@@ -1,43 +1,45 @@
-<p style="color: red"><%= alert %></p>
+<%= render layout: "shared/auth_card" do %>
+  <% if alert.present? %>
+    <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
+  <% end %>
 
-<% if Current.user.verified? %>
-  <h1>Change your email</h1>
-<% else %>
-  <h1>Verify your email</h1>
-  <p>We sent a verification email to the address below. Check that email and follow those instructions to confirm it's your email address.</p>
-  <p><%= button_to "Re-send verification email", identity_email_verification_path %></p>
-<% end %>
-
-<%= form_with(url: identity_email_path, method: :patch) do |form| %>
-  <% if @user.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h2>
-
-      <ul>
-        <% @user.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <% if Current.user.verified? %>
+    <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Change your email</h1>
+  <% else %>
+    <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Verify your email</h1>
+    <p class="mt-3 text-center text-sm leading-relaxed text-slate-600">
+      We sent a verification email to the address below. Open that email and follow the instructions to confirm it&apos;s yours.
+    </p>
+    <div class="mt-4 flex justify-center">
+      <%= button_to "Re-send verification email", identity_email_verification_path, class: tw_btn_secondary_classes %>
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :email, "New email", style: "display: block" %>
-    <%= form.email_field :email, required: true, autofocus: true %>
-  </div>
+  <%= form_with(url: identity_email_path, method: :patch, class: "mt-8 space-y-5") do |form| %>
+    <% if @user.errors.any? %>
+      <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
+        <p class="font-medium"><%= pluralize(@user.errors.count, "error") %> prevented saving:</p>
+        <ul class="list-inside list-disc text-sm">
+          <% @user.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
 
-  <div>
-    <%= form.label :password_challenge, style: "display: block" %>
-    <%= form.password_field :password_challenge, required: true, autocomplete: "current-password" %>
-  </div>
+    <div>
+      <%= form.label :email, Current.user.verified? ? "New email" : "Email", class: tw_label_classes %>
+      <%= form.email_field :email, required: true, autofocus: true, autocomplete: "email", class: tw_input_classes %>
+    </div>
 
-  <div>
-    <%= form.submit "Save changes" %>
-  </div>
+    <div>
+      <%= form.label :password_challenge, Current.user.verified? ? "Current password" : "Password", class: tw_label_classes %>
+      <%= form.password_field :password_challenge, required: true, autocomplete: "current-password", class: tw_input_classes %>
+    </div>
+
+    <div class="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
+      <%= form.submit "Save changes", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-[10rem]" %>
+      <%= link_to "Back", root_path, class: "text-center text-sm font-medium text-slate-600 hover:text-slate-900 sm:text-left" %>
+    </div>
+  <% end %>
 <% end %>
-
-<br>
-
-<div>
-  <%= link_to "Back", root_path %>
-</div>
