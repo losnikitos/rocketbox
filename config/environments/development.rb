@@ -42,8 +42,7 @@ Rails.application.configure do
 
   config.action_controller.default_url_options = { host: "localhost", port: 3000 }
 
-  # Open sent mail in the browser (letter_opener gem; no SMTP required).
-  config.action_mailer.delivery_method = :letter_opener
+  # Delivery uses :postmark from config/application.rb (sandbox server is fine for dev).
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
