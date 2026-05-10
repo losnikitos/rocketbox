@@ -7,10 +7,10 @@ class StripeWebhooksController < ApplicationController
   def create
     payload = request.body.read
     sig_header = request.env["HTTP_STRIPE_SIGNATURE"]
-    secret = ENV["STRIPE_WEBHOOK_SECRET"]
+    secret = StripeCredentials.webhook_secret
 
     if secret.blank?
-      Rails.logger.error("STRIPE_WEBHOOK_SECRET is not configured")
+      Rails.logger.error("stripe.webhook_secret is not set in Rails credentials")
       head :unprocessable_entity
       return
     end

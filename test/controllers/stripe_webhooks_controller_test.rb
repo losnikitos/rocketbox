@@ -7,18 +7,13 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
 
   setup do
     host! "www.example.com"
-    @secret = "whsec_test_123"
-    ENV["STRIPE_WEBHOOK_SECRET"] = @secret
-  end
-
-  teardown do
-    ENV.delete("STRIPE_WEBHOOK_SECRET")
   end
 
   test "rejects when webhook secret missing" do
-    ENV.delete("STRIPE_WEBHOOK_SECRET")
-    post stripe_webhook_path, params: "{}", headers: { "CONTENT_TYPE" => "application/json" }
-    assert_response :unprocessable_entity
+    stub_stripe_webhook_secret(nil) do
+      post stripe_webhook_path, params: "{}", headers: { "CONTENT_TYPE" => "application/json" }
+      assert_response :unprocessable_entity
+    end
   end
 
   test "accepts signed payload and processes job" do
@@ -44,12 +39,14 @@ class StripeWebhooksControllerTest < ActionDispatch::IntegrationTest
       metadata: { "user_id" => user.id.to_s }
     )
 
-    stub_stripe_webhook_construct_event do
-      stub_stripe_subscription_retrieve(stripe_sub) do
-        perform_enqueued_jobs do
-          post stripe_webhook_path,
-            params: payload,
-            headers: { "CONTENT_TYPE" => "application/json", "HTTP_STRIPE_SIGNATURE" => "v1,test" }
+    stub_stripe_webhook_secret("whsec_test_123") do
+      stub_stripe_webhook_construct_event do
+        stub_stripe_subscription_retrieve(stripe_sub) do
+          perform_enqueued_jobs do
+            post stripe_webhook_path,
+              params: payload,
+              headers: { "CONTENT_TYPE" => "application/json", "HTTP_STRIPE_SIGNATURE" => "v1,test" }
+          end
         end
       end
     end

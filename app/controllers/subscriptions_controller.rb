@@ -6,7 +6,7 @@ class SubscriptionsController < ApplicationController
   end
 
   def checkout
-    price_id = ENV["STRIPE_PRICE_ID"]
+    price_id = StripeCredentials.price_id
     if price_id.blank?
       redirect_to subscription_path, alert: "Subscription billing is not configured."
       return

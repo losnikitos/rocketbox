@@ -18,6 +18,14 @@ module StripeTestHelpers
   ensure
     Stripe::Webhook.define_singleton_method(:construct_event, original)
   end
+
+  def stub_stripe_webhook_secret(value)
+    original = StripeCredentials.method(:webhook_secret)
+    StripeCredentials.define_singleton_method(:webhook_secret) { value }
+    yield
+  ensure
+    StripeCredentials.define_singleton_method(:webhook_secret, original)
+  end
 end
 
 ActiveSupport.on_load(:active_support_test_case) { include StripeTestHelpers }
