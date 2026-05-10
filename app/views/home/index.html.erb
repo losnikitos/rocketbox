@@ -1,20 +1,6 @@
 <% content_for(:title, "Rocketbox — Practical guides for small business owners") %>
 
-<header class="mb-8 border-b border-slate-200 pb-6">
-  <nav class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" aria-label="Primary">
-    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-slate-700">
-      <%= link_to "Home", root_path, class: "font-medium text-indigo-600", aria: { current: "page" } %>
-      <%= link_to "Coffeeshop", "#{root_path}#coffeeshop", class: "hover:text-indigo-600" %>
-      <%= link_to "Tour guide", "#{root_path}#tour-guide", class: "hover:text-indigo-600" %>
-      <%= link_to "Barber", "#{root_path}#barber", class: "hover:text-indigo-600" %>
-    </div>
-    <div class="flex flex-wrap items-center gap-3 sm:justify-end">
-      <%= link_to "Pricing", "#{root_path}#pricing", class: "text-sm font-medium text-slate-700 hover:text-indigo-600" %>
-      <%= link_to "Sign in", sign_in_path, class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-      <%= link_to "Sign up free", sign_up_path, class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-    </div>
-  </nav>
-</header>
+<%= render "shared/page_header" %>
 
 <section class="flex flex-col gap-12 pb-8 text-center">
   <div class="flex flex-col items-center gap-5">
