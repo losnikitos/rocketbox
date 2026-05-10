@@ -1,0 +1,30 @@
+<nav class="lg:sticky lg:top-8" aria-label="Table of contents">
+  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Table of contents</p>
+    <ul class="mt-3 space-y-0.5 text-sm text-slate-700">
+      <li>
+        <%= link_to books_coffeeshop_path,
+              class: [
+                "block rounded-lg px-2 py-2 font-medium transition hover:bg-slate-50",
+                (local_assigns[:active_chapter].nil? ? "bg-indigo-50 text-indigo-900" : "text-slate-800"),
+              ].join(" ") do %>
+          <span class="text-slate-500">Overview</span>
+        <% end %>
+      </li>
+    </ul>
+    <ol class="mt-1 max-h-[min(70vh,40rem)] space-y-0.5 overflow-y-auto pr-1 text-sm">
+      <% chapters.each do |chapter| %>
+        <li>
+          <%= link_to books_coffeeshop_chapter_path(chapter: chapter.position),
+                class: [
+                  "flex gap-2 rounded-lg px-2 py-1.5 leading-snug transition hover:bg-slate-50",
+                  (local_assigns[:active_chapter] == chapter.position ? "bg-indigo-50 font-medium text-indigo-900" : "text-slate-700"),
+                ].join(" ") do %>
+            <span class="shrink-0 tabular-nums text-slate-400"><%= chapter.position %>.</span>
+            <span><%= chapter.title %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+</nav>

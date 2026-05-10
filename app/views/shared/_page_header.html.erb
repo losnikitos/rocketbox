@@ -2,7 +2,7 @@
   <nav class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" aria-label="Primary">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-slate-700">
       <%= link_to "Home", root_path, class: "font-medium text-indigo-600", aria: { current: "page" } %>
-      <%= link_to "Coffeeshop", "#{root_path}#coffeeshop", class: "hover:text-indigo-600" %>
+      <%= link_to "Coffeeshop", books_coffeeshop_path, class: "hover:text-indigo-600" %>
       <%= link_to "Tour guide", "#{root_path}#tour-guide", class: "hover:text-indigo-600" %>
       <%= link_to "Barber", "#{root_path}#barber", class: "hover:text-indigo-600" %>
     </div>
