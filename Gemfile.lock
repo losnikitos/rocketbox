@@ -491,7 +491,7 @@ DEPENDENCIES
   jbuilder
   kamal
   letter_opener
-  postmark-rails (~> 0.22.1)
+  postmark-rails (~> 0.22)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)
