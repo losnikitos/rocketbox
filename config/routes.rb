@@ -12,7 +12,11 @@ Rails.application.routes.draw do
   end
   root "home#index"
 
+  resource :free_preview, only: %i[new create]
+  get "free_preview/thanks", to: "free_previews#thanks", as: :free_preview_thanks
+
   namespace :books do
+    get "preview", to: "preview_accesses#show", as: :preview_access
     get "coffeeshop", to: "coffeeshop#index", as: :coffeeshop
     get "coffeeshop/:chapter", to: "coffeeshop#show", as: :coffeeshop_chapter
   end
