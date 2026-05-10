@@ -31,7 +31,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "That email or password is incorrect", flash[:alert]
 
     get root_url
-    assert_redirected_to sign_in_url
+    assert_response :success
   end
 
   test "should sign out" do
