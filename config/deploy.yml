@@ -1,8 +1,8 @@
 # Name of your application. Used to uniquely configure containers.
 service: rocketbox
 
-# Container image (pushed to registry.server / image).
-image: losnikitos/rocketbox
+# Container image namespace must match GHCR owner (same as KAMAL_REGISTRY_USERNAME).
+image: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME") %>/rocketbox
 
 # Deploy to these servers (SSH user defaults to root; set ssh: user if needed).
 servers:
@@ -23,16 +23,20 @@ servers:
 # kamal-proxy on the host terminates TLS (Let's Encrypt) and proxies to the app container.
 proxy:
   ssl: true
-  host: rocketbox.monitoring.tadaaa.uk.com
+  host: rocketbox.plus
   # Required so Rails sees X-Forwarded-Proto when ssl: true on the proxy.
   forward_headers: true
+  # Bind only the public interface: Tailscale uses 100.x:443 for `tailscale serve`, which
+  # conflicts with Docker's default publish 0.0.0.0:443 (address already in use).
+  run:
+    bind_ips:
+      - 51.75.68.97
 
-# GHCR (create a PAT with read:packages + write:packages; set KAMAL_REGISTRY_PASSWORD).
+# GHCR: KAMAL_REGISTRY_USERNAME + KAMAL_REGISTRY_PASSWORD in .env (see .kamal/secrets).
 registry:
   server: ghcr.io
-  username: losnikitos
-
-  # Always use an access token rather than real password when possible.
+  username:
+    - KAMAL_REGISTRY_USERNAME
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -51,7 +55,7 @@ env:
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2
 
-    MAILER_DEFAULT_HOST: rocketbox.monitoring.tadaaa.uk.com
+    MAILER_DEFAULT_HOST: rocketbox.plus
 
     # Match this to any external database server to configure Active Record correctly
     # Use rocketbox-db for a db accessory server on same machine via local kamal docker network.
