@@ -22,8 +22,8 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 antialiased">
-    <main class="container bg-white mx-auto flex min-h-screen max-w-3xl flex-col px-5 py-16">
+  <body class="min-h-screen bg-slate-100 antialiased">
+    <main class="mx-auto flex min-h-screen w-full <%= @main_container_class.presence || "max-w-3xl" %> flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <%= yield %>
     </main>
   </body>

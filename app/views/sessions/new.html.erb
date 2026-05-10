@@ -1,30 +1,32 @@
-<p style="color: green"><%= notice %></p>
-<p style="color: red"><%= alert %></p>
+<%= render layout: "shared/auth_card" do %>
+  <% if notice.present? %>
+    <p class="<%= tw_alert_success_classes %>"><%= notice %></p>
+  <% end %>
+  <% if alert.present? %>
+    <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
+  <% end %>
 
-<h1>Sign in</h1>
+  <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Sign in</h1>
+  <p class="mt-1 text-center text-sm text-slate-600">
+    <%= link_to "Create an account", sign_up_path, class: "font-medium text-indigo-600 hover:text-indigo-500" %>
+  </p>
 
-<%= form_with(url: sign_in_path) do |form| %>
-  <div>
-    <%= form.label :email, style: "display: block" %>
-    <%= form.email_field :email, value: params[:email_hint], required: true, autofocus: true, autocomplete: "email" %>
-  </div>
+  <%= form_with(url: sign_in_path, class: "mt-8 space-y-5") do |form| %>
+    <div>
+      <%= form.label :email, class: tw_label_classes %>
+      <%= form.email_field :email, value: params[:email_hint], required: true, autofocus: true, autocomplete: "email", class: tw_input_classes %>
+    </div>
 
-  <div>
-    <%= form.label :password, style: "display: block" %>
-    <%= form.password_field :password, required: true, autocomplete: "current-password" %>
-  </div>
+    <div>
+      <%= form.label :password, class: tw_label_classes %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password", class: tw_input_classes %>
+      <p class="mt-2 text-right text-sm">
+        <%= link_to "Forgot your password?", new_identity_password_reset_path, class: "font-medium text-indigo-600 hover:text-indigo-500" %>
+      </p>
+    </div>
 
-  <div>
-    <%= form.submit "Sign in" %>
-  </div>
+    <div class="pt-1">
+      <%= form.submit "Sign in", class: tw_btn_primary_classes %>
+    </div>
+  <% end %>
 <% end %>
-
-<br>
-
-
-<br>
-
-<div>
-  <%= link_to "Sign up", sign_up_path %> |
-  <%= link_to "Forgot your password?", new_identity_password_reset_path %>
-</div>

@@ -1,5 +1,7 @@
 <% content_for(:title, "Rocketbox — Practical guides for small business owners") %>
 
+<%= render "shared/page_header" %>
+
 <section class="flex flex-col gap-12 pb-8 text-center">
   <div class="flex flex-col items-center gap-5">
     <p class="rounded-full bg-indigo-100 px-4 py-1 text-sm font-medium text-indigo-800">
@@ -26,21 +28,21 @@
     Deep dives for high-touch, local businesses. More verticals are on the way.
   </p>
   <ul class="mt-8 grid gap-4 sm:grid-cols-3">
-    <li class="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
+    <li id="coffeeshop" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
       <span class="text-2xl" aria-hidden="true">☕</span>
       <h3 class="mt-2 font-semibold text-slate-900">Coffee shop owners</h3>
       <p class="mt-1 text-sm leading-relaxed text-slate-600">
         Menu, staffing, morning rush, and margins—without the fluff.
       </p>
     </li>
-    <li class="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
+    <li id="tour-guide" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
       <span class="text-2xl" aria-hidden="true">🧭</span>
       <h3 class="mt-2 font-semibold text-slate-900">Tour guides</h3>
       <p class="mt-1 text-sm leading-relaxed text-slate-600">
         Bookings, safety, storytelling, and running a standout experience.
       </p>
     </li>
-    <li class="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
+    <li id="barber" class="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
       <span class="text-2xl" aria-hidden="true">💈</span>
       <h3 class="mt-2 font-semibold text-slate-900">Barbers</h3>
       <p class="mt-1 text-sm leading-relaxed text-slate-600">
@@ -50,7 +52,7 @@
   </ul>
 </section>
 
-<section class="border-t border-slate-200 pt-12">
+<section id="pricing" class="scroll-mt-24 border-t border-slate-200 pt-12">
   <h2 class="text-center text-xl font-semibold text-slate-900 sm:text-2xl">
     Free preview vs full access
   </h2>
