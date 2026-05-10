@@ -12,7 +12,7 @@ module Books
         return
       end
 
-      redirect_to books_coffeeshop_chapter_path(1)
+      redirect_to books_book_chapter_path("coffeeshop", 1)
     end
   end
 end

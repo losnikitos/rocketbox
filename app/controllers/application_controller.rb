@@ -14,7 +14,14 @@ class ApplicationController < ActionController::Base
     end
 
     def authenticate
+      return if allow_public_access?
+
       redirect_to sign_in_path unless Current.session
+    end
+
+    # Root route (`/`) is the public landing page — same in dev and production.
+    def allow_public_access?
+      request.path == "/" && (request.get? || request.head?)
     end
 
     def set_current_request_details

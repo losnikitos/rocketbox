@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount_avo
   get  "sign_in", to: "sessions#new"
   post "sign_in", to: "sessions#create"
   get  "sign_up", to: "registrations#new"
@@ -24,8 +25,8 @@ Rails.application.routes.draw do
 
   namespace :books do
     get "preview", to: "preview_accesses#show", as: :preview_access
-    get "coffeeshop", to: "coffeeshop#index", as: :coffeeshop
-    get "coffeeshop/:chapter", to: "coffeeshop#show", as: :coffeeshop_chapter
+    get ":slug", to: "books#index", as: :book
+    get ":slug/:chapter", to: "books#show", as: :book_chapter
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
