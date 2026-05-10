@@ -32,10 +32,10 @@
 
   <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
     <% unless @subscription.active? %>
-      <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+      <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
     <% end %>
     <% if @subscription.stripe_customer_id.present? %>
-      <%= button_to "Manage billing", portal_account_path, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+      <%= button_to "Manage billing", portal_account_path, form: { data: { turbo: false } }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
     <% end %>
     <%= button_to "Log out", session_path(Current.session), method: :delete, form: { class: "inline-flex" }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
   </div>
