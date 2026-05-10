@@ -12,7 +12,7 @@
     </h1>
     <p class="mt-4 text-lg leading-relaxed text-slate-600">
       A field-style walkthrough for owners who live on the bar during rush. This mock page stands in for the catalog:
-      <%= @chapters.size %> chapters, each with the same reader layout—navigation on the left, long-form notes on the right.
+      <%= @book.chapters.size %> chapters, each with the same reader layout—navigation on the left, long-form notes on the right.
     </p>
 
     <div class="mt-8 space-y-4 text-slate-700 leading-relaxed">
@@ -34,16 +34,17 @@
     </ul>
 
     <div class="mt-10 flex flex-wrap gap-3">
-      <% if @chapters.any? %>
-        <%= link_to "Start at chapter 1",
-              books_coffeeshop_chapter_path(chapter: @chapters.first.position),
+      <% first_unlocked = @chapters.find { |c| !chapter_locked?(c) } %>
+      <% if first_unlocked %>
+        <%= link_to "Start at chapter #{first_unlocked.position}",
+              books_coffeeshop_chapter_path(chapter: first_unlocked.position),
               class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-        <% ch10 = @chapters.find { |c| c.position == 10 } %>
-        <% if ch10 %>
-          <%= link_to "Jump to chapter 10",
-                books_coffeeshop_chapter_path(chapter: ch10.position),
-                class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-        <% end %>
+      <% end %>
+      <% ch10 = @chapters.find { |c| c.position == 10 } %>
+      <% if ch10 && !chapter_locked?(ch10) %>
+        <%= link_to "Jump to chapter 10",
+              books_coffeeshop_chapter_path(chapter: ch10.position),
+              class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
       <% end %>
     </div>
   </article>

@@ -6,6 +6,9 @@ module Books
 
     before_action :set_coffeeshop_book
     before_action :set_reader_context
+    before_action :set_chapters
+
+    helper_method :chapter_locked?, :subscribed?
 
     def index
     end
@@ -14,8 +17,13 @@ module Books
       n = Integer(params[:chapter], exception: false)
       @chapter = @chapters.find { |c| c.position == n }
       unless @chapter
-        redirect_to books_coffeeshop_path
+        redirect_to books_coffeeshop_path, alert: "That chapter is not available."
         return
+      end
+
+      if chapter_locked?(@chapter)
+        redirect_to books_coffeeshop_path, alert: "Subscribe to unlock this chapter."
+        nil
       end
     end
 
@@ -27,12 +35,24 @@ module Books
           redirect_to root_path
           return
         end
+      end
 
-        @chapters = @book.chapters
+      def set_chapters
+        return unless @book
+
+        @chapters = @book.chapters.order(:position).to_a
       end
 
       def set_reader_context
         @main_container_class = "max-w-6xl"
+      end
+
+      def subscribed?
+        Current.user&.subscription&.active? || false
+      end
+
+      def chapter_locked?(chapter)
+        !chapter.free? && !subscribed?
       end
   end
 end
