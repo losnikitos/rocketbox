@@ -1,23 +1,10 @@
-<p style="color: green"><%= notice %></p>
-
-<p>Signed as <%= Current.user.email %></p>
-
-<h2>Login and verification</h2>
-
-<div>
-  <%= link_to "Change password", edit_password_path %>
+<div class="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+  <h1
+    class="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl"
+  >
+    Hello world
+  </h1>
+  <p class="text-lg text-slate-600">
+    If this line is styled, Tailwind is working.
+  </p>
 </div>
-
-<div>
-  <%= link_to "Change email address", edit_identity_email_path %>
-</div>
-
-<h2>Access history</h2>
-
-<div>
-  <%= link_to "Devices & Sessions", sessions_path %>
-</div>
-
-<br>
-
-<%= button_to "Log out", Current.session, method: :delete %>
