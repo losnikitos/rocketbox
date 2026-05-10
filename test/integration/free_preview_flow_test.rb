@@ -22,7 +22,7 @@ class FreePreviewFlowTest < ActionDispatch::IntegrationTest
   test "valid preview token redirects to first chapter" do
     token = DemoPreviewLink.generate!("reader@example.com")
     get books_preview_access_url(t: token)
-    assert_redirected_to books_coffeeshop_chapter_path(1)
+    assert_redirected_to books_book_chapter_path("coffeeshop", 1)
   end
 
   test "invalid preview token redirects to request form" do
