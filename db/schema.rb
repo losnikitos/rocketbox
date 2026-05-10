@@ -10,12 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_230001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_11_004417) do
   create_table "books", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "notion_database_id"
     t.string "slug", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["notion_database_id"], name: "index_books_on_notion_database_id", unique: true
     t.index ["slug"], name: "index_books_on_slug", unique: true
   end
 

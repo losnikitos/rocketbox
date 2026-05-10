@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SubscriptionsController < ApplicationController
+class AccountsController < ApplicationController
   def show
     @subscription = Current.user.subscription
   end
@@ -8,12 +8,12 @@ class SubscriptionsController < ApplicationController
   def checkout
     price_id = StripeCredentials.price_id
     if price_id.blank?
-      redirect_to subscription_path, alert: "Subscription billing is not configured."
+      redirect_to account_path, alert: "Subscription billing is not configured."
       return
     end
 
     if Stripe.api_key.blank?
-      redirect_to subscription_path, alert: "Stripe is not configured."
+      redirect_to account_path, alert: "Stripe is not configured."
       return
     end
 
@@ -21,8 +21,8 @@ class SubscriptionsController < ApplicationController
     session_params = {
       mode: "subscription",
       line_items: [ { price: price_id, quantity: 1 } ],
-      success_url: subscription_url + "?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: subscription_url,
+      success_url: account_url + "?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: account_url,
       client_reference_id: Current.user.id.to_s,
       metadata: { user_id: Current.user.id.to_s },
       subscription_data: { metadata: { user_id: Current.user.id.to_s } }
@@ -38,23 +38,23 @@ class SubscriptionsController < ApplicationController
     redirect_to session.url, allow_other_host: true
   rescue Stripe::StripeError => e
     Rails.logger.error("[Stripe checkout] #{e.class}: #{e.message}")
-    redirect_to subscription_path, alert: "Could not start checkout. Please try again."
+    redirect_to account_path, alert: "Could not start checkout. Please try again."
   end
 
   def portal
     sub = Current.user.subscription
     if sub.stripe_customer_id.blank?
-      redirect_to subscription_path, alert: "Subscribe first to manage billing."
+      redirect_to account_path, alert: "Subscribe first to manage billing."
       return
     end
 
     session = Stripe::BillingPortal::Session.create(
       customer: sub.stripe_customer_id,
-      return_url: subscription_url
+      return_url: account_url
     )
     redirect_to session.url, allow_other_host: true
   rescue Stripe::StripeError => e
     Rails.logger.error("[Stripe portal] #{e.class}: #{e.message}")
-    redirect_to subscription_path, alert: "Could not open billing portal. Please try again."
+    redirect_to account_path, alert: "Could not open billing portal. Please try again."
   end
 end

@@ -15,7 +15,7 @@ Rails.application.routes.draw do
 
   resources :documents, only: [:show], param: :slug
 
-  resource :subscription, only: [:show] do
+  resource :account, only: [:show] do
     post :checkout
     post :portal
   end

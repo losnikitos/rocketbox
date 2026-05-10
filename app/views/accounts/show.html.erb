@@ -1,9 +1,9 @@
-<% content_for(:title, "My subscription — Rocketbox") %>
+<% content_for(:title, "My account — Rocketbox") %>
 
 <%= render "shared/page_header" %>
 
 <section class="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-  <h1 class="text-xl font-semibold text-slate-900">My subscription</h1>
+  <h1 class="text-xl font-semibold text-slate-900">My account</h1>
 
   <% if params[:session_id].present? %>
     <p class="mt-4 text-sm leading-relaxed text-slate-600">
@@ -32,11 +32,11 @@
 
   <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
     <% unless @subscription.active? %>
-      <%= button_to "Subscribe with Stripe Checkout", checkout_subscription_path, class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+      <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
     <% end %>
     <% if @subscription.stripe_customer_id.present? %>
-      <%= button_to "Manage billing", portal_subscription_path, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
+      <%= button_to "Manage billing", portal_account_path, form: { data: { turbo: false } }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
     <% end %>
-    <%= link_to "Read the Coffee shop guide", books_book_path("coffeeshop"), class: "inline-flex items-center justify-center rounded-lg border border-transparent px-5 py-2.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500" %>
+    <%= button_to "Log out", session_path(Current.session), method: :delete, form: { class: "inline-flex" }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
   </div>
 </section>
