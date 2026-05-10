@@ -80,3 +80,5 @@ gem "stripe", "~> 15.0"
 gem "avo", ">= 3.2.1"
 
 gem "friendly_id", "~> 5.7"
+
+gem "redcarpet", "~> 3.6"
