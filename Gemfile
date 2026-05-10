@@ -55,6 +55,8 @@ group :development, :test do
 end
 
 group :development do
+  # Preview outbound email in the browser (no SMTP) [https://github.com/ryanb/letter_opener]
+  gem "letter_opener"
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
   # Live reloading for Hotwire (HTML/CSS/Stimulus) — https://github.com/basecamp/hotwire-spark
@@ -70,3 +72,7 @@ end
 gem "authentication-zero", "~> 4.0"
 
 gem "tailwindcss-rails", "~> 4.4"
+
+gem "heroicons", "~> 2.0"
+
+gem "stripe", "~> 15.0"

@@ -1,0 +1,43 @@
+<% content_for(:title, "Free preview — Rocketbox") %>
+
+<%= render "shared/page_header" %>
+
+<%= render layout: "shared/auth_card" do %>
+  <% if alert.present? %>
+    <p class="<%= tw_alert_error_classes %>" role="alert"><%= alert %></p>
+  <% end %>
+
+  <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+    Read a free demo chapter
+  </h1>
+  <p class="mt-3 text-center text-sm leading-relaxed text-slate-600">
+    Leave your email and we’ll send you a link to read a sample chapter (PDF-style web reading for now). You’ll also hear about new guides and releases—unsubscribe anytime.
+  </p>
+
+  <%= form_with model: @request, url: free_preview_path, class: "mt-8 space-y-5", method: :post do |form| %>
+    <% if @request.errors.any? %>
+      <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
+        <p class="font-medium"><%= pluralize(@request.errors.count, "issue") %> to fix:</p>
+        <ul class="list-inside list-disc text-sm">
+          <% @request.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :email, class: tw_label_classes %>
+      <%= form.email_field :email, required: true, autofocus: true, autocomplete: "email", class: tw_input_classes %>
+    </div>
+
+    <div class="pt-1">
+      <%= form.submit "Read for free", class: tw_btn_primary_classes %>
+    </div>
+
+    <p class="text-center text-xs text-slate-500">
+      Already have an account?
+      <%= link_to "Sign in", sign_in_path, class: "font-medium text-indigo-600 hover:text-indigo-500" %>
+    </p>
+  <% end %>
+<% end %>

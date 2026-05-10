@@ -1,13 +1,13 @@
 # Name of your application. Used to uniquely configure containers.
 service: rocketbox
 
-# Name of the container image (use your-user/app-name on external registries).
-image: rocketbox
+# Container image namespace must match GHCR owner (same as KAMAL_REGISTRY_USERNAME).
+image: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME") %>/rocketbox
 
-# Deploy to these servers.
+# Deploy to these servers (SSH user defaults to root; set ssh: user if needed).
 servers:
   web:
-    - 192.168.0.1
+    - monitoring.tadaaa.uk.com
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -20,21 +20,25 @@ servers:
 #
 # Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
 #
-# proxy:
-#   ssl: true
-#   host: app.example.com
+# kamal-proxy on the host terminates TLS (Let's Encrypt) and proxies to the app container.
+proxy:
+  ssl: true
+  host: rocketbox.plus
+  # Required so Rails sees X-Forwarded-Proto when ssl: true on the proxy.
+  forward_headers: true
+  # Bind only the public interface: Tailscale uses 100.x:443 for `tailscale serve`, which
+  # conflicts with Docker's default publish 0.0.0.0:443 (address already in use).
+  run:
+    bind_ips:
+      - 51.75.68.97
 
-# Where you keep your container images.
+# GHCR: KAMAL_REGISTRY_USERNAME + KAMAL_REGISTRY_PASSWORD in .env (see .kamal/secrets).
 registry:
-  # Alternatives: hub.docker.com / registry.digitalocean.com / ghcr.io / ...
-  server: localhost:5555
-
-  # Needed for authenticated registries.
-  # username: your-user
-
-  # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  server: ghcr.io
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
@@ -50,6 +54,8 @@ env:
 
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2
+
+    MAILER_DEFAULT_HOST: rocketbox.plus
 
     # Match this to any external database server to configure Active Record correctly
     # Use rocketbox-db for a db accessory server on same machine via local kamal docker network.

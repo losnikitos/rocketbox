@@ -11,6 +11,9 @@ class User < ApplicationRecord
 
 
   has_many :sessions, dependent: :destroy
+  has_one :subscription, dependent: :destroy, inverse_of: :user
+
+  after_create :create_default_subscription
 
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password, allow_nil: true, length: { minimum: 12 }
@@ -24,4 +27,10 @@ class User < ApplicationRecord
   after_update if: :password_digest_previously_changed? do
     sessions.where.not(id: Current.session).delete_all
   end
+
+  private
+
+    def create_default_subscription
+      create_subscription!(active: false)
+    end
 end
