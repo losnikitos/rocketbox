@@ -13,6 +13,8 @@ Rails.application.routes.draw do
   end
   root "home#index"
 
+  resources :documents, only: [:show], param: :slug
+
   resource :subscription, only: [:show] do
     post :checkout
     post :portal

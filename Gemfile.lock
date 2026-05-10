@@ -265,6 +265,11 @@ GEM
     parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
+    postmark (1.25.1)
+      json
+    postmark-rails (0.22.1)
+      actionmailer (>= 3.0.0)
+      postmark (>= 1.21.3, < 2.0)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -330,6 +335,7 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
+    redcarpet (3.6.1)
     regexp_parser (2.12.0)
     reline (0.6.3)
       io-console (~> 0.5)
@@ -485,9 +491,11 @@ DEPENDENCIES
   jbuilder
   kamal
   letter_opener
+  postmark-rails (~> 0.22.1)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)
+  redcarpet (~> 3.6)
   rubocop-rails-omakase
   selenium-webdriver
   solid_cable
