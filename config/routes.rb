@@ -12,6 +12,13 @@ Rails.application.routes.draw do
   end
   root "home#index"
 
+  resource :subscription, only: [:show] do
+    post :checkout
+    post :portal
+  end
+
+  post "stripe/webhook", to: "stripe_webhooks#create"
+
   resource :free_preview, only: %i[new create]
   get "free_preview/thanks", to: "free_previews#thanks", as: :free_preview_thanks
 

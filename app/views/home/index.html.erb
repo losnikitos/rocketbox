@@ -71,12 +71,21 @@
       <p class="mt-2 text-sm leading-relaxed text-indigo-900/90">
         Full digital access to complete guides—every chapter, checklist, and update we ship for your plan.
       </p>
+      <% if Current.user %>
+        <div class="mt-4">
+          <%= link_to "View subscription & billing", subscription_path, class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+        </div>
+      <% else %>
+        <p class="mt-4 text-sm font-medium text-indigo-900/80">
+          <%= link_to "Sign in", sign_in_path, class: "text-indigo-700 underline hover:text-indigo-600" %> to subscribe with Stripe Checkout.
+        </p>
+      <% end %>
     </div>
   </div>
 </section>
 
 <section class="border-t border-slate-200 pb-4 pt-12 text-center">
   <p class="text-sm text-slate-500">
-    This page is a placeholder; catalog and checkout will plug in here next.
+    Subscriptions use Stripe Checkout and the customer billing portal.
   </p>
 </section>

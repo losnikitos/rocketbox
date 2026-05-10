@@ -74,3 +74,5 @@ gem "authentication-zero", "~> 4.0"
 gem "tailwindcss-rails", "~> 4.4"
 
 gem "heroicons", "~> 2.0"
+
+gem "stripe", "~> 15.0"
