@@ -85,7 +85,10 @@ module Notion
         cursor = nil
 
         loop do
-          response = @client.block_children(block_id: page_id, page_size: 100, start_cursor: cursor)
+          request = { block_id: page_id, page_size: 100 }
+          request[:start_cursor] = cursor if cursor.present?
+
+          response = @client.block_children(**request)
           blocks.concat(Array(response.results))
           break unless response.has_more
 
