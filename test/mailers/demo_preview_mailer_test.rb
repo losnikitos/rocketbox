@@ -7,9 +7,14 @@ class DemoPreviewMailerTest < ActionMailer::TestCase
     preview_url = "https://example.com/books/preview?t=abc"
     mail = DemoPreviewMailer.with(email: "reader@example.com", preview_url:).demo_chapter
 
-    assert_equal "Your free Rocketbox preview", mail.subject
-    assert_equal ["reader@example.com"], mail.to
-    assert_includes mail.html_part.decoded, preview_url
-    assert_includes mail.text_part.decoded, preview_url
+    assert_equal [ "reader@example.com" ], mail.to
+    assert_equal "demo_chapter", mail.template_alias
+
+    model = mail.template_model
+    assert_equal preview_url, model[:preview_url]
+    assert_equal(
+      ActionController::Base.helpers.pluralize(DemoPreviewLink::EXPIRATION_DAYS, "day"),
+      model[:expiration_phrase]
+    )
   end
 end

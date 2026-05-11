@@ -1,0 +1,21 @@
+{
+  "name": "rocketbox-email",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cross-env SHARP_IGNORE_GLOBAL_LIBVIPS=1 email build",
+    "dev": "cross-env SHARP_IGNORE_GLOBAL_LIBVIPS=1 email dev",
+    "export": "cross-env SHARP_IGNORE_GLOBAL_LIBVIPS=1 email export"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-email": "6.0.5"
+  },
+  "devDependencies": {
+    "@react-email/ui": "6.0.5",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "cross-env": "^7.0.3"
+  }
+}

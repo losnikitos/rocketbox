@@ -1,0 +1,6 @@
+.react-email
+.vscode
+node_modules
+out
+.DS_Store
+.env

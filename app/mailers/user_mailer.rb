@@ -1,15 +1,27 @@
 class UserMailer < ApplicationMailer
+  include PostmarkRails::TemplatedMailerMixin
+
   def password_reset
     @user = params[:user]
     @signed_id = @user.generate_token_for(:password_reset)
 
-    mail to: @user.email, subject: "Reset your password"
+    self.template_model = {
+      user_email: @user.email,
+      reset_password_url: edit_identity_password_reset_url(sid: @signed_id)
+    }
+
+    mail to: @user.email, postmark_template_alias: "password_reset"
   end
 
   def email_verification
     @user = params[:user]
     @signed_id = @user.generate_token_for(:email_verification)
 
-    mail to: @user.email, subject: "Verify your email"
+    self.template_model = {
+      user_email: @user.email,
+      verification_url: identity_email_verification_url(sid: @signed_id)
+    }
+
+    mail to: @user.email, postmark_template_alias: "email_verification"
   end
 end
