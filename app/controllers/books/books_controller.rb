@@ -2,7 +2,7 @@
 
 module Books
   class BooksController < ApplicationController
-    skip_before_action :authenticate
+    skip_before_action :authenticate, except: :show
 
     before_action :set_book
     before_action :set_reader_context
@@ -52,6 +52,8 @@ module Books
       end
 
       def chapter_locked?(chapter)
+        return true unless Current.user
+
         !chapter.free? && !subscribed?
       end
   end

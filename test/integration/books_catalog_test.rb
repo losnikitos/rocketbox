@@ -14,4 +14,14 @@ class BooksCatalogTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "Coffee Shop Ops Manual"
     assert_select "a[href=?]", books_book_path(book), text: "Open preview"
   end
+
+  test "book overview page is publicly accessible" do
+    book = Book.create!(title: "Coffee Shop Ops Manual")
+    book.chapters.create!(title: "Opening Shift", position: 1, free: true)
+
+    get books_book_path(book)
+
+    assert_response :success
+    assert_select "h1", text: "Coffee Shop Ops Manual"
+  end
 end

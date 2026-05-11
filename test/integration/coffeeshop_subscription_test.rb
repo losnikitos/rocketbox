@@ -10,14 +10,21 @@ class CoffeeshopSubscriptionTest < ActionDispatch::IntegrationTest
     @paid_chapter = @book.chapters.create!(title: "Paid chapter", position: 2, free: false)
   end
 
-  test "guest can read free chapter" do
+  test "guest cannot read free chapter" do
     get books_book_chapter_path("coffeeshop", @free_chapter)
-    assert_response :success
+    assert_redirected_to sign_in_path
   end
 
   test "guest cannot read paid chapter" do
     get books_book_chapter_path("coffeeshop", @paid_chapter)
-    assert_redirected_to books_book_path("coffeeshop")
+    assert_redirected_to sign_in_path
+  end
+
+  test "signed-in user can read free chapter" do
+    sign_in_as(users(:lazaro_nixon))
+
+    get books_book_chapter_path("coffeeshop", @free_chapter)
+    assert_response :success
   end
 
   test "subscribed user can read paid chapter" do
