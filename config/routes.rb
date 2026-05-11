@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     resource :password_reset,     only: [:new, :edit, :create, :update]
   end
   root "home#index"
+  get "books", to: "books#index", as: :books
 
   resources :documents, only: [:show], param: :slug
 
