@@ -16,38 +16,8 @@
       <%= @chapter.title %>
     </h1>
 
-    <div class="mt-8 max-w-none">
-      <p class="text-lg leading-relaxed text-slate-600">
-        This is mock body copy for chapter <%= @chapter.position %>. Imagine a trusted operator leaning in during cleanup and
-        saying: “Here’s what actually matters about <%= @chapter.title.downcase %>—ignore the influencer stuff.”
-      </p>
-
-      <h2 class="mt-10 text-xl font-semibold text-slate-900">The short version</h2>
-      <p class="mt-3 leading-relaxed text-slate-700">
-        You win when defaults are boring: the critical checklist lives in one place, handoffs don’t fight each other,
-        and the numbers get read on the same day every week. This chapter gathers those defaults into
-        a single page your leads can riff on—not a binder nobody opens.
-      </p>
-
-      <h2 class="mt-10 text-xl font-semibold text-slate-900">Three decisions to lock</h2>
-      <ul class="mt-3 list-inside list-decimal space-y-2 leading-relaxed text-slate-700">
-        <li>What metric you glance at daily (throughput, ticket, waste—pick one).</li>
-        <li>Who owns the checklist when the owner isn’t on the floor.</li>
-        <li>What you refuse to expand until margins are proven.</li>
-      </ul>
-
-      <h2 class="mt-10 text-xl font-semibold text-slate-900">Try this on Monday</h2>
-      <p class="mt-3 leading-relaxed text-slate-700">
-        Block fifteen minutes before open. Walk the line a customer would walk: first impression, clarity, friction, and the
-        small ugly details. Fix the first thing you see with what you already have on hand—no “we’ll order that later” unless
-        safety demands it.
-      </p>
-
-      <h2 class="mt-10 text-xl font-semibold text-slate-900">If you only remember one line</h2>
-      <p class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/80 px-4 py-3 text-indigo-950 leading-relaxed">
-        Consistency beats cleverness: people notice when the experience feels calm and reliable, not when you added a fourth
-        shiny idea nobody uses.
-      </p>
+    <div class="prose prose-slate mt-8 max-w-none">
+      <%= render_markdown(@chapter.body) %>
     </div>
 
     <nav class="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-8 text-sm font-medium" aria-label="Chapter pagination">

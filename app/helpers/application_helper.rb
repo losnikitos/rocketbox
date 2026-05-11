@@ -1,4 +1,6 @@
 module ApplicationHelper
+  include ActionView::Helpers::SanitizeHelper
+
   def tw_label_classes
     "mb-1 block text-sm font-medium text-slate-700"
   end
@@ -21,5 +23,23 @@ module ApplicationHelper
 
   def tw_alert_error_classes
     "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+  end
+
+  def render_markdown(text)
+    renderer = Redcarpet::Render::HTML.new(
+      filter_html: true,
+      hard_wrap: true,
+      link_attributes: { target: "_blank", rel: "noopener noreferrer" }
+    )
+    markdown = Redcarpet::Markdown.new(
+      renderer,
+      autolink: true,
+      fenced_code_blocks: true,
+      no_intra_emphasis: true,
+      strikethrough: true,
+      superscript: true,
+      tables: true
+    )
+    sanitize(markdown.render(text.to_s))
   end
 end
