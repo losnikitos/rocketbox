@@ -1,7 +1,5 @@
 <% content_for(:title, "Free preview — Rocketbox") %>
 
-<%= render "shared/page_header" %>
-
 <%= render layout: "shared/auth_card" do %>
   <% if alert.present? %>
     <p class="<%= tw_alert_error_classes %>" role="alert"><%= alert %></p>

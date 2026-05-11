@@ -1,8 +1,5 @@
 <% width = local_assigns.fetch(:width, "max-w-md") %>
 <div class="flex flex-1 flex-col justify-center py-6 sm:py-10">
-  <div class="mx-auto mb-6">
-    <%= render "shared/logo" %>
-  </div>
   <div class="mx-auto w-full <%= width %> rb-surface-form px-6 py-8 rb-shadow-card sm:px-8 sm:py-10">
     <%= yield %>
   </div>

@@ -5,7 +5,6 @@ module Books
     skip_before_action :authenticate, except: :show
 
     before_action :set_book
-    before_action :set_reader_context
     before_action :set_chapters
 
     helper_method :chapter_locked?, :subscribed?
@@ -41,10 +40,6 @@ module Books
         return unless @book
 
         @chapters = @book.chapters.order(:position).to_a
-      end
-
-      def set_reader_context
-        @main_container_class = "max-w-6xl"
       end
 
       def subscribed?

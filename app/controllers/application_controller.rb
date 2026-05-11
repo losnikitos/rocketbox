@@ -20,9 +20,12 @@ class ApplicationController < ActionController::Base
       redirect_to sign_in_path unless Current.session
     end
 
-    # Root route (`/`) is the public landing page — same in dev and production.
+    # Public HTML pages that do not require a session (same shell as the rest of the app).
     def allow_public_access?
-      request.path == "/" && (request.get? || request.head?)
+      return true if request.path == "/" && (request.get? || request.head?)
+      return true if controller_name == "documents" && action_name == "show" && (request.get? || request.head?)
+
+      false
     end
 
     def set_current_request_details
