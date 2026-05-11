@@ -1,6 +1,17 @@
 # frozen_string_literal: true
 
 class AccountsController < ApplicationController
+  ADMIN_EDITABLE_SUBSCRIPTION_STATUSES = %w[
+    not_subscribed
+    active
+    trialing
+    past_due
+    canceled
+    unpaid
+    incomplete
+    incomplete_expired
+  ].freeze
+
   def show
     @subscription = Current.user.subscription
   end
@@ -56,5 +67,28 @@ class AccountsController < ApplicationController
   rescue Stripe::StripeError => e
     Rails.logger.error("[Stripe portal] #{e.class}: #{e.message}")
     redirect_to account_path, alert: "Could not open billing portal. Please try again."
+  end
+
+  def subscription_status
+    unless Current.user.admin?
+      redirect_to account_path, alert: "You are not allowed to update subscription status."
+      return
+    end
+
+    status = params.require(:subscription_status)
+    unless ADMIN_EDITABLE_SUBSCRIPTION_STATUSES.include?(status)
+      redirect_to account_path, alert: "Unknown subscription status."
+      return
+    end
+
+    subscription = Current.user.subscription
+    stripe_status = (status == "not_subscribed" ? nil : status)
+
+    subscription.update!(
+      status: stripe_status,
+      active: Subscription.stripe_status_grants_access?(stripe_status)
+    )
+
+    redirect_to account_path, notice: "Subscription status updated."
   end
 end

@@ -20,7 +20,7 @@ Install the [Postmark CLI](https://github.com/wildbit/postmark-cli) globally (or
 - `make postmark-push` — upload `postmark/` to Postmark
 - `make postmark-sync` — pull → export → copy HTML → push
 
-Rails sends with `postmark_template_alias` values `password_reset`, `email_verification`, and `demo_chapter` (must match folder names under `postmark/`).
+Rails sends with `postmark_template_alias` values `password_reset`, `email_verification`, `demo_chapter`, and `subscribe_magic_link` (must match folder names under `postmark/`).
 
 ## CLI authentication
 

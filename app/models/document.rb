@@ -3,7 +3,7 @@
 class Document < ApplicationRecord
   extend FriendlyId
 
-  friendly_id :name, use: :slugged
+  friendly_id :name, use: %i[finders slugged]
 
   validates :name, presence: true
   validates :title, presence: true
