@@ -1,0 +1,10 @@
+{
+  "Name": "Password reset",
+  "Alias": "password_reset",
+  "Subject": "Reset your password",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "user_email": "user_email_Value",
+    "reset_password_url": "reset_password_url_Value"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Name": "Demo chapter",
+  "Alias": "demo_chapter",
+  "Subject": "Your free Rocketbox preview",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "preview_url": "https://example.com/books/preview?t=sample",
+    "expiration_phrase": "7 days"
+  }
+}

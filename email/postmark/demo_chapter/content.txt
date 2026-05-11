@@ -1,0 +1,11 @@
+Hi,
+
+Thanks for your interest in Rocketbox. Open your free preview (coffee shop guide, chapter 1) at:
+
+{{preview_url}}
+
+This link expires in {{expiration_phrase}} for your inbox's safety—you can always request another from our site.
+
+You'll occasionally hear about new guides and launches. If that's not for you, you can ignore those messages.
+
+— The Rocketbox team

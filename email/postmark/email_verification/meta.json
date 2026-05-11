@@ -1,0 +1,10 @@
+{
+  "Name": "Email verification",
+  "Alias": "email_verification",
+  "Subject": "Verify your email",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "user_email": "user_email_Value",
+    "verification_url": "verification_url_Value"
+  }
+}

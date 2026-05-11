@@ -1,0 +1,9 @@
+Hey there,
+
+Can't remember your password for {{user_email}}? Use this link to set a new one:
+
+{{reset_password_url}}
+
+If you did not request a password reset you can safely ignore this email; it expires in 20 minutes.
+
+Have questions? Reply to this email.

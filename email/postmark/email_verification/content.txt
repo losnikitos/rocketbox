@@ -1,0 +1,7 @@
+Hey there,
+
+Confirm that {{user_email}} is the email you want on your account. Open this link to verify:
+
+{{verification_url}}
+
+Have questions? Reply to this email.

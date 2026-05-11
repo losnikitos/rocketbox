@@ -1,0 +1,9 @@
+{
+  "Name": "Demo chapter",
+  "Alias": "demo-chapter",
+  "Subject": "Read {{book}}",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "book": "book_Value"
+  }
+}
