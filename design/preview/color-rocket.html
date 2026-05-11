@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:24px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
+  .swatch{width:200px;height:160px;border-radius:14px;background:var(--rocket);display:flex;align-items:flex-end;padding:14px;color:#fff;font:800 18px/1 var(--font-display);letter-spacing:-0.02em}
+  .col{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:12px;font:500 13px/1.2 var(--font-body);color:var(--fg)}
+  .dot{width:18px;height:18px;border-radius:5px;flex:0 0 18px}
+  .mono{font-family:var(--font-mono);color:var(--fg-muted);font-size:12px}
+</style></head><body>
+<div class="swatch">Rocket Blue</div>
+<div class="col">
+  <div class="t-micro" style="margin-bottom:4px">Rocket Blue — the one brand accent</div>
+  <div class="row"><span class="dot" style="background:#2D6BFF"></span>Base <span class="mono">#2D6BFF · --rocket</span></div>
+  <div class="row"><span class="dot" style="background:#3F7BFF"></span>Hover <span class="mono">#3F7BFF · --rocket-hover</span></div>
+  <div class="row"><span class="dot" style="background:#2458D8"></span>Press <span class="mono">#2458D8 · --rocket-press</span></div>
+  <div class="t-caption" style="margin-top:6px">Used for primary CTAs, links, focus rings. Nothing else.</div>
+</div>
+</body></html>

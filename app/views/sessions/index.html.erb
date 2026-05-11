@@ -3,34 +3,34 @@
     <p class="<%= tw_alert_success_classes %>"><%= notice %></p>
   <% end %>
 
-  <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Devices &amp; sessions</h1>
-  <p class="mt-2 text-center text-sm text-slate-600">Signed-in devices for your account.</p>
+  <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Devices &amp; sessions</h1>
+  <p class="mt-2 text-center text-sm text-ink-600">Signed-in devices for your account.</p>
 
   <div id="sessions" class="mt-8 space-y-6">
     <% @sessions.each do |session| %>
-      <div id="<%= dom_id session %>" class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
-        <dl class="space-y-2 text-sm text-slate-700">
+      <div id="<%= dom_id session %>" class="rounded-[18px] border border-ink-900/10 bg-paper-200 p-4 sm:p-5">
+        <dl class="space-y-2 text-sm text-ink-700">
           <div>
-            <dt class="font-medium text-slate-900">User agent</dt>
-            <dd class="mt-0.5 break-all text-slate-600"><%= session.user_agent %></dd>
+            <dt class="font-medium text-ink-900">User agent</dt>
+            <dd class="mt-0.5 break-all text-ink-600"><%= session.user_agent %></dd>
           </div>
           <div>
-            <dt class="font-medium text-slate-900">IP address</dt>
-            <dd class="mt-0.5 text-slate-600"><%= session.ip_address %></dd>
+            <dt class="font-medium text-ink-900">IP address</dt>
+            <dd class="mt-0.5 text-ink-600"><%= session.ip_address %></dd>
           </div>
           <div>
-            <dt class="font-medium text-slate-900">Created</dt>
-            <dd class="mt-0.5 text-slate-600"><%= session.created_at %></dd>
+            <dt class="font-medium text-ink-900">Created</dt>
+            <dd class="mt-0.5 text-ink-600"><%= session.created_at %></dd>
           </div>
         </dl>
-        <div class="mt-4 border-t border-slate-200 pt-4">
-          <%= button_to "Log out this session", session, method: :delete, class: "inline-flex cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2" %>
+        <div class="mt-4 border-t border-ink-900/10 pt-4">
+          <%= button_to "Log out this session", session, method: :delete, class: "inline-flex cursor-pointer items-center justify-center rounded-[10px] border border-signal-red/40 bg-paper-50 px-4 py-2 text-sm font-semibold text-signal-red transition-colors duration-[160ms] hover:bg-paper-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)]" %>
         </div>
       </div>
     <% end %>
   </div>
 
-  <div class="mt-8 border-t border-slate-100 pt-6 text-center">
-    <%= link_to "Back to home", root_path, class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+  <div class="mt-8 border-t border-ink-900/10 pt-6 text-center">
+    <%= link_to "Back to home", root_path, class: "text-sm rb-text-link" %>
   </div>
 <% end %>

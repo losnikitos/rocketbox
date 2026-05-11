@@ -4,8 +4,8 @@
 
 <section class="space-y-8">
   <div>
-    <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Books</h1>
-    <p class="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
+    <h1 class="font-manrope text-3xl font-extrabold tracking-[-0.02em] text-ink-900 sm:text-4xl">Books</h1>
+    <p class="mt-3 max-w-2xl text-[17px] font-medium leading-relaxed text-ink-500">
       Browse the available Rocketbox guides and open any book preview.
     </p>
   </div>
@@ -13,21 +13,21 @@
   <% if @books.any? %>
     <div class="grid gap-4 sm:grid-cols-2">
       <% @books.each do |book| %>
-        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-slate-900"><%= book.title %></h2>
-          <p class="mt-2 text-sm text-slate-600">
+        <article class="rb-surface-raised p-5 rb-shadow-card sm:p-6">
+          <h2 class="font-manrope text-lg font-bold tracking-tight text-ink-900"><%= book.title %></h2>
+          <p class="mt-2 text-sm text-ink-500">
             <%= pluralize(book.chapters.size, "chapter") %> available
           </p>
           <div class="mt-4">
             <%= link_to "Open preview",
                   books_book_path(book),
-                  class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+                  class: "rb-btn-primary px-4 py-2.5 text-sm" %>
           </div>
         </article>
       <% end %>
     </div>
   <% else %>
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+    <div class="rb-surface-raised p-6 text-ink-500 rb-shadow-card">
       No books are available yet.
     </div>
   <% end %>

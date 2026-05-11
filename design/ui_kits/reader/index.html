@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rocketbox Reader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<link rel="stylesheet" href="reader.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const LIB = [
+  { id:'refunds',  title:'Refunds & returns',                  cover:'book-refunds.svg',  pct: 62, meta:'Reading · ch 4 / 7' },
+  { id:'hiring',   title:'Hiring your first support rep.',     cover:'book-hiring.svg',   pct: 100, meta:'Finished · Mar 2026' },
+  { id:'retention',title:'The 7-day retention audit.',         cover:'book-retention.svg',pct: 18, meta:'Reading · ch 1 / 9' },
+  { id:'emails',   title:'Writing a refund email that works.', cover:'book-emails.svg',   pct: 0, meta:'Lesson kit · 8 unstarted' },
+];
+
+const CHAPTERS = [
+  'The refund window question',
+  'When to refund without asking',
+  'Writing the email',
+  'Handling the angry customer',
+  'When fraud actually happens',
+  'Refund policy on your website',
+  'A small business toolkit',
+];
+
+const ReaderTop = ({ screen, setScreen, theme, setTheme, crumb }) => (
+  <header className="reader-top">
+    <div className="reader-top__left">
+      <a className="topbar__logo" onClick={() => setScreen('library')} style={{cursor:'pointer'}}>Rocketbox<span className="dot" /></a>
+      {crumb && <span className="reader-top__crumb">{crumb}</span>}
+    </div>
+    <div className="reader-top__nav">
+      <button className={`reader-top__btn ${screen==='library' ? 'is-active' : ''}`} onClick={() => setScreen('library')}>Library</button>
+      <button className={`reader-top__btn ${screen==='chapter' ? 'is-active' : ''}`} onClick={() => setScreen('chapter')}>Reader</button>
+      <button className={`reader-top__btn ${screen==='lesson' ? 'is-active' : ''}`} onClick={() => setScreen('lesson')}>Lesson</button>
+      <button className="reader-top__btn" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? 'Dark' : 'Light'}</button>
+    </div>
+  </header>
+);
+
+const Library = ({ onOpen }) => (
+  <div className="library" data-screen-label="01 Library">
+    <h1>Your library.</h1>
+    <p className="library__sub">4 books · 8 lessons · last read Thursday</p>
+    <div className="library__grid">
+      {LIB.map(b => (
+        <div key={b.id} className="lib-book" onClick={() => onOpen(b)}>
+          <div className="lib-book__cover"><img src={`../../assets/${b.cover}`} alt="" /></div>
+          <div className="lib-book__title">{b.title}</div>
+          <div className="lib-book__meta">{b.meta}</div>
+          <div className="lib-book__prog"><span style={{width: b.pct + '%'}} /></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const DecisionCard = () => (
+  <div className="decision-card">
+    <div className="decision-card__cell" style={{background:'var(--signal-green)', color:'var(--on-green)'}}>
+      <strong>Do</strong>Refund within 24 hours. Send the money first, ask follow-up questions second.
+    </div>
+    <div className="decision-card__cell" style={{background:'var(--signal-red)', color:'var(--on-red)'}}>
+      <strong>Don't</strong>Make the customer prove the product was broken. They've already decided.
+    </div>
+    <div className="decision-card__cell" style={{background:'var(--signal-yellow)', color:'var(--on-yellow)'}}>
+      <strong>Watch</strong>Three refunds from the same address in 60 days. Flag, don't auto-approve.
+    </div>
+    <div className="decision-card__cell" style={{background:'var(--signal-pink)', color:'var(--on-pink)'}}>
+      <strong>Side note</strong>For orders over $200, get a manager on the email. Cheap insurance.
+    </div>
+  </div>
+);
+
+const Chapter = ({ activeCh, setActiveCh }) => (
+  <div className="chapter" data-screen-label="02 Reader">
+    <aside className="toc">
+      <div className="toc__head">Contents</div>
+      {CHAPTERS.map((t, i) => (
+        <div key={i} className={`toc__item ${i === activeCh ? 'is-active' : ''}`} onClick={() => setActiveCh(i)}>
+          <span className="toc__num">{String(i+1).padStart(2,'0')}</span>
+          <span>{t}</span>
+        </div>
+      ))}
+    </aside>
+
+    <main className="prose">
+      <div className="prose__kicker">Refunds &amp; returns · Chapter {activeCh + 1} of 7 · 6 min read</div>
+      <h1>{CHAPTERS[activeCh]}.</h1>
+      <p>There is a question every small business eventually has to answer: <span className="hl">how long is the refund window</span>? Many businesses default to whatever their card processor allows — usually 60 to 120 days. That number is wrong for most operators, in either direction.</p>
+      <p>The right window is the one that matches your fulfilment cycle, your average order value, and how much your customer is supposed to use the thing before deciding whether it works. A bakery should not have the same window as a furniture maker.</p>
+      <blockquote>"We made it 14 days, no questions asked. Refund rate did not move. Disputes dropped by half." — Tia, Riverside Café</blockquote>
+      <h2>How to pick yours.</h2>
+      <p>Look at your last 200 orders. For each, write down the gap between order date and the first complaint or refund request. Sort. The point where 90% of legitimate requests have come in is your window. Add three days for slack.</p>
+      <p>If you can't run that analysis, default to <span className="hl">14 days</span>. It is short enough to keep your books clean and long enough to cover honest dissatisfaction.</p>
+      <DecisionCard />
+      <div className="prose-foot">
+        <span className="t-caption">04 / 07 · 6 min read</span>
+        <span className="prose-foot__next" onClick={() => setActiveCh(Math.min(activeCh + 1, CHAPTERS.length - 1))}>Next: {CHAPTERS[Math.min(activeCh + 1, CHAPTERS.length - 1)]} →</span>
+      </div>
+    </main>
+
+    <aside className="notes">
+      <div className="notes__head">Your notes</div>
+      <div className="note"><div className="note__time">p. 38 · 2 days ago</div>Run this 200-order analysis on the Square export this weekend.</div>
+      <div className="note"><div className="note__time">p. 41 · 2 days ago</div>"Add three days for slack" — share with Marcus before the Thursday clinic.</div>
+      <div className="note"><div className="note__time">p. 44 · today</div>Make sure refund email template doesn't use "policy" as a word — sounds defensive.</div>
+    </aside>
+  </div>
+);
+
+const Lesson = () => {
+  const lessons = [
+    ['01', 'The opener', '2:14'],
+    ['02', 'Acknowledging without apologising', '3:42'],
+    ['03', 'Stating the refund clearly', '2:08'],
+    ['04', 'Offering the next step', '1:55'],
+    ['05', 'Closing without grovelling', '2:30'],
+  ];
+  return (
+    <div className="lesson-shell" data-screen-label="03 Lesson player">
+      <div className="kicker">Writing a refund email that works · Lesson 02 of 8</div>
+      <h1>Acknowledging without apologising.</h1>
+      <div className="lesson-grid">
+        <div>
+          <div className="video">
+            <div className="video__play" />
+            <div className="video__time">01:14 / 03:42</div>
+            <div className="video__title">Acknowledging without apologising</div>
+            <div className="video__bar" />
+          </div>
+          <div className="transcript">
+            <h3>Transcript</h3>
+            <p>So the first move when a customer writes in upset — and they are <strong>upset</strong>, not just unhappy — is to acknowledge what happened without making it sound like you're admitting fault.</p>
+            <p>The wrong move is "I am so, so sorry about this." It sounds insincere when you've said it 800 times this year, and it makes the next sentence — the refund — feel like a payout rather than a normal part of doing business.</p>
+            <p>The right move is something like: "That sounds frustrating, and you're absolutely right to write in." It names the feeling. It doesn't take blame. It opens the door to what's next.</p>
+          </div>
+        </div>
+        <aside className="lesson-list">
+          <h3>In this kit</h3>
+          {lessons.map(([n, t, dur], i) => (
+            <div key={n} className={`lesson-list__item ${i === 1 ? 'is-active' : ''}`}>
+              <span className="lesson-list__num">{n}</span>
+              <span>{t}</span>
+              <span className="lesson-list__time">{dur}</span>
+            </div>
+          ))}
+        </aside>
+      </div>
+    </div>
+  );
+};
+
+const App = () => {
+  const [screen, setScreen] = useState('library');
+  const [theme, setTheme] = useState('light');
+  const [activeCh, setActiveCh] = useState(0);
+  useEffect(() => {
+    document.body.classList.toggle('theme-dark', theme === 'dark');
+  }, [theme]);
+  const crumb =
+    screen === 'library' ? null :
+    screen === 'chapter' ? `Refunds & returns · ch ${activeCh + 1}` :
+    'Writing a refund email · L2';
+  return (
+    <>
+      <ReaderTop screen={screen} setScreen={setScreen} theme={theme} setTheme={setTheme} crumb={crumb} />
+      {screen === 'library' && <Library onOpen={() => setScreen('chapter')} />}
+      {screen === 'chapter' && <Chapter activeCh={activeCh} setActiveCh={setActiveCh} />}
+      {screen === 'lesson'  && <Lesson />}
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

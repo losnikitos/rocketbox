@@ -1,11 +1,11 @@
 <div class="<%= local_assigns.fetch(:container_class, "flex flex-wrap items-center gap-3") %>">
   <% if Current.user&.subscription&.active? %>
-    <%= link_to "Read the books", books_path, class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+    <%= link_to "Read the books", books_path, class: "rb-btn-primary" %>
   <% elsif Current.user %>
-    <%= link_to "Preview", books_path, class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-    <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+    <%= link_to "Preview", books_path, class: "rb-btn-ghost" %>
+    <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
   <% else %>
-    <%= link_to "Start with a free preview", new_free_preview_path, class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-    <%= link_to "Subscribe", new_subscription_path, class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+    <%= link_to "Start with a free preview", new_free_preview_path, class: "rb-btn-primary" %>
+    <%= link_to "Subscribe", new_subscription_path, class: "rb-btn-ghost" %>
   <% end %>
 </div>

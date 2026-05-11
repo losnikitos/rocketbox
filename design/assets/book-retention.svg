@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <rect width="300" height="420" rx="6" fill="#34C26B"></rect>
+  <text x="30" y="64" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#0E2A18">The 7-day</text>
+  <text x="30" y="106" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#0E2A18">retention</text>
+  <text x="30" y="148" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#0E2A18">audit.</text>
+  <circle cx="240" cy="280" r="48" fill="#0E2A18" opacity="0.15"></circle>
+  <text x="30" y="370" font-family="Inter, system-ui" font-weight="500" font-size="13" fill="rgba(14,42,24,0.6)">Rocketbox · Book 11</text>
+  <text x="30" y="395" font-family="JetBrains Mono, monospace" font-weight="500" font-size="13" fill="#0E2A18">$28</text>
+</svg>

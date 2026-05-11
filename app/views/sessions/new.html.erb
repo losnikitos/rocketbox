@@ -6,9 +6,9 @@
     <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
   <% end %>
 
-  <h1 class="text-center text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Sign in</h1>
-  <p class="mt-1 text-center text-sm text-slate-600">
-    <%= link_to "Create an account", sign_up_path, class: "font-medium text-indigo-600 hover:text-indigo-500" %>
+  <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Sign in</h1>
+  <p class="mt-1 text-center text-sm text-ink-600">
+    <%= link_to "Create an account", sign_up_path, class: "rb-text-link" %>
   </p>
 
   <%= form_with(url: sign_in_path, class: "mt-8 space-y-5") do |form| %>
@@ -21,7 +21,7 @@
       <%= form.label :password, class: tw_label_classes %>
       <%= form.password_field :password, required: true, autocomplete: "current-password", class: tw_input_classes %>
       <p class="mt-2 text-right text-sm">
-        <%= link_to "Forgot your password?", new_identity_password_reset_path, class: "font-medium text-indigo-600 hover:text-indigo-500" %>
+        <%= link_to "Forgot your password?", new_identity_password_reset_path, class: "rb-text-link" %>
       </p>
     </div>
 

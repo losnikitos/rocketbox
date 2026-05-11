@@ -1,1 +1,113 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
 @import "tailwindcss";
+
+@theme {
+  --color-ink-900: #0e0e0f;
+  --color-ink-800: #17171a;
+  --color-ink-700: #222226;
+  --color-ink-600: #2e2e33;
+  --color-ink-500: #4a4a52;
+  --color-ink-400: #6e6e78;
+  --color-ink-300: #9a9aa3;
+  --color-paper: #f4f1ea;
+  --color-paper-50: #faf7f1;
+  --color-paper-200: #e8e4da;
+  --color-rocket: #2d6bff;
+  --color-rocket-hover: #3f7bff;
+  --color-rocket-press: #2458d8;
+  --color-signal-green: #34c26b;
+  --color-signal-red: #ff4d3d;
+  --color-signal-yellow: #ffd400;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --radius-r-card: 18px;
+  --radius-r-control: 10px;
+}
+
+@layer components {
+  .rb-btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center px-[18px] py-2.5 text-sm font-semibold text-white transition-[color,background-color,transform];
+    border-radius: var(--radius-r-control);
+    background-color: var(--color-rocket);
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .rb-btn-primary:hover {
+    background-color: var(--color-rocket-hover);
+  }
+
+  .rb-btn-primary:active {
+    background-color: var(--color-rocket-press);
+    transform: scale(0.98);
+  }
+
+  .rb-btn-primary:focus-visible {
+    outline: 2px solid rgb(45 107 255 / 0.5);
+    outline-offset: 2px;
+  }
+
+  .rb-btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center border border-ink-900/15 bg-transparent px-[18px] py-2.5 text-sm font-semibold text-ink-900 transition-[color,background-color,transform,border-color];
+    border-radius: var(--radius-r-control);
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .rb-btn-ghost:hover {
+    background-color: rgb(14 14 15 / 0.05);
+  }
+
+  .rb-btn-ghost:active {
+    transform: scale(0.98);
+  }
+
+  .rb-btn-ghost:focus-visible {
+    outline: 2px solid rgb(45 107 255 / 0.5);
+    outline-offset: 2px;
+  }
+
+  .rb-btn-ghost-on-light {
+    @apply inline-flex cursor-pointer items-center justify-center border border-ink-900/15 bg-transparent px-[18px] py-2.5 text-sm font-semibold text-ink-900 transition-[color,background-color,transform,border-color];
+    border-radius: var(--radius-r-control);
+    transition-duration: 160ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .rb-btn-ghost-on-light:hover {
+    background-color: rgb(14 14 15 / 0.05);
+  }
+
+  .rb-btn-ghost-on-light:active {
+    transform: scale(0.98);
+  }
+
+  .rb-btn-ghost-on-light:focus-visible {
+    outline: 2px solid rgb(45 107 255 / 0.5);
+    outline-offset: 2px;
+  }
+
+  .rb-text-link {
+    @apply font-medium text-rocket hover:text-rocket-hover;
+  }
+
+  .rb-surface-raised {
+    border-radius: var(--radius-r-card);
+    @apply border border-ink-900/10 bg-white text-ink-900;
+  }
+
+  .rb-surface-form {
+    border-radius: var(--radius-r-card);
+    @apply border border-ink-900/10 bg-white text-ink-900;
+  }
+
+  .rb-shadow-card {
+    box-shadow:
+      0 1px 0 rgb(14 14 15 / 0.04) inset,
+      0 10px 28px rgb(0 0 0 / 0.07);
+  }
+}
