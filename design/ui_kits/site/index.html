@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rocketbox — books and lessons for SMBs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<link rel="stylesheet" href="site.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root" data-screen-label="Rocketbox site"></div>
+
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+
+const BOOKS = [
+  { id: 'refunds',   title: 'Refunds & returns',         kicker: 'Book 03 · 56 pp', price: 24, cover: 'book-refunds.svg',   topics: ['Service'] },
+  { id: 'hiring',    title: 'Hiring your first support rep.', kicker: 'Book 07 · 64 pp', price: 24, cover: 'book-hiring.svg', topics: ['Hiring'] },
+  { id: 'retention', title: 'The 7-day retention audit.', kicker: 'Book 11 · 72 pp', price: 28, cover: 'book-retention.svg', topics: ['Retention'] },
+  { id: 'emails',    title: 'Writing a refund email that works.', kicker: 'Lesson kit · 8 lessons', price: 12, cover: 'book-emails.svg', topics: ['Service','Writing'] },
+];
+
+// Repeat books to fill catalogue grid
+const CAT_BOOKS = [...BOOKS, ...BOOKS.map(b => ({...b, id: b.id + '-2'}))];
+
+const HomeScreen = ({ onOpenBook, onBuy }) => (
+  <main className="shell" data-screen-label="01 Home">
+    <Hero onPrimary={() => onOpenBook(BOOKS[0])} />
+
+    <section className="section">
+      <div className="section__head">
+        <h2 className="section__title">Newest books</h2>
+        <a className="section__link">See all 14 →</a>
+      </div>
+      <div className="book-grid">
+        {BOOKS.map(b => <BookCard key={b.id} book={b} onOpen={onOpenBook} />)}
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="section__head">
+        <h2 className="section__title">Short lessons</h2>
+        <a className="section__link">All 38 lessons →</a>
+      </div>
+      <div className="lessons-row">
+        <div className="lesson"><div className="lesson__num">L · 12 min</div><div className="lesson__title">The refund email template that doesn't sound like a robot.</div><div className="lesson__meta">Free · 1,204 starts</div></div>
+        <div className="lesson"><div className="lesson__num">L · 8 min</div><div className="lesson__title">Greeting the customer (in person and over chat).</div><div className="lesson__meta">$4</div></div>
+        <div className="lesson"><div className="lesson__num">L · 15 min</div><div className="lesson__title">When to fire a customer — and how to do it kindly.</div><div className="lesson__meta">$4</div></div>
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="membership">
+        <div>
+          <h2 className="membership__title">Read everything. Pay one price.</h2>
+          <p className="membership__copy">Membership unlocks the full catalogue, the monthly live Q&amp;A with the authors, and the private community where 1,200+ operators trade notes.</p>
+          <p className="t-caption">Cancel anytime. Keep what you've downloaded.</p>
+        </div>
+        <MembershipCard onJoin={() => onBuy('Joined Rocketbox membership.')} />
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+);
+
+const CatalogueScreen = ({ onOpenBook }) => {
+  const [filter, setFilter] = useState('All');
+  const topics = ['All', 'Service', 'Retention', 'Hiring', 'Writing'];
+  const visible = filter === 'All' ? CAT_BOOKS : CAT_BOOKS.filter(b => b.topics.includes(filter));
+  return (
+    <main className="shell" data-screen-label="02 Catalogue">
+      <section style={{padding: '64px 0 32px'}}>
+        <h1 style={{font: '800 72px/1 var(--font-display)', letterSpacing:'-0.03em', margin: '0 0 16px'}}>The catalogue.</h1>
+        <p style={{font:'500 19px/1.55 var(--font-body)', color:'var(--fg-muted)', maxWidth: 600, margin:0}}>14 books and 38 short lessons, organised by what you're trying to fix.</p>
+      </section>
+      <div className="cat-filter">
+        {topics.map(t => <button key={t} className={filter === t ? 'is-active' : ''} onClick={() => setFilter(t)}>{t}</button>)}
+      </div>
+      <div className="book-grid" style={{marginBottom: 80}}>
+        {visible.map(b => <BookCard key={b.id} book={b} onOpen={onOpenBook} />)}
+      </div>
+      <Footer />
+    </main>
+  );
+};
+
+const BookScreen = ({ book, onBuy }) => (
+  <main className="shell" data-screen-label="03 Product">
+    <div className="book-detail">
+      <div>
+        <img className="book-detail__cover" src={`../../assets/${book.cover}`} alt="" />
+      </div>
+      <div>
+        <div className="t-micro">{book.kicker}</div>
+        <h1>{book.title}</h1>
+        <p className="book-detail__blurb">A focused short book on getting refund and return policy right for a small business — when to refund without asking, what to write back, and how to spot a fraud pattern early. Read it in an evening.</p>
+        <BuyPanel book={book} onBuy={() => onBuy(`Added "${book.title}" to your library.`)} />
+        <div className="chip-row">
+          <span className="rb-chip">Customer service</span>
+          <span className="rb-chip">Refunds</span>
+          <span className="rb-chip">56 pages</span>
+        </div>
+      </div>
+    </div>
+
+    <section className="section">
+      <h2 className="section__title">What's inside.</h2>
+      <p style={{font:'500 17px/1.55 var(--font-body)', color:'var(--fg-muted)', maxWidth: 600, marginTop:12}}>Every chapter ends with the same four-block decision card. Skim them, then read the chapter.</p>
+      <ContentsBlock />
+    </section>
+
+    <section className="section">
+      <h2 className="section__title">Sample chapters.</h2>
+      <div className="lessons-row" style={{marginTop:24}}>
+        <div className="lesson"><div className="lesson__num">01</div><div className="lesson__title">The refund window question.</div><div className="lesson__meta">8 pages</div></div>
+        <div className="lesson"><div className="lesson__num">02</div><div className="lesson__title">When to refund without asking.</div><div className="lesson__meta">6 pages</div></div>
+        <div className="lesson"><div className="lesson__num">03</div><div className="lesson__title">Writing the email.</div><div className="lesson__meta">10 pages</div></div>
+      </div>
+    </section>
+
+    <Footer />
+  </main>
+);
+
+const MembershipScreen = ({ onBuy }) => (
+  <main className="shell" data-screen-label="04 Membership">
+    <section style={{padding: '80px 0'}}>
+      <div className="membership">
+        <div>
+          <h1 style={{font: '800 80px/0.98 var(--font-display)', letterSpacing:'-0.035em', margin: '0 0 24px'}}>Read the whole catalogue. Show up on Thursdays.</h1>
+          <p style={{font:'500 19px/1.55 var(--font-body)', color:'var(--fg-muted)', maxWidth: 560}}>One membership covers everything Rocketbox publishes plus a live monthly clinic with the authors. 1,200 operators are already in.</p>
+        </div>
+        <MembershipCard onJoin={() => onBuy('Joined Rocketbox membership.')} />
+      </div>
+    </section>
+    <section className="section">
+      <h2 className="section__title">What you get.</h2>
+      <div className="lessons-row" style={{marginTop: 24}}>
+        <div className="lesson"><div className="lesson__num">01</div><div className="lesson__title">Every current and future book.</div><div className="lesson__meta">14 today. ~6 new per year.</div></div>
+        <div className="lesson"><div className="lesson__num">02</div><div className="lesson__title">The monthly Q&amp;A clinic.</div><div className="lesson__meta">First Thursday. Live, with recording.</div></div>
+        <div className="lesson"><div className="lesson__num">03</div><div className="lesson__title">The community.</div><div className="lesson__meta">Private, vetted, no recruiters.</div></div>
+      </div>
+    </section>
+    <Footer />
+  </main>
+);
+
+const AboutScreen = () => (
+  <main className="shell" data-screen-label="05 About">
+    <section style={{padding: '80px 0', maxWidth: 760}}>
+      <h1 style={{font:'800 64px/1 var(--font-display)', letterSpacing:'-0.03em', margin:'0 0 24px'}}>Books for the people who run the place.</h1>
+      <p style={{font:'500 19px/1.6 var(--font-body)', color:'var(--fg)', margin:'0 0 16px'}}>Rocketbox is a small publisher. We make short, focused books and lessons for people who run small and medium businesses — the operators, the owners, the first managers.</p>
+      <p style={{font:'500 19px/1.6 var(--font-body)', color:'var(--fg)', margin:'0 0 16px'}}>We believe in concrete advice from people who have done the thing. We don't believe in 200-page books that could have been 40. Every Rocketbox book is short on purpose.</p>
+      <p style={{font:'500 19px/1.6 var(--font-body)', color:'var(--fg-muted)', margin:0}}>Started 2024. Based in Portland, Oregon. Two founders, three contributors, no investors.</p>
+    </section>
+    <section className="section">
+      <h2 className="section__title">The founders.</h2>
+      <div className="founder-grid" style={{marginTop:32}}>
+        <FounderCard initial="DK" name="Dana Kowalski" role="Editor &amp; co-founder" bio="Ran customer service at a 14-location bakery for 6 years. Writes the service titles." />
+        <FounderCard initial="MR" name="Marcus Reyes" role="Author &amp; co-founder" bio="Built and sold a small-business CRM. Writes the retention and ops titles. Hosts the Thursday clinic." />
+      </div>
+    </section>
+    <Footer />
+  </main>
+);
+
+const App = () => {
+  const [screen, setScreen] = useState('home');
+  const [activeBook, setActiveBook] = useState(BOOKS[0]);
+  const [toast, setToast] = useState(null);
+
+  const openBook = (b) => { setActiveBook(b); setScreen('book'); window.scrollTo(0, 0); };
+  const buy = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2400); };
+  const goto = (s) => { setScreen(s); window.scrollTo(0, 0); };
+
+  return (
+    <>
+      <TopBar screen={screen} setScreen={goto} />
+      {screen === 'home'       && <HomeScreen onOpenBook={openBook} onBuy={buy} />}
+      {screen === 'catalogue'  && <CatalogueScreen onOpenBook={openBook} />}
+      {screen === 'book'       && <BookScreen book={activeBook} onBuy={buy} />}
+      {screen === 'membership' && <MembershipScreen onBuy={buy} />}
+      {screen === 'about'      && <AboutScreen />}
+      <Toast message={toast} />
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

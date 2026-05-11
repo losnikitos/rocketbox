@@ -22,12 +22,12 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-100 antialiased">
+  <body class="min-h-screen bg-paper-50 font-sans text-ink-900 antialiased">
     <main class="mx-auto flex min-h-screen w-full <%= @main_container_class.presence || "max-w-3xl" %> flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <div class="flex flex-1 flex-col">
         <% flash.each do |type, message| %>
           <div
-            class="mb-6 rounded-lg border px-4 py-3 text-sm font-medium <%= type.to_s == "alert" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900" %>"
+            class="mb-6 rounded-[10px] border px-4 py-3 text-sm font-medium <%= type.to_s == "alert" ? "border-signal-red/30 bg-paper text-ink-900" : "border-signal-green/35 bg-paper text-ink-900" %>"
             role="status"
           >
             <%= message %>
@@ -37,13 +37,13 @@
       </div>
 
       <% if @footer_documents&.any? %>
-        <footer class="mt-auto border-t border-slate-200 pt-8">
-          <nav aria-label="Legal and informational pages" class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-slate-600">
+        <footer class="mt-auto border-t border-ink-900/10 pt-8">
+          <nav aria-label="Legal and informational pages" class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-ink-500">
             <% @footer_documents.each_with_index do |doc, i| %>
               <% if i.positive? %>
-                <span class="text-slate-300" aria-hidden="true">·</span>
+                <span class="text-ink-300" aria-hidden="true">·</span>
               <% end %>
-              <%= link_to doc.name, document_path(doc), class: "font-medium text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-600" %>
+              <%= link_to doc.name, document_path(doc), class: "font-medium text-rocket underline decoration-ink-900/15 underline-offset-2 hover:text-rocket-hover" %>
             <% end %>
           </nav>
         </footer>

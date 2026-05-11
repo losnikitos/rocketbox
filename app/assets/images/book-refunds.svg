@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <defs>
+    <linearGradient id="spine" x1="0" x2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.25"></stop>
+      <stop offset="0.05" stop-color="#000" stop-opacity="0"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="420" rx="6" fill="#0E0E0F"></rect>
+  <rect width="300" height="420" rx="6" fill="url(#spine)"></rect>
+  <text x="30" y="64" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">Refunds</text>
+  <text x="30" y="106" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">&amp; returns</text>
+  <text x="30" y="370" font-family="Inter, system-ui" font-weight="500" font-size="13" fill="#9A9AA3">Rocketbox · Book 03</text>
+  <rect x="30" y="180" width="64" height="64" rx="6" fill="#FF4D3D"></rect>
+  <rect x="100" y="180" width="64" height="64" rx="6" fill="#FFD400"></rect>
+  <rect x="170" y="180" width="64" height="64" rx="6" fill="#34C26B"></rect>
+  <text x="30" y="395" font-family="JetBrains Mono, monospace" font-weight="500" font-size="13" fill="#2D6BFF">$24</text>
+</svg>

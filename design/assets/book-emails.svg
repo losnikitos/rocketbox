@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" width="300" height="420">
+  <rect width="300" height="420" rx="6" fill="#2D6BFF"></rect>
+  <text x="30" y="64" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">Writing</text>
+  <text x="30" y="106" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">a refund</text>
+  <text x="30" y="148" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">email</text>
+  <text x="30" y="190" font-family="Manrope, system-ui" font-weight="800" font-size="44" letter-spacing="-0.03em" fill="#F4F1EA">that works.</text>
+  <text x="30" y="370" font-family="Inter, system-ui" font-weight="500" font-size="13" fill="rgba(244,241,234,0.6)">Rocketbox · Lesson kit</text>
+  <text x="30" y="395" font-family="JetBrains Mono, monospace" font-weight="500" font-size="13" fill="#FFD400">$12</text>
+</svg>

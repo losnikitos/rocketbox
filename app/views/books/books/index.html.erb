@@ -5,17 +5,17 @@
 <div class="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
   <%= render "toc", chapters: @chapters, active_chapter: nil %>
 
-  <article class="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-    <p class="text-sm font-medium text-indigo-600">Guide preview</p>
-    <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+  <article class="rb-surface-form min-w-0 flex-1 p-6 rb-shadow-card sm:p-8">
+    <p class="text-xs font-medium uppercase tracking-[0.06em] text-ink-500">Guide preview</p>
+    <h1 class="mt-2 font-manrope text-3xl font-extrabold tracking-[-0.02em] text-ink-900 sm:text-4xl">
       <%= @book.title %>
     </h1>
-    <p class="mt-4 text-lg leading-relaxed text-slate-600">
+    <p class="mt-4 text-lg font-medium leading-relaxed text-ink-500">
       A field-style walkthrough for operators who run the floor. This mock page stands in for the catalog:
       <%= @book.chapters.size %> chapters, each with the same reader layout—navigation on the left, long-form notes on the right.
     </p>
 
-    <div class="mt-8 space-y-4 text-slate-700 leading-relaxed">
+    <div class="mt-8 space-y-4 text-[17px] font-medium leading-relaxed text-ink-700">
       <p>
         Use the table of contents to jump into any chapter. The copy below is placeholder content so designers and engineers
         can wire layout, typography, and paywall seams before the real manuscript ships.
@@ -26,8 +26,8 @@
       </p>
     </div>
 
-    <h2 class="mt-10 text-lg font-semibold text-slate-900">What you’ll find inside</h2>
-    <ul class="mt-3 list-inside list-disc space-y-2 text-slate-700">
+    <h2 class="mt-10 text-lg font-semibold text-ink-900">What you’ll find inside</h2>
+    <ul class="mt-3 list-inside list-disc space-y-2 text-ink-700">
       <li>Checklists formatted like shift notes, not MBA slides</li>
       <li>Margin and labor prompts you can answer in ten minutes</li>
       <li>Scripts and defaults your team can rely on when it’s busy</li>
