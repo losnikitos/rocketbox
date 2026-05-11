@@ -2,7 +2,7 @@
 
 class Chapter < ApplicationRecord
   extend FriendlyId
-  friendly_id :title, use: %i[slugged scoped], scope: :book
+  friendly_id :title, use: %i[finders slugged scoped], scope: :book
 
   belongs_to :book, inverse_of: :chapters
 
