@@ -25,10 +25,10 @@
               <%= heroicon "lock-closed", variant: :micro, options: { class: "size-3 shrink-0 text-slate-400", "aria-hidden": true } %>
             </div>
           <% else %>
-            <%= link_to books_book_chapter_path(@book, chapter.position),
+            <%= link_to books_book_chapter_path(@book, chapter),
                   class: [
                     "flex items-start gap-2 rounded-lg px-2 py-1.5 leading-snug transition hover:bg-slate-50",
-                    (local_assigns[:active_chapter] == chapter.position ? "bg-indigo-50 font-medium text-indigo-900" : "text-slate-700"),
+                    (local_assigns[:active_chapter] == chapter.slug ? "bg-indigo-50 font-medium text-indigo-900" : "text-slate-700"),
                   ].join(" ") do %>
               <div class="shrink-0 tabular-nums text-slate-400"><%= chapter.position %>.</div>
               <div class="min-w-0 flex-1"><%= chapter.title %></div>

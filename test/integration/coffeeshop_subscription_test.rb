@@ -11,12 +11,12 @@ class CoffeeshopSubscriptionTest < ActionDispatch::IntegrationTest
   end
 
   test "guest can read free chapter" do
-    get books_book_chapter_path("coffeeshop", @free_chapter.position)
+    get books_book_chapter_path("coffeeshop", @free_chapter)
     assert_response :success
   end
 
   test "guest cannot read paid chapter" do
-    get books_book_chapter_path("coffeeshop", @paid_chapter.position)
+    get books_book_chapter_path("coffeeshop", @paid_chapter)
     assert_redirected_to books_book_path("coffeeshop")
   end
 
@@ -25,7 +25,7 @@ class CoffeeshopSubscriptionTest < ActionDispatch::IntegrationTest
     user.subscription.update!(active: true)
     sign_in_as(user)
 
-    get books_book_chapter_path("coffeeshop", @paid_chapter.position)
+    get books_book_chapter_path("coffeeshop", @paid_chapter)
     assert_response :success
   end
 
@@ -34,7 +34,7 @@ class CoffeeshopSubscriptionTest < ActionDispatch::IntegrationTest
     user.subscription.update!(active: false)
     sign_in_as(user)
 
-    get books_book_chapter_path("coffeeshop", @paid_chapter.position)
+    get books_book_chapter_path("coffeeshop", @paid_chapter)
     assert_redirected_to books_book_path("coffeeshop")
   end
 end

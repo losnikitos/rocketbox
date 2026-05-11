@@ -14,8 +14,7 @@ module Books
     end
 
     def show
-      n = Integer(params[:chapter], exception: false)
-      @chapter = @chapters.find { |c| c.position == n }
+      @chapter = @chapters.find { |c| c.slug == params[:chapter_slug] }
       unless @chapter
         redirect_to books_book_path(@book), alert: "That chapter is not available."
         return
