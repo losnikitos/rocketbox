@@ -20,9 +20,18 @@ class FreePreviewFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "valid preview token redirects to first chapter" do
+    book = Book.find_or_create_by!(slug: "coffeeshop") do |b|
+      b.title = "Coffee Shop"
+    end
+    first_chapter = book.chapters.order(:position).first || book.chapters.create!(
+      title: "Why this guide exists",
+      position: 1,
+      free: true,
+    )
+
     token = DemoPreviewLink.generate!("reader@example.com")
     get books_preview_access_url(t: token)
-    assert_redirected_to books_book_chapter_path("coffeeshop", 1)
+    assert_redirected_to books_book_chapter_path("coffeeshop", first_chapter)
   end
 
   test "invalid preview token redirects to request form" do

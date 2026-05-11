@@ -6,6 +6,7 @@ class Avo::Resources::Chapter < Avo::BaseResource
     field :book, as: :belongs_to
     field :position, as: :number
     field :title, as: :text
+    field :body, as: :textarea
     field :free, as: :boolean
     field :created_at, as: :date_time, readonly: true
     field :updated_at, as: :date_time, readonly: true

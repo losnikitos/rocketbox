@@ -29,7 +29,7 @@ Rails.application.routes.draw do
   namespace :books do
     get "preview", to: "preview_accesses#show", as: :preview_access
     get ":slug", to: "books#index", as: :book
-    get ":slug/:chapter", to: "books#show", as: :book_chapter
+    get ":slug/:chapter_slug", to: "books#show", as: :book_chapter
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

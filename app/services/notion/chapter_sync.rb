@@ -24,7 +24,7 @@ module Notion
       attrs.sort_by! { |a| a[:position] }
 
       Book.transaction do
-        @book.chapters.delete_all
+        @book.chapters.destroy_all
         attrs.each do |a|
           @book.chapters.create!(a)
         end
@@ -76,7 +76,86 @@ module Notion
           title: title,
           position: position.to_i,
           free: access == FREE_ACCESS,
+          body: build_markdown_body(row.id),
         }
+      end
+
+      def build_markdown_body(page_id)
+        blocks = []
+        cursor = nil
+
+        loop do
+          request = { block_id: page_id, page_size: 100 }
+          request[:start_cursor] = cursor if cursor.present?
+
+          response = @client.block_children(**request)
+          blocks.concat(Array(response.results))
+          break unless response.has_more
+
+          cursor = response.next_cursor
+        end
+
+        render_blocks_to_markdown(blocks).strip
+      rescue StandardError => e
+        Rails.logger.warn("Notion::ChapterSync could not load page body for #{page_id}: #{e.class}: #{e.message}")
+        ""
+      end
+
+      def render_blocks_to_markdown(blocks)
+        lines = []
+
+        blocks.each do |block|
+          type = block["type"] || block[:type]
+          data = block[type] || block[type.to_sym]
+
+          case type
+          when "paragraph"
+            lines << rich_text_to_plain_text(data["rich_text"] || data[:rich_text])
+            lines << ""
+          when "heading_1"
+            lines << "# #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+            lines << ""
+          when "heading_2"
+            lines << "## #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+            lines << ""
+          when "heading_3"
+            lines << "### #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+            lines << ""
+          when "bulleted_list_item"
+            lines << "- #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+          when "numbered_list_item"
+            lines << "1. #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+          when "quote"
+            lines << "> #{rich_text_to_plain_text(data["rich_text"] || data[:rich_text])}"
+            lines << ""
+          when "code"
+            lines << "```"
+            lines << rich_text_to_plain_text(data["rich_text"] || data[:rich_text])
+            lines << "```"
+            lines << ""
+          when "divider"
+            lines << "---"
+            lines << ""
+          when "image"
+            lines << image_block_to_markdown(data)
+            lines << ""
+          end
+        end
+
+        lines.join("\n")
+      end
+
+      def image_block_to_markdown(image_data)
+        image_type = image_data["type"] || image_data[:type]
+        image_url = image_data.dig(image_type, "url") || image_data.dig(image_type.to_sym, :url)
+        caption = rich_text_to_plain_text(image_data["caption"] || image_data[:caption])
+        return "" if image_url.blank?
+
+        "![#{caption}](#{image_url})"
+      end
+
+      def rich_text_to_plain_text(rich_text)
+        Array(rich_text).map { |segment| segment["plain_text"] || segment[:plain_text] }.join.strip
       end
 
       def ensure_unique_positions!(attrs)

@@ -12,7 +12,14 @@ module Books
         return
       end
 
-      redirect_to books_book_chapter_path("coffeeshop", 1)
+      book = Book.find_by(slug: "coffeeshop")
+      chapter = book&.chapters&.order(:position)&.first
+
+      if chapter
+        redirect_to books_book_chapter_path(book, chapter)
+      else
+        redirect_to books_path, alert: "Preview is temporarily unavailable."
+      end
     end
   end
 end
