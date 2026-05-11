@@ -2,6 +2,7 @@
   <nav class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" aria-label="Primary">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-slate-700">
       <%= link_to "Home", root_path, class: "font-medium text-indigo-600", aria: { current: "page" } %>
+      <%= link_to "Books", books_path, class: "font-medium text-slate-700 hover:text-indigo-600" %>
     </div>
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <%= link_to "Pricing", "#{root_path}#pricing", class: "text-sm font-medium text-slate-700 hover:text-indigo-600" %>
