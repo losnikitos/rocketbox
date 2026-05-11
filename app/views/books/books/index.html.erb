@@ -33,19 +33,6 @@
       <li>Scripts and defaults your team can rely on when it’s busy</li>
     </ul>
 
-    <div class="mt-10 flex flex-wrap gap-3">
-      <% first_unlocked = @chapters.find { |c| !chapter_locked?(c) } %>
-      <% if first_unlocked %>
-        <%= link_to "Start at chapter #{first_unlocked.position}",
-              books_book_chapter_path(@book, first_unlocked),
-              class: "inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
-      <% end %>
-      <% ch10 = @chapters.find { |c| c.position == 10 } %>
-      <% if ch10 && !chapter_locked?(ch10) %>
-        <%= link_to "Jump to chapter 10",
-              books_book_chapter_path(@book, ch10),
-              class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2" %>
-      <% end %>
-    </div>
+    <%= render "shared/subscription_action_buttons", container_class: "mt-10 flex flex-wrap gap-3" %>
   </article>
 </div>
