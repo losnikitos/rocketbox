@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   resource :account, only: [:show] do
     post :checkout
     post :portal
+    patch :subscription_status
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

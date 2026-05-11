@@ -3,3 +3,7 @@
 lazaro_nixon:
   user: lazaro_nixon
   active: false
+
+admin_user:
+  user: admin_user
+  active: false
