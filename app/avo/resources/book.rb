@@ -9,4 +9,8 @@ class Avo::Resources::Book < Avo::BaseResource
     field :created_at, as: :date_time, readonly: true
     field :updated_at, as: :date_time, readonly: true
   end
+
+  def actions
+    action Avo::Actions::SyncNotionChapters
+  end
 end
