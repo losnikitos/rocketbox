@@ -1,0 +1,8 @@
+Hi,
+
+Use this secure link to continue with your Rocketbox subscription:
+{{subscribe_url}}
+
+This link expires in {{expiration_phrase}}.
+
+- The Rocketbox team

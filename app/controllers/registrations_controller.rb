@@ -2,7 +2,7 @@ class RegistrationsController < ApplicationController
   skip_before_action :authenticate
 
   def new
-    @user = User.new
+    @user = User.new(email: params[:email_hint])
   end
 
   def create

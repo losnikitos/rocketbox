@@ -26,6 +26,10 @@ Rails.application.routes.draw do
   resource :free_preview, only: %i[new create]
   get "free_preview/thanks", to: "free_previews#thanks", as: :free_preview_thanks
 
+  resource :subscription, only: %i[new create]
+  get "subscription/thanks", to: "subscriptions#thanks", as: :subscription_thanks
+  get "subscription/access", to: "subscriptions/accesses#show", as: :subscription_access
+
   namespace :books do
     get "preview", to: "preview_accesses#show", as: :preview_access
     get ":slug", to: "books#index", as: :book

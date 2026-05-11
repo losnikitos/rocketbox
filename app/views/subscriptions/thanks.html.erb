@@ -1,0 +1,18 @@
+<% content_for(:title, "Check your email — Rocketbox") %>
+
+<%= render "shared/page_header" %>
+
+<%= render layout: "shared/auth_card" do %>
+  <div class="text-center">
+    <p class="text-4xl" aria-hidden="true">✉️</p>
+    <h1 class="mt-4 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+      Link sent
+    </h1>
+    <p class="mt-3 text-sm leading-relaxed text-slate-600">
+      Check your inbox for an email from us. We’ve sent a magic link you can use to continue subscribing. If nothing shows up in a minute or two, peek at spam or promotions.
+    </p>
+    <div class="mx-auto mt-8 flex max-w-xs flex-col gap-3">
+      <%= link_to "Back to home", root_path, class: tw_btn_primary_classes %>
+    </div>
+  </div>
+<% end %>

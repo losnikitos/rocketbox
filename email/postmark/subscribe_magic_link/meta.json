@@ -1,0 +1,10 @@
+{
+  "Name": "Subscribe magic link",
+  "Alias": "subscribe_magic_link",
+  "Subject": "Subscribe to Rocketbox",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "subscribe_url": "https://example.com/subscription/access?t=sample",
+    "expiration_phrase": "7 days"
+  }
+}
