@@ -75,7 +75,7 @@ gem "tailwindcss-rails", "~> 4.4"
 
 gem "heroicons", "~> 2.0"
 
-gem "stripe", "~> 15.0"
+gem "stripe", "~> 19.1"
 
 gem "avo", ">= 3.2.1"
 
