@@ -58,5 +58,7 @@ Repo secrets (Settings → Secrets and variables → Actions):
 |--------|--------|
 | `RAILS_MASTER_KEY` | Contents of [`config/master.key`](/config/master.key) |
 | `SSH_PRIVATE_KEY` | Private key whose public half is in `root`’s `authorized_keys` on the VPS |
+| `KAMAL_REGISTRY_USERNAME` | Same as local `.env` (GitHub username, e.g. `losnikitos`) |
+| `KAMAL_REGISTRY_PASSWORD` | GHCR PAT with `write:packages` / `read:packages` (same as local `.env`) |
 
-No GHCR PAT needed in Actions: registry username is `github.repository_owner` (`losnikitos`), password is `GITHUB_TOKEN` (`packages: write`). Local deploys still use `KAMAL_REGISTRY_USERNAME` / `KAMAL_REGISTRY_PASSWORD` from `.env` as before — keep that username equal to the GitHub owner so CI and local push the same image path.
+`GITHUB_TOKEN` is not enough here: the package was first pushed with a personal PAT, so Actions’ token gets `permission_denied: read_package` on push. Use the same registry credentials as local Kamal.

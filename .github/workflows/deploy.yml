@@ -40,6 +40,8 @@ jobs:
 
       - name: Deploy with Kamal
         env:
-          KAMAL_REGISTRY_USERNAME: ${{ github.repository_owner }}
-          KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          # Same GHCR PAT as local deploy — GITHUB_TOKEN gets read_package denied on
+          # packages created earlier with a personal token.
+          KAMAL_REGISTRY_USERNAME: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
+          KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
         run: bin/kamal deploy
