@@ -26,6 +26,6 @@ class SubscriptionsController < ApplicationController
   private
 
     def subscription_params
-      params.expect(subscription_request: [:email])
+      params.expect(subscription_request: [ :email ])
     end
 end

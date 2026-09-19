@@ -19,31 +19,19 @@ class InstagramStoriesControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "publishes story and redirects" do
-    with_publish_stub(->(**_) { true }) do
+  test "enqueues publish job and redirects" do
+    assert_enqueued_with(job: PublishInstagramStoryJob, args: [ @media.id ]) do
       post library_instagram_story_url(@media)
     end
 
     assert_redirected_to library_url
-    assert_equal "Published to Instagram Stories.", flash[:notice]
+    assert_equal "Publishing to Instagram Stories…", flash[:notice]
   end
 
-  test "shows api error as alert" do
-    with_publish_stub(->(**_) { raise PublishInstagramStory::Error, "bad token" }) do
-      post library_instagram_story_url(@media)
-    end
+  test "shows alert when media not found" do
+    post library_instagram_story_url(id: 0)
 
     assert_redirected_to library_url
-    assert_equal "bad token", flash[:alert]
+    assert_equal "Media not found.", flash[:alert]
   end
-
-  private
-
-    def with_publish_stub(callable)
-      original = PublishInstagramStory.method(:call)
-      PublishInstagramStory.define_singleton_method(:call) { |**kwargs| callable.call(**kwargs) }
-      yield
-    ensure
-      PublishInstagramStory.define_singleton_method(:call, original)
-    end
 end

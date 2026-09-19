@@ -12,11 +12,11 @@ class AddSlugToChapters < ActiveRecord::Migration[8.1]
     end
 
     change_column_null :chapters, :slug, false
-    add_index :chapters, [:book_id, :slug], unique: true
+    add_index :chapters, [ :book_id, :slug ], unique: true
   end
 
   def down
-    remove_index :chapters, column: [:book_id, :slug]
+    remove_index :chapters, column: [ :book_id, :slug ]
     remove_column :chapters, :slug
   end
 

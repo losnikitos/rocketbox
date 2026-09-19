@@ -31,7 +31,7 @@ class CreateBooksAndChapters < ActiveRecord::Migration[8.1]
     "Handling complaints at the bar",
     "Seasonal menus and limited drops",
     "Expanding hours (or saying no)",
-    "Your next 30 days",
+    "Your next 30 days"
   ].freeze
 
   def up
@@ -50,7 +50,7 @@ class CreateBooksAndChapters < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :chapters, [:book_id, :position], unique: true
+    add_index :chapters, [ :book_id, :position ], unique: true
 
     say_with_time "Populate Coffee Shop playbook" do
       coffee = Book.create!(

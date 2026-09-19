@@ -15,14 +15,14 @@ class SeedTourGuideAndBarberBooks < ActiveRecord::Migration[8.1]
     "Bookings, calendars, and no-shows",
     "Safety, permits, and liability basics",
     "Storytelling that earns five-star reviews",
-    "Running a standout group experience",
+    "Running a standout group experience"
   ].freeze
 
   BARBER_CHAPTERS = [
     "Chair flow, wait times, and the board",
     "Retail, upsells, and product rotation",
     "Retention, reminders, and VIP cuts",
-    "Building a shop people return to",
+    "Building a shop people return to"
   ].freeze
 
   def up

@@ -82,7 +82,7 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   config.hosts = [
-    "rocketbox.plus",
+    "rocketbox.plus"
   ]
 
   # Skip DNS rebinding protection for the default health check endpoint.

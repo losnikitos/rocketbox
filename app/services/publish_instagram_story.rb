@@ -6,7 +6,7 @@ class PublishInstagramStory
   API_VERSION = "v25.0"
   # Instagram Login tokens (IG…) use graph.instagram.com; Facebook Login (EA…) uses graph.facebook.com.
   GRAPH_BASE = "https://graph.instagram.com/#{API_VERSION}"
-  # ponytail: sync poll; Meta suggests ~1/min for video — move to a job if waits bite.
+  # Meta suggests ~1/min poll for video; waits run inside PublishInstagramStoryJob.
   POLL_ATTEMPTS = 30
   POLL_SLEEP = 2
 
