@@ -1,8 +1,22 @@
 # Rocketbox
 
-Rocketbox helps small businesses grow while they stay focused on their craft.
+Rocketbox handles marketing for small businesses while owners keep doing their craft.
 
-We handle the marketing side: social networks, promotions, and advertising. A typical customer is a barbershop — they send us before/after customer photos while they work; we post reels on their Instagram on their behalf. Periodically we suggest seasonal promotions, print flyers from their media, or build a promo web page for them. The point is to run and advertise the business so owners can keep doing the work they’re good at.
+## Product
+
+**Pitch:** We handle marketing for you while you work.
+
+**Loop (once live):**
+1. One-time setup — crawl the business website and social presence
+2. Owner sends media during the day (Telegram today; more connectors later)
+3. Fully automated Instagram publishing — Reels, Stories, and feed posts
+4. Owner can delete anything they dislike after it goes live (typically after work)
+
+**Not the homepage story:** Setup/run mechanics stay off the public marketing surface. Ads target specific verticals (barbershops, salons, etc.); the site speaks to “your business.”
+
+**Current go-to-market:** Closed beta. Public CTA is join the waitlist at `/try` ([waitlists](/app/controllers/waitlists_controller.rb)). Visitor leaves business link (site or Instagram), email, and phone. We respond with a personalized pack (WhatsApp). If they like it, full onboarding follows (coming soon). No public pricing yet.
+
+**Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 
 # Documentation Index
 

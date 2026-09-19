@@ -1,22 +1,41 @@
-<% content_for(:title, "Rocketbox — Marketing for small businesses") %>
+<% content_for(:title, "Rocketbox — Marketing for your business") %>
 
-<% content_for :background do %>
-  <div
-    class="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-    data-controller="hero-wave"
-    aria-hidden="true"
-  >
-    <canvas data-hero-wave-target="canvas" class="absolute inset-0 h-full w-full"></canvas>
-  </div>
-<% end %>
-
-<section class="pb-16 pt-4 lg:pb-20 lg:pt-2">
+<section class="pb-12 pt-4 lg:pb-16 lg:pt-2">
   <h1 class="mt-6 font-manrope text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink-900 text-balance">
-    Grow your business<br class="hidden sm:block" />
-    while you do the work.
+    We handle marketing for you<br class="hidden sm:block" />
+    while you work.
   </h1>
   <p class="mt-6 max-w-xl text-[17px] font-medium leading-relaxed text-ink-500">
-    We handle the marketing side — social posts, promotions, and advertising — so you can stay focused on your craft.
+    Instagram for your business — Reels, Stories, and posts — without you doing the marketing.
   </p>
-  <%= render "shared/subscription_action_buttons", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
+  <%= render "shared/waitlist_cta", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
+</section>
+
+<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="proof-heading">
+  <h2 id="proof-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
+    What we make from your day-to-day media
+  </h2>
+  <p class="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+    A still from the floor becomes a short video ready for Instagram.
+  </p>
+
+  <div class="mt-10 space-y-14">
+    <% UseCasesController::REGISTRY.fetch("barbershops").fetch(:demos).each do |demo| %>
+      <%= render "use_cases/demo_pair", demo: demo %>
+    <% end %>
+  </div>
+
+  <p class="mt-10">
+    <%= link_to "More examples", use_case_path("barbershops"), class: "rb-text-link text-[15px] font-medium" %>
+  </p>
+</section>
+
+<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="beta-heading">
+  <h2 id="beta-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
+    Closed beta
+  </h2>
+  <p class="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+    We’re inviting a small set of businesses to try Rocketbox. Join the waitlist and we’ll notify you when the service is generally available.
+  </p>
+  <%= render "shared/waitlist_cta", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
 </section>
