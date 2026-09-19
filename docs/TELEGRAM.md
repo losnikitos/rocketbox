@@ -10,6 +10,8 @@ Inbound media from the bot (photos, video, docs, etc.) for customer content. Tex
 
 Supported kinds: photo (largest size), document, video, audio, voice, video_note, animation, sticker. Edited messages are handled the same as new ones.
 
+`users.telegram_user_id` can be set on the account page for future matching; inbound media still only stores `chat_id` / `from_id` on uploads.
+
 ## Credentials
 
 Under `telegram` in Rails credentials:

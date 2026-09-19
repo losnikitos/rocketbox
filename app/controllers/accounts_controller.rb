@@ -16,6 +16,15 @@ class AccountsController < ApplicationController
     @subscription = Current.user.subscription
   end
 
+  def update
+    if Current.user.update(account_params)
+      redirect_to account_path, notice: "Account updated."
+    else
+      @subscription = Current.user.subscription
+      render :show, status: :unprocessable_entity
+    end
+  end
+
   def checkout
     price_id = StripeCredentials.price_id
     if price_id.blank?
@@ -90,5 +99,11 @@ class AccountsController < ApplicationController
     )
 
     redirect_to account_path(tab: "subscription"), notice: "Subscription status updated."
+  end
+
+  private
+
+  def account_params
+    params.require(:user).permit(:instagram_user_id, :instagram_access_token, :telegram_user_id)
   end
 end

@@ -22,7 +22,7 @@ Routes in [`config/routes.rb`](/config/routes.rb): `GET/POST /sign_in`, `resourc
 
 [`app/controllers/sessions_controller.rb`](/app/controllers/sessions_controller.rb) — `User.authenticate_by` then create session + cookie. Logout destroys a session owned by `Current.user`. Dev shortcut signs in a fixed local user.
 
-UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header links Sign in / My account ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Account page logout ([`app/views/accounts/show.html.erb`](/app/views/accounts/show.html.erb), [`app/controllers/accounts_controller.rb`](/app/controllers/accounts_controller.rb)).
+UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header links Sign in / My account ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Account page logout ([`app/views/accounts/show.html.erb`](/app/views/accounts/show.html.erb), [`app/controllers/accounts_controller.rb`](/app/controllers/accounts_controller.rb)). The Account tab also lets the signed-in user set Instagram user id / access token and Telegram user id on their `User` row (`PATCH /account`).
 
 ## Sign up
 

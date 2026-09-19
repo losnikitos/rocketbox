@@ -15,6 +15,9 @@ class Avo::Resources::User < Avo::BaseResource
         "Admin" => "admin"
       }
     field :verified, as: :boolean
+    field :instagram_user_id, as: :text
+    field :instagram_access_token, as: :textarea
+    field :telegram_user_id, as: :number
     field :sessions, as: :has_many
     field :subscription, as: :has_one
   end
