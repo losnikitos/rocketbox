@@ -23,6 +23,7 @@ class PublishInstagramStory
   def call
     raise Error, "Connect Instagram under Integrations first." if credentials_blank?
     raise Error, "Only photos and videos can be published as stories." unless @upload.story_publishable?
+    raise Error, "Instagram must fetch the image from a public URL (not localhost). Use production or a tunnel." if private_media_host?
 
     container_id = create_container!
     wait_until_ready!(container_id)
@@ -33,6 +34,14 @@ class PublishInstagramStory
 
     def credentials_blank?
       @user.instagram_user_id.blank? || @user.instagram_access_token.blank?
+    end
+
+    # Meta downloads image_url/video_url itself; private hosts always fail with a misleading media_type error.
+    def private_media_host?
+      host = URI.parse(@media_url).host.to_s.downcase
+      host.blank? || host == "localhost" || host.end_with?(".local") || host == "127.0.0.1" || host == "::1"
+    rescue URI::InvalidURIError
+      true
     end
 
     def create_container!
@@ -89,7 +98,9 @@ class PublishInstagramStory
       body = response.body.is_a?(Hash) ? response.body : {}
 
       if !response.success? || body["error"]
-        message = body.dig("error", "message").presence || "Instagram API error (#{response.status})"
+        err = body["error"].is_a?(Hash) ? body["error"] : {}
+        message = err["error_user_msg"].presence || err["error_user_title"].presence ||
+          err["message"].presence || "Instagram API error (#{response.status})"
         raise Error, message
       end
 

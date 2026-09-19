@@ -1,0 +1,21 @@
+<%# Locals: path, label, icon, chip, target (default :_blank),
+    rel (optional), data (optional), download (optional) %>
+<% data = local_assigns[:data] %>
+<% target = if local_assigns.key?(:target)
+              local_assigns[:target]
+            elsif data.is_a?(Hash) && (data[:turbo_method] || data["turbo_method"])
+              nil
+            else
+              :_blank
+            end %>
+<%= link_to path,
+    target:,
+    rel: local_assigns[:rel],
+    data:,
+    download: local_assigns[:download],
+    class: "flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5" do %>
+  <span class="flex items-center justify-center rounded p-1 text-white <%= chip %>">
+    <%= heroicon icon, variant: :micro %>
+  </span>
+  <%= label %>
+<% end %>

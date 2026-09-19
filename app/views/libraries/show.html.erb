@@ -7,7 +7,7 @@
   <% if @telegram_uploads.present? %>
     <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
       <% @telegram_uploads.each do |upload| %>
-        <li class="min-w-0">
+        <li class="relative min-w-0">
           <% if upload.file.attached? %>
             <% content_type = upload.file.content_type.to_s %>
             <% if content_type.start_with?("image/") || upload.kind == "photo" || upload.kind == "sticker" %>
@@ -22,6 +22,9 @@
           <% else %>
             <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-sm text-ink-500">Missing file</div>
           <% end %>
+          <div class="absolute right-1 top-1">
+            <%= render "shared/admin_links/telegram_upload", telegram_upload: upload %>
+          </div>
           <p class="mt-2 text-xs text-ink-500">
             <%= upload.kind %> · <%= l(upload.created_at, format: :short) %>
           </p>

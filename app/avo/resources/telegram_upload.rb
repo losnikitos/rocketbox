@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+class Avo::Resources::TelegramUpload < Avo::BaseResource
+  self.title = :telegram_file_unique_id
+
+  def fields
+    field :id, as: :id
+    field :kind, as: :text
+    field :telegram_file_id, as: :text
+    field :telegram_file_unique_id, as: :text
+    field :chat_id, as: :number
+    field :from_id, as: :number
+    field :user, as: :belongs_to
+    field :file, as: :file
+    field :created_at, as: :date_time, readonly: true
+    field :updated_at, as: :date_time, readonly: true
+  end
+end

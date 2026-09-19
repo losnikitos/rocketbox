@@ -53,4 +53,12 @@ class PublishInstagramStoryTest < ActiveSupport::TestCase
 
     assert_match(/Integrations/, error.message)
   end
+
+  test "rejects localhost media urls before calling Instagram" do
+    error = assert_raises(PublishInstagramStory::Error) do
+      PublishInstagramStory.call(user: @user, upload: @upload, media_url: "http://localhost:3000/rails/active_storage/blob.jpg")
+    end
+
+    assert_match(/public URL/, error.message)
+  end
 end
