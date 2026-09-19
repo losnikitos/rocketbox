@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   mount_avo
   get  "sign_in", to: "sessions#new"
   post "sign_in", to: "sessions#create"
+  get  "sign_in/otp", to: "sessions#otp", as: :sign_in_otp
+  post "sign_in/otp", to: "sessions#otp_create"
+  get  "sign_in/magic", to: "sessions#magic", as: :sign_in_magic
+  get  "sign_in/password", to: "sessions#password", as: :sign_in_password
+  post "sign_in/password", to: "sessions#password_create"
   post "dev_sign_in", to: "sessions#dev" if Rails.env.development?
   get  "sign_up", to: "registrations#new"
   post "sign_up", to: "registrations#create"

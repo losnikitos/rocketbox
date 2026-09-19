@@ -29,6 +29,18 @@ class User < ApplicationRecord
     role == "admin"
   end
 
+  def self.find_or_create_from_login!(email)
+    user = find_or_initialize_by(email: email)
+    if user.new_record?
+      user.password = SecureRandom.hex(24)
+      user.verified = true
+      user.save!
+    elsif !user.verified?
+      user.update!(verified: true)
+    end
+    user
+  end
+
   before_validation if: :email_changed?, on: :update do
     self.verified = false
   end

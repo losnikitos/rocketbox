@@ -24,4 +24,16 @@ class UserMailer < ApplicationMailer
 
     mail to: @user.email, postmark_template_alias: "email_verification"
   end
+
+  def login_otp
+    email = params[:email]
+
+    self.template_model = {
+      user_email: email,
+      otp_code: params[:otp_code],
+      magic_login_url: sign_in_magic_url(sid: params[:magic_token])
+    }
+
+    mail to: email, postmark_template_alias: "login_otp"
+  end
 end

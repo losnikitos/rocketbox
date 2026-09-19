@@ -1,0 +1,11 @@
+{
+  "Name": "Login OTP",
+  "Alias": "login_otp",
+  "Subject": "Your Rocketbox login code",
+  "TemplateType": "Standard",
+  "TestRenderModel": {
+    "user_email": "user_email_Value",
+    "otp_code": "123456",
+    "magic_login_url": "magic_login_url_Value"
+  }
+}
