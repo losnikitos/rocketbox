@@ -24,6 +24,7 @@ class ApplicationController < ActionController::Base
     def allow_public_access?
       return true if request.path == "/" && (request.get? || request.head?)
       return true if controller_name == "documents" && action_name == "show" && (request.get? || request.head?)
+      return true if controller_name == "use_cases" && action_name == "show" && (request.get? || request.head?)
 
       false
     end

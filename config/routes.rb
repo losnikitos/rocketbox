@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   end
   root "home#index"
 
+  get "use-cases/:slug", to: "use_cases#show", as: :use_case
   resources :documents, only: [ :show ], param: :slug
 
   resource :account, only: [ :show ] do
