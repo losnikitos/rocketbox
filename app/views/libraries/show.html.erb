@@ -4,14 +4,7 @@
   <h1 class="font-manrope text-xl font-bold text-ink-900">Library</h1>
   <p class="mt-2 text-sm text-ink-600">Media you’ve sent to the Telegram bot.</p>
 
-  <% if Current.user.telegram_user_id.blank? %>
-    <p class="mt-6 text-sm text-ink-600">
-      Set your <%= link_to "Telegram user id", account_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
-      under Integrations so inbound media can be attached here.
-    </p>
-  <% elsif @telegram_uploads.blank? %>
-    <p class="mt-6 text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
-  <% else %>
+  <% if @telegram_uploads.present? %>
     <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
       <% @telegram_uploads.each do |upload| %>
         <li class="min-w-0">
@@ -32,8 +25,21 @@
           <p class="mt-2 text-xs text-ink-500">
             <%= upload.kind %> · <%= l(upload.created_at, format: :short) %>
           </p>
+          <% if upload.story_publishable? %>
+            <%= button_to "Publish as Instagram story",
+                  library_instagram_story_path(upload),
+                  method: :post,
+                  class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
+          <% end %>
         </li>
       <% end %>
     </ul>
+  <% elsif Current.user.telegram_user_id.blank? %>
+    <p class="mt-6 text-sm text-ink-600">
+      Set your <%= link_to "Telegram user id", account_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
+      under Integrations so inbound media can be attached here.
+    </p>
+  <% else %>
+    <p class="mt-6 text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
   <% end %>
 </section>

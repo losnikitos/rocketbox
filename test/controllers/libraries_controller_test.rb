@@ -13,6 +13,20 @@ class LibrariesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Library"
   end
 
+  test "shows publish button for story media" do
+    upload = TelegramUpload.create!(
+      telegram_file_id: "f3",
+      telegram_file_unique_id: "u3-library-btn",
+      kind: "photo",
+      user: @user
+    )
+    upload.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
+
+    get library_url
+    assert_response :success
+    assert_select "form[action=?]", library_instagram_story_path(upload)
+  end
+
   test "requires sign in" do
     delete session_url(@user.sessions.last)
     get library_url

@@ -89,4 +89,6 @@ gem "notion-ruby-client", "~> 1.2"
 
 gem "telegram-bot-ruby", "~> 2.7"
 
+gem "faraday", "~> 2.14"
+
 gem "ruby_llm", "= 2.0.0"
