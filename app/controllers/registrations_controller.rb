@@ -6,6 +6,9 @@ class RegistrationsController < ApplicationController
   end
 
   def create
+    # ponytail: honeypot only; CAPTCHA if bots start leaving it empty
+    return redirect_to(root_path, notice: "Welcome! You have signed up successfully") if params[:website].present?
+
     @user = User.new(user_params)
 
     if @user.save

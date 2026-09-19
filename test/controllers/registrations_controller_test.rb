@@ -13,4 +13,17 @@ class RegistrationsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to root_url
   end
+
+  test "honeypot rejects spam sign up" do
+    assert_no_difference(%w[User.count Subscription.count]) do
+      post sign_up_url, params: {
+        email: "bot@example.com",
+        password: "Secret1*3*5*",
+        password_confirmation: "Secret1*3*5*",
+        website: "https://spam.example"
+      }
+    end
+
+    assert_redirected_to root_url
+  end
 end

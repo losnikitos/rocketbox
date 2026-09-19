@@ -6,19 +6,21 @@
   </div>
   <div>
     <p class="mb-3 text-xs font-medium uppercase tracking-wide text-ink-500">We make</p>
-    <% if demo[:video_is_image] %>
-      <%= image_tag demo[:video], alt: "#{demo[:caption]} — reel placeholder", class: "mx-auto w-full max-w-xs object-cover sm:mx-0", loading: "lazy" %>
-    <% else %>
-      <video
-        class="mx-auto w-full max-w-xs object-cover sm:mx-0"
-        src="<%= demo[:video] %>"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        aria-label="<%= demo[:caption] %> — reel we generate"
-      ></video>
+    <%= render layout: "shared/iphone_frame", locals: { username: demo[:caption].to_s.parameterize, caption: demo[:caption] } do %>
+      <% if demo[:video_is_image] %>
+        <%= image_tag demo[:video], alt: "#{demo[:caption]} — reel placeholder", class: "h-full w-full object-cover", loading: "lazy" %>
+      <% else %>
+        <video
+          class="h-full w-full object-cover"
+          src="<%= demo[:video] %>"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label="<%= demo[:caption] %> — reel we generate"
+        ></video>
+      <% end %>
     <% end %>
   </div>
 </figure>

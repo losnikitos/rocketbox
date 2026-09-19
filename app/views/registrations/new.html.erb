@@ -17,6 +17,11 @@
       </div>
     <% end %>
 
+    <div class="absolute -left-[9999px]" aria-hidden="true">
+      <%= form.label :website, "Website" %>
+      <%= form.text_field :website, tabindex: -1, autocomplete: "off" %>
+    </div>
+
     <div>
       <%= form.label :email, class: tw_label_classes %>
       <%= form.email_field :email, value: @user.email, required: true, autofocus: true, autocomplete: "email", class: tw_input_classes %>

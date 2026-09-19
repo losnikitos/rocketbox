@@ -1,0 +1,59 @@
+<%# Phone chrome + Instagram Reels overlay. Pass screen via render layout: … do
+   locals: username (optional), caption (optional) %>
+<% username = local_assigns.fetch(:username, "yourbusiness") %>
+<% caption = local_assigns[:caption] %>
+<div class="relative mx-auto w-full max-w-[240px] sm:mx-0">
+  <%# side buttons %>
+  <div class="absolute -left-0.5 top-[18%] h-5 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
+  <div class="absolute -left-0.5 top-[28%] h-8 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
+  <div class="absolute -left-0.5 top-[42%] h-8 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
+  <div class="absolute -right-0.5 top-[32%] h-12 w-0.5 rounded-r-sm bg-ink-800" aria-hidden="true"></div>
+
+  <div class="aspect-[9/19.5] rounded-[2.5rem] bg-ink-900 p-[3px] shadow-lg">
+    <div class="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-ink-900">
+      <%= yield %>
+
+      <%# Instagram Reels chrome (decorative) %>
+      <div class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3 pt-4 text-white" aria-hidden="true">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-[13px] font-semibold tracking-tight drop-shadow-sm">Reels</span>
+          <%= heroicon "camera", variant: :mini, options: { class: "size-5 drop-shadow-sm" } %>
+        </div>
+
+        <div class="flex items-end gap-2">
+          <div class="min-w-0 flex-1 space-y-2 pb-1">
+            <div class="flex items-center gap-2">
+              <span class="size-7 shrink-0 rounded-full bg-white/90 ring-1 ring-white/40"></span>
+              <span class="truncate text-[11px] font-semibold drop-shadow-sm"><%= username %></span>
+              <span class="rounded border border-white/80 px-1.5 py-0.5 text-[9px] font-semibold leading-none">Follow</span>
+            </div>
+            <% if caption.present? %>
+              <p class="line-clamp-2 text-[10px] leading-snug drop-shadow-sm"><%= caption %></p>
+            <% end %>
+            <div class="flex items-center gap-1.5 text-[9px] text-white/90">
+              <%= heroicon "musical-note", variant: :mini, options: { class: "size-3 shrink-0" } %>
+              <span class="truncate">Original audio · <%= username %></span>
+            </div>
+          </div>
+
+          <div class="flex shrink-0 flex-col items-center gap-3.5 pb-1">
+            <div class="flex flex-col items-center gap-0.5">
+              <%= heroicon "heart", variant: :solid, options: { class: "size-6 drop-shadow-sm" } %>
+              <span class="text-[9px] font-medium tabular-nums drop-shadow-sm">12.4K</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <%= heroicon "chat-bubble-oval-left", variant: :solid, options: { class: "size-6 drop-shadow-sm" } %>
+              <span class="text-[9px] font-medium tabular-nums drop-shadow-sm">842</span>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+              <%= heroicon "paper-airplane", variant: :solid, options: { class: "size-6 drop-shadow-sm" } %>
+              <span class="text-[9px] font-medium tabular-nums drop-shadow-sm">210</span>
+            </div>
+            <%= heroicon "ellipsis-horizontal", variant: :mini, options: { class: "size-5 drop-shadow-sm" } %>
+            <span class="size-6 rounded-md bg-gradient-to-br from-amber-200 to-rose-400 ring-2 ring-white"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
