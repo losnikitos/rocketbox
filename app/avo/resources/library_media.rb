@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Avo::Resources::TelegramUpload < Avo::BaseResource
+class Avo::Resources::LibraryMedia < Avo::BaseResource
   self.title = :telegram_file_unique_id
 
   def fields

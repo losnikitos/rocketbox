@@ -27,12 +27,12 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 
 | Entity | Partial | Typical items |
 |--------|---------|-----------------|
-| Telegram upload | [`_telegram_upload`](/app/views/shared/admin_links/_telegram_upload.html.erb) | Avo |
+| Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Avo |
 
 ## Usage
 
 ```erb
-<%= render 'shared/admin_links/telegram_upload', telegram_upload: upload %>
+<%= render 'shared/admin_links/library_media', library_media: media %>
 ```
 
 Optional locals (most entities):

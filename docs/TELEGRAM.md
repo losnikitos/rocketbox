@@ -7,9 +7,9 @@ Inbound media from the bot (photos, video, docs, etc.) for customer content. Tex
 1. Telegram POSTs updates to `POST /telegram/webhook` ([routes](/config/routes.rb)).
 2. [TelegramWebhooksController](/app/controllers/telegram_webhooks_controller.rb) skips CSRF/auth, optionally checks `X-Telegram-Bot-Api-Secret-Token` against credentials, then enqueues [ProcessTelegramUpdateJob](/app/jobs/process_telegram_update_job.rb).
 3. The job branches:
-   - **Media** → [StoreTelegramMedia](/app/services/store_telegram_media.rb): extract media → skip if `telegram_file_unique_id` already stored → download via Bot API → create [TelegramUpload](/app/models/telegram_upload.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised). Caption-only context on media messages is not sent to the LLM.
+   - **Media** → [StoreTelegramMedia](/app/services/store_telegram_media.rb): extract media → skip if `telegram_file_unique_id` already stored → download via Bot API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised). Caption-only context on media messages is not sent to the LLM.
    - **Text-only** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): resolve user by `telegram_user_id` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_message` the reply.
-4. Ownership: if `message.from.id` matches a user’s `telegram_user_id`, the upload is attached to that user (`telegram_uploads.user_id`). Unmatched media is still stored. Saving a Telegram user id on Account backfills orphan uploads with that `from_id`. Media appears on `/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.
+4. Ownership: if `message.from.id` matches a user’s `telegram_user_id`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a Telegram user id on Account backfills orphan media with that `from_id`. Media appears on `/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.
 
 Supported kinds: photo (largest size), document, video, audio, voice, video_note, animation, sticker. Edited messages are handled the same as new ones.
 
@@ -39,8 +39,8 @@ Gems: `telegram-bot-ruby`, `ruby_llm` in [Gemfile](/Gemfile).
 | Store media | [app/services/store_telegram_media.rb](/app/services/store_telegram_media.rb) |
 | LLM reply | [app/services/reply_telegram_message.rb](/app/services/reply_telegram_message.rb) |
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
-| Model | [app/models/telegram_upload.rb](/app/models/telegram_upload.rb) |
+| Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/libraries/show.html.erb](/app/views/libraries/show.html.erb) (`/library`) |
-| Migration | [db/migrate/20260919120000_create_telegram_uploads.rb](/db/migrate/20260919120000_create_telegram_uploads.rb) |
+| Migration | [db/migrate/20260919120000_create_telegram_uploads.rb](/db/migrate/20260919120000_create_telegram_uploads.rb) (renamed to `library_media` in later migration) |
 | Rake | [lib/tasks/telegram.rake](/lib/tasks/telegram.rake) |
 | Tests | [test/services/store_telegram_media_test.rb](/test/services/store_telegram_media_test.rb), [test/tools/list_media_test.rb](/test/tools/list_media_test.rb) |

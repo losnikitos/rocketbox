@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class TelegramUpload < ApplicationRecord
+class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   has_one_attached :file
 
@@ -23,4 +23,3 @@ class TelegramUpload < ApplicationRecord
     story_image? || story_video?
   end
 end
-

@@ -1,12 +1,12 @@
-<%# Locals: telegram_upload,
+<%# Locals: library_media,
     links (optional hash — :avo; default true) %>
-<% telegram_upload = local_assigns[:telegram_upload] %>
+<% library_media = local_assigns[:library_media] %>
 <% links = { avo: true }.merge(local_assigns.fetch(:links, {})) %>
-<% if Current.user&.admin? && telegram_upload.present? && links[:avo] %>
-  <% popover_id = "telegram-upload-admin-links-#{telegram_upload.id}" %>
+<% if Current.user&.admin? && library_media.present? && links[:avo] %>
+  <% popover_id = "library-media-admin-links-#{library_media.id}" %>
   <%= render layout: "shared/admin_links/menu", locals: { popover_id:, align: local_assigns.fetch(:align, :right) } do %>
     <%= render "shared/admin_links/item",
-        path: avo.resources_telegram_upload_path(telegram_upload),
+        path: avo.resources_library_media_path(library_media),
         label: "Avo",
         icon: "pencil",
         chip: "bg-signal-green" %>

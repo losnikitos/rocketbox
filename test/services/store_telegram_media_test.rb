@@ -16,23 +16,23 @@ class StoreTelegramMediaTest < ActiveSupport::TestCase
     }
 
     assert_nil StoreTelegramMedia.call(update)
-    assert_equal 0, TelegramUpload.count
+    assert_equal 0, LibraryMedia.count
   end
 
-  test "attaches upload to user matching telegram_user_id" do
+  test "attaches media to user matching telegram_user_id" do
     user = users(:lazaro_nixon)
     user.update!(telegram_user_id: 90504516)
 
-    upload = store_photo!(from_id: 90504516, unique_id: "linked-photo")
+    media = store_photo!(from_id: 90504516, unique_id: "linked-photo")
 
-    assert_equal user.id, upload.user_id
-    assert upload.file.attached?
+    assert_equal user.id, media.user_id
+    assert media.file.attached?
   end
 
   test "leaves user_id nil when no matching telegram_user_id" do
-    upload = store_photo!(from_id: 111222333, unique_id: "orphan-photo")
+    media = store_photo!(from_id: 111222333, unique_id: "orphan-photo")
 
-    assert_nil upload.user_id
+    assert_nil media.user_id
   end
 
   private

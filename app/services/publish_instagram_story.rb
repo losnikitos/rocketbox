@@ -10,19 +10,19 @@ class PublishInstagramStory
   POLL_ATTEMPTS = 30
   POLL_SLEEP = 2
 
-  def self.call(user:, upload:, media_url:)
-    new(user:, upload:, media_url:).call
+  def self.call(user:, media:, media_url:)
+    new(user:, media:, media_url:).call
   end
 
-  def initialize(user:, upload:, media_url:)
+  def initialize(user:, media:, media_url:)
     @user = user
-    @upload = upload
+    @media = media
     @media_url = media_url
   end
 
   def call
     raise Error, "Connect Instagram under Integrations first." if credentials_blank?
-    raise Error, "Only photos and videos can be published as stories." unless @upload.story_publishable?
+    raise Error, "Only photos and videos can be published as stories." unless @media.story_publishable?
     raise Error, "Instagram must fetch the image from a public URL (not localhost). Use production or a tunnel." if private_media_host?
 
     container_id = create_container!
@@ -46,7 +46,7 @@ class PublishInstagramStory
 
     def create_container!
       params = { media_type: "STORIES", access_token: @user.instagram_access_token }
-      if @upload.story_image?
+      if @media.story_image?
         params[:image_url] = @media_url
       else
         params[:video_url] = @media_url

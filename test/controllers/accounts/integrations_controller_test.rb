@@ -31,8 +31,8 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 90504516, @user.telegram_user_id
   end
 
-  test "backfills orphan telegram uploads when telegram_user_id is saved" do
-    orphan = TelegramUpload.create!(
+  test "backfills orphan library media when telegram_user_id is saved" do
+    orphan = LibraryMedia.create!(
       telegram_file_id: "file-1",
       telegram_file_unique_id: "unique-1",
       chat_id: 90504516,

@@ -5,7 +5,7 @@ require "test_helper"
 class ListMediaTest < ActiveSupport::TestCase
   test "returns count and items for linked user" do
     user = users(:lazaro_nixon)
-    TelegramUpload.create!(
+    LibraryMedia.create!(
       telegram_file_id: "f1",
       telegram_file_unique_id: "u1",
       chat_id: 1,
@@ -13,7 +13,7 @@ class ListMediaTest < ActiveSupport::TestCase
       kind: "photo",
       user: user
     )
-    TelegramUpload.create!(
+    LibraryMedia.create!(
       telegram_file_id: "f2",
       telegram_file_unique_id: "u2",
       chat_id: 1,

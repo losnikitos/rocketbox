@@ -6,13 +6,13 @@ class PublishInstagramStoryTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
     @user.update!(instagram_user_id: "ig-user-1", instagram_access_token: "ig-token")
-    @upload = TelegramUpload.create!(
+    @media = LibraryMedia.create!(
       telegram_file_id: "f1",
       telegram_file_unique_id: "u1-story-test",
       kind: "photo",
       user: @user
     )
-    @upload.file.attach(
+    @media.file.attach(
       io: StringIO.new("fake-image"),
       filename: "shot.jpg",
       content_type: "image/jpeg"
@@ -21,7 +21,7 @@ class PublishInstagramStoryTest < ActiveSupport::TestCase
 
   test "creates container then publishes" do
     calls = []
-    service = PublishInstagramStory.new(user: @user, upload: @upload, media_url: "https://example.com/shot.jpg")
+    service = PublishInstagramStory.new(user: @user, media: @media, media_url: "https://example.com/shot.jpg")
     service.define_singleton_method(:request!) do |method, path, params = {}|
       calls << [ method, path, params ]
       case [ method, path ]
@@ -48,7 +48,7 @@ class PublishInstagramStoryTest < ActiveSupport::TestCase
     @user.update!(instagram_access_token: nil)
 
     error = assert_raises(PublishInstagramStory::Error) do
-      PublishInstagramStory.call(user: @user, upload: @upload, media_url: "https://example.com/shot.jpg")
+      PublishInstagramStory.call(user: @user, media: @media, media_url: "https://example.com/shot.jpg")
     end
 
     assert_match(/Integrations/, error.message)
@@ -56,7 +56,7 @@ class PublishInstagramStoryTest < ActiveSupport::TestCase
 
   test "rejects localhost media urls before calling Instagram" do
     error = assert_raises(PublishInstagramStory::Error) do
-      PublishInstagramStory.call(user: @user, upload: @upload, media_url: "http://localhost:3000/rails/active_storage/blob.jpg")
+      PublishInstagramStory.call(user: @user, media: @media, media_url: "http://localhost:3000/rails/active_storage/blob.jpg")
     end
 
     assert_match(/public URL/, error.message)

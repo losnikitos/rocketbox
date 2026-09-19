@@ -32,7 +32,7 @@ Rails.application.routes.draw do
     patch :subscription_status
   end
   resource :library, only: :show
-  post "library/uploads/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
+  post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
 
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"

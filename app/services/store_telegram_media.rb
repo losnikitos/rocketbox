@@ -24,16 +24,16 @@ class StoreTelegramMedia
     message = @update.message || @update.edited_message
     return if message.blank?
 
-    media, kind = extract_media(message)
-    return if media.blank?
+    tg_media, kind = extract_media(message)
+    return if tg_media.blank?
 
-    existing = TelegramUpload.find_by(telegram_file_unique_id: media.file_unique_id)
+    existing = LibraryMedia.find_by(telegram_file_unique_id: tg_media.file_unique_id)
     return existing if existing
 
-    file = TelegramBot.client.api.get_file(file_id: media.file_id)
-    upload = download_and_store!(message:, media:, kind:, file_path: file.file_path)
+    file = TelegramBot.client.api.get_file(file_id: tg_media.file_id)
+    media = download_and_store!(message:, tg_media:, kind:, file_path: file.file_path)
     react_ok(message)
-    upload
+    media
   end
 
   private
@@ -44,22 +44,22 @@ class StoreTelegramMedia
       end
 
       MEDIA_ATTRS.each do |attr|
-        media = message.public_send(attr)
-        return media, attr.to_s if media.present?
+        tg_media = message.public_send(attr)
+        return tg_media, attr.to_s if tg_media.present?
       end
 
       [ nil, nil ]
     end
 
-    def download_and_store!(message:, media:, kind:, file_path:)
+    def download_and_store!(message:, tg_media:, kind:, file_path:)
       url = "https://api.telegram.org/file/bot#{TelegramBot.token}/#{file_path}"
       io = URI.open(url)
-      filename = File.basename(file_path.presence || "telegram-#{media.file_unique_id}")
+      filename = File.basename(file_path.presence || "telegram-#{tg_media.file_unique_id}")
 
       from_id = message.from&.id
-      upload = TelegramUpload.create!(
-        telegram_file_id: media.file_id,
-        telegram_file_unique_id: media.file_unique_id,
+      media = LibraryMedia.create!(
+        telegram_file_id: tg_media.file_id,
+        telegram_file_unique_id: tg_media.file_unique_id,
         chat_id: message.chat&.id,
         from_id: from_id,
         kind: kind,
@@ -72,8 +72,8 @@ class StoreTelegramMedia
           filename: filename,
           content_type: io.content_type.presence || "application/octet-stream"
         )
-        upload.file.attach(blob)
-        upload
+        media.file.attach(blob)
+        media
       ensure
         io&.close
       end

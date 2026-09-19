@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_19_140003) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_140816) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -80,6 +80,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_140003) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
+  end
+
+  create_table "library_media", force: :cascade do |t|
+    t.integer "chat_id"
+    t.datetime "created_at", null: false
+    t.integer "from_id"
+    t.string "kind", null: false
+    t.string "telegram_file_id", null: false
+    t.string "telegram_file_unique_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
+    t.index ["user_id"], name: "index_library_media_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -208,19 +221,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_140003) do
     t.index ["user_id"], name: "index_subscriptions_on_user_id", unique: true
   end
 
-  create_table "telegram_uploads", force: :cascade do |t|
-    t.integer "chat_id"
-    t.datetime "created_at", null: false
-    t.integer "from_id"
-    t.string "kind", null: false
-    t.string "telegram_file_id", null: false
-    t.string "telegram_file_unique_id", null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id"
-    t.index ["telegram_file_unique_id"], name: "index_telegram_uploads_on_telegram_file_unique_id", unique: true
-    t.index ["user_id"], name: "index_telegram_uploads_on_user_id"
-  end
-
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
@@ -238,8 +238,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_140003) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chapters", "books"
   add_foreign_key "chats", "ruby_llm_models"
+  add_foreign_key "library_media", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "sessions", "users"
   add_foreign_key "subscriptions", "users"
-  add_foreign_key "telegram_uploads", "users"
 end

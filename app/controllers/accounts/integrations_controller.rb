@@ -8,7 +8,7 @@ module Accounts
     def update
       if Current.user.update(integrations_params)
         if Current.user.telegram_user_id.present?
-          TelegramUpload.where(from_id: Current.user.telegram_user_id, user_id: nil)
+          LibraryMedia.where(from_id: Current.user.telegram_user_id, user_id: nil)
             .update_all(user_id: Current.user.id)
         end
         redirect_to account_integrations_path, notice: "Account updated."

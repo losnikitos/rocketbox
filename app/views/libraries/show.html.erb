@@ -4,33 +4,33 @@
   <h1 class="font-manrope text-xl font-bold text-ink-900">Library</h1>
   <p class="mt-2 text-sm text-ink-600">Media you’ve sent to the Telegram bot.</p>
 
-  <% if @telegram_uploads.present? %>
+  <% if @library_media.present? %>
     <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-      <% @telegram_uploads.each do |upload| %>
+      <% @library_media.each do |media| %>
         <li class="relative min-w-0">
-          <% if upload.file.attached? %>
-            <% content_type = upload.file.content_type.to_s %>
-            <% if content_type.start_with?("image/") || upload.kind == "photo" || upload.kind == "sticker" %>
-              <%= image_tag url_for(upload.file), alt: upload.kind, class: "aspect-square w-full object-cover" %>
-            <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(upload.kind) %>
-              <%= video_tag url_for(upload.file), controls: true, class: "aspect-square w-full object-cover bg-ink-900/5" %>
+          <% if media.file.attached? %>
+            <% content_type = media.file.content_type.to_s %>
+            <% if content_type.start_with?("image/") || media.kind == "photo" || media.kind == "sticker" %>
+              <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
+            <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(media.kind) %>
+              <%= video_tag url_for(media.file), controls: true, class: "aspect-square w-full object-cover bg-ink-900/5" %>
             <% else %>
               <div class="flex aspect-square flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center">
-                <%= link_to upload.file.filename, url_for(upload.file), class: "text-sm font-medium text-ink-900 underline underline-offset-2 break-all" %>
+                <%= link_to media.file.filename, url_for(media.file), class: "text-sm font-medium text-ink-900 underline underline-offset-2 break-all" %>
               </div>
             <% end %>
           <% else %>
             <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-sm text-ink-500">Missing file</div>
           <% end %>
           <div class="absolute right-1 top-1">
-            <%= render "shared/admin_links/telegram_upload", telegram_upload: upload %>
+            <%= render "shared/admin_links/library_media", library_media: media %>
           </div>
           <p class="mt-2 text-xs text-ink-500">
-            <%= upload.kind %> · <%= l(upload.created_at, format: :short) %>
+            <%= media.kind %> · <%= l(media.created_at, format: :short) %>
           </p>
-          <% if upload.story_publishable? %>
+          <% if media.story_publishable? %>
             <%= button_to "Publish as Instagram story",
-                  library_instagram_story_path(upload),
+                  library_instagram_story_path(media),
                   method: :post,
                   class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
           <% end %>
