@@ -25,6 +25,7 @@ class LibrariesControllerTest < ActionDispatch::IntegrationTest
     get library_url
     assert_response :success
     assert_select "form[action=?]", library_instagram_story_path(media)
+    assert_select "form[action=?]", library_improve_path(media)
   end
 
   test "requires sign in" do

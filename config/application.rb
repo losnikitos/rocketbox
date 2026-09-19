@@ -29,5 +29,8 @@ module Rocketbox
     config.action_mailer.postmark_settings = {
       api_token: Rails.application.credentials.postmark_api_token
     }
+
+    # Session/admin gate is in routes; disable Mission Control's default HTTP Basic Auth.
+    config.mission_control.jobs.http_basic_auth_enabled = false
   end
 end

@@ -28,6 +28,12 @@
           <p class="mt-2 text-xs text-ink-500">
             <%= media.kind %> · <%= l(media.created_at, format: :short) %>
           </p>
+          <% if media.story_image? %>
+            <%= button_to "Improve with AI",
+                  library_improve_path(media),
+                  method: :post,
+                  class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
+          <% end %>
           <% if media.story_publishable? %>
             <%= button_to "Publish as Instagram story",
                   library_instagram_story_path(media),

@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   end
   resource :library, only: :show
   post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
+  post "library/media/:id/improve", to: "library_media_improves#create", as: :library_improve
 
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"
@@ -45,6 +46,10 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
+
+  constraints ->(request) { Session.find_by(id: request.cookie_jar.signed[:session_token])&.user&.admin? } do
+    mount MissionControl::Jobs::Engine, at: "/jobs"
+  end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
