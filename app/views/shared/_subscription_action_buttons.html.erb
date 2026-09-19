@@ -1,11 +1,9 @@
 <div class="<%= local_assigns.fetch(:container_class, "flex flex-wrap items-center gap-3") %>">
   <% if Current.user&.subscription&.active? %>
-    <%= link_to "Read the books", books_path, class: "rb-btn-primary" %>
+    <%= link_to "Open library", library_path, class: "rb-btn-primary" %>
   <% elsif Current.user %>
-    <%= link_to "Preview", books_path, class: "rb-btn-ghost" %>
     <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
   <% else %>
-    <%= link_to "Start with a free preview", new_free_preview_path, class: "rb-btn-primary" %>
-    <%= link_to "Subscribe", new_subscription_path, class: "rb-btn-ghost" %>
+    <%= link_to "Subscribe", new_subscription_path, class: "rb-btn-primary" %>
   <% end %>
 </div>

@@ -1,6 +1,6 @@
 # Stripe
 
-Recurring subscriptions via Stripe Checkout. Local `Subscription` rows mirror Stripe state; `active` unlocks paid book chapters.
+Recurring subscriptions via Stripe Checkout. Local `Subscription` rows mirror Stripe state; `active` marks paid access for the product (wired to future gated features).
 
 ## Credentials
 
@@ -32,7 +32,7 @@ Guests use a separate magic-link subscribe flow ([`app/controllers/subscriptions
 
 [`app/models/subscription.rb`](/app/models/subscription.rb) — one row per user (created on user signup). Stripe-related fields: `stripe_customer_id`, `stripe_subscription_id`, `status`, `current_period_end`, `active`.
 
-Access is granted when Stripe status is `active` or `trialing` (`Subscription.stripe_status_grants_access?`). Paid chapters check `subscription.active?` in [`app/controllers/books/books_controller.rb`](/app/controllers/books/books_controller.rb).
+Access is granted when Stripe status is `active` or `trialing` (`Subscription.stripe_status_grants_access?`). Product surfaces that need paid access should check `subscription.active?`.
 
 Admins can patch their own status on the account page for testing (does not call Stripe). Avo resource: [`app/avo/resources/subscription.rb`](/app/avo/resources/subscription.rb).
 

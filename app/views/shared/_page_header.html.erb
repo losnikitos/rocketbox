@@ -3,7 +3,6 @@
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
       <%= render "shared/logo" %>
       <%= link_to "Home", root_path, class: class_names("font-medium transition-colors", (current_page?(root_path) ? "text-ink-900" : "text-ink-500 hover:text-ink-900")), aria: (current_page?(root_path) ? { current: "page" } : {}) %>
-      <%= link_to "Books", books_path, class: class_names("font-medium transition-colors", (request.path.start_with?("/books") ? "text-ink-900" : "text-ink-500 hover:text-ink-900")) %>
       <% if Current.user %>
         <%= link_to "Library", library_path, class: class_names("font-medium transition-colors", (current_page?(library_path) ? "text-ink-900" : "text-ink-500 hover:text-ink-900")), aria: (current_page?(library_path) ? { current: "page" } : {}) %>
       <% end %>

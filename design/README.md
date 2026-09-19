@@ -15,8 +15,6 @@ The brand is built on the conviction that the people who run small businesses ar
 | `fonts/` | Web fonts (or Google Fonts links). |
 | `assets/` | Logos, icon files, illustrations, generic product imagery. |
 | `preview/` | Specimen cards that populate the Design System tab. |
-| `ui_kits/site/` | High-fidelity recreation of the marketing site (hero, catalogue, product page, footer). |
-| `ui_kits/reader/` | High-fidelity recreation of the in-product reader (book index, lesson page, video lesson). |
 | `SKILL.md` | Agent-skill entry point. |
 
 There is no slide template attached, so `slides/` is intentionally absent.

@@ -10,22 +10,21 @@ Rails.application.routes.draw do
   post "dev_sign_in", to: "sessions#dev" if Rails.env.development?
   get  "sign_up", to: "registrations#new"
   post "sign_up", to: "registrations#create"
-  resources :sessions, only: [:index, :show, :destroy]
-  resource  :password, only: [:edit, :update]
+  resources :sessions, only: [ :index, :show, :destroy ]
+  resource  :password, only: [ :edit, :update ]
   namespace :identity do
-    resource :email,              only: [:edit, :update]
-    resource :email_verification, only: [:show, :create]
-    resource :password_reset,     only: [:new, :edit, :create, :update]
+    resource :email,              only: [ :edit, :update ]
+    resource :email_verification, only: [ :show, :create ]
+    resource :password_reset,     only: [ :new, :edit, :create, :update ]
   end
   root "home#index"
-  get "books", to: "books#index", as: :books
 
-  resources :documents, only: [:show], param: :slug
+  resources :documents, only: [ :show ], param: :slug
 
-  resource :account, only: [:show] do
+  resource :account, only: [ :show ] do
     scope module: :accounts do
-      resource :integrations, only: [:show, :update]
-      resource :subscription, only: [:show]
+      resource :integrations, only: [ :show, :update ]
+      resource :subscription, only: [ :show ]
     end
     post :checkout
     post :portal
@@ -37,18 +36,9 @@ Rails.application.routes.draw do
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"
 
-  resource :free_preview, only: %i[new create]
-  get "free_preview/thanks", to: "free_previews#thanks", as: :free_preview_thanks
-
   resource :subscription, only: %i[new create]
   get "subscription/thanks", to: "subscriptions#thanks", as: :subscription_thanks
   get "subscription/access", to: "subscriptions/accesses#show", as: :subscription_access
-
-  namespace :books do
-    get "preview", to: "preview_accesses#show", as: :preview_access
-    get ":slug", to: "books#index", as: :book
-    get ":slug/:chapter_slug", to: "books#show", as: :book_chapter
-  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

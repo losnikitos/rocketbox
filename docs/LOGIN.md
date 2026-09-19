@@ -12,7 +12,7 @@ Auth cookie: signed permanent httponly `session_token` holding the session id. S
 
 ## Gatekeeping
 
-Almost everything requires a session (`before_action :authenticate`). Public exceptions: home GET `/`, document show, plus controllers that `skip_before_action :authenticate` (sessions OTP/password/magic, registrations, password reset, email verification show, Stripe/Telegram webhooks, books index/preview, guest subscribe/preview flows).
+Almost everything requires a session (`before_action :authenticate`). Public exceptions: home GET `/`, document show, plus controllers that `skip_before_action :authenticate` (sessions OTP/password/magic, registrations, password reset, email verification show, Stripe/Telegram webhooks, guest subscribe flow).
 
 Unauthenticated users are redirected to `/sign_in`.
 

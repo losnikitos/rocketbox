@@ -26,7 +26,7 @@ Kamal secrets: [`.kamal/secrets`](/.kamal/secrets). Expects from local `.env` (l
 - `KAMAL_REGISTRY_USERNAME` / `KAMAL_REGISTRY_PASSWORD` (GHCR PAT: `write:packages`, `read:packages`)
 - `RAILS_MASTER_KEY` from [`config/master.key`](/config/master.key) (never commit)
 
-Injected into the container: `RAILS_MASTER_KEY`. App secrets (Stripe, Telegram, Postmark, Notion, etc.) live in encrypted Rails credentials (`bin/rails credentials:edit` → [`config/credentials.yml.enc`](/config/credentials.yml.enc)), decrypted with that master key.
+Injected into the container: `RAILS_MASTER_KEY`. App secrets (Stripe, Telegram, Postmark, etc.) live in encrypted Rails credentials (`bin/rails credentials:edit` → [`config/credentials.yml.enc`](/config/credentials.yml.enc)), decrypted with that master key.
 
 Clear env from deploy config includes `SOLID_QUEUE_IN_PUMA=true` and `MAILER_DEFAULT_HOST=rocketbox.plus`.
 

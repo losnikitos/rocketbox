@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_19_140816) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_141339) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -37,30 +37,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_140816) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
-  end
-
-  create_table "books", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "notion_database_id"
-    t.string "slug", null: false
-    t.string "title", null: false
-    t.datetime "updated_at", null: false
-    t.index ["notion_database_id"], name: "index_books_on_notion_database_id", unique: true
-    t.index ["slug"], name: "index_books_on_slug", unique: true
-  end
-
-  create_table "chapters", force: :cascade do |t|
-    t.text "body", default: "", null: false
-    t.integer "book_id", null: false
-    t.datetime "created_at", null: false
-    t.boolean "free", default: false, null: false
-    t.integer "position", null: false
-    t.string "slug", null: false
-    t.string "title", null: false
-    t.datetime "updated_at", null: false
-    t.index ["book_id", "position"], name: "index_chapters_on_book_id_and_position", unique: true
-    t.index ["book_id", "slug"], name: "index_chapters_on_book_id_and_slug", unique: true
-    t.index ["book_id"], name: "index_chapters_on_book_id"
   end
 
   create_table "chats", force: :cascade do |t|
@@ -236,7 +212,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_140816) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "chapters", "books"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "library_media", "users"
   add_foreign_key "messages", "chats"
