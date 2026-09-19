@@ -280,7 +280,7 @@ function foldedGeometry(width = 400, height = 400, segX = 128, segY = 256) {
   return geo
 }
 
-// Stripe createLoginWaveConfig — position tuned for home layout; softness from post + glow wash
+// Stripe createLoginWaveConfig — scale bumped vs their 9×8 for home framing
 const MATERIAL = {
   speed: 4e-5,
   timeOffset: 17500,
@@ -310,9 +310,9 @@ const MATERIAL = {
   glowPower: 0.806
 }
 
-// Stripe Post Processing — slightly stronger blur than 0.02 so edges soften on our framing
+// Stripe Post Processing folder defaults (blurAmount is angular radians, not CSS px)
 const POST = {
-  blurAmount: 0.045,
+  blurAmount: 0.02,
   grainAmount: 1.1
 }
 
@@ -349,8 +349,7 @@ export default class extends Controller {
     this.renderer = renderer
     this.dpr = Math.min(window.devicePixelRatio || 1, 2)
     renderer.setPixelRatio(this.dpr)
-    // Opaque white clear so angular blur washes into white (Stripe light theme)
-    renderer.setClearColor(clear, 1)
+    renderer.setClearColor(clear, 0)
     renderer.outputColorSpace = THREE.SRGBColorSpace
 
     this.scene = new THREE.Scene()
