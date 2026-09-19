@@ -6,7 +6,7 @@
   </div>
   <div>
     <p class="mb-3 text-xs font-medium uppercase tracking-wide text-ink-500">We make</p>
-    <%= render layout: "shared/iphone_frame", locals: { username: demo[:caption].to_s.parameterize, caption: demo[:caption] } do %>
+    <%= render layout: "shared/iphone_frame", locals: { username: demo[:caption].to_s.parameterize } do %>
       <% if demo[:video_is_image] %>
         <%= image_tag demo[:video], alt: "#{demo[:caption]} — reel placeholder", class: "h-full w-full object-cover", loading: "lazy" %>
       <% else %>
