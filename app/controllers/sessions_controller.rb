@@ -1,5 +1,5 @@
 class SessionsController < ApplicationController
-  skip_before_action :authenticate, only: %i[ new create ]
+  skip_before_action :authenticate, only: %i[ new create dev ]
 
   before_action :set_session, only: :destroy
 
@@ -19,6 +19,16 @@ class SessionsController < ApplicationController
     else
       redirect_to sign_in_path(email_hint: params[:email]), alert: "That email or password is incorrect"
     end
+  end
+
+  def dev
+    raise ActionController::RoutingError, "Not Found" unless Rails.env.development?
+
+    user = User.find_by!(email: "losnikitos@gmail.com")
+    @session = user.sessions.create!
+    cookies.signed.permanent[:session_token] = { value: @session.id, httponly: true }
+
+    redirect_to root_path, notice: "Signed in successfully"
   end
 
   def destroy

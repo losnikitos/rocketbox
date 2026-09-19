@@ -89,6 +89,6 @@ class AccountsController < ApplicationController
       active: Subscription.stripe_status_grants_access?(stripe_status)
     )
 
-    redirect_to account_path, notice: "Subscription status updated."
+    redirect_to account_path(tab: "subscription"), notice: "Subscription status updated."
   end
 end

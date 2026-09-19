@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_11_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_19_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -95,6 +95,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_11_100000) do
     t.index ["stripe_customer_id"], name: "index_subscriptions_on_stripe_customer_id"
     t.index ["stripe_subscription_id"], name: "index_subscriptions_on_stripe_subscription_id", unique: true
     t.index ["user_id"], name: "index_subscriptions_on_user_id", unique: true
+  end
+
+  create_table "telegram_uploads", force: :cascade do |t|
+    t.integer "chat_id"
+    t.datetime "created_at", null: false
+    t.integer "from_id"
+    t.string "kind", null: false
+    t.string "telegram_file_id", null: false
+    t.string "telegram_file_unique_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["telegram_file_unique_id"], name: "index_telegram_uploads_on_telegram_file_unique_id", unique: true
   end
 
   create_table "users", force: :cascade do |t|

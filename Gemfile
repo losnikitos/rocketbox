@@ -86,3 +86,5 @@ gem "redcarpet", "~> 3.6"
 gem "postmark-rails", "~> 0.22"
 
 gem "notion-ruby-client", "~> 1.2"
+
+gem "telegram-bot-ruby", "~> 2.7"

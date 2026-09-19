@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   mount_avo
   get  "sign_in", to: "sessions#new"
   post "sign_in", to: "sessions#create"
+  post "dev_sign_in", to: "sessions#dev" if Rails.env.development?
   get  "sign_up", to: "registrations#new"
   post "sign_up", to: "registrations#create"
   resources :sessions, only: [:index, :show, :destroy]
@@ -23,6 +24,7 @@ Rails.application.routes.draw do
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"
+  post "telegram/webhook", to: "telegram_webhooks#create"
 
   resource :free_preview, only: %i[new create]
   get "free_preview/thanks", to: "free_previews#thanks", as: :free_preview_thanks

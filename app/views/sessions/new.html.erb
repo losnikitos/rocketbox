@@ -29,4 +29,10 @@
       <%= form.submit "Sign in", class: tw_btn_primary_classes %>
     </div>
   <% end %>
+
+  <% if Rails.env.development? %>
+    <div class="mt-4">
+      <%= button_to "Quick login as losnikitos@gmail.com", dev_sign_in_path, class: tw_btn_secondary_classes %>
+    </div>
+  <% end %>
 <% end %>
