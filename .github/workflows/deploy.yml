@@ -52,4 +52,4 @@ jobs:
           # packages created earlier with a personal token.
           KAMAL_REGISTRY_USERNAME: ${{ secrets.KAMAL_REGISTRY_USERNAME }}
           KAMAL_REGISTRY_PASSWORD: ${{ secrets.KAMAL_REGISTRY_PASSWORD }}
-        run: bin/kamal deploy
+        run: bin/kamal deploy --quiet

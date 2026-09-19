@@ -1,5 +1,15 @@
 <% content_for(:title, "Rocketbox — Marketing for your business") %>
 
+<% content_for :background do %>
+  <div
+    class="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+    data-controller="hero-wave"
+    aria-hidden="true"
+  >
+    <canvas data-hero-wave-target="canvas" class="absolute inset-0 h-full w-full"></canvas>
+  </div>
+<% end %>
+
 <section class="pb-12 pt-4 lg:pb-16 lg:pt-2">
   <h1 class="mt-6 font-manrope text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink-900 text-balance">
     We handle marketing for you<br class="hidden sm:block" />
