@@ -280,50 +280,80 @@ function foldedGeometry(width = 400, height = 400, segX = 128, segY = 256) {
   return geo
 }
 
-// Exact Stripe createLoginWaveConfig — medium breakpoint (lg)
-// https://dashboard.stripe.com/login
-const MATERIAL = {
-  speed: 4e-5,
-  timeOffset: 17500,
-  colorContrast: 1,
-  colorSaturation: 1,
-  colorHueShift: -0.00159265358979299,
-  displaceFrequencyX: 0.005831,
-  displaceFrequencyZ: 0.016001,
-  displaceAmount: -7.821,
+// Exact Stripe createLoginWaveConfig + breakpoints from dashboard login
+// small ≤639 | medium 640–1263 | wide ≥1264
+function createLoginWaveConfig({ positionX, positionY, rotationZ, referenceHeight, offsetX }) {
+  return {
+    material: {
+      speed: 4e-5,
+      timeOffset: 17500,
+      colorContrast: 1,
+      colorSaturation: 1,
+      colorHueShift: -0.00159265358979299,
+      displaceFrequencyX: 0.005831,
+      displaceFrequencyZ: 0.016001,
+      displaceAmount: -7.821,
+      positionX,
+      positionY,
+      positionZ: -11.1,
+      rotationX: -0.449592653589793,
+      rotationY: -0.117592653589793,
+      rotationZ,
+      scaleX: 9,
+      scaleY: 8,
+      scaleZ: 5,
+      twistFrequencyX: -0.65,
+      twistFrequencyY: 0.41,
+      twistFrequencyZ: -0.58,
+      twistPowerX: 3.63,
+      twistPowerY: 0.7,
+      twistPowerZ: 3.95,
+      glowRamp: 0.834,
+      glowAmount: 1.98,
+      glowPower: 0.806
+    },
+    cam: {
+      x: 100,
+      y: 0,
+      z: 5000,
+      referenceHeight,
+      offsetX,
+      offsetYFraction: -0.25
+    }
+  }
+}
+
+const WIDE = createLoginWaveConfig({
+  positionX: 380,
+  positionY: -301.7,
+  rotationZ: 1.87440734641021,
+  referenceHeight: 2500,
+  offsetX: 250
+})
+const MEDIUM = createLoginWaveConfig({
   positionX: 475,
   positionY: -301.7,
-  positionZ: -11.1,
-  rotationX: -0.449592653589793,
-  rotationY: -0.117592653589793,
   rotationZ: 1.72,
-  scaleX: 9,
-  scaleY: 8,
-  scaleZ: 5,
-  twistFrequencyX: -0.65,
-  twistFrequencyY: 0.41,
-  twistFrequencyZ: -0.58,
-  twistPowerX: 3.63,
-  twistPowerY: 0.7,
-  twistPowerZ: 3.95,
-  glowRamp: 0.834,
-  glowAmount: 1.98,
-  glowPower: 0.806
-}
+  referenceHeight: 1250,
+  offsetX: 0
+})
+const SMALL = createLoginWaveConfig({
+  positionX: 260,
+  positionY: -370,
+  rotationZ: 1.52,
+  referenceHeight: 1250,
+  offsetX: 0
+})
 
 const POST = {
   blurAmount: 0.02,
   grainAmount: 1.1
 }
 
-// Stripe camState + medium domOffset
-const CAM = {
-  x: 100,
-  y: 0,
-  z: 5000,
-  referenceHeight: 1250,
-  offsetX: 0,
-  offsetYFraction: -0.25
+function stripeConfig() {
+  if (window.matchMedia("(max-width: 639px)").matches) return SMALL
+  if (window.matchMedia("(min-width: 640px) and (max-width: 1263px)").matches) return MEDIUM
+  return WIDE
 }
 
 export default class extends Controller {
@@ -343,13 +373,17 @@ export default class extends Controller {
   async #boot() {
     const canvas = this.canvasTarget
     const clear = new THREE.Color(0xffffff)
+    this.config = stripeConfig()
+    const m = this.config.material
+    const cam = this.config.cam
 
     let renderer
     try {
+      // Stripe light theme: antialias false, alpha false
       renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
-        alpha: true,
+        antialias: false,
+        alpha: false,
         powerPreference: "high-performance"
       })
     } catch {
@@ -359,12 +393,12 @@ export default class extends Controller {
     this.renderer = renderer
     this.dpr = Math.min(window.devicePixelRatio || 1, 2)
     renderer.setPixelRatio(this.dpr)
-    renderer.setClearColor(clear, 0)
+    renderer.setClearColor(clear, 1)
     renderer.outputColorSpace = THREE.SRGBColorSpace
 
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(0, 0, 0, 0, 1, 10000)
-    this.camera.position.set(CAM.x, CAM.y, CAM.z)
+    this.camera.position.set(cam.x, cam.y, cam.z)
     this.camera.lookAt(0, 0, 0)
 
     const loader = new THREE.TextureLoader()
@@ -379,25 +413,25 @@ export default class extends Controller {
     palette.colorSpace = THREE.SRGBColorSpace
 
     const uniforms = {
-      u_time: { value: MATERIAL.timeOffset },
-      u_speed: { value: MATERIAL.speed },
+      u_time: { value: m.timeOffset },
+      u_speed: { value: m.speed },
       u_resolution: { value: new THREE.Vector2(1, 1) },
       u_paletteTexture: { value: palette },
-      u_colorContrast: { value: MATERIAL.colorContrast },
-      u_colorSaturation: { value: MATERIAL.colorSaturation },
-      u_colorHueShift: { value: MATERIAL.colorHueShift },
-      u_displaceFrequencyX: { value: MATERIAL.displaceFrequencyX },
-      u_displaceFrequencyZ: { value: MATERIAL.displaceFrequencyZ },
-      u_displaceAmount: { value: MATERIAL.displaceAmount },
-      u_twistFrequencyX: { value: MATERIAL.twistFrequencyX },
-      u_twistFrequencyY: { value: MATERIAL.twistFrequencyY },
-      u_twistFrequencyZ: { value: MATERIAL.twistFrequencyZ },
-      u_twistPowerX: { value: MATERIAL.twistPowerX },
-      u_twistPowerY: { value: MATERIAL.twistPowerY },
-      u_twistPowerZ: { value: MATERIAL.twistPowerZ },
-      u_glowAmount: { value: MATERIAL.glowAmount },
-      u_glowPower: { value: MATERIAL.glowPower },
-      u_glowRamp: { value: MATERIAL.glowRamp },
+      u_colorContrast: { value: m.colorContrast },
+      u_colorSaturation: { value: m.colorSaturation },
+      u_colorHueShift: { value: m.colorHueShift },
+      u_displaceFrequencyX: { value: m.displaceFrequencyX },
+      u_displaceFrequencyZ: { value: m.displaceFrequencyZ },
+      u_displaceAmount: { value: m.displaceAmount },
+      u_twistFrequencyX: { value: m.twistFrequencyX },
+      u_twistFrequencyY: { value: m.twistFrequencyY },
+      u_twistFrequencyZ: { value: m.twistFrequencyZ },
+      u_twistPowerX: { value: m.twistPowerX },
+      u_twistPowerY: { value: m.twistPowerY },
+      u_twistPowerZ: { value: m.twistPowerZ },
+      u_glowAmount: { value: m.glowAmount },
+      u_glowPower: { value: m.glowPower },
+      u_glowRamp: { value: m.glowRamp },
       u_clearColor: { value: clear.clone() }
     }
 
@@ -414,20 +448,54 @@ export default class extends Controller {
     })
 
     const mesh = new THREE.Mesh(foldedGeometry(), material)
-    mesh.position.set(MATERIAL.positionX, MATERIAL.positionY, MATERIAL.positionZ)
-    mesh.rotation.set(MATERIAL.rotationX, MATERIAL.rotationY, MATERIAL.rotationZ)
-    mesh.scale.set(MATERIAL.scaleX, MATERIAL.scaleY, MATERIAL.scaleZ)
+    mesh.position.set(m.positionX, m.positionY, m.positionZ)
+    mesh.rotation.set(m.rotationX, m.rotationY, m.rotationZ)
+    mesh.scale.set(m.scaleX, m.scaleY, m.scaleZ)
     this.mesh = mesh
     this.scene.add(mesh)
 
-    // Stripe only enables post on light + non-mobile; it's what makes the ribbon soft
+    // Stripe only enables post on light + non-mobile
     const isMobile = window.matchMedia("(pointer: coarse) and (hover: none)").matches
     if (!isMobile) this.#initPost()
 
     this.#resize()
     this.ro = new ResizeObserver(() => this.#resize())
     this.ro.observe(this.element)
+    this.mq = [
+      window.matchMedia("(max-width: 639px)"),
+      window.matchMedia("(min-width: 640px) and (max-width: 1263px)"),
+      window.matchMedia("(min-width: 1264px)")
+    ]
+    this.onBreakpoint = () => this.#applyConfig(stripeConfig())
+    this.mq.forEach((q) => q.addEventListener("change", this.onBreakpoint))
     this.raf = requestAnimationFrame((t) => this.#frame(t))
+  }
+
+  #applyConfig(config) {
+    this.config = config
+    const m = config.material
+    if (!this.mesh || !this.uniforms) return
+    this.mesh.position.set(m.positionX, m.positionY, m.positionZ)
+    this.mesh.rotation.set(m.rotationX, m.rotationY, m.rotationZ)
+    this.mesh.scale.set(m.scaleX, m.scaleY, m.scaleZ)
+    Object.entries({
+      u_colorContrast: m.colorContrast,
+      u_colorSaturation: m.colorSaturation,
+      u_colorHueShift: m.colorHueShift,
+      u_displaceFrequencyX: m.displaceFrequencyX,
+      u_displaceFrequencyZ: m.displaceFrequencyZ,
+      u_displaceAmount: m.displaceAmount,
+      u_twistFrequencyX: m.twistFrequencyX,
+      u_twistFrequencyY: m.twistFrequencyY,
+      u_twistFrequencyZ: m.twistFrequencyZ,
+      u_twistPowerX: m.twistPowerX,
+      u_twistPowerY: m.twistPowerY,
+      u_twistPowerZ: m.twistPowerZ,
+      u_glowAmount: m.glowAmount,
+      u_glowPower: m.glowPower,
+      u_glowRamp: m.glowRamp
+    }).forEach(([k, v]) => { this.uniforms[k].value = v })
+    this.#resize()
   }
 
   #initPost() {
@@ -455,7 +523,7 @@ export default class extends Controller {
   }
 
   #resize() {
-    if (!this.renderer) return
+    if (!this.renderer || !this.config) return
     const { width, height } = this.element.getBoundingClientRect()
     if (width < 1 || height < 1) return
     this.renderer.setSize(width, height, false)
@@ -464,10 +532,11 @@ export default class extends Controller {
     this.camera.top = height / 2
     this.camera.bottom = -height / 2
     this.camera.updateProjectionMatrix()
+    const cam = this.config.cam
     // Stripe applyCameraOffset
-    this.camera.position.x = CAM.x - CAM.offsetX
+    this.camera.position.x = cam.x - cam.offsetX
     this.camera.position.y =
-      CAM.y + CAM.referenceHeight * (0.5 + CAM.offsetYFraction) - height / 2
+      cam.y + cam.referenceHeight * (0.5 + cam.offsetYFraction) - height / 2
     const resW = width * this.dpr
     const resH = height * this.dpr
     this.uniforms.u_resolution.value.set(resW, resH)
@@ -482,7 +551,7 @@ export default class extends Controller {
     if (this._skip) return
 
     if (this.start == null) this.start = t
-    this.uniforms.u_time.value = MATERIAL.timeOffset + (t - this.start)
+    this.uniforms.u_time.value = this.config.material.timeOffset + (t - this.start)
 
     if (this.sceneTarget) {
       this.renderer.setRenderTarget(this.sceneTarget)
@@ -497,6 +566,7 @@ export default class extends Controller {
   #teardown() {
     if (this.raf) cancelAnimationFrame(this.raf)
     this.ro?.disconnect()
+    this.mq?.forEach((q) => q.removeEventListener("change", this.onBreakpoint))
     this.mesh?.geometry.dispose()
     this.mesh?.material.dispose()
     this.postMaterial?.dispose()
