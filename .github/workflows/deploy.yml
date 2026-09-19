@@ -33,7 +33,15 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H monitoring.tadaaa.uk.com >> ~/.ssh/known_hosts
+          # Pin host keys (Net::SSH checks "host,ip"). Do not use ssh-keyscan -H —
+          # hashed entries caused HostKeyMismatch on this runner.
+          cat >> ~/.ssh/known_hosts <<'EOF'
+          monitoring.tadaaa.uk.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILeNJyMt1tmxmvLsl1aPUL/Vz5zefvoH1qIAMa17UHWs
+          monitoring.tadaaa.uk.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDXacmWDHmRddZddzTSvy5nTbACZKYm+8xJWAYPWPBJP5hMPOaqFLFMSN0LCjqpvw4kpCfS6cr7E9Jp+LQhe/owzZFpLg2nZKhJ4EfmT++yimkcqDSpsgdQTwWQFDp4VWbI1jOTfT/XsmexJYDJvsTN9AnjXTI59Y0KW/vm972g3gsLDMAaqlJg3Y+0MZGxrWL0rlevS4rAI5SZIUD8IsiSFmehwoNWc8Wai9HYI1TLQ36w5iLhvdsxAD1rUUWs0ue+lkWm21fNh52I9rvoPS829vLTsLdhCb0w3xmymTe4Ty0HGwMQ7lXupuVGHVe8tbW4dMcxvQk4g06nDJuqn9hRTFnYDhogWNZatP9spyK372WfAT3bP3s0j/ywlSD3Ko9+MGHQkRzuovuL68mi2nbCIb3YBLVvMVBC2U7Xp+lxea4Fmrs4X6Bd2kOMOEH2U0F6yC38mmtYK2SXvDDBPrph8ryqlgHfmDzYY60WSI5t7iNR42ypWJ2Nx/cZefM0Lqs=
+          monitoring.tadaaa.uk.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKRSlQdXNbomq+nYVtmo+Udupo19TCjSd3St7qUU7CfqhngCbNUJVm6FwOAKuywdBXWXk/PZdynJ9dvbzF0WtuM=
+          51.75.68.97 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILeNJyMt1tmxmvLsl1aPUL/Vz5zefvoH1qIAMa17UHWs
+          monitoring.tadaaa.uk.com,51.75.68.97 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILeNJyMt1tmxmvLsl1aPUL/Vz5zefvoH1qIAMa17UHWs
+          EOF
 
       - name: Write Rails master key
         run: printf '%s' "${{ secrets.RAILS_MASTER_KEY }}" > config/master.key
