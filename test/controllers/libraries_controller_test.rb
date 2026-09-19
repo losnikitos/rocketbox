@@ -34,7 +34,7 @@ class LibrariesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to sign_in_url
   end
 
-  test "admin sees avo link menu on media" do
+  test "admin sees avo and remove links on media" do
     admin = sign_in_as(users(:admin_user))
     media = LibraryMedia.create!(
       telegram_file_id: "f-admin",
@@ -48,6 +48,7 @@ class LibrariesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[title='Admin actions']"
     assert_select "a[href=?]", avo.resources_library_media_path(media), text: "Avo"
+    assert_select "a[href=?][data-turbo-method=?]", library_media_path(media), "delete", text: "Remove"
   end
 
   test "non-admin does not see avo link menu" do

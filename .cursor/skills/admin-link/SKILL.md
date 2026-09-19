@@ -27,7 +27,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 
 | Entity | Partial | Typical items |
 |--------|---------|-----------------|
-| Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Avo |
+| Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Avo, Remove |
 
 ## Usage
 

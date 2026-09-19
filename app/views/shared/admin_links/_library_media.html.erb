@@ -1,14 +1,24 @@
 <%# Locals: library_media,
-    links (optional hash — :avo; default true) %>
+    links (optional hash — :avo, :remove; default true) %>
 <% library_media = local_assigns[:library_media] %>
-<% links = { avo: true }.merge(local_assigns.fetch(:links, {})) %>
-<% if Current.user&.admin? && library_media.present? && links[:avo] %>
+<% links = { avo: true, remove: true }.merge(local_assigns.fetch(:links, {})) %>
+<% if Current.user&.admin? && library_media.present? && (links[:avo] || links[:remove]) %>
   <% popover_id = "library-media-admin-links-#{library_media.id}" %>
   <%= render layout: "shared/admin_links/menu", locals: { popover_id:, align: local_assigns.fetch(:align, :right) } do %>
-    <%= render "shared/admin_links/item",
-        path: avo.resources_library_media_path(library_media),
-        label: "Avo",
-        icon: "pencil",
-        chip: "bg-signal-green" %>
+    <% if links[:avo] %>
+      <%= render "shared/admin_links/item",
+          path: avo.resources_library_media_path(library_media),
+          label: "Avo",
+          icon: "pencil",
+          chip: "bg-signal-green" %>
+    <% end %>
+    <% if links[:remove] %>
+      <%= render "shared/admin_links/item",
+          path: library_media_path(library_media),
+          label: "Remove",
+          icon: "trash",
+          chip: "bg-signal-red",
+          data: { turbo_method: :delete, turbo_confirm: "Remove this media?" } %>
+    <% end %>
   <% end %>
 <% end %>
