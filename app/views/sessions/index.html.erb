@@ -4,7 +4,7 @@
 
   <div id="sessions" class="mt-8 space-y-6">
     <% @sessions.each do |session| %>
-      <div id="<%= dom_id session %>" class="rounded-[18px] border border-ink-900/10 bg-paper-200 p-4 sm:p-5">
+      <div id="<%= dom_id session %>" class="rounded-[18px] border border-ink-900/10 bg-ink-900/5 p-4 sm:p-5">
         <dl class="space-y-2 text-sm text-ink-700">
           <div>
             <dt class="font-medium text-ink-900">User agent</dt>
@@ -20,7 +20,7 @@
           </div>
         </dl>
         <div class="mt-4 border-t border-ink-900/10 pt-4">
-          <%= button_to "Log out this session", session, method: :delete, class: "inline-flex cursor-pointer items-center justify-center rounded-[10px] border border-signal-red/40 bg-paper-50 px-4 py-2 text-sm font-semibold text-signal-red transition-colors duration-[160ms] hover:bg-paper-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)]" %>
+          <%= button_to "Log out this session", session, method: :delete, class: "inline-flex cursor-pointer items-center justify-center rounded-[10px] border border-signal-red/40 bg-white px-4 py-2 text-sm font-semibold text-signal-red transition-colors duration-[160ms] hover:bg-ink-900/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)]" %>
         </div>
       </div>
     <% end %>

@@ -109,14 +109,14 @@ A serious operator's manual designed by someone with taste — confident type, g
 ### Colour
 
 - **Background is near-black** (`--ink-900: #0E0E0F`), never pure `#000`. Pure black looks cheap on OLED and absorbs all hierarchy.
-- **Foreground is warm white** (`--paper: #F4F1EA`), slightly off-white, set against ink-900. White type on near-black is the default.
+- **Foreground is white** (`--white: #FFFFFF`), set against ink-900. White type on near-black is the default.
 - **One brand accent: Rocket Blue** (`--rocket: #2D6BFF`). Used for primary CTAs, links, focus rings. Nothing else.
 - **Four signal colours**, used as flat fill blocks in callouts and tags, never as background washes:
   - `--signal-green: #34C26B` — wins, success, "this works"
   - `--signal-red: #FF4D3D` — warning, "don't do this"
   - `--signal-yellow: #FFD400` — highlight, important
   - `--signal-pink: #FFD1D1` — soft highlight, side-notes
-- **Light mode exists but is secondary.** Paper background (`--paper-50: #FAF7F1`), ink-900 text. The reader product offers it. Marketing is always dark.
+- **Light mode** uses a white background with ink-900 text.
 
 Gradients are not part of the system. No glows. No glass.
 
@@ -143,7 +143,7 @@ No 24px+ rounding. No fully-round pills except in one place: the price chip on b
 
 ### Borders
 
-Default border is `1px solid rgba(244, 241, 234, 0.10)` on dark — a faint ivory line. On paper it's `1px solid rgba(14, 14, 15, 0.10)`. Borders are used to separate, never to decorate.
+Default border is `1px solid rgba(255, 255, 255, 0.10)` on dark — a faint white line. On light surfaces it's `1px solid rgba(14, 14, 15, 0.10)`. Borders are used to separate, never to decorate.
 
 ### Shadows
 
@@ -157,7 +157,7 @@ Buttons do not carry shadows. The blue CTA stands on colour alone.
 ### Backgrounds & textures
 
 - The marketing site is solid `--ink-900`.
-- The reader is solid `--paper-50` in light mode, `--ink-900` in dark.
+- The reader is solid `--white` in light mode, `--ink-900` in dark.
 - Section dividers are 1px hairline rules, not background colour changes.
 - **No** repeating patterns. **No** noise. **No** texture overlays. **No** gradients.
 - Hero sections can carry a single large book cover as the visual centrepiece — that's the texture.

@@ -2,7 +2,7 @@
     Popover id is always uniquified — safe when the same record is rendered twice. %>
 <% align = local_assigns.fetch(:align, :left) %>
 <% anchor_pos = align == :right ? "right-[calc(anchor(right))]" : "left-[calc(anchor(left))]" %>
-<% trigger_class = local_assigns.fetch(:trigger_class, "relative z-10 cursor-pointer rounded bg-paper-50/90 p-1 text-ink-500 shadow-sm hover:bg-paper-50 hover:text-ink-700") %>
+<% trigger_class = local_assigns.fetch(:trigger_class, "relative z-10 cursor-pointer rounded bg-white/90 p-1 text-ink-500 shadow-sm hover:bg-white hover:text-ink-700") %>
 <% popover_id = "#{popover_id}#{admin_link_id_suffix}" %>
 <% anchor_name = "--#{popover_id}" %>
 <button type="button" popovertarget="<%= popover_id %>"
@@ -16,6 +16,6 @@
 
 <div id="<%= popover_id %>" popover
      style="position-anchor: <%= anchor_name %>"
-     class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] <%= anchor_pos %> [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] min-w-40 rounded-lg border border-ink-900/15 bg-paper-50 p-1 shadow-lg">
+     class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] <%= anchor_pos %> [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] min-w-40 rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
   <%= yield %>
 </div>

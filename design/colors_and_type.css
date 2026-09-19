@@ -15,12 +15,8 @@
   --ink-400: #6E6E78;   /* placeholder text */
   --ink-300: #9A9AA3;   /* secondary text on dark */
 
-  /* ---- Colour: paper (light surfaces) ------------------------------------- */
-  --paper-50: #FAF7F1;  /* reader light-mode background */
-  --paper-100: #F4F1EA; /* primary light-mode surface, also "warm white" fg */
-  --paper-200: #E8E4DA; /* light-mode card */
-  --paper-300: #D4CFC2; /* light-mode border */
-  --paper:    #F4F1EA;  /* alias — warm white type colour on dark */
+  /* ---- Colour: white (light surfaces / on-dark type) ---------------------- */
+  --white: #FFFFFF;
 
   /* ---- Colour: brand ------------------------------------------------------ */
   --rocket:       #2D6BFF; /* primary CTA, links, focus */
@@ -42,11 +38,11 @@
   /* ---- Semantic foreground / background ----------------------------------- */
   --bg:        var(--ink-900);
   --bg-raised: var(--ink-800);
-  --fg:        var(--paper);
+  --fg:        var(--white);
   --fg-muted:  var(--ink-300);
   --fg-dim:    var(--ink-400);
-  --border:    rgba(244, 241, 234, 0.10);
-  --border-strong: rgba(244, 241, 234, 0.22);
+  --border:    rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.22);
 
   /* ---- Type families ------------------------------------------------------ */
   --font-display: 'Manrope', system-ui, -apple-system, sans-serif;

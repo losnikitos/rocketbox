@@ -18,11 +18,11 @@ module ApplicationHelper
   end
 
   def tw_alert_success_classes
-    "mb-4 rounded-[10px] border border-signal-green/40 bg-paper-200 px-3 py-2 text-sm text-ink-900"
+    "mb-4 rounded-[10px] border border-signal-green/40 bg-ink-900/5 px-3 py-2 text-sm text-ink-900"
   end
 
   def tw_alert_error_classes
-    "mb-4 rounded-[10px] border border-signal-red/35 bg-paper-200 px-3 py-2 text-sm text-ink-900"
+    "mb-4 rounded-[10px] border border-signal-red/35 bg-ink-900/5 px-3 py-2 text-sm text-ink-900"
   end
 
   def render_markdown(text)

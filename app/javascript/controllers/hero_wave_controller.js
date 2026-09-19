@@ -273,7 +273,7 @@ export default class extends Controller {
 
   async #boot() {
     const canvas = this.canvasTarget
-    const clear = new THREE.Color(0xfaf7f1)
+    const clear = new THREE.Color(0xffffff)
 
     let renderer
     try {
