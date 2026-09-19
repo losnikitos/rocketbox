@@ -29,6 +29,7 @@ Rails.application.routes.draw do
 
   resource :account, only: [ :show ] do
     scope module: :accounts do
+      resource :settings, only: [ :show ]
       resource :integrations, only: [ :show, :update ]
       resource :subscription, only: [ :show ]
     end
@@ -36,7 +37,7 @@ Rails.application.routes.draw do
     post :portal
     patch :subscription_status
   end
-  resource :library, only: :show
+  get "library", to: redirect("/account")
   delete "library/media/:id", to: "library_media#destroy", as: :library_media
   post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
   post "library/media/:id/improve", to: "library_media_improves#create", as: :library_improve

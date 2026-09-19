@@ -2,7 +2,8 @@
 <nav class="sm:w-44 sm:shrink-0" aria-label="Account sections">
   <ul class="flex gap-1 sm:flex-col sm:gap-0.5">
     <% [
-      [account_path, "Account", current == :account],
+      [account_path, "Library", current == :library],
+      [account_settings_path, "Settings", current == :settings],
       [account_integrations_path, "Integrations", current == :integrations],
       [account_subscription_path, "Subscription", current == :subscription]
     ].each do |path, label, active| %>

@@ -33,7 +33,7 @@ Routes in [`config/routes.rb`](/config/routes.rb):
 
 Mail: [`UserMailer#login_otp`](/app/mailers/user_mailer.rb) (Postmark `login_otp`) with code + magic URL.
 
-UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp`](/app/views/sessions/otp.html.erb), [`password`](/app/views/sessions/password.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header links Sign in / My account ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Account page logout ([`app/views/accounts/show.html.erb`](/app/views/accounts/show.html.erb), [`app/controllers/accounts_controller.rb`](/app/controllers/accounts_controller.rb)). Integrations ([`/account/integrations`](/app/controllers/accounts/integrations_controller.rb)) lets the signed-in user set Instagram user id / access token and Telegram user id on their `User` row.
+UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp`](/app/views/sessions/otp.html.erb), [`password`](/app/views/sessions/password.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header links Sign in / My account ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Account library ([`/account`](/app/controllers/accounts_controller.rb)); settings logout ([`/account/settings`](/app/controllers/accounts/settings_controller.rb)). Integrations ([`/account/integrations`](/app/controllers/accounts/integrations_controller.rb)) lets the signed-in user set Instagram user id / access token and Telegram user id on their `User` row.
 
 ## Sign up
 

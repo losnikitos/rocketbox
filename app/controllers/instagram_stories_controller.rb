@@ -4,8 +4,8 @@ class InstagramStoriesController < ApplicationController
   def create
     media = Current.user.library_media.find(params[:id])
     PublishInstagramStoryJob.perform_later(media.id)
-    redirect_to library_path, notice: "Publishing to Instagram Stories…"
+    redirect_to account_path, notice: "Publishing to Instagram Stories…"
   rescue ActiveRecord::RecordNotFound
-    redirect_to library_path, alert: "Media not found."
+    redirect_to account_path, alert: "Media not found."
   end
 end

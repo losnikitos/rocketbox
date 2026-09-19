@@ -23,14 +23,14 @@ class LibraryMediaImprovesControllerTest < ActionDispatch::IntegrationTest
       post library_improve_url(@media)
     end
 
-    assert_redirected_to library_url
+    assert_redirected_to account_url
     assert_equal "Improving with AI…", flash[:notice]
   end
 
   test "shows alert when media not found" do
     post library_improve_url(id: 0)
 
-    assert_redirected_to library_url
+    assert_redirected_to account_url
     assert_equal "Media not found.", flash[:alert]
   end
 end

@@ -19,7 +19,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
       delete library_media_url(@media)
     end
 
-    assert_redirected_to library_url
+    assert_redirected_to account_url
     assert_equal "Media removed.", flash[:notice]
   end
 
@@ -36,14 +36,14 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
       delete library_media_url(media)
     end
 
-    assert_redirected_to library_url
+    assert_redirected_to account_url
     assert_equal "You are not allowed to remove media.", flash[:alert]
   end
 
   test "shows alert when media not found" do
     delete library_media_url(id: 0)
 
-    assert_redirected_to library_url
+    assert_redirected_to account_url
     assert_equal "Media not found.", flash[:alert]
   end
 end

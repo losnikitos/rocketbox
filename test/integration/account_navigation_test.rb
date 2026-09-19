@@ -11,24 +11,35 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", sign_up_path, count: 0
   end
 
-  test "logged in header links to library and account without log out" do
+  test "logged in header links to account without log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get root_url
 
     assert_response :success
-    assert_select "a[href=?]", library_path, text: "Library"
     assert_select "a[href=?]", account_path, text: "My account"
     assert_select "form[action=?]", session_path(user.sessions.last), count: 0
   end
 
-  test "account page shows log out action" do
-    user = sign_in_as(users(:lazaro_nixon))
+  test "account page shows library with settings link" do
+    sign_in_as(users(:lazaro_nixon))
 
     get account_url
 
     assert_response :success
-    assert_select "h1", "Account"
+    assert_select "h1", "Library"
+    assert_select "nav[aria-label='Account sections']"
+    assert_select "a[href=?][aria-current='page']", account_path, text: "Library"
+    assert_select "a[href=?]", account_settings_path, text: "Settings"
+  end
+
+  test "settings page shows log out action" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    get account_settings_url
+
+    assert_response :success
+    assert_select "h1", "Settings"
     assert_select "nav[aria-label='Account sections']"
     assert_select "h2", text: "Integrations", count: 0
     assert_select "form[action=?]", session_path(user.sessions.last) do

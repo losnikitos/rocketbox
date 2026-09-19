@@ -249,7 +249,7 @@ function foldedGeometry(width = 400, height = 400, segX = 128, segY = 256) {
   const geo = new THREE.PlaneGeometry(width, height, segX, segY)
   const pos = geo.attributes.position
   const uv = geo.attributes.uv
-  const fold = 16
+  const fold = 16 // Stripe HeroWaveGeometry.folded
   const depth = 4
   const xAxis = new THREE.Vector3(1, 0, 0)
   const yAxis = new THREE.Vector3(0, 1, 0)
@@ -280,7 +280,8 @@ function foldedGeometry(width = 400, height = 400, segX = 128, segY = 256) {
   return geo
 }
 
-// Stripe createLoginWaveConfig — scale bumped vs their 9×8 for home framing
+// Exact Stripe createLoginWaveConfig — medium breakpoint (lg)
+// https://dashboard.stripe.com/login
 const MATERIAL = {
   speed: 4e-5,
   timeOffset: 17500,
@@ -290,14 +291,14 @@ const MATERIAL = {
   displaceFrequencyX: 0.005831,
   displaceFrequencyZ: 0.016001,
   displaceAmount: -7.821,
-  positionX: 220,
-  positionY: -40,
+  positionX: 475,
+  positionY: -301.7,
   positionZ: -11.1,
   rotationX: -0.449592653589793,
   rotationY: -0.117592653589793,
   rotationZ: 1.72,
-  scaleX: 10,
-  scaleY: 9,
+  scaleX: 9,
+  scaleY: 8,
   scaleZ: 5,
   twistFrequencyX: -0.65,
   twistFrequencyY: 0.41,
@@ -310,10 +311,19 @@ const MATERIAL = {
   glowPower: 0.806
 }
 
-// Stripe Post Processing folder defaults (blurAmount is angular radians, not CSS px)
 const POST = {
   blurAmount: 0.02,
   grainAmount: 1.1
+}
+
+// Stripe camState + medium domOffset
+const CAM = {
+  x: 100,
+  y: 0,
+  z: 5000,
+  referenceHeight: 1250,
+  offsetX: 0,
+  offsetYFraction: -0.25
 }
 
 export default class extends Controller {
@@ -354,7 +364,7 @@ export default class extends Controller {
 
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(0, 0, 0, 0, 1, 10000)
-    this.camera.position.set(100, 0, 5000)
+    this.camera.position.set(CAM.x, CAM.y, CAM.z)
     this.camera.lookAt(0, 0, 0)
 
     const loader = new THREE.TextureLoader()
@@ -454,9 +464,10 @@ export default class extends Controller {
     this.camera.top = height / 2
     this.camera.bottom = -height / 2
     this.camera.updateProjectionMatrix()
-    // Keep wave on the right without covering hero copy
-    this.camera.position.x = 40
-    this.camera.position.y = height * 0.15
+    // Stripe applyCameraOffset
+    this.camera.position.x = CAM.x - CAM.offsetX
+    this.camera.position.y =
+      CAM.y + CAM.referenceHeight * (0.5 + CAM.offsetYFraction) - height / 2
     const resW = width * this.dpr
     const resH = height * this.dpr
     this.uniforms.u_resolution.value.set(resW, resH)
