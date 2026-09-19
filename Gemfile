@@ -79,7 +79,7 @@ gem "heroicons", "~> 2.0"
 
 gem "stripe", "~> 15.0"
 
-gem "avo", ">= 3.2.1"
+gem "avo", "~> 3.32.1"
 
 gem "friendly_id", "~> 5.7"
 

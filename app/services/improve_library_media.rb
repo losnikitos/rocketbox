@@ -2,6 +2,7 @@
 
 class ImproveLibraryMedia
   Error = Class.new(StandardError)
+  TransientError = Class.new(Error)
 
   API_BASE = "https://api.x.ai/v1"
   MODEL = "grok-imagine-image-2.0"
@@ -44,6 +45,10 @@ class ImproveLibraryMedia
       end
 
       body.dig("data", 0, "b64_json").presence || raise(Error, "xAI did not return an image.")
+    rescue Faraday::TimeoutError, Faraday::ConnectionFailed, Faraday::SSLError => e
+      raise TransientError, "xAI request failed: #{e.message}"
+    rescue Faraday::Error => e
+      raise Error, "xAI request failed: #{e.message}"
     end
 
     def store!(b64)
@@ -75,6 +80,8 @@ class ImproveLibraryMedia
 
     def connection
       @connection ||= Faraday.new(url: API_BASE) do |f|
+        f.options.open_timeout = 30
+        f.options.timeout = 300
         f.response :json
         f.adapter Faraday.default_adapter
       end

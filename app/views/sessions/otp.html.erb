@@ -1,11 +1,4 @@
 <%= render layout: "shared/auth_card" do %>
-  <% if notice.present? %>
-    <p class="<%= tw_alert_success_classes %>"><%= notice %></p>
-  <% end %>
-  <% if alert.present? %>
-    <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
-  <% end %>
-
   <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Enter your code</h1>
   <p class="mt-1 text-center text-sm text-ink-600">
     We sent a login code to <strong><%= @email %></strong>

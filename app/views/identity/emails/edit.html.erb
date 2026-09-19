@@ -1,8 +1,4 @@
 <%= render layout: "shared/auth_card" do %>
-  <% if alert.present? %>
-    <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
-  <% end %>
-
   <% if Current.user.verified? %>
     <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Change your email</h1>
   <% else %>

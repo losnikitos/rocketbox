@@ -1,0 +1,26 @@
+<% flashes = flash.to_hash.select { |_, message| message.present? } %>
+<% if flashes.any? %>
+  <div class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2 p-4 sm:p-0">
+    <% flashes.each do |type, message| %>
+      <% alert = type.to_s == "alert" %>
+      <div
+        class="pointer-events-auto flex items-start gap-3 rounded-[10px] bg-white px-4 py-3 text-sm font-medium text-ink-900 shadow-lg"
+        role="<%= alert ? "alert" : "status" %>"
+        data-flash
+      >
+        <span class="mt-0.5 shrink-0 <%= alert ? "text-signal-red" : "text-signal-green" %>">
+          <%= heroicon(alert ? "exclamation-circle" : "check-circle", variant: :mini, options: { class: "size-5", "aria-hidden": true }) %>
+        </span>
+        <p class="flex-1"><%= message %></p>
+        <button
+          type="button"
+          class="mt-0.5 shrink-0 rounded text-ink-400 transition-colors hover:text-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket/50"
+          aria-label="Dismiss"
+          onclick="this.closest('[data-flash]').remove()"
+        >
+          <%= heroicon("x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true }) %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

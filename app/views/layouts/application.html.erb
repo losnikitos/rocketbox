@@ -27,14 +27,6 @@
     <main class="relative z-10 container mx-auto flex min-h-screen flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
       <%= render "shared/page_header" %>
       <div class="flex flex-1 flex-col">
-        <% flash.each do |type, message| %>
-          <div
-            class="mb-6 rounded-[10px] border px-4 py-3 text-sm font-medium <%= type.to_s == "alert" ? "border-signal-red/30 bg-paper text-ink-900" : "border-signal-green/35 bg-paper text-ink-900" %>"
-            role="status"
-          >
-            <%= message %>
-          </div>
-        <% end %>
         <%= yield %>
       </div>
 
@@ -52,5 +44,6 @@
         <p class="text-center text-sm text-ink-500 <%= "mt-6" if @footer_documents&.any? %>">© <%= Time.current.year %> Rocketbox</p>
       </footer>
     </main>
+    <%= render "shared/flashes" %>
   </body>
 </html>

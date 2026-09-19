@@ -1,8 +1,4 @@
 <%= render layout: "shared/auth_card" do %>
-  <% if alert.present? %>
-    <p class="<%= tw_alert_error_classes %>"><%= alert %></p>
-  <% end %>
-
   <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Change your password</h1>
 
   <%= form_with(url: password_path, method: :patch, class: "mt-8 space-y-5") do |form| %>
