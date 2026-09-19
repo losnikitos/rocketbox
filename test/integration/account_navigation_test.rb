@@ -11,12 +11,13 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", sign_up_path, count: 0
   end
 
-  test "logged in header links to account without log out" do
+  test "logged in header links to library and account without log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get root_url
 
     assert_response :success
+    assert_select "a[href=?]", library_path, text: "Library"
     assert_select "a[href=?]", account_path, text: "My account"
     assert_select "form[action=?]", session_path(user.sessions.last), count: 0
   end
@@ -29,15 +30,27 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Account"
     assert_select "nav[aria-label='Account sections']"
+    assert_select "h2", text: "Integrations", count: 0
     assert_select "form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
   end
 
-  test "subscription tab shows billing controls without log out" do
+  test "integrations page shows credentials form without log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    get account_url(tab: "subscription")
+    get account_integrations_url
+
+    assert_response :success
+    assert_select "h1", "Integrations"
+    assert_select "form[action=?]", account_integrations_path
+    assert_select "form[action=?]", session_path(user.sessions.last), count: 0
+  end
+
+  test "subscription page shows billing controls without log out" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    get account_subscription_url
 
     assert_response :success
     assert_select "h1", "Subscription"
@@ -47,7 +60,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "non-admin cannot see admin subscription controls" do
     sign_in_as(users(:lazaro_nixon))
 
-    get account_url(tab: "subscription")
+    get account_subscription_url
 
     assert_response :success
     assert_select "h2", text: "Admin controls", count: 0
@@ -57,14 +70,14 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "admin can adjust their own subscription status" do
     admin = sign_in_as(users(:admin_user))
 
-    get account_url(tab: "subscription")
+    get account_subscription_url
 
     assert_response :success
     assert_select "h2", "Admin controls"
     assert_select "form[action=?]", subscription_status_account_path
 
     patch subscription_status_account_path, params: { subscription_status: "trialing" }
-    assert_redirected_to account_path(tab: "subscription")
+    assert_redirected_to account_subscription_path
 
     admin.subscription.reload
     assert_equal "trialing", admin.subscription.status
@@ -75,7 +88,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     user = sign_in_as(users(:lazaro_nixon))
 
     patch subscription_status_account_path, params: { subscription_status: "active" }
-    assert_redirected_to account_path
+    assert_redirected_to account_subscription_path
 
     user.subscription.reload
     assert_not user.subscription.active?

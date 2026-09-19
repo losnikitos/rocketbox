@@ -17,11 +17,16 @@ Rails.application.routes.draw do
 
   resources :documents, only: [:show], param: :slug
 
-  resource :account, only: [:show, :update] do
+  resource :account, only: [:show] do
+    scope module: :accounts do
+      resource :integrations, only: [:show, :update]
+      resource :subscription, only: [:show]
+    end
     post :checkout
     post :portal
     patch :subscription_status
   end
+  resource :library, only: :show
 
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"

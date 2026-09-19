@@ -162,6 +162,7 @@ GEM
     erubi (1.13.1)
     et-orbi (1.4.0)
       tzinfo
+    event_stream_parser (1.0.0)
     faraday (2.14.1)
       faraday-net_http (>= 2.0, < 3.5)
       json
@@ -173,6 +174,8 @@ GEM
       multipart-post (~> 2.0)
     faraday-net_http (3.4.2)
       net-http (~> 0.5)
+    faraday-retry (2.4.0)
+      faraday (~> 2.0)
     ffi (1.17.4-aarch64-linux-gnu)
     ffi (1.17.4-aarch64-linux-musl)
     ffi (1.17.4-arm-linux-gnu)
@@ -416,7 +419,19 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
+    ruby_llm (2.0.0)
+      base64
+      event_stream_parser (~> 1)
+      faraday (>= 1.10.0)
+      faraday-multipart (>= 1)
+      faraday-net_http (>= 1)
+      faraday-retry (>= 1)
+      json (< 3)
+      marcel (>= 1.0, < 3)
+      schematist (~> 1.1)
+      zeitwerk (~> 2)
     rubyzip (3.3.0)
+    schematist (1.1.0)
     securerandom (0.4.1)
     selenium-webdriver (4.43.0)
       base64 (~> 0.2)
@@ -547,6 +562,7 @@ DEPENDENCIES
   rails (~> 8.1.2)
   redcarpet (~> 3.6)
   rubocop-rails-omakase
+  ruby_llm (= 2.0.0)
   selenium-webdriver
   solid_cable
   solid_cache

@@ -13,7 +13,9 @@ class User < ApplicationRecord
 
 
   has_many :sessions, dependent: :destroy
+  has_many :telegram_uploads, dependent: :nullify
   has_one :subscription, dependent: :destroy, inverse_of: :user
+
 
   after_create :create_default_subscription
 

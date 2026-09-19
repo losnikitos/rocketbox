@@ -1,138 +1,22 @@
 <% content_for(:title, "My account — Rocketbox") %>
-<% tab = params[:tab].presence_in(%w[account subscription]) || (params[:session_id].present? ? "subscription" : "account") %>
 
 <section class="rb-surface-form w-full p-6 rb-shadow-card sm:p-8">
   <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
-    <nav class="sm:w-44 sm:shrink-0" aria-label="Account sections">
-      <ul class="flex gap-1 sm:flex-col sm:gap-0.5">
-        <% [
-          ["account", "Account"],
-          ["subscription", "Subscription"]
-        ].each do |key, label| %>
-          <li class="min-w-0 flex-1 sm:flex-none">
-            <%= link_to label,
-                  account_path(tab: key),
-                  class: [
-                    "block rounded-[10px] px-3 py-2 text-center text-sm font-medium transition hover:bg-ink-900/5 sm:text-left",
-                    (tab == key ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
-                  ].join(" "),
-                  aria: { current: (tab == key ? "page" : nil) } %>
-          </li>
-        <% end %>
-      </ul>
-    </nav>
+    <%= render "accounts/nav", current: :account %>
 
     <div class="min-w-0 flex-1">
-      <% if tab == "account" %>
-        <h1 class="font-manrope text-xl font-bold text-ink-900">Account</h1>
+      <h1 class="font-manrope text-xl font-bold text-ink-900">Account</h1>
 
-        <dl class="mt-6 space-y-3 text-sm">
-          <div class="flex justify-between gap-4">
-            <dt class="text-ink-500">Email</dt>
-            <dd class="font-medium text-ink-900"><%= Current.user.email %></dd>
-          </div>
-        </dl>
-
-        <div class="mt-8 border-t border-ink-900/10 pt-6">
-          <h2 class="text-sm font-semibold uppercase tracking-[0.06em] text-ink-500">Integrations</h2>
-          <p class="mt-2 text-sm text-ink-600">Instagram and Telegram credentials for posting and inbound media.</p>
-
-          <%= form_with model: Current.user, url: account_path, method: :patch, class: "mt-4 space-y-4" do |form| %>
-            <% if Current.user.errors.any? %>
-              <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
-                <p class="font-medium"><%= pluralize(Current.user.errors.count, "error") %> prevented saving:</p>
-                <ul class="list-inside list-disc text-sm">
-                  <% Current.user.errors.each do |error| %>
-                    <li><%= error.full_message %></li>
-                  <% end %>
-                </ul>
-              </div>
-            <% end %>
-
-            <div>
-              <%= form.label :instagram_user_id, "Instagram user id", class: tw_label_classes %>
-              <%= form.text_field :instagram_user_id, class: tw_input_classes, autocomplete: "off" %>
-            </div>
-
-            <div>
-              <%= form.label :instagram_access_token, "Instagram access token", class: tw_label_classes %>
-              <%= form.password_field :instagram_access_token, value: Current.user.instagram_access_token, class: tw_input_classes, autocomplete: "off" %>
-            </div>
-
-            <div>
-              <%= form.label :telegram_user_id, "Telegram user id", class: tw_label_classes %>
-              <%= form.number_field :telegram_user_id, class: tw_input_classes, autocomplete: "off" %>
-            </div>
-
-            <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-[10rem]" %>
-          <% end %>
+      <dl class="mt-6 space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-ink-500">Email</dt>
+          <dd class="font-medium text-ink-900"><%= Current.user.email %></dd>
         </div>
+      </dl>
 
-        <div class="mt-8">
-          <%= button_to "Log out", session_path(Current.session), method: :delete, form: { class: "inline-flex" }, class: "rb-btn-ghost-on-light" %>
-        </div>
-      <% else %>
-        <h1 class="font-manrope text-xl font-bold text-ink-900">Subscription</h1>
-
-        <% if params[:session_id].present? %>
-          <p class="mt-4 text-sm leading-relaxed text-ink-500">
-            Thanks — we’re confirming your payment. Full access usually appears within a few seconds once Stripe notifies us.
-          </p>
-        <% end %>
-
-        <dl class="mt-6 space-y-3 text-sm">
-          <div class="flex justify-between gap-4">
-            <dt class="text-ink-500">Access</dt>
-            <dd class="font-medium text-ink-900"><%= @subscription.active? ? "Active" : "Not subscribed" %></dd>
-          </div>
-          <% if @subscription.status.present? %>
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-500">Stripe status</dt>
-              <dd class="font-medium text-ink-900"><%= @subscription.status %></dd>
-            </div>
-          <% end %>
-          <% if @subscription.current_period_end.present? %>
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-500">Current period ends</dt>
-              <dd class="font-medium text-ink-900"><%= l(@subscription.current_period_end, format: :long) %></dd>
-            </div>
-          <% end %>
-        </dl>
-
-        <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <% unless @subscription.active? %>
-            <%= button_to "Subscribe with Stripe Checkout", checkout_account_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
-          <% end %>
-          <% if @subscription.stripe_customer_id.present? %>
-            <%= button_to "Manage billing", portal_account_path, form: { data: { turbo: false } }, class: "rb-btn-ghost-on-light" %>
-          <% end %>
-        </div>
-
-        <% if Current.user.admin? %>
-          <div class="mt-8 border-t border-ink-900/10 pt-6">
-            <h2 class="text-sm font-semibold uppercase tracking-[0.06em] text-ink-500">Admin controls</h2>
-            <p class="mt-2 text-sm text-ink-600">Update your subscription status for testing access rules.</p>
-            <%= form_with url: subscription_status_account_path, method: :patch, class: "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" do %>
-              <%= select_tag :subscription_status,
-                options_for_select(
-                  [
-                    ["Not subscribed", "not_subscribed"],
-                    ["active", "active"],
-                    ["trialing", "trialing"],
-                    ["past_due", "past_due"],
-                    ["canceled", "canceled"],
-                    ["unpaid", "unpaid"],
-                    ["incomplete", "incomplete"],
-                    ["incomplete_expired", "incomplete_expired"]
-                  ],
-                  (@subscription.status.presence || "not_subscribed")
-                ),
-                class: "w-full rounded-[10px] border border-ink-900/15 bg-paper-50 px-3 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 sm:w-auto" %>
-              <%= button_tag "Update status", class: "inline-flex cursor-pointer items-center justify-center rounded-[10px] bg-ink-900 px-4 py-2.5 text-sm font-semibold text-paper transition-[color,background-color,transform] duration-[160ms] [transition-timing-function:cubic-bezier(0.2,0,0,1)] hover:bg-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)] active:scale-[0.98]" %>
-            <% end %>
-          </div>
-        <% end %>
-      <% end %>
+      <div class="mt-8">
+        <%= button_to "Log out", session_path(Current.session), method: :delete, form: { class: "inline-flex" }, class: "rb-btn-ghost-on-light" %>
+      </div>
     </div>
   </div>
 </section>

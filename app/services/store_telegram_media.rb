@@ -50,13 +50,16 @@ class StoreTelegramMedia
       io = URI.open(url)
       filename = File.basename(file_path.presence || "telegram-#{media.file_unique_id}")
 
+      from_id = message.from&.id
       upload = TelegramUpload.create!(
         telegram_file_id: media.file_id,
         telegram_file_unique_id: media.file_unique_id,
         chat_id: message.chat&.id,
-        from_id: message.from&.id,
-        kind: kind
+        from_id: from_id,
+        kind: kind,
+        user: User.find_by(telegram_user_id: from_id)
       )
+
 
       blob = ActiveStorage::Blob.create_and_upload!(
           io: io,

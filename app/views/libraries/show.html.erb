@@ -1,0 +1,39 @@
+<% content_for(:title, "Library — Rocketbox") %>
+
+<section class="rb-surface-form w-full p-6 rb-shadow-card sm:p-8">
+  <h1 class="font-manrope text-xl font-bold text-ink-900">Library</h1>
+  <p class="mt-2 text-sm text-ink-600">Media you’ve sent to the Telegram bot.</p>
+
+  <% if Current.user.telegram_user_id.blank? %>
+    <p class="mt-6 text-sm text-ink-600">
+      Set your <%= link_to "Telegram user id", account_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
+      under Integrations so inbound media can be attached here.
+    </p>
+  <% elsif @telegram_uploads.blank? %>
+    <p class="mt-6 text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
+  <% else %>
+    <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <% @telegram_uploads.each do |upload| %>
+        <li class="min-w-0">
+          <% if upload.file.attached? %>
+            <% content_type = upload.file.content_type.to_s %>
+            <% if content_type.start_with?("image/") || upload.kind == "photo" || upload.kind == "sticker" %>
+              <%= image_tag url_for(upload.file), alt: upload.kind, class: "aspect-square w-full object-cover" %>
+            <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(upload.kind) %>
+              <%= video_tag url_for(upload.file), controls: true, class: "aspect-square w-full object-cover bg-ink-900/5" %>
+            <% else %>
+              <div class="flex aspect-square flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center">
+                <%= link_to upload.file.filename, url_for(upload.file), class: "text-sm font-medium text-ink-900 underline underline-offset-2 break-all" %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-sm text-ink-500">Missing file</div>
+          <% end %>
+          <p class="mt-2 text-xs text-ink-500">
+            <%= upload.kind %> · <%= l(upload.created_at, format: :short) %>
+          </p>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

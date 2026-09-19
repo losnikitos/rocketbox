@@ -1,0 +1,42 @@
+<% content_for(:title, "Integrations — Rocketbox") %>
+
+<section class="rb-surface-form w-full p-6 rb-shadow-card sm:p-8">
+  <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
+    <%= render "accounts/nav", current: :integrations %>
+
+    <div class="min-w-0 flex-1">
+      <h1 class="font-manrope text-xl font-bold text-ink-900">Integrations</h1>
+      <p class="mt-2 text-sm text-ink-600">Instagram and Telegram credentials for posting and inbound media.</p>
+
+      <%= form_with model: Current.user, url: account_integrations_path, method: :patch, class: "mt-6 space-y-4" do |form| %>
+        <% if Current.user.errors.any? %>
+          <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
+            <p class="font-medium"><%= pluralize(Current.user.errors.count, "error") %> prevented saving:</p>
+            <ul class="list-inside list-disc text-sm">
+              <% Current.user.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div>
+          <%= form.label :instagram_user_id, "Instagram user id", class: tw_label_classes %>
+          <%= form.text_field :instagram_user_id, class: tw_input_classes, autocomplete: "off" %>
+        </div>
+
+        <div>
+          <%= form.label :instagram_access_token, "Instagram access token", class: tw_label_classes %>
+          <%= form.password_field :instagram_access_token, value: Current.user.instagram_access_token, class: tw_input_classes, autocomplete: "off" %>
+        </div>
+
+        <div>
+          <%= form.label :telegram_user_id, "Telegram user id", class: tw_label_classes %>
+          <%= form.number_field :telegram_user_id, class: tw_input_classes, autocomplete: "off" %>
+        </div>
+
+        <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-[10rem]" %>
+      <% end %>
+    </div>
+  </div>
+</section>
