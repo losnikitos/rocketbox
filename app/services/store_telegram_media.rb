@@ -10,6 +10,12 @@ class StoreTelegramMedia
     new(update).call
   end
 
+  def self.media?(message)
+    return false if message.blank?
+
+    message.photo.present? || MEDIA_ATTRS.any? { |attr| message.public_send(attr).present? }
+  end
+
   def initialize(update)
     @update = update.is_a?(Hash) ? Telegram::Bot::Types::Update.new(update) : update
   end

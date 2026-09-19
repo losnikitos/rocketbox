@@ -21,8 +21,8 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on persistent VPS disk (see config/storage.yml).
-  config.active_storage.service = :vps
+  # Store uploaded files on S3 (see config/storage.yml :amazon).
+  config.active_storage.service = :amazon
 
   # Kamal's kamal-proxy terminates TLS; the app sees HTTP with forwarded proto headers.
   config.assume_ssl = true

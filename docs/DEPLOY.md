@@ -40,10 +40,23 @@ Clear env from deploy config includes `SOLID_QUEUE_IN_PUMA=true` and `MAILER_DEF
 
 ## Local vs production processes
 
-[`bin/dev`](/bin/dev) + [`Procfile.dev`](/Procfile.dev): web (port 3000), Tailwind watch, Stripe CLI forward, Telegram long-poll. Production uses HTTPS webhooks for Stripe and Telegram instead of those local processes.
+[`bin/dev`](/bin/dev) + [`Procfile.dev`](/Procfile.dev): web (port 3000), Solid Queue (`bin/jobs`), Tailwind watch, Stripe CLI forward, Telegram long-poll. Production uses HTTPS webhooks for Stripe and Telegram instead of those local processes; jobs run inside Puma via `SOLID_QUEUE_IN_PUMA`.
 
 After deploy, point Telegram at the live webhook (see Telegram docs / `rails telegram:set_webhook[...]`).
 
 ## CI
 
 [`.github/workflows/ci.yml`](/.github/workflows/ci.yml) on PRs and pushes to `main`: Brakeman, bundler-audit, importmap audit, RuboCop, `test`, `test:system`. Dependabot: [`.github/dependabot.yml`](/.github/dependabot.yml) (bundler + GitHub Actions, weekly).
+
+## GitHub Actions deploy
+
+[`.github/workflows/deploy.yml`](/.github/workflows/deploy.yml) runs `bin/kamal deploy` on push to `main` (and manually via **Actions → Deploy → Run workflow**). Builds amd64 on the runner, pushes to GHCR with `GITHUB_TOKEN`, SSHs to `monitoring.tadaaa.uk.com`.
+
+Repo secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|--------|--------|
+| `RAILS_MASTER_KEY` | Contents of [`config/master.key`](/config/master.key) |
+| `SSH_PRIVATE_KEY` | Private key whose public half is in `root`’s `authorized_keys` on the VPS |
+
+No GHCR PAT needed in Actions: registry username is `github.repository_owner` (`losnikitos`), password is `GITHUB_TOKEN` (`packages: write`). Local deploys still use `KAMAL_REGISTRY_USERNAME` / `KAMAL_REGISTRY_PASSWORD` from `.env` as before — keep that username equal to the GitHub owner so CI and local push the same image path.

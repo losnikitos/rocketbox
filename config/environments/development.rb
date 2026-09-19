@@ -28,8 +28,8 @@ Rails.application.configure do
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Same S3 backend as production (see config/storage.yml :amazon).
+  config.active_storage.service = :amazon
 
   # Surface Postmark/API failures while wiring mail locally (silent failures hide misconfigured From/token).
   config.action_mailer.raise_delivery_errors = true
@@ -58,6 +58,10 @@ Rails.application.configure do
 
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
+
+  # Durable jobs (media processing, etc.). Run workers via `bin/jobs` (Procfile.dev).
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
 
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
