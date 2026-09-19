@@ -178,8 +178,62 @@ void main() {
   color.rgb = contrast(color.rgb, u_colorContrast);
   color.rgb = desaturate(color.rgb, 1.0 - u_colorSaturation);
   color.rgb = hueShift(color.rgb, u_colorHueShift);
-  color.rgb += (1.0 - pdy) * 0.08;
+  color.rgb += (1.0 - pdy) * 0.25;
   gl_FragColor = clamp(color, 0.0, 1.0);
+}
+`
+
+// Stripe HeroWavePostProcessingMaterial — angular blur + grain softens the ribbon edges
+const POST_VERT = /* glsl */ `
+varying vec2 v_uv;
+
+void main() {
+  v_uv = uv;
+  gl_Position = vec4(position, 1.0);
+}
+`
+
+const POST_FRAG = /* glsl */ `
+precision highp float;
+
+uniform sampler2D u_scene;
+uniform float u_blurAmount;
+uniform float u_grainAmount;
+varying vec2 v_uv;
+
+float random(in vec2 st) {
+  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+vec3 grain(vec3 color, float amount) {
+  float grid_position = random(gl_FragCoord.xy * 0.01);
+  vec3 dither_shift_RGB = vec3(4.0 / 255.0);
+  dither_shift_RGB = mix(amount * dither_shift_RGB, -amount * dither_shift_RGB, grid_position);
+  return color + dither_shift_RGB;
+}
+
+vec4 blurAngular(sampler2D tex, vec2 uv, float angle) {
+  const int samples = 6;
+  vec4 total = vec4(0.0);
+  vec2 coord = uv - 0.5;
+  float dist = 1.0 / float(samples);
+  vec2 dir = vec2(cos(angle * dist), sin(angle * dist));
+  mat2 rot = mat2(dir.x, dir.y, -dir.y, dir.x);
+
+  for (int i = 0; i < samples; i++) {
+    total += texture2D(tex, coord + 0.5);
+    coord *= rot;
+  }
+  return total * dist;
+}
+
+void main() {
+  vec4 sceneColor = texture2D(u_scene, v_uv);
+  vec4 blurColor = blurAngular(u_scene, v_uv, u_blurAmount);
+  float blurPower = smoothstep(0.0, 0.7, v_uv.y) - smoothstep(0.2, 1.0, v_uv.y);
+  vec4 finalColor = mix(blurColor, sceneColor, blurPower);
+  finalColor.rgb = grain(finalColor.rgb, u_grainAmount);
+  gl_FragColor = vec4(min(finalColor.rgb, 1.0), finalColor.a);
 }
 `
 
@@ -191,8 +245,7 @@ function parabola(x, n) {
   return Math.pow(4 * x * (1 - x), n)
 }
 
-function foldedGeometry(width = 400, height = 400, segX = 64, segY = 128) {
-  // ponytail: 64×128 vs Stripe's 128×256 — bump if mesh looks faceted
+function foldedGeometry(width = 400, height = 400, segX = 128, segY = 256) {
   const geo = new THREE.PlaneGeometry(width, height, segX, segY)
   const pos = geo.attributes.position
   const uv = geo.attributes.uv
@@ -227,12 +280,12 @@ function foldedGeometry(width = 400, height = 400, segX = 64, segY = 128) {
   return geo
 }
 
-// Stripe createLoginWaveConfig — tuned so the ribbon sits top-right on our home layout
+// Stripe createLoginWaveConfig — position tuned for home layout; softness from post + glow wash
 const MATERIAL = {
   speed: 4e-5,
   timeOffset: 17500,
-  colorContrast: 1.15,
-  colorSaturation: 1.2,
+  colorContrast: 1,
+  colorSaturation: 1,
   colorHueShift: -0.00159265358979299,
   displaceFrequencyX: 0.005831,
   displaceFrequencyZ: 0.016001,
@@ -243,8 +296,8 @@ const MATERIAL = {
   rotationX: -0.449592653589793,
   rotationY: -0.117592653589793,
   rotationZ: 1.72,
-  scaleX: 8,
-  scaleY: 7.5,
+  scaleX: 10,
+  scaleY: 9,
   scaleZ: 5,
   twistFrequencyX: -0.65,
   twistFrequencyY: 0.41,
@@ -255,6 +308,12 @@ const MATERIAL = {
   glowRamp: 0.834,
   glowAmount: 1.98,
   glowPower: 0.806
+}
+
+// Stripe Post Processing — slightly stronger blur than 0.02 so edges soften on our framing
+const POST = {
+  blurAmount: 0.045,
+  grainAmount: 1.1
 }
 
 export default class extends Controller {
@@ -290,7 +349,8 @@ export default class extends Controller {
     this.renderer = renderer
     this.dpr = Math.min(window.devicePixelRatio || 1, 2)
     renderer.setPixelRatio(this.dpr)
-    renderer.setClearColor(clear, 0)
+    // Opaque white clear so angular blur washes into white (Stripe light theme)
+    renderer.setClearColor(clear, 1)
     renderer.outputColorSpace = THREE.SRGBColorSpace
 
     this.scene = new THREE.Scene()
@@ -351,10 +411,38 @@ export default class extends Controller {
     this.mesh = mesh
     this.scene.add(mesh)
 
+    // Stripe only enables post on light + non-mobile; it's what makes the ribbon soft
+    const isMobile = window.matchMedia("(pointer: coarse) and (hover: none)").matches
+    if (!isMobile) this.#initPost()
+
     this.#resize()
     this.ro = new ResizeObserver(() => this.#resize())
     this.ro.observe(this.element)
     this.raf = requestAnimationFrame((t) => this.#frame(t))
+  }
+
+  #initPost() {
+    const { width, height } = this.element.getBoundingClientRect()
+    const resW = Math.max(1, Math.floor(width * this.dpr))
+    const resH = Math.max(1, Math.floor(height * this.dpr))
+
+    this.sceneTarget = new THREE.WebGLRenderTarget(resW, resH)
+    this.postUniforms = {
+      u_scene: { value: this.sceneTarget.texture },
+      u_blurAmount: { value: POST.blurAmount },
+      u_grainAmount: { value: POST.grainAmount }
+    }
+    const postMaterial = new THREE.ShaderMaterial({
+      uniforms: this.postUniforms,
+      vertexShader: POST_VERT,
+      fragmentShader: POST_FRAG,
+      depthTest: false,
+      depthWrite: false
+    })
+    this.postMaterial = postMaterial
+    this.postScene = new THREE.Scene()
+    this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial))
+    this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   }
 
   #resize() {
@@ -367,12 +455,13 @@ export default class extends Controller {
     this.camera.top = height / 2
     this.camera.bottom = -height / 2
     this.camera.updateProjectionMatrix()
-    // Stripe applyCameraOffset for medium: offsetX 0, referenceHeight 1250, offsetYFraction -0.25
+    // Keep wave on the right without covering hero copy
     this.camera.position.x = 40
     this.camera.position.y = height * 0.15
     const resW = width * this.dpr
     const resH = height * this.dpr
     this.uniforms.u_resolution.value.set(resW, resH)
+    this.sceneTarget?.setSize(resW, resH)
   }
 
   #frame(t) {
@@ -385,8 +474,14 @@ export default class extends Controller {
     if (this.start == null) this.start = t
     this.uniforms.u_time.value = MATERIAL.timeOffset + (t - this.start)
 
-    // ponytail: skip angular blur/grain post-pass for now — add back if the soft wash is missing
-    this.renderer.render(this.scene, this.camera)
+    if (this.sceneTarget) {
+      this.renderer.setRenderTarget(this.sceneTarget)
+      this.renderer.render(this.scene, this.camera)
+      this.renderer.setRenderTarget(null)
+      this.renderer.render(this.postScene, this.postCamera)
+    } else {
+      this.renderer.render(this.scene, this.camera)
+    }
   }
 
   #teardown() {
@@ -394,6 +489,11 @@ export default class extends Controller {
     this.ro?.disconnect()
     this.mesh?.geometry.dispose()
     this.mesh?.material.dispose()
+    this.postMaterial?.dispose()
+    this.postScene?.traverse((obj) => {
+      if (obj.geometry) obj.geometry.dispose()
+    })
+    this.sceneTarget?.dispose()
     this.uniforms?.u_paletteTexture.value?.dispose()
     this.renderer?.dispose()
     this.renderer = null
