@@ -1,76 +1,116 @@
 <% barbershops = UseCasesController::REGISTRY.fetch("barbershops") %>
 <% demos = barbershops.fetch(:demos) %>
+<% account = barbershops.fetch(:account) %>
 
 <section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="proof-heading">
   <h2 id="proof-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
-    What we make from your day-to-day media
+    How it works
   </h2>
   <p class="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
-    A still from the floor becomes a reel for Instagram, a fresh photo on your Google Maps page — and contact cards you can order from us.
+    Send what you already capture at work. We turn it into posts and keep your presence fresh.
   </p>
 
-  <% card = "col-start-1 row-start-1 w-full rounded-2xl object-cover ring-1 ring-ink-900/10 shadow-xl" %>
-  <div class="mx-auto mt-10 grid max-w-md place-items-center py-6 sm:max-w-lg">
-    <%= image_tag demos.first[:photo], class: "#{card} z-0 -rotate-6 translate-x-4", loading: "lazy" %>
-    <%= image_tag demos.second[:photo], class: "#{card} z-10 rotate-3 -translate-x-4", loading: "lazy" %>
-  </div>
-
-  <div class="mt-8 flex justify-center text-ink-500" aria-hidden="true">
-    <%= heroicon "arrow-down", variant: :outline, options: { class: "size-6" } %>
-  </div>
-
-  <div class="mt-8 -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pb-2 sm:-mx-0 sm:px-0" role="list">
-    <div class="w-[min(100%,240px)] shrink-0 snap-center" role="listitem">
-      <%= render "use_cases/instagram_account", account: barbershops.fetch(:account), headed: false %>
-      <p class="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500">Instagram</p>
-      <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
-        After a week of sends, the feed looks like this.
-      </p>
-    </div>
-
-    <% demos.each do |demo| %>
-      <div class="w-[min(100%,240px)] shrink-0 snap-center" role="listitem">
-        <%= render layout: "shared/iphone_frame", locals: { username: demo[:caption].to_s.parameterize } do %>
-          <% if demo[:video_is_image] %>
-            <%= image_tag demo[:video], alt: "#{demo[:caption]} — reel placeholder", class: "h-full w-full object-cover", loading: "lazy" %>
-          <% else %>
-            <video
-              class="h-full w-full object-cover"
-              src="<%= demo[:video] %>"
-              autoplay
-              muted
-              loop
-              playsinline
-              preload="metadata"
-              aria-label="<%= demo[:caption] %> — reel we generate"
-            ></video>
-          <% end %>
-        <% end %>
-        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500">Reel · <%= demo[:caption] %></p>
-        <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
-          <% if demo == demos.first %>
-            A chair-side still becomes a reel ready to post.
-          <% else %>
-            Same send → publish loop for the next cut.
-          <% end %>
+  <%# Step 1: you send %>
+  <div class="mt-10">
+    <div class="flex gap-4">
+      <span class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 tabular-nums" aria-hidden="true">1</span>
+      <div>
+        <h3 class="font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">You send while you work</h3>
+        <p class="mt-1 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+          A quick photo or clip from the floor — no shoot, no schedule.
         </p>
       </div>
-    <% end %>
-
-    <div class="w-[min(100%,240px)] shrink-0 snap-center" role="listitem">
-      <%= render "use_cases/google_maps_listing", maps: barbershops.fetch(:maps), headed: false %>
-      <p class="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500">Google Maps</p>
-      <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
-        The same sends land on your listing so searchers see fresh work.
-      </p>
     </div>
 
-    <div class="w-[min(100%,240px)] shrink-0 snap-center" role="listitem">
-      <%= render "use_cases/contact_card", contact_card: barbershops.fetch(:contact_card), headed: false %>
-      <p class="mt-4 text-xs font-medium uppercase tracking-wide text-ink-500">Contact cards</p>
-      <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
-        Same brand work, printed — order cards from us when you need them.
-      </p>
+    <div
+      class="swiper mx-auto mt-8 w-56 overflow-visible py-6 sm:w-72"
+      data-controller="swiper"
+      data-swiper-effect="cards"
+    >
+      <div class="swiper-wrapper">
+        <% demos.each do |demo| %>
+          <div class="swiper-slide !h-auto overflow-hidden rounded-2xl ring-1 ring-ink-900/10 shadow-xl">
+            <%= image_tag demo[:photo], class: "aspect-[3/4] w-full object-cover", loading: "lazy", alt: demo[:caption] %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Step 2: we keep channels updated %>
+  <div class="mt-12">
+    <div class="flex gap-4">
+      <span class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 tabular-nums" aria-hidden="true">2</span>
+      <div>
+        <h3 class="font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">We keep your channels updated</h3>
+        <p class="mt-1 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+          Reels, feed, Google Maps, and print when you need it — from the same sends.
+        </p>
+      </div>
+    </div>
+
+    <% slide = "flex w-full flex-col items-center text-center rb-surface-raised rb-shadow-card p-5 [&_figure]:flex [&_figure]:w-full [&_figure]:justify-center" %>
+    <div
+      class="swiper mt-8 -mx-4 pb-8 sm:-mx-6 lg:-mx-8"
+      data-controller="swiper"
+    >
+      <div class="swiper-wrapper">
+        <div class="swiper-slide">
+          <div class="<%= slide %>">
+            <%= render "use_cases/instagram_account", account: account, headed: false %>
+            <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Instagram</h3>
+            <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+              Your feed stays full from a week of sends.
+            </p>
+          </div>
+        </div>
+
+        <% demos.each do |demo| %>
+          <div class="swiper-slide">
+            <div class="<%= slide %>">
+              <%= render layout: "shared/iphone_frame", locals: { username: account[:username] } do %>
+                <% if demo[:video_is_image] %>
+                  <%= image_tag demo[:video], alt: "", class: "h-full w-full object-cover", loading: "lazy" %>
+                <% else %>
+                  <video
+                    class="h-full w-full object-cover"
+                    src="<%= demo[:video] %>"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  ></video>
+                <% end %>
+              <% end %>
+              <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Reel</h3>
+              <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+                Chair-side stills posted as reels, ready to watch.
+              </p>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="swiper-slide">
+          <div class="<%= slide %>">
+            <%= render "use_cases/google_maps_listing", maps: barbershops.fetch(:maps), headed: false %>
+            <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Google Maps</h3>
+            <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+              Your listing stays fresh so searchers see recent work.
+            </p>
+          </div>
+        </div>
+
+        <div class="swiper-slide">
+          <div class="<%= slide %>">
+            <%= render "use_cases/contact_card", contact_card: barbershops.fetch(:contact_card), headed: false %>
+            <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Contact cards</h3>
+            <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+              Same brand, printed — order cards when you need them.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
