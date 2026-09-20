@@ -1,7 +1,7 @@
-# Foreman gives each process a different $PORT; pin web to 3000 so Stripe CLI can forward here.
-web: bin/rails server -p 3000
+# Foreman gives each process a different $PORT; pin web to 3003 so Stripe CLI can forward here.
+web: bin/rails server -p 3003
 jobs: bin/jobs
 css: bin/rails tailwindcss:watch
 # Run `stripe login` once. Copy the "webhook signing secret" from logs into .env as STRIPE_WEBHOOK_SECRET=whsec_...
-stripe: stripe listen --forward-to http://127.0.0.1:3000/stripe/webhook
+stripe: stripe listen --forward-to http://127.0.0.1:3003/stripe/webhook
 telegram: bin/rails telegram:poll

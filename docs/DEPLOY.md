@@ -40,7 +40,7 @@ Clear env from deploy config includes `SOLID_QUEUE_IN_PUMA=true` and `MAILER_DEF
 
 ## Local vs production processes
 
-[`bin/dev`](/bin/dev) + [`Procfile.dev`](/Procfile.dev): web (port 3000), Solid Queue (`bin/jobs`), Tailwind watch, Stripe CLI forward, Telegram long-poll. Production uses HTTPS webhooks for Stripe and Telegram instead of those local processes; jobs run inside Puma via `SOLID_QUEUE_IN_PUMA`.
+[`bin/dev`](/bin/dev) + [`Procfile.dev`](/Procfile.dev): web (port 3003), Solid Queue (`bin/jobs`), Tailwind watch, Stripe CLI forward, Telegram long-poll. Production uses HTTPS webhooks for Stripe and Telegram instead of those local processes; jobs run inside Puma via `SOLID_QUEUE_IN_PUMA`.
 
 After deploy, point Telegram at the live webhook (see Telegram docs / `rails telegram:set_webhook[...]`).
 

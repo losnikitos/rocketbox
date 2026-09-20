@@ -38,9 +38,9 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
 
-  config.action_controller.default_url_options = { host: "localhost", port: 3000 }
+  config.action_controller.default_url_options = { host: "localhost", port: 3003 }
 
   # Delivery uses :postmark from config/application.rb (sandbox server is fine for dev).
 

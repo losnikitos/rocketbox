@@ -16,7 +16,7 @@ Gem: `stripe` in [`Gemfile`](/Gemfile).
 
 ## Local webhooks
 
-[`Procfile.dev`](/Procfile.dev) runs `stripe listen` forwarding to `http://127.0.0.1:3000/stripe/webhook`. Copy the CLI signing secret into `.env` as `STRIPE_WEBHOOK_SECRET`. The Rails server is pinned to port 3000 so forwarding stays stable.
+[`Procfile.dev`](/Procfile.dev) runs `stripe listen` forwarding to `http://127.0.0.1:3003/stripe/webhook`. Copy the CLI signing secret into `.env` as `STRIPE_WEBHOOK_SECRET`. The Rails server is pinned to port 3003 so forwarding stays stable.
 
 ## Checkout and billing portal
 
