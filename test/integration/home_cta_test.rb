@@ -19,6 +19,10 @@ class HomeCtaTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "section[aria-labelledby='proof-heading']"
     assert_select "img[src='/use-cases/barbershops/alan.jpg']"
+    assert_select "img[src='/use-cases/barbershops/bob.jpg']"
     assert_select "video[src='/use-cases/barbershops/alan.mp4']"
+    assert_select "video[src='/use-cases/barbershops/bob.mp4']"
+    assert_select "[aria-label='Fade House Google Maps listing']"
+    assert_select "[aria-label='Fade House Instagram profile']"
   end
 end

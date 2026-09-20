@@ -29,6 +29,28 @@ class UseCasesController < ApplicationController
           { src: "/use-cases/barbershops/account/08.jpg", reel: true },
           { src: "/use-cases/barbershops/account/09.jpg", reel: true }
         ]
+      },
+      maps: {
+        name: "Fade House",
+        category: "Barber shop",
+        rating: "4.9",
+        reviews: 186,
+        travel: "7 min",
+        status: "Open · Closes 19:00",
+        collage: [
+          { src: "/use-cases/barbershops/account/01.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/02.jpg" },
+          { src: "/use-cases/barbershops/account/03.jpg" }
+        ],
+        delivery_hours: [
+          { day: "Mon–Fri", hours: "09:00–19:00" },
+          { day: "Sat", hours: "10:00–18:00" },
+          { day: "Sun", hours: "Closed" }
+        ]
+      },
+      contact_card: {
+        image: "/use-cases/barbershops/contact-card.png",
+        label: "Fade House"
       }
     },
     "nail-salons" => {

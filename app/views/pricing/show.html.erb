@@ -1,0 +1,41 @@
+<% content_for(:title, "Pricing — Rocketbox") %>
+
+<section class="pb-12 pt-4 lg:pb-16 lg:pt-2">
+  <h1 class="mt-6 font-manrope text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink-900 text-balance">
+    Pricing
+  </h1>
+  <p class="mt-6 max-w-xl text-[17px] font-medium leading-relaxed text-ink-500">
+    Simple monthly plans. Join the waitlist to get started.
+  </p>
+</section>
+
+<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="plans-heading">
+  <h2 id="plans-heading" class="sr-only">Plans</h2>
+  <div class="grid gap-8 sm:grid-cols-3">
+    <% PricingController::TIERS.each do |tier| %>
+      <div class="<%= class_names("flex flex-col p-6", (tier[:highlighted] ? "rb-surface-raised rb-shadow-card" : "border border-transparent")) %>">
+        <h3 class="font-manrope text-xl font-extrabold tracking-[-0.03em] text-ink-900"><%= tier[:name] %></h3>
+        <p class="mt-1 text-[15px] font-medium text-ink-500"><%= tier[:blurb] %></p>
+        <p class="mt-6 font-mono text-3xl font-medium tracking-tight text-ink-900">
+          <%= tier[:price] %><span class="text-base text-ink-500">+VAT</span>
+        </p>
+        <ul class="mt-6 flex-1 space-y-2 text-[15px] font-medium leading-relaxed text-ink-500">
+          <% tier[:features].each do |feature| %>
+            <li><%= feature %></li>
+          <% end %>
+        </ul>
+        <%= render "shared/waitlist_cta", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="beta-heading">
+  <h2 id="beta-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
+    Closed beta
+  </h2>
+  <p class="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+    We’re inviting a small set of businesses to try Rocketbox. Join the waitlist and we’ll notify you when the service is generally available.
+  </p>
+  <%= render "shared/waitlist_cta", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
+</section>

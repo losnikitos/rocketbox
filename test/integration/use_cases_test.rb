@@ -10,6 +10,7 @@ class UseCasesTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /fade/
     assert_select "a[href='#{try_path}']", text: "Join the waitlist"
     assert_select "a[href='#{new_subscription_path}']", count: 0
+    assert_select "[aria-label='Fade House Google Maps listing']"
   end
 
   test "unknown use case returns not found" do

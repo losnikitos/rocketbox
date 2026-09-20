@@ -21,26 +21,7 @@
   <%= render "shared/waitlist_cta", container_class: "mt-8 flex flex-wrap items-center gap-3" %>
 </section>
 
-<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="proof-heading">
-  <h2 id="proof-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
-    What we make from your day-to-day media
-  </h2>
-  <p class="mt-3 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
-    A still from the floor becomes a short video ready for Instagram.
-  </p>
-
-  <div class="mt-10 space-y-14">
-    <% barbershops = UseCasesController::REGISTRY.fetch("barbershops") %>
-    <% barbershops.fetch(:demos).each do |demo| %>
-      <%= render "use_cases/demo_pair", demo: demo %>
-    <% end %>
-    <%= render "use_cases/instagram_account", account: barbershops.fetch(:account) %>
-  </div>
-
-  <p class="mt-10">
-    <%= link_to "More examples", use_case_path("barbershops"), class: "rb-text-link text-[15px] font-medium" %>
-  </p>
-</section>
+<%= render "home/proof" %>
 
 <section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="beta-heading">
   <h2 id="beta-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">

@@ -26,6 +26,12 @@
     <% if @use_case[:account] %>
       <%= render "use_cases/instagram_account", account: @use_case[:account] %>
     <% end %>
+    <% if @use_case[:maps] %>
+      <%= render "use_cases/google_maps_listing", maps: @use_case[:maps] %>
+    <% end %>
+    <% if @use_case[:contact_card] %>
+      <%= render "use_cases/contact_card", contact_card: @use_case[:contact_card] %>
+    <% end %>
   </div>
 </section>
 

@@ -1,0 +1,15 @@
+<%# locals: contact_card (image:, label:), headed: (default true) %>
+<% contact_card = local_assigns.fetch(:contact_card) %>
+<% headed = local_assigns.fetch(:headed, true) %>
+<figure>
+  <% if headed %>
+    <p class="mb-3 text-xs font-medium uppercase tracking-wide text-ink-500">Contact cards</p>
+    <p class="mb-4 max-w-sm text-[13px] font-medium leading-relaxed text-ink-500">
+      Same brand work, printed — order cards from us when you need them.
+    </p>
+  <% end %>
+  <%= image_tag contact_card[:image],
+        alt: "#{contact_card[:label]} contact card",
+        class: "w-full max-w-sm object-contain",
+        loading: "lazy" %>
+</figure>
