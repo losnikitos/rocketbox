@@ -30,9 +30,11 @@
   </p>
 
   <div class="mt-10 space-y-14">
-    <% UseCasesController::REGISTRY.fetch("barbershops").fetch(:demos).each do |demo| %>
+    <% barbershops = UseCasesController::REGISTRY.fetch("barbershops") %>
+    <% barbershops.fetch(:demos).each do |demo| %>
       <%= render "use_cases/demo_pair", demo: demo %>
     <% end %>
+    <%= render "use_cases/instagram_account", account: barbershops.fetch(:account) %>
   </div>
 
   <p class="mt-10">

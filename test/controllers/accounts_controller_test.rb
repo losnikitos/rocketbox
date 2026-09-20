@@ -13,6 +13,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Library"
     assert_select "nav[aria-label='Account sections'] a[aria-current='page']", text: "Library"
     assert_select "a[href=?]", account_settings_path, text: "Settings"
+    assert_select "button[popovertarget='use-cases-menu']", count: 0
   end
 
   test "shows publish button for story media" do

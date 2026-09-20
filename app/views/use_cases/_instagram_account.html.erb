@@ -1,0 +1,79 @@
+<%# locals: account (username:, display_name:, bio:, posts:, followers:, following:, avatar:, grid:) %>
+<% account = local_assigns.fetch(:account) %>
+<figure>
+  <p class="mb-3 text-xs font-medium uppercase tracking-wide text-ink-500">Your account</p>
+  <p class="mb-4 max-w-sm text-[13px] font-medium leading-relaxed text-ink-500">
+    After a week of sends, the feed looks like this.
+  </p>
+  <%= render layout: "shared/iphone_shell" do %>
+    <div class="flex h-full flex-col bg-white text-ink-900" aria-label="<%= account[:display_name] %> Instagram profile">
+      <%# top bar %>
+      <div class="flex items-center justify-between px-3 pb-1.5 pt-3">
+        <span class="text-[12px] font-semibold tracking-tight"><%= account[:username] %></span>
+        <div class="flex items-center gap-2.5">
+          <%= heroicon "plus", variant: :mini, options: { class: "size-4" } %>
+          <%= heroicon "bars-3", variant: :mini, options: { class: "size-4" } %>
+        </div>
+      </div>
+
+      <%# avatar + stats %>
+      <div class="flex items-center gap-3 px-3 pt-1">
+        <%= image_tag account[:avatar], alt: "", class: "size-14 shrink-0 rounded-full object-cover ring-1 ring-ink-900/10", loading: "lazy" %>
+        <div class="grid flex-1 grid-cols-3 text-center">
+          <div>
+            <p class="text-[12px] font-bold tabular-nums leading-none"><%= account[:posts] %></p>
+            <p class="mt-0.5 text-[8px] text-ink-500">Posts</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-bold tabular-nums leading-none"><%= account[:followers] %></p>
+            <p class="mt-0.5 text-[8px] text-ink-500">Followers</p>
+          </div>
+          <div>
+            <p class="text-[12px] font-bold tabular-nums leading-none"><%= account[:following] %></p>
+            <p class="mt-0.5 text-[8px] text-ink-500">Following</p>
+          </div>
+        </div>
+      </div>
+
+      <%# name / bio %>
+      <div class="px-3 pt-2">
+        <p class="text-[11px] font-semibold leading-tight"><%= account[:display_name] %></p>
+        <p class="text-[9px] font-medium text-ink-500">Barber Shop</p>
+        <p class="mt-0.5 text-[10px] leading-snug text-ink-900"><%= account[:bio] %></p>
+      </div>
+
+      <%# actions %>
+      <div class="mt-2 flex gap-1.5 px-3">
+        <span class="flex-1 rounded-md bg-ink-900 py-1 text-center text-[9px] font-semibold text-white">Follow</span>
+        <span class="flex-1 rounded-md bg-ink-900/8 py-1 text-center text-[9px] font-semibold">Message</span>
+      </div>
+
+      <%# tabs %>
+      <div class="mt-2.5 flex border-b border-ink-900/10">
+        <div class="flex flex-1 items-center justify-center border-b border-ink-900 pb-1.5">
+          <%= heroicon "squares-2x2", variant: :mini, options: { class: "size-3.5" } %>
+        </div>
+        <div class="flex flex-1 items-center justify-center pb-1.5 text-ink-900/30">
+          <%= heroicon "play", variant: :mini, options: { class: "size-3.5" } %>
+        </div>
+        <div class="flex flex-1 items-center justify-center pb-1.5 text-ink-900/30">
+          <%= heroicon "user", variant: :mini, options: { class: "size-3.5" } %>
+        </div>
+      </div>
+
+      <%# 3x3 grid — portrait tiles (IG profile grid is ~3:4, not square) %>
+      <div class="grid min-h-0 flex-1 grid-cols-3 grid-rows-3 gap-px bg-ink-900/10">
+        <% account[:grid].each do |tile| %>
+          <div class="relative min-h-0 overflow-hidden bg-ink-100">
+            <%= image_tag tile[:src], alt: "", class: "absolute inset-0 h-full w-full object-cover", loading: "lazy" %>
+            <% if tile[:reel] %>
+              <span class="pointer-events-none absolute right-1 top-1 text-white drop-shadow" aria-hidden="true">
+                <%= heroicon "play", variant: :mini, options: { class: "size-3" } %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</figure>

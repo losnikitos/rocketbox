@@ -19,7 +19,8 @@ All entity menus live under [`app/views/shared/admin_links/`](/app/views/shared/
 | [`_item.html.erb`](/app/views/shared/admin_links/_item.html.erb) | One menu row (`path`, `label`, `icon`, `chip`). |
 
 Chip conventions:
-- Avo: `bg-signal-green` + `pencil`
+- Avo: `bg-signal-green` + `cog`
+- Remove: `bg-signal-red` + `trash`
 
 Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_menu` sets an explicit `anchor-name` / `position-anchor` pair — do not remove those; without them `anchor()` can resolve to `0` and the menu jumps to the top-left.
 

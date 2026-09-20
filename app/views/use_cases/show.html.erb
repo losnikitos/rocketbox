@@ -23,6 +23,9 @@
     <% @use_case[:demos].each do |demo| %>
       <%= render "use_cases/demo_pair", demo: demo %>
     <% end %>
+    <% if @use_case[:account] %>
+      <%= render "use_cases/instagram_account", account: @use_case[:account] %>
+    <% end %>
   </div>
 </section>
 

@@ -9,7 +9,27 @@ class UseCasesController < ApplicationController
       demos: [
         { photo: "/use-cases/barbershops/alan.jpg", video: "/use-cases/barbershops/alan.mp4", caption: "Alan" },
         { photo: "/use-cases/barbershops/bob.jpg", video: "/use-cases/barbershops/bob.mp4", caption: "Bob" }
-      ]
+      ],
+      account: {
+        username: "fadehouse",
+        display_name: "Fade House",
+        bio: "Cuts · fades · same-day appointments",
+        posts: 128,
+        followers: "4.2K",
+        following: 312,
+        avatar: "/use-cases/barbershops/account/avatar.jpg",
+        grid: [
+          { src: "/use-cases/barbershops/account/01.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/02.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/03.jpg" },
+          { src: "/use-cases/barbershops/account/04.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/05.jpg" },
+          { src: "/use-cases/barbershops/account/06.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/07.jpg" },
+          { src: "/use-cases/barbershops/account/08.jpg", reel: true },
+          { src: "/use-cases/barbershops/account/09.jpg", reel: true }
+        ]
+      }
     },
     "nail-salons" => {
       label: "Nail salons",
