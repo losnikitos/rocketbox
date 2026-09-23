@@ -1,0 +1,40 @@
+<%# locals: demos (array of {photo, video, caption, video_is_image?}), account %>
+<% demos = local_assigns.fetch(:demos) %>
+<% account = local_assigns.fetch(:account) %>
+
+<div class="mt-10" aria-labelledby="demo-heading">
+  <h3 id="demo-heading" class="font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Demo</h3>
+  <p class="mt-1 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+    You send photos. We post Reels.
+  </p>
+
+  <div class="mt-10 flex flex-wrap items-center justify-center gap-2 py-8 sm:gap-3 sm:py-12 lg:gap-4 lg:py-16">
+    <% demos.each do |demo| %>
+      <div class="w-44 shrink-0 overflow-hidden rounded-2xl ring-1 ring-ink-900/10 shadow-xl sm:w-56 lg:w-64">
+        <%= image_tag demo[:photo], class: "aspect-[3/4] w-full object-cover", loading: "lazy", alt: demo[:caption] %>
+      </div>
+    <% end %>
+
+    <%= heroicon "arrow-right", variant: :outline, options: { class: "size-8 shrink-0 text-ink-400 sm:size-10", "aria-hidden": true } %>
+
+    <% demos.each do |demo| %>
+      <div class="w-44 shrink-0 sm:w-56 lg:w-64">
+        <%= render layout: "shared/iphone_frame", locals: { username: account[:username] } do %>
+          <% if demo[:video_is_image] %>
+            <%= image_tag demo[:video], alt: "", class: "h-full w-full object-cover", loading: "lazy" %>
+          <% else %>
+            <video
+              class="h-full w-full object-cover"
+              src="<%= demo[:video] %>"
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="metadata"
+            ></video>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

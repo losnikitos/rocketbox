@@ -1,0 +1,76 @@
+<%# locals: demos, account, maps, contact_card %>
+<% demos = local_assigns.fetch(:demos) %>
+<% account = local_assigns.fetch(:account) %>
+<% maps = local_assigns.fetch(:maps) %>
+<% contact_card = local_assigns.fetch(:contact_card) %>
+<% slide = "flex w-full flex-col items-center text-center rb-surface-raised rb-shadow-card p-5 [&_figure]:flex [&_figure]:w-full [&_figure]:justify-center" %>
+
+<div class="mt-12" aria-labelledby="deliverables-heading">
+  <h3 id="deliverables-heading" class="font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Deliverables</h3>
+  <p class="mt-1 max-w-xl text-[15px] font-medium leading-relaxed text-ink-500">
+    Same sends also fill your profile, Maps, and print.
+  </p>
+
+  <div
+    class="swiper mt-8 -mx-4 pb-8 sm:-mx-6 lg:-mx-8"
+    data-controller="swiper"
+  >
+    <div class="swiper-wrapper">
+      <div class="swiper-slide">
+        <div class="<%= slide %>">
+          <%= render "use_cases/instagram_account", account: account, headed: false %>
+          <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Instagram</h3>
+          <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+            Your feed stays full from a week of sends.
+          </p>
+        </div>
+      </div>
+
+      <% demos.each do |demo| %>
+        <div class="swiper-slide">
+          <div class="<%= slide %>">
+            <%= render layout: "shared/iphone_frame", locals: { username: account[:username] } do %>
+              <% if demo[:video_is_image] %>
+                <%= image_tag demo[:video], alt: "", class: "h-full w-full object-cover", loading: "lazy" %>
+              <% else %>
+                <video
+                  class="h-full w-full object-cover"
+                  src="<%= demo[:video] %>"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                ></video>
+              <% end %>
+            <% end %>
+            <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Reel</h3>
+            <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+              Chair-side stills posted as Reels.
+            </p>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="swiper-slide">
+        <div class="<%= slide %>">
+          <%= render "use_cases/google_maps_listing", maps: maps, headed: false %>
+          <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Google Maps</h3>
+          <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+            Your listing stays fresh so searchers see recent work.
+          </p>
+        </div>
+      </div>
+
+      <div class="swiper-slide">
+        <div class="<%= slide %>">
+          <%= render "use_cases/contact_card", contact_card: contact_card, headed: false %>
+          <h3 class="mt-5 font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Contact cards</h3>
+          <p class="mt-1 text-[13px] font-medium leading-relaxed text-ink-500">
+            Same brand, printed — order cards when you need them.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
