@@ -28,7 +28,10 @@ class StoreTelegramMedia
     return if tg_media.blank?
 
     existing = LibraryMedia.find_by(telegram_file_unique_id: tg_media.file_unique_id)
-    return existing if existing
+    if existing
+      attach_to_incoming_message!(message.message_id, existing.file.blob) if existing.file.attached?
+      return existing
+    end
 
     file = TelegramBot.client.api.get_file(file_id: tg_media.file_id)
     media = download_and_store!(message:, tg_media:, kind:, file_path: file.file_path)
@@ -66,17 +69,22 @@ class StoreTelegramMedia
         user: User.find_by(telegram_user_id: from_id)
       )
 
-
       blob = ActiveStorage::Blob.create_and_upload!(
-          io: io,
-          filename: filename,
-          content_type: io.content_type.presence || "application/octet-stream"
-        )
-        media.file.attach(blob)
-        media
-      ensure
-        io&.close
-      end
+        io: io,
+        filename: filename,
+        content_type: io.content_type.presence || "application/octet-stream"
+      )
+      media.file.attach(blob)
+      attach_to_incoming_message!(message.message_id, blob)
+      media
+    ensure
+      io&.close
+    end
+
+    def attach_to_incoming_message!(external_id, blob)
+      IncomingMessage.find_by(channel: "telegram", external_id: external_id.to_s.presence)
+        &.attachments&.attach(blob)
+    end
 
     def react_ok(message)
       TelegramBot.client.api.set_message_reaction(
