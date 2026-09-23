@@ -1,13 +1,13 @@
 <%# Locals: library_media,
-    links (optional hash — :avo, :remove; default true) %>
+    links (optional hash — :admin, :remove; default true) %>
 <% library_media = local_assigns[:library_media] %>
-<% links = { avo: true, remove: true }.merge(local_assigns.fetch(:links, {})) %>
-<% if Current.user&.admin? && library_media.present? && (links[:avo] || links[:remove]) %>
+<% links = { admin: true, remove: true }.merge(local_assigns.fetch(:links, {})) %>
+<% if Current.user&.admin? && library_media.present? && (links[:admin] || links[:remove]) %>
   <% popover_id = "library-media-admin-links-#{library_media.id}" %>
   <%= render layout: "shared/admin_links/menu", locals: { popover_id:, align: local_assigns.fetch(:align, :right) } do %>
-    <% if links[:avo] %>
+    <% if links[:admin] %>
       <%= render "shared/admin_links/item",
-          path: avo.resources_library_media_path(library_media),
+          path: admin_library_media_path(library_media),
           label: "Admin",
           icon: "cog",
           chip: "bg-signal-green" %>

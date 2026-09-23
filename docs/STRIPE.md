@@ -34,7 +34,7 @@ Guests use a separate magic-link subscribe flow ([`app/controllers/subscriptions
 
 Access is granted when Stripe status is `active` or `trialing` (`Subscription.stripe_status_grants_access?`). Product surfaces that need paid access should check `subscription.active?`.
 
-Admins can patch their own status on the account page for testing (does not call Stripe). Avo resource: [`app/avo/resources/subscription.rb`](/app/avo/resources/subscription.rb).
+Admins can patch their own status on the account page for testing (does not call Stripe). Active Admin resource: [`app/admin/subscriptions.rb`](/app/admin/subscriptions.rb).
 
 ## Webhooks
 

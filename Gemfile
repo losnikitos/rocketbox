@@ -79,7 +79,6 @@ gem "heroicons", "~> 2.0"
 
 gem "stripe", "~> 15.0"
 
-gem "avo", "~> 3.32.1"
 
 # Active Admin v3 (not v4). CSS via dartsass → builds/; JS via rake active_admin:build_js.
 gem "activeadmin", "~> 3.5.0"
