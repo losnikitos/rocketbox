@@ -1,7 +1,6 @@
 <%# locals: demos (array of {photo, video, caption, video_is_image?}), account %>
 <% demos = local_assigns.fetch(:demos) %>
 <% account = local_assigns.fetch(:account) %>
-<% first, second = demos[0], demos[1] || demos[0] %>
 <% username = account.fetch(:username) %>
 
 <div class="mt-10" aria-labelledby="demo-heading">
@@ -11,7 +10,7 @@
   </p>
 
   <div class="mx-auto mt-8 w-full max-w-md sm:max-w-lg" data-controller="demo">
-    <div class="relative h-[28rem] w-full sm:h-[32rem]" aria-hidden="true">
+    <div class="relative h-[28rem] w-full sm:h-[32rem]" aria-hidden="true" data-demo-target="stage">
       <p class="sr-only">
         Demo: photos stack, send to Rocketbox on WhatsApp, then reels play on Instagram.
       </p>
@@ -27,7 +26,7 @@
 
       <div
         data-demo-target="phone"
-        class="absolute right-0 top-1/2 z-20 w-[42%] max-w-[11.5rem] -translate-y-1/2 translate-x-6 opacity-0 sm:max-w-[13rem]"
+        class="absolute right-0 top-1/2 z-20 w-[42%] max-w-[11.5rem] opacity-0 sm:max-w-[13rem]"
       >
         <%= render layout: "shared/iphone_shell" do %>
           <div
@@ -44,25 +43,18 @@
             </div>
 
             <div class="flex flex-1 flex-col justify-end overflow-hidden px-2.5 py-2">
-              <div
-                data-demo-target="out"
-                class="ml-auto mb-1.5 w-[48%] overflow-hidden rounded-lg rounded-tr-sm bg-[#dcf8c6] opacity-0 shadow-sm"
-              >
-                <div class="p-1">
-                  <%= image_tag first[:photo], alt: "", class: "aspect-[9/16] w-full rounded-md object-cover", loading: "lazy" %>
-                  <p class="mt-0.5 px-0.5 text-right text-[7px] tabular-nums text-ink-500/70">12:04 ✓✓</p>
+              <% ["12:04", "12:05"].each do |time| %>
+                <div
+                  data-demo-target="out"
+                  class="ml-auto mb-1.5 w-[48%] overflow-hidden rounded-lg rounded-tr-sm bg-[#dcf8c6] opacity-0 shadow-sm"
+                >
+                  <div class="p-1">
+                    <%# Same photo nodes land here — empty slot reserves space %>
+                    <div data-demo-target="slot" class="aspect-[9/16] w-full rounded-md"></div>
+                    <p class="mt-0.5 px-0.5 text-right text-[7px] tabular-nums text-ink-500/70"><%= time %> ✓✓</p>
+                  </div>
                 </div>
-              </div>
-
-              <div
-                data-demo-target="out"
-                class="ml-auto mb-1.5 w-[48%] overflow-hidden rounded-lg rounded-tr-sm bg-[#dcf8c6] opacity-0 shadow-sm"
-              >
-                <div class="p-1">
-                  <%= image_tag second[:photo], alt: "", class: "aspect-[9/16] w-full rounded-md object-cover", loading: "lazy" %>
-                  <p class="mt-0.5 px-0.5 text-right text-[7px] tabular-nums text-ink-500/70">12:05 ✓✓</p>
-                </div>
-              </div>
+              <% end %>
 
               <div
                 data-demo-target="reply"
