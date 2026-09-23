@@ -4,8 +4,10 @@ class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   has_one_attached :file
 
-  validates :telegram_file_id, :telegram_file_unique_id, :kind, presence: true
-  validates :telegram_file_unique_id, uniqueness: true
+  validates :kind, presence: true
+  validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
+  validates :whatsapp_media_id, uniqueness: true, allow_nil: true
+  validate :channel_identity_present
 
   def story_image?
     return false unless file.attached?
@@ -22,4 +24,15 @@ class LibraryMedia < ApplicationRecord
   def story_publishable?
     story_image? || story_video?
   end
+
+  private
+
+    def channel_identity_present
+      telegram = telegram_file_id.present? && telegram_file_unique_id.present?
+      whatsapp = whatsapp_media_id.present?
+      return if telegram || whatsapp
+
+      errors.add(:base, "Telegram or WhatsApp media identity is required")
+    end
 end
+

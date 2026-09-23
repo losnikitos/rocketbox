@@ -6,7 +6,7 @@
 
     <div class="min-w-0 flex-1">
       <h1 class="font-manrope text-xl font-bold text-ink-900">Integrations</h1>
-      <p class="mt-2 text-sm text-ink-600">Instagram and Telegram credentials for posting and inbound media.</p>
+      <p class="mt-2 text-sm text-ink-600">Instagram, Telegram, and WhatsApp credentials for posting and inbound media.</p>
 
       <%= form_with model: Current.user, url: account_integrations_path, method: :patch, class: "mt-6 space-y-4" do |form| %>
         <% if Current.user.errors.any? %>
@@ -33,6 +33,12 @@
         <div>
           <%= form.label :telegram_user_id, "Telegram user id", class: tw_label_classes %>
           <%= form.number_field :telegram_user_id, class: tw_input_classes, autocomplete: "off" %>
+        </div>
+
+        <div>
+          <%= form.label :whatsapp_phone, "WhatsApp phone", class: tw_label_classes %>
+          <%= form.text_field :whatsapp_phone, class: tw_input_classes, autocomplete: "off", placeholder: "15551234567" %>
+          <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +).</p>
         </div>
 
         <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-[10rem]" %>

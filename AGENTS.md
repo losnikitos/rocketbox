@@ -8,7 +8,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Loop (once live):**
 1. One-time setup — crawl the business website and social presence
-2. Owner sends media during the day (Telegram today; more connectors later)
+2. Owner sends media during the day (Telegram or WhatsApp; more connectors later)
 3. Fully automated Instagram publishing — Reels, Stories, and feed posts
 4. Owner can delete anything they dislike after it goes live (typically after work)
 
@@ -25,6 +25,9 @@ Payments and billing via Stripe.
 
 ### [TELEGRAM.md](./docs/TELEGRAM.md)
 Telegram bot: inbound media, webhooks, outbound messaging.
+
+### [WHATSAPP.md](./docs/WHATSAPP.md)
+WhatsApp Cloud API: inbound media, webhooks, outbound messaging.
 
 ### [LOGIN.md](./docs/LOGIN.md)
 Authentication and session login.

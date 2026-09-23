@@ -45,6 +45,8 @@ Rails.application.routes.draw do
 
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"
+  get  "whatsapp/webhook", to: "whatsapp_webhooks#show"
+  post "whatsapp/webhook", to: "whatsapp_webhooks#create"
 
   resource :subscription, only: %i[new create]
   get "subscription/thanks", to: "subscriptions#thanks", as: :subscription_thanks

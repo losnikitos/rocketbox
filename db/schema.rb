@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_19_152527) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_111358) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -63,12 +63,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_152527) do
     t.datetime "created_at", null: false
     t.integer "from_id"
     t.string "kind", null: false
-    t.string "telegram_file_id", null: false
-    t.string "telegram_file_unique_id", null: false
+    t.string "telegram_file_id"
+    t.string "telegram_file_unique_id"
     t.datetime "updated_at", null: false
     t.integer "user_id"
+    t.string "whatsapp_from"
+    t.string "whatsapp_media_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
     t.index ["user_id"], name: "index_library_media_on_user_id"
+    t.index ["whatsapp_media_id"], name: "index_library_media_on_whatsapp_media_id", unique: true
   end
 
   create_table "messages", force: :cascade do |t|
@@ -207,7 +210,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_19_152527) do
     t.bigint "telegram_user_id"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false, null: false
+    t.string "whatsapp_phone"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
   end
 
   create_table "waitlist_entries", force: :cascade do |t|

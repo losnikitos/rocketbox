@@ -8,7 +8,7 @@ class ListMedia < RubyLLM::Tool
   end
 
   def execute
-    return { error: "No Rocketbox account linked. Set your Telegram user id in Account → Integrations." } if @user.nil?
+    return { error: "No Rocketbox account linked. Set your Telegram user id or WhatsApp phone in Account → Integrations." } if @user.nil?
 
     media = @user.library_media.order(created_at: :desc)
     {

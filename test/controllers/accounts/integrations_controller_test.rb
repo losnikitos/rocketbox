@@ -45,4 +45,19 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to account_integrations_url
     assert_equal @user.id, orphan.reload.user_id
   end
+
+  test "backfills orphan library media when whatsapp_phone is saved" do
+    orphan = LibraryMedia.create!(
+      whatsapp_media_id: "wa-media-1",
+      whatsapp_from: "15551234567",
+      kind: "photo"
+    )
+
+    patch account_integrations_url, params: { user: { whatsapp_phone: "+1 (555) 123-4567" } }
+
+    assert_redirected_to account_integrations_url
+    @user.reload
+    assert_equal "15551234567", @user.whatsapp_phone
+    assert_equal @user.id, orphan.reload.user_id
+  end
 end

@@ -24,6 +24,7 @@ class User < ApplicationRecord
   validates :role, inclusion: { in: ROLES }
 
   normalizes :email, with: -> { _1.strip.downcase }
+  normalizes :whatsapp_phone, with: ->(phone) { phone.to_s.gsub(/\D/, "").presence }
 
   def admin?
     role == "admin"
