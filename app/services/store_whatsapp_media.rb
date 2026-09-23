@@ -51,7 +51,10 @@ class StoreWhatsappMedia
       return if media_id.blank?
 
       existing = LibraryMedia.find_by(whatsapp_media_id: media_id)
-      return existing if existing
+      if existing
+        attach_to_incoming_message!(message["id"], existing.file.blob) if existing.file.attached?
+        return existing
+      end
 
       from = message["from"].to_s
       io = nil
@@ -71,10 +74,16 @@ class StoreWhatsappMedia
         content_type: mime_type
       )
       media.file.attach(blob)
+      attach_to_incoming_message!(message["id"], blob)
       react_ok(message)
       media
     ensure
       io&.close if defined?(io)
+    end
+
+    def attach_to_incoming_message!(external_id, blob)
+      IncomingMessage.find_by(channel: "whatsapp", external_id: external_id.to_s.presence)
+        &.attachments&.attach(blob)
     end
 
     def filename_for(media_payload, media_id, mime_type)

@@ -21,6 +21,14 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     assert media.file.attached?
   end
 
+  test "attaches blob to matching IncomingMessage" do
+    media = store_image!(from: "15551234567", media_id: "incoming-media")
+    incoming = IncomingMessage.find_by!(channel: "whatsapp", external_id: "wamid.incoming-media")
+
+    assert incoming.attachments.attached?
+    assert_equal media.file.blob_id, incoming.attachments.first.blob_id
+  end
+
   test "leaves user_id nil when no matching whatsapp_phone" do
     media = store_image!(from: "19998887777", media_id: "orphan-media")
 
@@ -58,29 +66,29 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     end
 
     def store_image!(from:, media_id:)
+      message = {
+        "from" => from,
+        "id" => "wamid.#{media_id}",
+        "timestamp" => Time.now.to_i.to_s,
+        "type" => "image",
+        "image" => {
+          "id" => media_id,
+          "mime_type" => "image/jpeg"
+        }
+      }
       payload = {
         "object" => "whatsapp_business_account",
         "entry" => [ {
           "changes" => [ {
             "field" => "messages",
             "value" => {
-              "messages" => [ {
-                "from" => from,
-                "id" => "wamid.#{media_id}",
-                "timestamp" => Time.now.to_i.to_s,
-                "type" => "image",
-                "image" => {
-                  "id" => media_id,
-                  "mime_type" => "image/jpeg"
-                }
-              } ]
+              "messages" => [ message ]
             }
           } ]
         } ]
       }
 
-      io = StringIO.new("fake-image-bytes")
-      io.define_singleton_method(:content_type) { "image/jpeg" }
+      StoreIncomingMessage.whatsapp(message)
 
       original_download = WhatsappCloud.method(:download_media)
       original_react = WhatsappCloud.method(:react)

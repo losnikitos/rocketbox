@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require "net/http"
 require "stringio"
+require "uri"
 
 module WhatsappCloud
   Error = Class.new(StandardError)
@@ -37,10 +39,15 @@ module WhatsappCloud
     url = meta["url"].presence || raise(Error, "WhatsApp media #{media_id} has no url")
     mime_type = meta["mime_type"].presence || "application/octet-stream"
 
-    response = Faraday.get(url) do |req|
-      req.headers["Authorization"] = "Bearer #{access_token}"
+    # Net::HTTP keeps query param order. Faraday rebuilds the query string and
+    # Meta's lookaside signature then returns 401.
+    uri = URI(url)
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+      req = Net::HTTP::Get.new(uri)
+      req["Authorization"] = "Bearer #{access_token}"
+      http.request(req)
     end
-    raise Error, "WhatsApp media download failed (#{response.status})" unless response.success?
+    raise Error, "WhatsApp media download failed (#{response.code})" unless response.is_a?(Net::HTTPSuccess)
 
     io = StringIO.new(response.body)
     io.define_singleton_method(:content_type) { mime_type }

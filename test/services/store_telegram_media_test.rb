@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "stringio"
+require "telegram/bot"
 
 class StoreTelegramMediaTest < ActiveSupport::TestCase
   test "ignores messages without media" do
@@ -27,6 +28,14 @@ class StoreTelegramMediaTest < ActiveSupport::TestCase
 
     assert_equal user.id, media.user_id
     assert media.file.attached?
+  end
+
+  test "attaches blob to matching IncomingMessage" do
+    media = store_photo!(from_id: 111222333, unique_id: "incoming-photo")
+    incoming = IncomingMessage.find_by!(channel: "telegram", external_id: "10")
+
+    assert incoming.attachments.attached?
+    assert_equal media.file.blob_id, incoming.attachments.first.blob_id
   end
 
   test "leaves user_id nil when no matching telegram_user_id" do
@@ -56,6 +65,9 @@ class StoreTelegramMediaTest < ActiveSupport::TestCase
           ]
         }
       }
+
+      message = Telegram::Bot::Types::Update.new(update).message
+      StoreIncomingMessage.telegram(message)
 
       file = Struct.new(:file_path).new("photos/#{unique_id}.jpg")
       api = Object.new
