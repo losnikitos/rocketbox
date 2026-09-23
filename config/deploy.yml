@@ -105,26 +105,19 @@ builder:
 # ssh:
 #   user: app
 
-# Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+# Accessories (boot separately: bin/kamal accessory boot <name>).
+accessories:
+  # Local-dev HTTPS: kamal-proxy → this container → SSH -R on the host → laptop :3003.
+  # Laptop: ssh -N -R 172.18.0.1:13003:127.0.0.1:3003 root@monitoring.tadaaa.uk.com
+  # (sshd needs GatewayPorts clientspecified; 172.18.0.1 is the kamal bridge gateway on this host.)
+  # Requires tunnel up for accessory boot (healthcheck /up).
+  dev-tunnel:
+    image: alpine/socat
+    role: web
+    cmd: "TCP-LISTEN:80,fork,reuseaddr TCP:172.18.0.1:13003"
+    proxy:
+      ssl: true
+      host: dev.rocketbox.plus
+      forward_headers: true
+      healthcheck:
+        path: /up
