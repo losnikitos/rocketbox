@@ -26,8 +26,67 @@ xAI key for replies: `xai.api_key` (see [ruby_llm initializer](/config/initializ
 
 ## Ops
 
-- **Meta dashboard:** callback URL `https://host/whatsapp/webhook`, subscribe to the `messages` field, paste `webhook_verify_token`.
+Sandbox / test line (dev Meta app) — reference only; runtime values live in credentials where noted:
+
+| What | Value |
+|------|-------|
+| Display number | `+15551712639` / `15551712639` (humans text this; webhook `metadata.display_phone_number`) |
+| Phone number ID | `1238456642695224` → `credentials.whatsapp.phone_number_id` (dev) |
+| WhatsApp Business account ID (WABA) | `2195816907943950` (`entry[].id`) |
+| Dev sender (Nikita) | `447919397572` (`messages[].from` / `contacts[].wa_id` — link as `users.whatsapp_phone`) |
+
+Production line:
+
+| What | Value |
+|------|-------|
+| Display number | `+44 7451 273884` / `447451273884` |
+| Phone number ID | `1237261782813765` → `credentials.whatsapp.phone_number_id` (prod) |
+
+- **Dev callback host:** `https://dev.rocketbox.plus` (SSH reverse tunnel → local `:3003`; see [deploy.yml](/config/deploy.yml) `dev-tunnel` / `make tunnel`). Meta callback: `https://dev.rocketbox.plus/whatsapp/webhook`.
+- **Meta dashboard:** callback URL `https://host/whatsapp/webhook` (prod) or the dev URL above, subscribe to the `messages` field, paste `webhook_verify_token`.
 - Needs a Meta App with the WhatsApp product and a connected WhatsApp Business phone number.
+
+### Sample inbound text webhook (Meta dump, trimmed)
+
+Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display_phone_number`, `messages[].from` + `id` + `type` (+ media or `text.body`). Ignore Meta-only extras (`internal_1p_only_data`, `from_user_id`, `from_logical_id`, etc.).
+
+```json
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "2195816907943950",
+      "changes": [
+        {
+          "field": "messages",
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "15551712639",
+              "phone_number_id": "1238456642695224"
+            },
+            "contacts": [
+              {
+                "profile": { "name": "Nikita" },
+                "wa_id": "447919397572"
+              }
+            ],
+            "messages": [
+              {
+                "from": "447919397572",
+                "id": "wamid.HBgMNDQ3OTE5Mzk3NTcyFQIAEhgUM0IwMTYxNzNBQjNENkQ3MEQ4OUYA",
+                "timestamp": "1790201693",
+                "type": "text",
+                "text": { "body": "hi" }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
 
 ## Key files
 
