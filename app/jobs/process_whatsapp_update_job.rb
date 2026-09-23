@@ -16,6 +16,8 @@ class ProcessWhatsappUpdateJob < ApplicationJob
     end
     return if messages.empty?
 
+    messages.each { |message| StoreIncomingMessage.whatsapp(message) }
+
     if messages.any? { |message| StoreWhatsappMedia.media?(message) }
       StoreWhatsappMedia.call(payload)
     end

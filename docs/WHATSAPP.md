@@ -6,7 +6,7 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
 
 1. Meta POSTs updates to `POST /whatsapp/webhook` ([routes](/config/routes.rb)). Initial hub verification uses `GET /whatsapp/webhook`.
 2. [WhatsappWebhooksController](/app/controllers/whatsapp_webhooks_controller.rb) skips CSRF/auth, verifies `hub.verify_token` on GET, optionally checks `X-Hub-Signature-256` against `app_secret` on POST, then enqueues [ProcessWhatsappUpdateJob](/app/jobs/process_whatsapp_update_job.rb).
-3. The job branches:
+3. The job persists an [IncomingMessage](/app/models/incoming_message.rb) per message ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreWhatsappMedia](/app/services/store_whatsapp_media.rb): extract media → skip if `whatsapp_media_id` already stored → download via Graph API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised).
    - **Text-only** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): resolve user by `whatsapp_phone` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Account backfills orphan media with that `whatsapp_from`. Media appears on `/account`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.

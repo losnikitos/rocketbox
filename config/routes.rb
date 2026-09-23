@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  mount_avo
+  ActiveAdmin.routes(self)
   get  "sign_in", to: "sessions#new"
   post "sign_in", to: "sessions#create"
   get  "sign_in/otp", to: "sessions#otp", as: :sign_in_otp
@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   get  "sign_up", to: "registrations#new"
   post "sign_up", to: "registrations#create"
   resources :sessions, only: [ :index, :show, :destroy ]
+  delete "sign_out", to: "sessions#destroy_current", as: :sign_out
   resource  :password, only: [ :edit, :update ]
   namespace :identity do
     resource :email,              only: [ :edit, :update ]

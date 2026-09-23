@@ -10,7 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_111358) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_225627) do
+  create_table "active_admin_comments", force: :cascade do |t|
+    t.integer "author_id"
+    t.string "author_type"
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "namespace"
+    t.integer "resource_id"
+    t.string "resource_type"
+    t.datetime "updated_at", null: false
+    t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author"
+    t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
+    t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource"
+  end
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -56,6 +70,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_111358) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
+  end
+
+  create_table "incoming_messages", force: :cascade do |t|
+    t.text "body"
+    t.string "channel", null: false
+    t.string "chat_id"
+    t.datetime "created_at", null: false
+    t.string "external_id"
+    t.string "kind"
+    t.json "payload", null: false
+    t.string "sender"
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["channel", "external_id"], name: "index_incoming_messages_on_channel_and_external_id"
+    t.index ["created_at"], name: "index_incoming_messages_on_created_at"
+    t.index ["user_id"], name: "index_incoming_messages_on_user_id"
   end
 
   create_table "library_media", force: :cascade do |t|
@@ -226,6 +256,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_111358) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
+  add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "sessions", "users"

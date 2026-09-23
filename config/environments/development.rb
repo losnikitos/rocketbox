@@ -15,6 +15,15 @@ Rails.application.configure do
   # Enable server timing.
   config.server_timing = true
 
+  # WhatsApp (etc.) webhooks via ngrok/cloudflared/SSH tunnel — Meta hits the tunnel Host header.
+  config.hosts << /.*\.ngrok-free\.app/
+  config.hosts << /.*\.ngrok\.app/
+  config.hosts << /.*\.ngrok\.io/
+  config.hosts << /.*\.trycloudflare\.com/
+  config.hosts << "dev.rocketbox.plus"
+  # kamal-proxy healthchecks hit /up with the container id as Host (same as production.rb).
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
   # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
   # Run rails dev:cache to toggle Action Controller caching.
   if Rails.root.join("tmp/caching-dev.txt").exist?

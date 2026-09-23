@@ -2,12 +2,12 @@
 name: admin-link
 description: >-
   Admin context-menu (popover) for any record. Use when adding admin shortcuts
-  (Avo, etc.) in customer UI.
+  (Active Admin, etc.) in customer UI.
 ---
 
 # Admin links (context menu)
 
-Admin actions are an ellipsis button that opens a native HTML popover menu. Do **not** render bare green pencil icons, “Admin” pills, or standalone Avo links.
+Admin actions are an ellipsis button that opens a native HTML popover menu. Do **not** render bare green pencil icons, “Admin” pills, or standalone admin links.
 
 All entity menus live under [`app/views/shared/admin_links/`](/app/views/shared/admin_links/).
 
@@ -19,7 +19,7 @@ All entity menus live under [`app/views/shared/admin_links/`](/app/views/shared/
 | [`_item.html.erb`](/app/views/shared/admin_links/_item.html.erb) | One menu row (`path`, `label`, `icon`, `chip`). |
 
 Chip conventions:
-- Avo: `bg-signal-green` + `cog`
+- Admin: `bg-signal-green` + `cog`
 - Remove: `bg-signal-red` + `trash`
 
 Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_menu` sets an explicit `anchor-name` / `position-anchor` pair — do not remove those; without them `anchor()` can resolve to `0` and the menu jumps to the top-left.
@@ -28,7 +28,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 
 | Entity | Partial | Typical items |
 |--------|---------|-----------------|
-| Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Avo, Remove |
+| Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Admin, Remove |
 
 ## Usage
 

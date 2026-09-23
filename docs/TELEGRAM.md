@@ -6,7 +6,7 @@ Inbound media from the bot (photos, video, docs, etc.) for customer content. Tex
 
 1. Telegram POSTs updates to `POST /telegram/webhook` ([routes](/config/routes.rb)).
 2. [TelegramWebhooksController](/app/controllers/telegram_webhooks_controller.rb) skips CSRF/auth, optionally checks `X-Telegram-Bot-Api-Secret-Token` against credentials, then enqueues [ProcessTelegramUpdateJob](/app/jobs/process_telegram_update_job.rb).
-3. The job branches:
+3. The job persists an [IncomingMessage](/app/models/incoming_message.rb) ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreTelegramMedia](/app/services/store_telegram_media.rb): extract media → skip if `telegram_file_unique_id` already stored → download via Bot API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised). Caption-only context on media messages is not sent to the LLM.
    - **Text-only** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): resolve user by `telegram_user_id` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_message` the reply.
 4. Ownership: if `message.from.id` matches a user’s `telegram_user_id`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a Telegram user id on Account backfills orphan media with that `from_id`. Media appears on `/account`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.

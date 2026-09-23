@@ -20,6 +20,15 @@ class ApplicationController < ActionController::Base
       redirect_to sign_in_path unless Current.session
     end
 
+    # Active Admin (config.authentication_method / current_user_method)
+    def authenticate_admin!
+      redirect_to root_path, alert: "You do not have access to the admin." unless Current.user&.admin?
+    end
+
+    def current_admin_user
+      Current.user if Current.user&.admin?
+    end
+
     # Public HTML pages that do not require a session (same shell as the rest of the app).
     def allow_public_access?
       return true if request.path == "/" && (request.get? || request.head?)
