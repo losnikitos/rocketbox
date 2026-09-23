@@ -1,6 +1,8 @@
 <%# locals: demos (array of {photo, video, caption, video_is_image?}), account %>
 <% demos = local_assigns.fetch(:demos) %>
 <% account = local_assigns.fetch(:account) %>
+<% first, second = demos[0], demos[1] || demos[0] %>
+<% username = account.fetch(:username) %>
 
 <div class="mt-10" aria-labelledby="demo-heading">
   <h3 id="demo-heading" class="font-manrope text-xl font-extrabold tracking-[-0.02em] text-ink-900">Demo</h3>
@@ -8,33 +10,150 @@
     You send photos. We post Reels.
   </p>
 
-  <div class="mt-10 flex flex-wrap items-center justify-center gap-2 py-8 sm:gap-3 sm:py-12 lg:gap-4 lg:py-16">
-    <% demos.each do |demo| %>
-      <div class="w-44 shrink-0 overflow-hidden rounded-2xl ring-1 ring-ink-900/10 shadow-xl sm:w-56 lg:w-64">
-        <%= image_tag demo[:photo], class: "aspect-[3/4] w-full object-cover", loading: "lazy", alt: demo[:caption] %>
-      </div>
-    <% end %>
+  <div class="mx-auto mt-8 w-full max-w-md sm:max-w-lg" data-controller="demo">
+    <div class="relative h-[28rem] w-full sm:h-[32rem]" aria-hidden="true">
+      <p class="sr-only">
+        Demo: photos stack, send to Rocketbox on WhatsApp, then reels play on Instagram.
+      </p>
 
-    <%= heroicon "arrow-right", variant: :outline, options: { class: "size-8 shrink-0 text-ink-400 sm:size-10", "aria-hidden": true } %>
+      <% demos.first(2).each_with_index do |demo, i| %>
+        <%= image_tag demo[:photo],
+              alt: "",
+              loading: "lazy",
+              data: { demo_target: "photo" },
+              class: "pointer-events-none absolute left-1/2 top-1/2 z-10 w-[55%] max-w-[14rem] rounded-2xl object-cover shadow-2xl opacity-0 aspect-[3/4]",
+              style: "z-index: #{10 + i};" %>
+      <% end %>
 
-    <% demos.each do |demo| %>
-      <div class="w-44 shrink-0 sm:w-56 lg:w-64">
-        <%= render layout: "shared/iphone_frame", locals: { username: account[:username] } do %>
-          <% if demo[:video_is_image] %>
-            <%= image_tag demo[:video], alt: "", class: "h-full w-full object-cover", loading: "lazy" %>
-          <% else %>
-            <video
-              class="h-full w-full object-cover"
-              src="<%= demo[:video] %>"
-              autoplay
-              muted
-              loop
-              playsinline
-              preload="metadata"
-            ></video>
-          <% end %>
+      <div
+        data-demo-target="phone"
+        class="absolute right-0 top-1/2 z-20 w-[42%] max-w-[11.5rem] -translate-y-1/2 translate-x-6 opacity-0 sm:max-w-[13rem]"
+      >
+        <%= render layout: "shared/iphone_shell" do %>
+          <div
+            data-demo-target="chat"
+            class="absolute inset-0 z-10 flex flex-col bg-[#efeae2]"
+          >
+            <div class="flex items-center gap-2 bg-[#075e54] px-2.5 pb-2 pt-3 text-white">
+              <span class="text-[14px] leading-none opacity-80">‹</span>
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-[9px] font-bold">R</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[12px] font-semibold leading-tight">Rocketbox</p>
+                <p class="text-[9px] text-white/70">bot</p>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col justify-end overflow-hidden px-2.5 py-2">
+              <div
+                data-demo-target="out"
+                class="ml-auto mb-1.5 w-[48%] overflow-hidden rounded-lg rounded-tr-sm bg-[#dcf8c6] opacity-0 shadow-sm"
+              >
+                <div class="p-1">
+                  <%= image_tag first[:photo], alt: "", class: "aspect-[9/16] w-full rounded-md object-cover", loading: "lazy" %>
+                  <p class="mt-0.5 px-0.5 text-right text-[7px] tabular-nums text-ink-500/70">12:04 ✓✓</p>
+                </div>
+              </div>
+
+              <div
+                data-demo-target="out"
+                class="ml-auto mb-1.5 w-[48%] overflow-hidden rounded-lg rounded-tr-sm bg-[#dcf8c6] opacity-0 shadow-sm"
+              >
+                <div class="p-1">
+                  <%= image_tag second[:photo], alt: "", class: "aspect-[9/16] w-full rounded-md object-cover", loading: "lazy" %>
+                  <p class="mt-0.5 px-0.5 text-right text-[7px] tabular-nums text-ink-500/70">12:05 ✓✓</p>
+                </div>
+              </div>
+
+              <div
+                data-demo-target="reply"
+                class="mr-auto mb-1.5 max-w-[90%] overflow-hidden rounded-lg rounded-tl-sm bg-white opacity-0 shadow-sm"
+              >
+                <p class="px-2 py-1.5 text-[10px] leading-snug text-ink-800">Reels posted on Instagram 🎉</p>
+              </div>
+            </div>
+
+            <div class="flex items-end gap-1.5 bg-[#f0f0f0] px-1.5 py-1.5">
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-full text-[16px] font-light leading-none text-ink-500">+</span>
+              <div class="flex min-h-7 flex-1 items-center rounded-full bg-white px-2 py-1 shadow-sm">
+                <span class="text-[9px] text-ink-300">Message</span>
+              </div>
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#25d366] text-[10px] font-bold text-white">↑</span>
+            </div>
+          </div>
+
+          <div
+            data-demo-target="reels"
+            class="absolute inset-0 z-0 overflow-hidden bg-ink-900 opacity-0"
+          >
+            <div data-demo-target="reelsTrack" class="absolute inset-0">
+              <% demos.first(2).each_with_index do |demo, i| %>
+                <div class="absolute inset-x-0 h-full <%= i.zero? ? "top-0" : "top-full" %>">
+                  <% if demo[:video_is_image] %>
+                    <%= image_tag demo[:video], alt: "", class: "h-full w-full object-cover", loading: "lazy" %>
+                  <% else %>
+                    <video
+                      data-demo-target="reel"
+                      class="h-full w-full object-cover"
+                      src="<%= demo[:video] %>"
+                      muted
+                      playsinline
+                      preload="metadata"
+                    ></video>
+                  <% end %>
+
+                  <div class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-2.5 pt-3 text-white">
+                    <div class="flex items-center justify-between px-0.5">
+                      <span class="text-[11px] font-semibold tracking-tight drop-shadow-sm">Reels</span>
+                      <%= heroicon "camera", variant: :mini, options: { class: "size-4 drop-shadow-sm" } %>
+                    </div>
+                    <div class="flex items-end gap-1.5">
+                      <div class="min-w-0 flex-1 space-y-1.5 pb-0.5">
+                        <div class="flex items-center gap-1.5">
+                          <span class="size-5 shrink-0 rounded-full bg-white/90 ring-1 ring-white/40"></span>
+                          <span class="truncate text-[9px] font-semibold drop-shadow-sm"><%= username %></span>
+                          <span class="rounded border border-white/80 px-1 py-0.5 text-[7px] font-semibold leading-none">Follow</span>
+                        </div>
+                        <% if demo[:caption].present? %>
+                          <p class="line-clamp-2 text-[8px] leading-snug drop-shadow-sm"><%= demo[:caption] %></p>
+                        <% end %>
+                      </div>
+                      <div class="flex shrink-0 flex-col items-center gap-2.5 pb-0.5">
+                        <%= heroicon "heart", variant: :outline, options: { class: "size-5 drop-shadow-sm" } %>
+                        <%= heroicon "chat-bubble-oval-left", variant: :outline, options: { class: "size-5 drop-shadow-sm" } %>
+                        <%= heroicon "paper-airplane", variant: :outline, options: { class: "size-5 drop-shadow-sm" } %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
         <% end %>
       </div>
-    <% end %>
+    </div>
+
+    <div class="mt-4 flex items-center gap-3">
+      <button
+        type="button"
+        data-action="demo#togglePlay"
+        data-demo-target="playButton"
+        class="rb-btn-ghost-on-light shrink-0 px-2.5 py-1.5 text-xs font-medium"
+      >Pause</button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.001"
+        value="0"
+        data-demo-target="scrubber"
+        data-action="input->demo#scrub"
+        class="h-1.5 w-full cursor-pointer accent-ink-900"
+        aria-label="Demo timeline"
+      >
+      <span
+        data-demo-target="timeLabel"
+        class="shrink-0 tabular-nums text-[11px] font-medium text-ink-500"
+      >0 / 0</span>
+    </div>
   </div>
 </div>

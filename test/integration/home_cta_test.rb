@@ -20,6 +20,8 @@ class HomeCtaTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby='proof-heading']"
     assert_select "#demo-heading", text: "Demo"
     assert_select "#deliverables-heading", text: "Deliverables"
+    assert_select "[data-controller='demo']"
+    assert_select "input[data-demo-target='scrubber'][type='range']"
     assert_select "img[src='/use-cases/barbershops/alan.jpg']"
     assert_select "img[src='/use-cases/barbershops/bob.jpg']"
     assert_select "video[src='/use-cases/barbershops/alan.mp4']"
