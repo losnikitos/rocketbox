@@ -10,6 +10,8 @@ class ProcessTelegramUpdateJob < ApplicationJob
     message = parsed.message || parsed.edited_message
     return if message.blank?
 
+    StoreIncomingMessage.telegram(message)
+
     if StoreTelegramMedia.media?(message)
       StoreTelegramMedia.call(update)
     elsif message.text.present?
