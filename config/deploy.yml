@@ -2,7 +2,7 @@
 service: rocketbox
 
 # Container image namespace must match GHCR owner (same as KAMAL_REGISTRY_USERNAME).
-image: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME") %>/rocketbox
+image: losnikitos/rocketbox
 
 # Deploy to these servers (SSH user defaults to root; set ssh: user if needed).
 servers:
