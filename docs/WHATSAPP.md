@@ -17,7 +17,7 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 Under `whatsapp` in Rails credentials:
 
-- `access_token` — required; Graph API token used by [WhatsappCloud](/app/services/whatsapp_cloud.rb)
+- `access_token` — required; Graph API token used by [WhatsappCloud](/app/services/whatsapp_cloud.rb). Generate via Meta Business Settings > System users > Nikita (`61594348875817`)
 - `phone_number_id` — required; Cloud API phone number id (not the display number)
 - `app_secret` — optional; if set, webhook POSTs must send a matching `X-Hub-Signature-256`
 - `webhook_verify_token` — required for Meta hub verification; same string as in the Meta webhook “Verify token” field
