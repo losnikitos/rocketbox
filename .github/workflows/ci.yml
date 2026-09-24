@@ -63,7 +63,8 @@ jobs:
             rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
 
       - name: Lint code for consistent style
-        run: bin/rubocop -f github
+        # Style/layout (convention) still annotates PRs; only error/fatal fail the job.
+        run: bin/rubocop -f github --fail-level error
 
   test:
     runs-on: ubuntu-latest

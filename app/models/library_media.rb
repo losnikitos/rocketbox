@@ -35,4 +35,3 @@ class LibraryMedia < ApplicationRecord
       errors.add(:base, "Telegram or WhatsApp media identity is required")
     end
 end
-
