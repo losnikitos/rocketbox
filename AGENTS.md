@@ -26,6 +26,8 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 - Local: http://localhost:3003 (`bin/dev`)
 - Tunnel (public webhooks): https://dev.rocketbox.plus (`make tunnel`)
 
+**No backwards compatibility.** The service is new and still in the making — no active users yet. Prefer deleting and reshaping over redirects, aliases, or dual-path support.
+
 # Documentation Index
 
 ### [STRIPE.md](./docs/STRIPE.md)

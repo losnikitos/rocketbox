@@ -7,14 +7,14 @@ class SubscriptionFlowTest < ActionDispatch::IntegrationTest
 
   test "subscribe enqueues mail and redirects to thanks" do
     assert_enqueued_with(job: ActionMailer::MailDeliveryJob) do
-      post subscription_path, params: { subscription_request: { email: "NEW@Example.com " } }
+      post subscribe_path, params: { subscription_request: { email: "NEW@Example.com " } }
     end
     assert_redirected_to subscription_thanks_path
   end
 
   test "invalid email returns errors" do
     assert_no_enqueued_jobs only: ActionMailer::MailDeliveryJob do
-      post subscription_path, params: { subscription_request: { email: "not-an-email" } }
+      post subscribe_path, params: { subscription_request: { email: "not-an-email" } }
     end
     assert_response :unprocessable_entity
   end
@@ -28,6 +28,6 @@ class SubscriptionFlowTest < ActionDispatch::IntegrationTest
 
   test "invalid subscription token redirects to request form" do
     get subscription_access_url(t: "invalid")
-    assert_redirected_to new_subscription_path
+    assert_redirected_to new_subscribe_path
   end
 end

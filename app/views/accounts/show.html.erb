@@ -49,7 +49,7 @@
         </ul>
       <% elsif Current.user.telegram_user_id.blank? %>
         <p class="mt-6 text-sm text-ink-600">
-          Set your <%= link_to "Telegram user id", account_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
+          Set your <%= link_to "Telegram user id", integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
           under Integrations so inbound media can be attached here.
         </p>
       <% else %>

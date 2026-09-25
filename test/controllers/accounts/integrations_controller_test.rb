@@ -8,13 +8,13 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should show integrations" do
-    get account_integrations_url
+    get integrations_url
     assert_response :success
     assert_select "h1", "Integrations"
   end
 
   test "should update integrations" do
-    patch account_integrations_url, params: {
+    patch integrations_url, params: {
       user: {
         instagram_user_id: "28810616161875865",
         instagram_access_token: "ig-token-example",
@@ -22,7 +22,7 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to account_integrations_url
+    assert_redirected_to integrations_url
     assert_equal "Account updated.", flash[:notice]
 
     @user.reload
@@ -40,9 +40,9 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
       kind: "photo"
     )
 
-    patch account_integrations_url, params: { user: { telegram_user_id: 90504516 } }
+    patch integrations_url, params: { user: { telegram_user_id: 90504516 } }
 
-    assert_redirected_to account_integrations_url
+    assert_redirected_to integrations_url
     assert_equal @user.id, orphan.reload.user_id
   end
 
@@ -53,9 +53,9 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
       kind: "photo"
     )
 
-    patch account_integrations_url, params: { user: { whatsapp_phone: "+1 (555) 123-4567" } }
+    patch integrations_url, params: { user: { whatsapp_phone: "+1 (555) 123-4567" } }
 
-    assert_redirected_to account_integrations_url
+    assert_redirected_to integrations_url
     @user.reload
     assert_equal "15551234567", @user.whatsapp_phone
     assert_equal @user.id, orphan.reload.user_id

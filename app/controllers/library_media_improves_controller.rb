@@ -4,8 +4,8 @@ class LibraryMediaImprovesController < ApplicationController
   def create
     media = Current.user.library_media.find(params[:id])
     ImproveLibraryMediaJob.perform_later(media.id)
-    redirect_to account_path, notice: "Improving with AI…"
+    redirect_to library_path, notice: "Improving with AI…"
   rescue ActiveRecord::RecordNotFound
-    redirect_to account_path, alert: "Media not found."
+    redirect_to library_path, alert: "Media not found."
   end
 end

@@ -8,7 +8,7 @@
     Leave your email and we’ll send you a secure magic link to continue your Rocketbox subscription.
   </p>
 
-  <%= form_with model: @request, url: subscription_path, class: "mt-8 space-y-5", method: :post do |form| %>
+  <%= form_with model: @request, url: subscribe_path, class: "mt-8 space-y-5", method: :post do |form| %>
     <% if @request.errors.any? %>
       <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
         <p class="font-medium"><%= pluralize(@request.errors.count, "issue") %> to fix:</p>

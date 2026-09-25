@@ -31,7 +31,7 @@
     </div>
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <% if Current.user %>
-        <%= link_to "My account", account_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
+        <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
       <% else %>
         <%= link_to "Sign in", sign_in_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
       <% end %>
