@@ -63,6 +63,8 @@ Rails.application.routes.draw do
     mount MissionControl::Jobs::Engine, at: "/jobs"
   end
 
+  get "monitor", to: "monitor#show", as: :monitor
+
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
