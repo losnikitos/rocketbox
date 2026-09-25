@@ -28,6 +28,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Library"
+    assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
@@ -35,14 +36,14 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
   end
 
-  test "admin sees monitor link next to my profile" do
+  test "admin sees monitor link in primary nav" do
     sign_in_as(users(:admin_user))
 
     get library_uploads_url
 
     assert_response :success
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
-    assert_select "a[href=?]", monitor_path, text: "Monitor"
+    assert_select "nav[aria-label='Primary'] a[href=?]", monitor_path, text: "Monitor"
   end
 
   test "settings page shows log out action" do
