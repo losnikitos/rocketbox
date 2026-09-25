@@ -43,10 +43,10 @@
             <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-900/5">
               <% if generation.succeeded? && generation.file.attached? %>
                 <% if generation.image? %>
-                  <%= image_tag generation.file, class: "h-full w-full object-cover" %>
+                  <%= image_tag rails_blob_path(generation.file), class: "h-full w-full object-cover" %>
                 <% else %>
                   <video class="h-full w-full object-cover" muted preload="metadata">
-                    <source src="<%= url_for(generation.file) %>" type="<%= generation.file.content_type %>">
+                    <source src="<%= rails_blob_path(generation.file) %>" type="<%= generation.file.content_type %>">
                   </video>
                 <% end %>
               <% else %>

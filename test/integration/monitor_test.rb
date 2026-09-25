@@ -7,7 +7,7 @@ class MonitorTest < ActionDispatch::IntegrationTest
     get monitor_path
     assert_response :success
     assert_select "aside nav[aria-label=?]", "Monitor"
-    assert_select "header nav[aria-label=?]", "Sections"
+    assert_select "header nav[aria-label=?]", "Subsections"
   end
 
   test "non-admin redirected to root" do

@@ -46,17 +46,27 @@
                     ].join(" "),
                     aria: { current: (controller_name == "monitor_media_generations" ? "page" : nil) } %>
             </li>
+            <li class="my-2 border-t border-ink-900/10" aria-hidden="true"></li>
             <li>
-              <%= link_to "Jobs",
-                    "/jobs",
-                    class: "block rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5" %>
+              <%= link_to "/jobs",
+                    class: "flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    target: "_blank",
+                    rel: "noopener" do %>
+                Jobs
+                <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
+              <% end %>
+            </li>
+            <li>
+              <%= link_to "/admin",
+                    class: "flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    target: "_blank",
+                    rel: "noopener" do %>
+                Active Admin
+                <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
+              <% end %>
             </li>
           </ul>
         </nav>
-
-        <div class="border-t border-ink-900/10 px-4 py-3">
-          <%= link_to "Admin", "/admin", class: "text-xs font-medium text-ink-500 hover:text-ink-900" %>
-        </div>
       </aside>
 
       <div class="min-w-0 flex-1 bg-stone-50">
@@ -65,27 +75,19 @@
             <label for="monitor-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
               Menu
             </label>
-            <h1 class="font-manrope text-lg font-bold">Monitor</h1>
+            <% if content_for?(:heading) %>
+              <%= yield :heading %>
+            <% else %>
+              <h1 class="font-manrope text-lg font-bold">
+                <%= controller_name == "monitor_media_generations" ? "Media generations" : "Overview" %>
+              </h1>
+            <% end %>
             <p class="ml-auto truncate text-xs text-ink-500"><%= Current.user&.email %></p>
           </div>
-          <nav aria-label="Sections" class="mt-2 flex gap-4 px-4 sm:px-6">
-            <%= link_to "Overview",
-                  monitor_path,
-                  class: [
-                    "-mb-px border-b-2 pb-2 text-sm font-medium",
-                    (current_page?(monitor_path) ? "border-rocket text-ink-900" : "border-transparent text-ink-500 hover:text-ink-900"),
-                  ].join(" "),
-                  aria: { current: (current_page?(monitor_path) ? "page" : nil) } %>
-            <%= link_to "Media generations",
-                  monitor_media_generations_path,
-                  class: [
-                    "-mb-px border-b-2 pb-2 text-sm font-medium",
-                    (controller_name == "monitor_media_generations" ? "border-rocket text-ink-900" : "border-transparent text-ink-500 hover:text-ink-900"),
-                  ].join(" "),
-                  aria: { current: (controller_name == "monitor_media_generations" ? "page" : nil) } %>
-            <%= link_to "Jobs",
-                  "/jobs",
-                  class: "-mb-px border-b-2 border-transparent pb-2 text-sm font-medium text-ink-500 hover:text-ink-900" %>
+          <nav aria-label="Subsections" class="mt-2 flex gap-4 px-4 sm:px-6">
+            <span class="-mb-px border-b-2 border-rocket pb-2 text-sm font-medium text-ink-900" aria-current="page">Main</span>
+            <span class="-mb-px border-b-2 border-transparent pb-2 text-sm font-medium text-ink-300" aria-disabled="true">Details</span>
+            <span class="-mb-px border-b-2 border-transparent pb-2 text-sm font-medium text-ink-300" aria-disabled="true">History</span>
           </nav>
         </header>
 
