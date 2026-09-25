@@ -20,11 +20,11 @@ Gem: `stripe` in [`Gemfile`](/Gemfile).
 
 ## Checkout and billing portal
 
-Signed-in users start Checkout or open the Customer Portal from [`/account/subscription`](/app/controllers/accounts/subscriptions_controller.rb) ([`app/controllers/accounts_controller.rb`](/app/controllers/accounts_controller.rb)). Same Checkout button appears for signed-in non-subscribers via [`app/views/shared/_subscription_action_buttons.html.erb`](/app/views/shared/_subscription_action_buttons.html.erb).
+Signed-in users start Checkout or open the Customer Portal from [`/app/profile/subscriptions`](/app/controllers/accounts/subscriptions_controller.rb) ([`app/controllers/accounts_controller.rb`](/app/controllers/accounts_controller.rb)). Same Checkout button appears for signed-in non-subscribers via [`app/views/shared/_subscription_action_buttons.html.erb`](/app/views/shared/_subscription_action_buttons.html.erb).
 
-Routes: `POST /account/checkout`, `POST /account/portal` ([`config/routes.rb`](/config/routes.rb)).
+Routes: `POST /app/profile/checkout`, `POST /app/profile/portal` ([`config/routes.rb`](/config/routes.rb)).
 
-Checkout runs in `subscription` mode with the configured price, sets `client_reference_id` / metadata `user_id` for linking, reuses `stripe_customer_id` when present (otherwise pre-fills email), and returns to `/account/subscription`. Portal requires an existing Stripe customer id.
+Checkout runs in `subscription` mode with the configured price, sets `client_reference_id` / metadata `user_id` for linking, reuses `stripe_customer_id` when present (otherwise pre-fills email), and returns to `/app/profile/subscriptions`. Portal requires an existing Stripe customer id.
 
 Guests use a separate magic-link subscribe flow ([`app/controllers/subscriptions_controller.rb`](/app/controllers/subscriptions_controller.rb)) to create an account; Stripe Checkout only runs after sign-in.
 

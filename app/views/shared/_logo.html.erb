@@ -1,4 +1,5 @@
-<%= link_to root_path, class: "inline-flex items-center gap-2 font-manrope text-lg font-extrabold tracking-[-0.03em] text-ink-900 no-underline transition-opacity hover:opacity-80", aria: { label: "Rocketbox home" } do %>
+<%# locals: (path: root_path, aria_label: "Rocketbox home") %>
+<%= link_to path, class: "inline-flex items-center gap-2 font-manrope text-lg font-extrabold tracking-[-0.03em] text-ink-900 no-underline transition-opacity hover:opacity-80", aria: { label: aria_label } do %>
   <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-linear-to-b from-blue-600 to-sky-300 text-white" aria-hidden="true">
     <%= heroicon "rocket-launch", variant: :mini, options: { class: "size-5" } %>
   </span>

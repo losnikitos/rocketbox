@@ -8,7 +8,7 @@ module Subscriptions
       email = SubscriptionLink.read(params[:t])
 
       unless email
-        redirect_to new_subscription_path, alert: "That link is invalid or has expired. Request a new subscription link below."
+        redirect_to new_subscribe_path, alert: "That link is invalid or has expired. Request a new subscription link below."
         return
       end
 

@@ -8,7 +8,7 @@
       <h1 class="font-manrope text-xl font-bold text-ink-900">Integrations</h1>
       <p class="mt-2 text-sm text-ink-600">Instagram, Telegram, and WhatsApp credentials for posting and inbound media.</p>
 
-      <%= form_with model: Current.user, url: account_integrations_path, method: :patch, class: "mt-6 space-y-4" do |form| %>
+      <%= form_with model: Current.user, url: profile_integrations_path, method: :patch, class: "mt-6 space-y-4" do |form| %>
         <% if Current.user.errors.any? %>
           <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
             <p class="font-medium"><%= pluralize(Current.user.errors.count, "error") %> prevented saving:</p>
@@ -41,7 +41,7 @@
           <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +).</p>
         </div>
 
-        <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-[10rem]" %>
+        <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-40" %>
       <% end %>
     </div>
   </div>

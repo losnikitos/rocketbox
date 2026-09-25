@@ -26,6 +26,11 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 - Local: http://localhost:3003 (`bin/dev`)
 - Tunnel (public webhooks): https://dev.rocketbox.plus (`make tunnel`)
 
+**No backwards compatibility.** The service is new and still in the making — no active users yet. Prefer deleting and reshaping over redirects, aliases, or dual-path support.
+
+## UI / Tailwind
+Prefer built-in scale utilities over arbitrary values (`rounded-[10px]`, `min-w-[10rem]`, `px-[18px]`, …). Use the nearest step (`rounded-lg`, `min-w-40`, `px-4.5`). Keep arbitrary values only when nothing on the scale fits (e.g. mockup micro-type, email `max-w-[600px]`, one-off layout heights).
+
 # Documentation Index
 
 ### [STRIPE.md](./docs/STRIPE.md)
@@ -42,3 +47,6 @@ Authentication and session login.
 
 ### [DEPLOY.md](./docs/DEPLOY.md)
 How the app is deployed and operated in production.
+
+### [ICONS.md](./docs/ICONS.md)
+Heroicons: `heroicon "name"` — no variant or size unless needed.

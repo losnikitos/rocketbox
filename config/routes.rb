@@ -29,27 +29,35 @@ Rails.application.routes.draw do
   resources :documents, only: [ :show ], param: :slug
 
 
-  resource :account, only: [ :show ] do
-    scope module: :accounts do
-      resource :settings, only: [ :show ]
-      resource :integrations, only: [ :show, :update ]
-      resource :subscription, only: [ :show ]
+  # Customer portal at /app (landing page stays at /)
+  scope :app do
+    get "/", to: redirect("/app/library"), as: :app
+    get "library(/:folder)", to: "accounts#show", as: :library,
+        defaults: { folder: "uploads" }, constraints: { folder: /uploads|stories|reels/ }
+
+    scope path: "profile", as: "profile" do
+      scope module: :accounts do
+        resource :settings, only: [ :show ]
+        resource :integrations, only: [ :show, :update ]
+        resource :subscription, only: [ :show ], path: "subscriptions"
+      end
+      post "checkout", to: "accounts#checkout"
+      post "portal", to: "accounts#portal"
+      patch "subscription_status", to: "accounts#subscription_status"
     end
-    post :checkout
-    post :portal
-    patch :subscription_status
+
+    delete "library/media/:id", to: "library_media#destroy", as: :library_media
+    post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
+    post "library/media/:id/improve", to: "library_media_improves#create", as: :library_improve
   end
-  get "library", to: redirect("/account")
-  delete "library/media/:id", to: "library_media#destroy", as: :library_media
-  post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
-  post "library/media/:id/improve", to: "library_media_improves#create", as: :library_improve
 
   post "stripe/webhook", to: "stripe_webhooks#create"
   post "telegram/webhook", to: "telegram_webhooks#create"
   get  "whatsapp/webhook", to: "whatsapp_webhooks#show"
   post "whatsapp/webhook", to: "whatsapp_webhooks#create"
 
-  resource :subscription, only: %i[new create]
+  # Guest magic-link subscribe (helpers: new_subscribe_path / subscribe_path)
+  resource :subscription, only: %i[new create], as: :subscribe
   get "subscription/thanks", to: "subscriptions#thanks", as: :subscription_thanks
   get "subscription/access", to: "subscriptions/accesses#show", as: :subscription_access
 
@@ -61,6 +69,11 @@ Rails.application.routes.draw do
 
   constraints ->(request) { Session.find_by(id: request.cookie_jar.signed[:session_token])&.user&.admin? } do
     mount MissionControl::Jobs::Engine, at: "/jobs"
+  end
+
+  get "monitor", to: "monitor#show", as: :monitor
+  scope path: "monitor", as: "monitor" do
+    resources :media_generations, only: %i[index show new create], controller: "monitor_media_generations"
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

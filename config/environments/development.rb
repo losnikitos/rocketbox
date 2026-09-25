@@ -24,6 +24,9 @@ Rails.application.configure do
   # kamal-proxy healthchecks hit /up with the container id as Host (same as production.rb).
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
+  # Tunnel terminates TLS (dev.rocketbox.plus); app sees plain HTTP with X-Forwarded-Proto.
+  config.assume_ssl = true
+
   # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
   # Run rails dev:cache to toggle Action Controller caching.
   if Rails.root.join("tmp/caching-dev.txt").exist?
@@ -49,7 +52,10 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
 
-  config.action_controller.default_url_options = { host: "localhost", port: 3003 }
+  # No fixed controller host — request host is used (localhost:3003 or tunnel
+  # https://dev.rocketbox.plus). Hardcoding localhost broke Active Storage img
+  # URLs when browsing via the tunnel. Jobs that need absolute disk URLs set
+  # ActiveStorage::Current.url_options themselves (S3 ignores it).
 
   # Delivery uses :postmark from config/application.rb (sandbox server is fine for dev).
 

@@ -7,13 +7,29 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "should show library on account" do
-    get account_url
+  test "should show library uploads by default" do
+    get library_url
     assert_response :success
-    assert_select "h1", "Library"
-    assert_select "nav[aria-label='Account sections'] a[aria-current='page']", text: "Library"
-    assert_select "a[href=?]", account_settings_path, text: "Settings"
+    assert_select "h1", "Uploads"
+    assert_select "nav[aria-label='Library folders']"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "uploads"), text: "Uploads"
+    assert_select "a[href=?]", library_path(folder: "stories"), text: "Stories"
+    assert_select "a[href=?]", library_path(folder: "reels"), text: "Reels"
+    assert_select "nav[aria-label='Profile sections']", count: 0
+    assert_select "a[href=?]", profile_settings_path, text: "My profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
+  end
+
+  test "stories and reels folders are empty" do
+    get library_url(folder: "stories")
+    assert_response :success
+    assert_select "h1", "Stories"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "stories"), text: "Stories"
+
+    get library_url(folder: "reels")
+    assert_response :success
+    assert_select "h1", "Reels"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "reels"), text: "Reels"
   end
 
   test "shows publish button for story media" do
@@ -25,7 +41,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get account_url
+    get library_url
     assert_response :success
     assert_select "form[action=?]", library_instagram_story_path(media)
     assert_select "form[action=?]", library_improve_path(media)
@@ -33,7 +49,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
 
   test "requires sign in" do
     delete session_url(@user.sessions.last)
-    get account_url
+    get library_url
     assert_redirected_to sign_in_url
   end
 
@@ -47,7 +63,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get account_url
+    get library_url
     assert_response :success
     assert_select "[title='Admin actions']"
     assert_select "a[href=?]", admin_library_media_path(media), text: "Admin"
@@ -63,13 +79,13 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get account_url
+    get library_url
     assert_response :success
     assert_select "[title='Admin actions']", count: 0
   end
 
-  test "legacy library path redirects to account" do
-    get "/library"
-    assert_redirected_to "/account"
+  test "app root redirects to library" do
+    get "/app"
+    assert_redirected_to "/app/library"
   end
 end

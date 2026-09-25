@@ -9,8 +9,8 @@ class HomeCtaTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", text: /handle marketing/i
     assert_select "a[href='#{try_path}']", text: "Join the waitlist"
-    assert_select "a[href='#{new_subscription_path}']", count: 0
-    assert_select "form[action='#{checkout_account_path}']", count: 0
+    assert_select "a[href='#{new_subscribe_path}']", count: 0
+    assert_select "form[action='#{profile_checkout_path}']", count: 0
   end
 
   test "home shows barbershop proof demos" do

@@ -1,13 +1,13 @@
 <%# Phone bezel only. Pass screen via render layout: "shared/iphone_shell" do … end %>
-<div class="relative mx-auto w-full max-w-[280px]">
+<div class="relative mx-auto w-full max-w-72">
   <%# side buttons %>
   <div class="absolute -left-0.5 top-[18%] h-5 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
   <div class="absolute -left-0.5 top-[28%] h-8 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
   <div class="absolute -left-0.5 top-[42%] h-8 w-0.5 rounded-l-sm bg-ink-800" aria-hidden="true"></div>
   <div class="absolute -right-0.5 top-[32%] h-12 w-0.5 rounded-r-sm bg-ink-800" aria-hidden="true"></div>
 
-  <div class="aspect-[9/19.5] rounded-[1.5rem] bg-ink-900 p-[3px] shadow-lg">
-    <div class="relative h-full w-full overflow-hidden rounded-[1.25rem] bg-ink-900">
+  <div class="aspect-[9/19.5] rounded-3xl bg-ink-900 p-0.5 shadow-lg">
+    <div class="relative h-full w-full overflow-hidden rounded-2xl bg-ink-900">
       <%= yield %>
     </div>
   </div>
