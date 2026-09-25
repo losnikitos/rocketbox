@@ -1,0 +1,82 @@
+<% content_for(:title, "#{@post.prompt.name} — Posts — Rocketbox") %>
+
+<section class="w-full">
+  <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
+    <%= render "accounts/library_nav", current: :posts %>
+
+    <div class="min-w-0 flex-1">
+      <% if @post.generating? || (@post.draft? && !@post.generated_video.attached?) %>
+        <% content_for :head do %>
+          <meta http-equiv="refresh" content="5">
+        <% end %>
+      <% end %>
+
+      <p class="text-sm text-ink-500">
+        <%= link_to "Posts", posts_path, class: "underline underline-offset-2" %>
+        <span class="mx-1">/</span>
+        Draft
+      </p>
+      <h1 class="mt-2 font-manrope text-xl font-bold text-ink-900"><%= @post.prompt.name %></h1>
+      <p class="mt-2 text-sm text-ink-600">
+        Status: <span class="font-medium text-ink-900"><%= @post.status %></span>
+        <% if @post.published_at.present? %>
+          · published <%= l(@post.published_at, format: :short) %>
+        <% end %>
+      </p>
+
+      <% if @post.error_message.present? %>
+        <p class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"><%= @post.error_message %></p>
+      <% end %>
+
+      <div class="mt-6">
+        <h2 class="text-sm font-medium text-ink-900">Source images</h2>
+        <div class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+          <% @post.library_media.each do |media| %>
+            <div class="min-w-0">
+              <% if media.file.attached? %>
+                <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <h2 class="text-sm font-medium text-ink-900">Generated video</h2>
+        <% if @post.generated_video.attached? %>
+          <div class="mt-3 max-w-sm overflow-hidden rounded-xl bg-ink-900/5">
+            <%= video_tag url_for(@post.generated_video), controls: true, class: "aspect-[9/16] w-full object-contain" %>
+          </div>
+        <% elsif @post.generating? || @post.draft? %>
+          <p class="mt-3 text-sm text-ink-600">Generating with AI… refresh in a moment.</p>
+        <% elsif @post.failed? %>
+          <p class="mt-3 text-sm text-ink-600">Generation failed. Create a new draft from uploads to try again.</p>
+        <% else %>
+          <p class="mt-3 text-sm text-ink-600">No video yet.</p>
+        <% end %>
+      </div>
+
+      <% if @post.caption.present? %>
+        <div class="mt-8">
+          <h2 class="text-sm font-medium text-ink-900">Caption</h2>
+          <p class="mt-2 whitespace-pre-wrap text-sm text-ink-700"><%= @post.caption %></p>
+        </div>
+      <% end %>
+
+      <div class="mt-8">
+        <h2 class="text-sm font-medium text-ink-900">Prompt</h2>
+        <p class="mt-2 whitespace-pre-wrap text-sm text-ink-700"><%= @post.prompt.body %></p>
+      </div>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <% if @post.publishable? %>
+          <%= button_to "Looks good — publish to Instagram",
+                publish_post_path(@post),
+                method: :post,
+                class: "rb-btn-primary px-4 py-2 text-sm" %>
+        <% end %>
+        <%= link_to "Back to uploads", library_path(folder: "uploads"), class: "rb-btn-ghost-on-light px-4 py-2 text-sm" %>
+      </div>
+    </div>
+  </div>
+</section>

@@ -15,6 +15,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?][aria-selected='true']", library_path(folder: "uploads"), text: "Uploads"
     assert_select "a[href=?]", library_path(folder: "stories"), text: "Stories"
     assert_select "a[href=?]", library_path(folder: "reels"), text: "Reels"
+    assert_select "a[href=?]", posts_path, text: "Posts"
     assert_select "nav[aria-label='Profile sections']", count: 0
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
@@ -32,7 +33,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?][aria-selected='true']", library_path(folder: "reels"), text: "Reels"
   end
 
-  test "shows publish button for story media" do
+  test "shows publish button for story media without improve" do
     media = LibraryMedia.create!(
       telegram_file_id: "f3",
       telegram_file_unique_id: "u3-library-btn",
@@ -44,7 +45,9 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     get library_url
     assert_response :success
     assert_select "form[action=?]", library_instagram_story_path(media)
-    assert_select "form[action=?]", library_improve_path(media)
+    assert_select "input[data-library-select-target=?]", "checkbox"
+    assert_select "a[href=?]", posts_path, text: "Posts"
+    assert_select "button", text: "Improve with AI", count: 0
   end
 
   test "requires sign in" do

@@ -7,56 +7,104 @@
     <div class="min-w-0 flex-1">
       <% case @folder %>
       <% when "uploads" %>
-        <h1 class="font-manrope text-xl font-bold text-ink-900">Uploads</h1>
-        <p class="mt-2 text-sm text-ink-600">Media you’ve sent to the Telegram bot.</p>
+        <div data-controller="library-select" data-library-select-max-value="<%= SmmPost::MAX_MEDIA %>">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 class="font-manrope text-xl font-bold text-ink-900">Uploads</h1>
+              <p class="mt-2 text-sm text-ink-600">Media you’ve sent via Telegram or WhatsApp. Select images to draft an Instagram post.</p>
+            </div>
+            <%= link_to "Posts", posts_path, class: "text-sm font-medium text-ink-900 underline underline-offset-2" %>
+          </div>
 
-        <% if @library_media.present? %>
-          <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <% @library_media.each do |media| %>
-              <li class="relative min-w-0">
-                <% if media.file.attached? %>
-                  <% content_type = media.file.content_type.to_s %>
-                  <% if content_type.start_with?("image/") || media.kind == "photo" || media.kind == "sticker" %>
-                    <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
-                  <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(media.kind) %>
-                    <%= video_tag url_for(media.file), controls: true, class: "aspect-square w-full object-cover bg-ink-900/5" %>
-                  <% else %>
-                    <div class="flex aspect-square flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center">
-                      <%= link_to media.file.filename, url_for(media.file), class: "text-sm font-medium text-ink-900 underline underline-offset-2 break-all" %>
-                    </div>
+          <% if @library_media.present? %>
+            <div class="mt-4 flex flex-wrap gap-3 text-sm">
+              <button type="button" class="font-medium text-ink-700 underline underline-offset-2" data-action="library-select#selectAllImages">
+                Select images
+              </button>
+              <button type="button" class="font-medium text-ink-700 underline underline-offset-2" data-action="library-select#clear">
+                Clear
+              </button>
+            </div>
+
+            <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <% @library_media.each do |media| %>
+                <% selectable = media.story_image? %>
+                <li
+                  class="relative min-w-0 rounded-lg <%= "cursor-pointer" if selectable %>"
+                  data-library-select-target="item"
+                  <% if selectable %>
+                    data-action="click->library-select#selectItem"
                   <% end %>
-                <% else %>
-                  <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-sm text-ink-500">Missing file</div>
-                <% end %>
-                <div class="absolute right-1 top-1">
-                  <%= render "shared/admin_links/library_media", library_media: media %>
-                </div>
-                <p class="mt-2 text-xs text-ink-500">
-                  <%= media.kind %> · <%= l(media.created_at, format: :short) %>
-                </p>
-                <% if media.story_image? %>
-                  <%= button_to "Improve with AI",
-                        library_improve_path(media),
-                        method: :post,
-                        class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
-                <% end %>
-                <% if media.story_publishable? %>
-                  <%= button_to "Publish as Instagram story",
-                        library_instagram_story_path(media),
-                        method: :post,
-                        class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
-        <% elsif Current.user.telegram_user_id.blank? %>
-          <p class="mt-6 text-sm text-ink-600">
-            Set your <%= link_to "Telegram user id", profile_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
-            under Integrations so inbound media can be attached here.
-          </p>
-        <% else %>
-          <p class="mt-6 text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
-        <% end %>
+                >
+                  <% if selectable %>
+                    <label class="absolute left-2 top-2 z-10 flex cursor-pointer items-center rounded bg-white/90 p-1 shadow-sm">
+                      <input
+                        type="checkbox"
+                        name="library_media_ids[]"
+                        form="create-instagram-post"
+                        value="<%= media.id %>"
+                        data-library-select-target="checkbox"
+                        data-image="true"
+                        data-action="change->library-select#changed"
+                        class="size-4 rounded border-ink-900/30 text-rocket focus:ring-rocket"
+                      >
+                      <span class="sr-only">Select media</span>
+                    </label>
+                  <% end %>
+
+                  <% if media.file.attached? %>
+                    <% content_type = media.file.content_type.to_s %>
+                    <% if content_type.start_with?("image/") || media.kind == "photo" || media.kind == "sticker" %>
+                      <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
+                    <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(media.kind) %>
+                      <%= video_tag url_for(media.file), controls: true, class: "aspect-square w-full object-cover bg-ink-900/5" %>
+                    <% else %>
+                      <div class="flex aspect-square flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center">
+                        <%= link_to media.file.filename, url_for(media.file), class: "text-sm font-medium text-ink-900 underline underline-offset-2 break-all" %>
+                      </div>
+                    <% end %>
+                  <% else %>
+                    <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-sm text-ink-500">Missing file</div>
+                  <% end %>
+                  <div class="absolute right-1 top-1">
+                    <%= render "shared/admin_links/library_media", library_media: media %>
+                  </div>
+                  <p class="mt-2 text-xs text-ink-500">
+                    <%= media.kind %> · <%= l(media.created_at, format: :short) %>
+                  </p>
+                  <% if media.story_publishable? %>
+                    <%= button_to "Publish as Instagram story",
+                          library_instagram_story_path(media),
+                          method: :post,
+                          class: "rb-btn-ghost-on-light mt-2 w-full px-2 py-1.5 text-xs" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+
+            <div
+              class="sticky bottom-4 z-20 mt-6 hidden flex-col gap-3 rounded-xl border border-ink-900/10 bg-white/95 p-3 shadow-lg backdrop-blur data-[open]:flex sm:data-[open]:flex-row sm:data-[open]:items-center sm:data-[open]:justify-between"
+              data-library-select-target="bar"
+            >
+              <p class="text-sm text-ink-700">
+                <span class="font-semibold text-ink-900" data-library-select-target="count">0</span>
+                selected · create a draft Instagram post
+              </p>
+              <form id="create-instagram-post" action="<%= new_post_path %>" method="get" class="sm:mt-0">
+                <button type="submit" class="rb-btn-primary px-4 py-2 text-sm">
+                  Create Instagram post
+                </button>
+              </form>
+            </div>
+          <% elsif Current.user.telegram_user_id.blank? && Current.user.whatsapp_phone.blank? %>
+            <p class="mt-6 text-sm text-ink-600">
+              Set your <%= link_to "messaging integrations", profile_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
+              so inbound media can be attached here.
+            </p>
+          <% else %>
+            <p class="mt-6 text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
+          <% end %>
+        </div>
       <% when "stories" %>
         <h1 class="font-manrope text-xl font-bold text-ink-900">Stories</h1>
         <p class="mt-6 text-sm text-ink-600">No stories yet.</p>

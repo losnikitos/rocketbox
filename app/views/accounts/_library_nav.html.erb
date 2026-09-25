@@ -4,7 +4,8 @@
     <% [
       [library_path(folder: "uploads"), "Uploads", current == :uploads],
       [library_path(folder: "stories"), "Stories", current == :stories],
-      [library_path(folder: "reels"), "Reels", current == :reels]
+      [library_path(folder: "reels"), "Reels", current == :reels],
+      [posts_path, "Posts", current == :posts]
     ].each do |path, label, selected| %>
       <li class="min-w-0 flex-1 sm:flex-none">
         <%= link_to label,

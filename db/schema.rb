@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_135920) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_181054) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -134,6 +134,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_135920) do
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
+  create_table "prompts", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_prompts_on_active"
+    t.index ["position"], name: "index_prompts_on_position"
+  end
+
   create_table "ruby_llm_batches", force: :cascade do |t|
     t.string "batch_protocol"
     t.json "chat_ids", default: []
@@ -229,6 +240,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_135920) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "smm_post_media_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "library_media_id", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "smm_post_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["library_media_id"], name: "index_smm_post_media_items_on_library_media_id"
+    t.index ["smm_post_id", "library_media_id"], name: "index_smm_post_media_items_uniqueness", unique: true
+    t.index ["smm_post_id", "position"], name: "index_smm_post_media_items_on_smm_post_id_and_position"
+    t.index ["smm_post_id"], name: "index_smm_post_media_items_on_smm_post_id"
+  end
+
+  create_table "smm_posts", force: :cascade do |t|
+    t.text "caption"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.string "generation_request_id"
+    t.integer "prompt_id", null: false
+    t.datetime "published_at"
+    t.string "status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["prompt_id"], name: "index_smm_posts_on_prompt_id"
+    t.index ["status"], name: "index_smm_posts_on_status"
+    t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_smm_posts_on_user_id"
+  end
+
   create_table "subscriptions", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.datetime "created_at", null: false
@@ -274,5 +313,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_135920) do
   add_foreign_key "media_generations", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "sessions", "users"
+  add_foreign_key "smm_post_media_items", "library_media"
+  add_foreign_key "smm_post_media_items", "smm_posts"
+  add_foreign_key "smm_posts", "prompts"
+  add_foreign_key "smm_posts", "users"
   add_foreign_key "subscriptions", "users"
 end
