@@ -4,7 +4,7 @@
     <% flashes.each do |type, message| %>
       <% alert = type.to_s == "alert" %>
       <div
-        class="pointer-events-auto flex items-start gap-3 rounded-[10px] bg-white px-4 py-3 text-sm font-medium text-ink-900 shadow-lg"
+        class="pointer-events-auto flex items-start gap-3 rounded-lg bg-white px-4 py-3 text-sm font-medium text-ink-900 shadow-lg"
         role="<%= alert ? "alert" : "status" %>"
         data-flash
       >

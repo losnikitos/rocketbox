@@ -52,7 +52,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Settings"
     assert_select "nav[aria-label='Profile sections']"
-    assert_select "a[href=?][aria-current='page']", profile_settings_path, text: "Settings"
+    assert_select "a[href=?][aria-selected='true']", profile_settings_path, text: "Settings"
     assert_select "a[href=?]", profile_integrations_path, text: "Integrations"
     assert_select "a[href=?]", profile_subscription_path, text: "Subscription"
     assert_select "h2", text: "Integrations", count: 0

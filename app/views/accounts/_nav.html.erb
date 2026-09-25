@@ -5,15 +5,12 @@
       [profile_settings_path, "Settings", current == :settings],
       [profile_integrations_path, "Integrations", current == :integrations],
       [profile_subscription_path, "Subscription", current == :subscription]
-    ].each do |path, label, active| %>
+    ].each do |path, label, selected| %>
       <li class="min-w-0 flex-1 sm:flex-none">
         <%= link_to label,
               path,
-              class: [
-                "block rounded-[10px] px-3 py-2 text-center text-sm font-medium transition hover:bg-ink-900/5 sm:text-left",
-                (active ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
-              ].join(" "),
-              aria: { current: (active ? "page" : nil) } %>
+              class: "block rounded-lg px-3 py-2 text-center text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900 sm:text-left",
+              aria: { selected: selected } %>
       </li>
     <% end %>
   </ul>

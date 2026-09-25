@@ -28,6 +28,9 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **No backwards compatibility.** The service is new and still in the making — no active users yet. Prefer deleting and reshaping over redirects, aliases, or dual-path support.
 
+## UI / Tailwind
+Prefer built-in scale utilities over arbitrary values (`rounded-[10px]`, `min-w-[10rem]`, `px-[18px]`, …). Use the nearest step (`rounded-lg`, `min-w-40`, `px-4.5`). Keep arbitrary values only when nothing on the scale fits (e.g. mockup micro-type, email `max-w-[600px]`, one-off layout heights).
+
 # Documentation Index
 
 ### [STRIPE.md](./docs/STRIPE.md)

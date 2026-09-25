@@ -5,15 +5,12 @@
       [library_path(folder: "uploads"), "Uploads", current == :uploads],
       [library_path(folder: "stories"), "Stories", current == :stories],
       [library_path(folder: "reels"), "Reels", current == :reels]
-    ].each do |path, label, active| %>
+    ].each do |path, label, selected| %>
       <li class="min-w-0 flex-1 sm:flex-none">
         <%= link_to label,
               path,
-              class: [
-                "block rounded-[10px] px-3 py-2 text-center text-sm font-medium transition hover:bg-ink-900/5 sm:text-left",
-                (active ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
-              ].join(" "),
-              aria: { current: (active ? "page" : nil) } %>
+              class: "block rounded-lg px-3 py-2 text-center text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900 sm:text-left",
+              aria: { selected: selected } %>
       </li>
     <% end %>
   </ul>

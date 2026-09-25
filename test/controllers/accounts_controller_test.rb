@@ -12,7 +12,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Uploads"
     assert_select "nav[aria-label='Library folders']"
-    assert_select "a[href=?][aria-current='page']", library_path(folder: "uploads"), text: "Uploads"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "uploads"), text: "Uploads"
     assert_select "a[href=?]", library_path(folder: "stories"), text: "Stories"
     assert_select "a[href=?]", library_path(folder: "reels"), text: "Reels"
     assert_select "nav[aria-label='Profile sections']", count: 0
@@ -24,12 +24,12 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     get library_url(folder: "stories")
     assert_response :success
     assert_select "h1", "Stories"
-    assert_select "a[href=?][aria-current='page']", library_path(folder: "stories"), text: "Stories"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "stories"), text: "Stories"
 
     get library_url(folder: "reels")
     assert_response :success
     assert_select "h1", "Reels"
-    assert_select "a[href=?][aria-current='page']", library_path(folder: "reels"), text: "Reels"
+    assert_select "a[href=?][aria-selected='true']", library_path(folder: "reels"), text: "Reels"
   end
 
   test "shows publish button for story media" do

@@ -31,25 +31,19 @@
             <li>
               <%= link_to "Overview",
                     monitor_path,
-                    class: [
-                      "block rounded-[10px] px-3 py-2 text-sm font-medium transition hover:bg-ink-900/5",
-                      (current_page?(monitor_path) ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
-                    ].join(" "),
-                    aria: { current: (current_page?(monitor_path) ? "page" : nil) } %>
+                    class: "block rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900",
+                    aria: { selected: current_page?(monitor_path) } %>
             </li>
             <li>
               <%= link_to "Media generations",
                     monitor_media_generations_path,
-                    class: [
-                      "block rounded-[10px] px-3 py-2 text-sm font-medium transition hover:bg-ink-900/5",
-                      (controller_name == "monitor_media_generations" ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
-                    ].join(" "),
-                    aria: { current: (controller_name == "monitor_media_generations" ? "page" : nil) } %>
+                    class: "block rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900",
+                    aria: { selected: controller_name == "monitor_media_generations" } %>
             </li>
             <li class="my-2 border-t border-ink-900/10" aria-hidden="true"></li>
             <li>
               <%= link_to "/jobs",
-                    class: "flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    class: "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
                     target: "_blank",
                     rel: "noopener" do %>
                 Jobs
@@ -58,7 +52,7 @@
             </li>
             <li>
               <%= link_to "/admin",
-                    class: "flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    class: "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
                     target: "_blank",
                     rel: "noopener" do %>
                 Active Admin
