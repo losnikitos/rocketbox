@@ -1,49 +1,30 @@
 <header class="relative z-10 mb-10 w-full border-b border-ink-900/10 bg-white/50 pb-6 pt-8 backdrop-blur sm:pt-12 lg:pt-12">
   <nav class="container mx-auto flex flex-col gap-4 px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6 lg:px-8" aria-label="Primary">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
-      <% if controller_path.start_with?("accounts") %>
-        <%= render "shared/logo", path: library_path, aria_label: "Rocketbox library" %>
-      <% else %>
-        <%= render "shared/logo" %>
-      <% end %>
-      <% unless controller_path.start_with?("accounts") %>
-        <button type="button"
-                popovertarget="use-cases-menu"
-                style="anchor-name: --use-cases-menu"
-                class="font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900"
-                aria-selected="<%= controller_name == "use_cases" %>">
-          Use cases
-        </button>
-        <div id="use-cases-menu" popover
-             style="position-anchor: --use-cases-menu"
-             class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] min-w-44 rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
-          <% UseCasesController::REGISTRY.each do |slug, use_case| %>
-            <%= link_to use_case[:label], use_case_path(slug),
-                  class: "block rounded-md px-3 py-2 text-sm font-medium text-ink-500 no-underline transition-colors hover:bg-ink-900/5 hover:text-ink-900 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                  aria: { selected: params[:slug] == slug } %>
-          <% end %>
-        </div>
-        <%= link_to "Pricing", pricing_path,
-              class: "font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900",
-              aria: { selected: controller_name == "pricing" } %>
-      <% end %>
+      <%= render "shared/logo" %>
+      <button type="button"
+              popovertarget="use-cases-menu"
+              style="anchor-name: --use-cases-menu"
+              class="font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900"
+              aria-selected="<%= controller_name == "use_cases" %>">
+        Use cases
+      </button>
+      <div id="use-cases-menu" popover
+           style="position-anchor: --use-cases-menu"
+           class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] min-w-44 rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+        <% UseCasesController::REGISTRY.each do |slug, use_case| %>
+          <%= link_to use_case[:label], use_case_path(slug),
+                class: "block rounded-md px-3 py-2 text-sm font-medium text-ink-500 no-underline transition-colors hover:bg-ink-900/5 hover:text-ink-900 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: params[:slug] == slug } %>
+        <% end %>
+      </div>
+      <%= link_to "Pricing", pricing_path,
+            class: "font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900",
+            aria: { selected: controller_name == "pricing" } %>
     </div>
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <% if Current.user %>
-        <% if controller_path.start_with?("accounts") %>
-          <% if Current.user.admin? %>
-            <%= link_to monitor_path, class: "rb-btn-ghost inline-flex items-center gap-1.5 px-3 py-2 text-sm" do %>
-              <%= heroicon "cog" %>
-              Monitor
-            <% end %>
-          <% end %>
-          <%= link_to profile_settings_path, class: "rb-btn-ghost inline-flex items-center gap-1.5 px-3 py-2 text-sm" do %>
-            <%= heroicon "user" %>
-            My profile
-          <% end %>
-        <% else %>
-          <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
-        <% end %>
+        <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
       <% else %>
         <%= link_to "Sign in", sign_in_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
       <% end %>

@@ -10,7 +10,8 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
   test "should show integrations" do
     get profile_integrations_url
     assert_response :success
-    assert_select "h1", "Integrations"
+    assert_select "h1", "Profile"
+    assert_select "h2", "Integrations"
   end
 
   test "should update integrations" do

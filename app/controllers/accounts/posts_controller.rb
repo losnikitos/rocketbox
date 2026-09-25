@@ -2,19 +2,21 @@
 
 module Accounts
   class PostsController < ApplicationController
+    layout "app"
+
     def index
-      @posts = Current.user.smm_posts.includes(:prompt, :smm_post_media_items, generated_video_attachment: :blob).recent
+      @posts = Current.user.smm_posts.includes(:prompt, { library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
     end
 
     def new
       @prompts = Prompt.library
       @selected_media = selected_library_media
       if @selected_media.empty?
-        redirect_to library_path(folder: "uploads"), alert: "Select at least one image from your library."
+        redirect_to library_uploads_path, alert: "Select at least one image from your library."
         return
       end
       if @prompts.empty?
-        redirect_to library_path(folder: "uploads"), alert: "No prompts are available yet. Ask an admin to add prompts."
+        redirect_to library_uploads_path, alert: "No prompts are available yet. Ask an admin to add prompts."
         return
       end
 
@@ -27,7 +29,7 @@ module Accounts
       prompt = Prompt.library.find_by(id: params[:prompt_id])
 
       if @selected_media.empty?
-        redirect_to library_path(folder: "uploads"), alert: "Select at least one image from your library."
+        redirect_to library_uploads_path, alert: "Select at least one image from your library."
         return
       end
 
@@ -49,7 +51,7 @@ module Accounts
 
       if @post.save
         GenerateSmmPostVideoJob.perform_later(@post.id)
-        redirect_to post_path(@post), notice: "Draft post created. Generating your Instagram video…"
+        redirect_to smm_post_path(@post), notice: "Draft post created. Generating your Instagram video…"
       else
         flash.now[:alert] = @post.errors.full_messages.to_sentence
         render :new, status: :unprocessable_entity
@@ -63,13 +65,13 @@ module Accounts
     def publish
       @post = Current.user.smm_posts.find(params[:id])
       unless @post.publishable?
-        redirect_to post_path(@post), alert: "This post is not ready to publish yet."
+        redirect_to smm_post_path(@post), alert: "This post is not ready to publish yet."
         return
       end
 
       @post.update!(error_message: nil)
       PublishSmmPostJob.perform_later(@post.id)
-      redirect_to post_path(@post), notice: "Publishing to Instagram…"
+      redirect_to smm_post_path(@post), notice: "Publishing to Instagram…"
     end
 
     private

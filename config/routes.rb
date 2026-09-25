@@ -31,13 +31,21 @@ Rails.application.routes.draw do
 
   # Customer portal at /app (landing page stays at /)
   scope :app do
-    get "/", to: redirect("/app/library"), as: :app
-    get "library(/:folder)", to: "accounts#show", as: :library,
-        defaults: { folder: "uploads" }, constraints: { folder: /uploads|stories|reels/ }
+    get "/", to: redirect("/app/library/uploads"), as: :app
 
-    resources :posts, only: [ :index, :new, :create, :show ], module: :accounts do
-      member do
-        post :publish
+    scope path: "library", module: :accounts do
+      get "/", to: redirect("/app/library/uploads")
+      get "uploads", to: "library#uploads", as: :library_uploads
+    end
+
+    scope path: "smm", module: :accounts, as: :smm do
+      get "/", to: redirect("/app/smm/posts")
+      get "reels", to: "smm#reels"
+      get "stories", to: "smm#stories"
+      resources :posts, only: %i[index new create show] do
+        member do
+          post :publish
+        end
       end
     end
 
@@ -53,7 +61,6 @@ Rails.application.routes.draw do
     end
 
     delete "library/media/:id", to: "library_media#destroy", as: :library_media
-    post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

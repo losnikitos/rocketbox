@@ -2,6 +2,8 @@
 
 module Accounts
   class IntegrationsController < ApplicationController
+    layout "app"
+
     def show
     end
 

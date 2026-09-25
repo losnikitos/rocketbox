@@ -12,11 +12,6 @@ class AccountsController < ApplicationController
     incomplete_expired
   ].freeze
 
-  def show
-    @folder = params[:folder].presence_in(%w[uploads stories reels]) || "uploads"
-    @library_media = Current.user.library_media.with_attached_file.order(created_at: :desc) if @folder == "uploads"
-  end
-
   def checkout
     price_id = StripeCredentials.price_id
     if price_id.blank?

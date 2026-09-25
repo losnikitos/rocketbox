@@ -1,0 +1,30 @@
+<%# locals: (section:) %>
+<nav aria-label="Primary" class="mt-6 flex-1 px-2">
+  <ul class="flex flex-col gap-0.5">
+    <li>
+      <%= link_to library_uploads_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :library } do %>
+        <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        Library
+      <% end %>
+    </li>
+    <li>
+      <%= link_to smm_posts_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :smm } do %>
+        <%= heroicon "film", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        SMM
+      <% end %>
+    </li>
+    <% if Current.user&.admin? %>
+      <li class="mt-2 border-t border-ink-900/10 pt-2">
+        <%= link_to monitor_path,
+              class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5" do %>
+          <%= heroicon "cog", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+          Monitor
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</nav>

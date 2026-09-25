@@ -1,0 +1,9 @@
+<%# locals: (tabs:) %>
+<nav aria-label="Secondary" class="flex flex-wrap gap-1 px-1 sm:px-2">
+  <% tabs.each do |path, label, selected| %>
+    <%= link_to label,
+          path,
+          class: "rounded-full px-3.5 py-1.5 text-sm font-medium transition aria-selected:bg-ink-900 aria-selected:text-white text-ink-600 hover:bg-ink-900/5 hover:text-ink-900",
+          aria: { selected: selected, current: (selected ? "page" : nil) } %>
+  <% end %>
+</nav>
