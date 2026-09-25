@@ -66,15 +66,17 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/not ready/, flash[:alert])
   end
 
-  test "index lists posts" do
-    post_record = build_draft_post!
+  test "index lists posts as media thumbnails" do
+    post_record = create_ready_post!
 
     get smm_posts_url
     assert_response :success
     assert_select "h1", "SMM"
     assert_select "h2", "Posts"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", smm_posts_path, text: "Posts"
-    assert_select "a[href=?]", smm_post_path(post_record), text: @prompt.name
+    assert_select "a[href=?]", smm_post_path(post_record) do
+      assert_select "video[muted][preload=metadata]:not([controls])"
+    end
   end
 
   private

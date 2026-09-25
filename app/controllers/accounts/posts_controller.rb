@@ -5,7 +5,7 @@ module Accounts
     layout "app"
 
     def index
-      @posts = Current.user.smm_posts.includes(:prompt, :smm_post_media_items, generated_video_attachment: :blob).recent
+      @posts = Current.user.smm_posts.includes(:prompt, { library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
     end
 
     def new
