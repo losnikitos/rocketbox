@@ -11,8 +11,8 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     get library_url
     assert_response :success
     assert_select "h1", "Library"
-    assert_select "nav[aria-label='Account sections'] a[aria-current='page']", text: "Library"
-    assert_select "a[href=?]", settings_path, text: "Settings"
+    assert_select "nav[aria-label='Profile sections']", count: 0
+    assert_select "a[href=?]", profile_settings_path, text: "My profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
   end
 

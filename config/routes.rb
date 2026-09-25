@@ -34,14 +34,16 @@ Rails.application.routes.draw do
     get "/", to: redirect("/app/library"), as: :app
     get "library", to: "accounts#show", as: :library
 
-    scope module: :accounts do
-      resource :settings, only: [ :show ]
-      resource :integrations, only: [ :show, :update ]
-      resource :subscription, only: [ :show ]
+    scope path: "profile", as: "profile" do
+      scope module: :accounts do
+        resource :settings, only: [ :show ]
+        resource :integrations, only: [ :show, :update ]
+        resource :subscription, only: [ :show ], path: "subscriptions"
+      end
+      post "checkout", to: "accounts#checkout"
+      post "portal", to: "accounts#portal"
+      patch "subscription_status", to: "accounts#subscription_status"
     end
-    post "checkout", to: "accounts#checkout"
-    post "portal", to: "accounts#portal"
-    patch "subscription_status", to: "accounts#subscription_status"
 
     delete "library/media/:id", to: "library_media#destroy", as: :library_media
     post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
@@ -53,7 +55,7 @@ Rails.application.routes.draw do
   get  "whatsapp/webhook", to: "whatsapp_webhooks#show"
   post "whatsapp/webhook", to: "whatsapp_webhooks#create"
 
-  # Guest magic-link subscribe (helper names avoid clashing with portal subscription_path)
+  # Guest magic-link subscribe (helpers: new_subscribe_path / subscribe_path)
   resource :subscription, only: %i[new create], as: :subscribe
   get "subscription/thanks", to: "subscriptions#thanks", as: :subscription_thanks
   get "subscription/access", to: "subscriptions/accesses#show", as: :subscription_access

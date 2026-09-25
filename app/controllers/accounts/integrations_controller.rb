@@ -8,7 +8,7 @@ module Accounts
     def update
       if Current.user.update(integrations_params)
         backfill_orphan_media!
-        redirect_to integrations_path, notice: "Account updated."
+        redirect_to profile_integrations_path, notice: "Account updated."
       else
         render :show, status: :unprocessable_entity
       end

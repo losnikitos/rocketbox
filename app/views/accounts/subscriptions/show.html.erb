@@ -34,10 +34,10 @@
 
       <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <% unless @subscription.active? %>
-          <%= button_to "Subscribe with Stripe Checkout", checkout_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
+          <%= button_to "Subscribe with Stripe Checkout", profile_checkout_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
         <% end %>
         <% if @subscription.stripe_customer_id.present? %>
-          <%= button_to "Manage billing", portal_path, form: { data: { turbo: false } }, class: "rb-btn-ghost-on-light" %>
+          <%= button_to "Manage billing", profile_portal_path, form: { data: { turbo: false } }, class: "rb-btn-ghost-on-light" %>
         <% end %>
       </div>
 
@@ -45,7 +45,7 @@
         <div class="mt-8 border-t border-ink-900/10 pt-6">
           <h2 class="text-sm font-semibold uppercase tracking-[0.06em] text-ink-500">Admin controls</h2>
           <p class="mt-2 text-sm text-ink-600">Update your subscription status for testing access rules.</p>
-          <%= form_with url: subscription_status_path, method: :patch, class: "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" do %>
+          <%= form_with url: profile_subscription_status_path, method: :patch, class: "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" do %>
             <%= select_tag :subscription_status,
               options_for_select(
                 [

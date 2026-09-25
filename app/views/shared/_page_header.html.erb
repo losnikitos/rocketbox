@@ -1,7 +1,11 @@
 <header class="relative z-10 mb-10 w-full border-b border-ink-900/10 bg-white/50 pb-6 pt-8 backdrop-blur sm:pt-12 lg:pt-12">
   <nav class="container mx-auto flex flex-col gap-4 px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-6 lg:px-8" aria-label="Primary">
     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
-      <%= render "shared/logo" %>
+      <% if controller_path.start_with?("accounts") %>
+        <%= render "shared/logo", path: library_path, aria_label: "Rocketbox library" %>
+      <% else %>
+        <%= render "shared/logo" %>
+      <% end %>
       <% unless controller_path.start_with?("accounts") %>
         <% use_cases_active = controller_name == "use_cases" %>
         <button type="button"
@@ -31,7 +35,11 @@
     </div>
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <% if Current.user %>
-        <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
+        <% if controller_path.start_with?("accounts") %>
+          <%= link_to "My profile", profile_settings_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
+        <% else %>
+          <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
+        <% end %>
       <% else %>
         <%= link_to "Sign in", sign_in_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
       <% end %>

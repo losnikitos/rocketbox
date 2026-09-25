@@ -17,7 +17,7 @@ class PricingTest < ActionDispatch::IntegrationTest
     assert_select "span", text: "+VAT", count: 3
     assert_select "a[href='#{try_path}']", text: "Join the waitlist"
     assert_select "a[href='#{new_subscribe_path}']", count: 0
-    assert_select "form[action='#{checkout_path}']", count: 0
+    assert_select "form[action='#{profile_checkout_path}']", count: 0
   end
 
   test "pricing is linked from header and footer" do

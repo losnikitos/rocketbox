@@ -33,7 +33,7 @@ Routes in [`config/routes.rb`](/config/routes.rb):
 
 Mail: [`UserMailer#login_otp`](/app/mailers/user_mailer.rb) (Postmark `login_otp`) with code + magic URL.
 
-UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp`](/app/views/sessions/otp.html.erb), [`password`](/app/views/sessions/password.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header links Sign in / Go to Dashboard ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Customer portal library ([`/app/library`](/app/controllers/accounts_controller.rb)); settings logout ([`/app/settings`](/app/controllers/accounts/settings_controller.rb)). Integrations ([`/app/integrations`](/app/controllers/accounts/integrations_controller.rb)) lets the signed-in user set Instagram user id / access token and Telegram user id on their `User` row.
+UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp`](/app/views/sessions/otp.html.erb), [`password`](/app/views/sessions/password.html.erb), device list [`app/views/sessions/index.html.erb`](/app/views/sessions/index.html.erb). Header: Sign in / Go to Dashboard (marketing) or My profile (portal) ([`app/views/shared/_page_header.html.erb`](/app/views/shared/_page_header.html.erb)). Library ([`/app/library`](/app/controllers/accounts_controller.rb)); profile settings ([`/app/profile/settings`](/app/controllers/accounts/settings_controller.rb)), integrations ([`/app/profile/integrations`](/app/controllers/accounts/integrations_controller.rb)), subscriptions ([`/app/profile/subscriptions`](/app/controllers/accounts/subscriptions_controller.rb)).
 
 ## Sign up
 
