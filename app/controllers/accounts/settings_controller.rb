@@ -2,6 +2,8 @@
 
 module Accounts
   class SettingsController < ApplicationController
+    layout "app"
+
     def show
     end
   end

@@ -1,70 +1,62 @@
 <% content_for(:title, "Subscription — Rocketbox") %>
 
-<section class="w-full">
-  <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
-    <%= render "accounts/nav", current: :subscription %>
+<h2 class="font-manrope text-lg font-bold text-ink-900">Subscription</h2>
 
-    <div class="min-w-0 flex-1">
-      <h1 class="font-manrope text-xl font-bold text-ink-900">Subscription</h1>
+<% if params[:session_id].present? %>
+  <p class="mt-4 text-sm leading-relaxed text-ink-500">
+    Thanks — we’re confirming your payment. Full access usually appears within a few seconds once Stripe notifies us.
+  </p>
+<% end %>
 
-      <% if params[:session_id].present? %>
-        <p class="mt-4 text-sm leading-relaxed text-ink-500">
-          Thanks — we’re confirming your payment. Full access usually appears within a few seconds once Stripe notifies us.
-        </p>
-      <% end %>
-
-      <dl class="mt-6 space-y-3 text-sm">
-        <div class="flex justify-between gap-4">
-          <dt class="text-ink-500">Access</dt>
-          <dd class="font-medium text-ink-900"><%= @subscription.active? ? "Active" : "Not subscribed" %></dd>
-        </div>
-        <% if @subscription.status.present? %>
-          <div class="flex justify-between gap-4">
-            <dt class="text-ink-500">Stripe status</dt>
-            <dd class="font-medium text-ink-900"><%= @subscription.status %></dd>
-          </div>
-        <% end %>
-        <% if @subscription.current_period_end.present? %>
-          <div class="flex justify-between gap-4">
-            <dt class="text-ink-500">Current period ends</dt>
-            <dd class="font-medium text-ink-900"><%= l(@subscription.current_period_end, format: :long) %></dd>
-          </div>
-        <% end %>
-      </dl>
-
-      <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <% unless @subscription.active? %>
-          <%= button_to "Subscribe with Stripe Checkout", profile_checkout_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
-        <% end %>
-        <% if @subscription.stripe_customer_id.present? %>
-          <%= button_to "Manage billing", profile_portal_path, form: { data: { turbo: false } }, class: "rb-btn-ghost-on-light" %>
-        <% end %>
-      </div>
-
-      <% if Current.user.admin? %>
-        <div class="mt-8 border-t border-ink-900/10 pt-6">
-          <h2 class="text-sm font-semibold uppercase tracking-[0.06em] text-ink-500">Admin controls</h2>
-          <p class="mt-2 text-sm text-ink-600">Update your subscription status for testing access rules.</p>
-          <%= form_with url: profile_subscription_status_path, method: :patch, class: "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" do %>
-            <%= select_tag :subscription_status,
-              options_for_select(
-                [
-                  ["Not subscribed", "not_subscribed"],
-                  ["active", "active"],
-                  ["trialing", "trialing"],
-                  ["past_due", "past_due"],
-                  ["canceled", "canceled"],
-                  ["unpaid", "unpaid"],
-                  ["incomplete", "incomplete"],
-                  ["incomplete_expired", "incomplete_expired"]
-                ],
-                (@subscription.status.presence || "not_subscribed")
-              ),
-              class: "w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 sm:w-auto" %>
-            <%= button_tag "Update status", class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-[color,background-color,transform] duration-150 [transition-timing-function:cubic-bezier(0.2,0,0,1)] hover:bg-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)] active:scale-[0.98]" %>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
+<dl class="mt-6 space-y-3 text-sm">
+  <div class="flex justify-between gap-4">
+    <dt class="text-ink-500">Access</dt>
+    <dd class="font-medium text-ink-900"><%= @subscription.active? ? "Active" : "Not subscribed" %></dd>
   </div>
-</section>
+  <% if @subscription.status.present? %>
+    <div class="flex justify-between gap-4">
+      <dt class="text-ink-500">Stripe status</dt>
+      <dd class="font-medium text-ink-900"><%= @subscription.status %></dd>
+    </div>
+  <% end %>
+  <% if @subscription.current_period_end.present? %>
+    <div class="flex justify-between gap-4">
+      <dt class="text-ink-500">Current period ends</dt>
+      <dd class="font-medium text-ink-900"><%= l(@subscription.current_period_end, format: :long) %></dd>
+    </div>
+  <% end %>
+</dl>
+
+<div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+  <% unless @subscription.active? %>
+    <%= button_to "Subscribe with Stripe Checkout", profile_checkout_path, form: { data: { turbo: false } }, class: "rb-btn-primary" %>
+  <% end %>
+  <% if @subscription.stripe_customer_id.present? %>
+    <%= button_to "Manage billing", profile_portal_path, form: { data: { turbo: false } }, class: "rb-btn-ghost-on-light" %>
+  <% end %>
+</div>
+
+<% if Current.user.admin? %>
+  <div class="mt-8 border-t border-ink-900/10 pt-6">
+    <h3 class="text-sm font-semibold uppercase tracking-[0.06em] text-ink-500">Admin controls</h3>
+    <p class="mt-2 text-sm text-ink-600">Update your subscription status for testing access rules.</p>
+    <%= form_with url: profile_subscription_status_path, method: :patch, class: "mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" do %>
+      <%= select_tag :subscription_status,
+        options_for_select(
+          [
+            ["Not subscribed", "not_subscribed"],
+            ["active", "active"],
+            ["trialing", "trialing"],
+            ["past_due", "past_due"],
+            ["canceled", "canceled"],
+            ["unpaid", "unpaid"],
+            ["incomplete", "incomplete"],
+            ["incomplete_expired", "incomplete_expired"]
+          ],
+          (@subscription.status.presence || "not_subscribed")
+        ),
+        class: "w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 sm:w-auto" %>
+      <%= button_tag "Update status", class: "inline-flex cursor-pointer items-center justify-center rounded-lg bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition-[color,background-color,transform] duration-150 [transition-timing-function:cubic-bezier(0.2,0,0,1)] hover:bg-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(45_107_255/0.5)] active:scale-[0.98]" %>
+    <% end %>
+  </div>
+<% end %>

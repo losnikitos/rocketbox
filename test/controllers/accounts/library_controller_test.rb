@@ -2,38 +2,24 @@
 
 require "test_helper"
 
-class AccountsControllerTest < ActionDispatch::IntegrationTest
+class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "should show library uploads by default" do
-    get library_url
+  test "should show library uploads" do
+    get library_uploads_url
     assert_response :success
-    assert_select "h1", "Uploads"
-    assert_select "nav[aria-label='Library folders']"
-    assert_select "a[href=?][aria-selected='true']", library_path(folder: "uploads"), text: "Uploads"
-    assert_select "a[href=?]", library_path(folder: "stories"), text: "Stories"
-    assert_select "a[href=?]", library_path(folder: "reels"), text: "Reels"
-    assert_select "a[href=?]", posts_path, text: "Posts"
-    assert_select "nav[aria-label='Profile sections']", count: 0
+    assert_select "h1", "Library"
+    assert_select "nav[aria-label='Primary']"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
+    assert_select "nav[aria-label='Secondary'] a", text: "Reels", count: 0
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
   end
 
-  test "stories and reels folders are empty" do
-    get library_url(folder: "stories")
-    assert_response :success
-    assert_select "h1", "Stories"
-    assert_select "a[href=?][aria-selected='true']", library_path(folder: "stories"), text: "Stories"
-
-    get library_url(folder: "reels")
-    assert_response :success
-    assert_select "h1", "Reels"
-    assert_select "a[href=?][aria-selected='true']", library_path(folder: "reels"), text: "Reels"
-  end
-
-  test "shows publish button for story media without improve" do
+  test "shows selectable story images without publish or improve" do
     media = LibraryMedia.create!(
       telegram_file_id: "f3",
       telegram_file_unique_id: "u3-library-btn",
@@ -42,17 +28,17 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get library_url
+    get library_uploads_url
     assert_response :success
-    assert_select "form[action=?]", library_instagram_story_path(media)
+    assert_select "form[action=?]", new_smm_post_path
     assert_select "input[data-library-select-target=?]", "checkbox"
-    assert_select "a[href=?]", posts_path, text: "Posts"
+    assert_select "button", text: "Publish as Instagram story", count: 0
     assert_select "button", text: "Improve with AI", count: 0
   end
 
   test "requires sign in" do
     delete session_url(@user.sessions.last)
-    get library_url
+    get library_uploads_url
     assert_redirected_to sign_in_url
   end
 
@@ -66,7 +52,7 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get library_url
+    get library_uploads_url
     assert_response :success
     assert_select "[title='Admin actions']"
     assert_select "a[href=?]", admin_library_media_path(media), text: "Admin"
@@ -82,13 +68,13 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get library_url
+    get library_uploads_url
     assert_response :success
     assert_select "[title='Admin actions']", count: 0
   end
 
-  test "app root redirects to library" do
+  test "app root redirects to library uploads" do
     get "/app"
-    assert_redirected_to "/app/library"
+    assert_redirected_to "/app/library/uploads"
   end
 end

@@ -1,39 +1,31 @@
 <% content_for(:title, "Posts — Rocketbox") %>
 
-<section class="w-full">
-  <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
-    <%= render "accounts/library_nav", current: :posts %>
-
-    <div class="min-w-0 flex-1">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 class="font-manrope text-xl font-bold text-ink-900">Posts</h1>
-          <p class="mt-2 text-sm text-ink-600">Draft Instagram posts generated from your library.</p>
-        </div>
-        <%= link_to "Select media in uploads", library_path(folder: "uploads"), class: "text-sm font-medium text-ink-900 underline underline-offset-2" %>
-      </div>
-
-      <% if @posts.present? %>
-        <ul class="mt-6 space-y-4">
-          <% @posts.each do |post| %>
-            <li class="border-b border-ink-900/10 pb-4">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <%= link_to post.prompt.name, post_path(post), class: "font-medium text-ink-900 underline underline-offset-2" %>
-                  <p class="mt-1 text-xs text-ink-500">
-                    <%= post.status %> · <%= pluralize(post.smm_post_media_items.size, "image") %> · <%= l(post.created_at, format: :short) %>
-                  </p>
-                </div>
-                <%= link_to "Open", post_path(post), class: "rb-btn-ghost-on-light px-3 py-1.5 text-xs" %>
-              </div>
-            </li>
-          <% end %>
-        </ul>
-      <% else %>
-        <p class="mt-6 text-sm text-ink-600">
-          No posts yet. <%= link_to "Select images in uploads", library_path(folder: "uploads"), class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
-        </p>
-      <% end %>
-    </div>
+<div class="flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <h2 class="font-manrope text-lg font-bold text-ink-900">Posts</h2>
+    <p class="mt-2 text-sm text-ink-600">Draft Instagram posts generated from your library.</p>
   </div>
-</section>
+  <%= link_to "Select media in uploads", library_uploads_path, class: "text-sm font-medium text-ink-900 underline underline-offset-2" %>
+</div>
+
+<% if @posts.present? %>
+  <ul class="mt-6 space-y-4">
+    <% @posts.each do |post| %>
+      <li class="border-b border-ink-900/10 pb-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <%= link_to post.prompt.name, smm_post_path(post), class: "font-medium text-ink-900 underline underline-offset-2" %>
+            <p class="mt-1 text-xs text-ink-500">
+              <%= post.status %> · <%= pluralize(post.smm_post_media_items.size, "image") %> · <%= l(post.created_at, format: :short) %>
+            </p>
+          </div>
+          <%= link_to "Open", smm_post_path(post), class: "rb-btn-ghost-on-light px-3 py-1.5 text-xs" %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="mt-6 text-sm text-ink-600">
+    No posts yet. <%= link_to "Select images in uploads", library_uploads_path, class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
+  </p>
+<% end %>

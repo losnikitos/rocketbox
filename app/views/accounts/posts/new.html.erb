@@ -1,52 +1,44 @@
 <% content_for(:title, "Create Instagram post — Rocketbox") %>
 
-<section class="w-full">
-  <div class="flex flex-col gap-8 sm:flex-row sm:gap-10 lg:gap-12">
-    <%= render "accounts/library_nav", current: :posts %>
+<h2 class="font-manrope text-lg font-bold text-ink-900">Create Instagram post</h2>
+<p class="mt-2 text-sm text-ink-600">Pick a prompt. We’ll generate a Reel from your selected images.</p>
 
-    <div class="min-w-0 flex-1">
-      <h1 class="font-manrope text-xl font-bold text-ink-900">Create Instagram post</h1>
-      <p class="mt-2 text-sm text-ink-600">Pick a prompt. We’ll generate a Reel from your selected images.</p>
-
-      <div class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-        <% @selected_media.each do |media| %>
-          <div class="min-w-0">
-            <% if media.file.attached? %>
-              <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
-            <% else %>
-              <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-xs text-ink-500">Missing</div>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-
-      <%= form_with url: posts_path, method: :post, class: "mt-8 max-w-xl space-y-5" do %>
-        <% @selected_media.each do |media| %>
-          <%= hidden_field_tag "library_media_ids[]", media.id %>
-        <% end %>
-
-        <div>
-          <label for="prompt_id" class="block text-sm font-medium text-ink-900">Prompt</label>
-          <%= select_tag :prompt_id,
-                options_from_collection_for_select(@prompts, :id, :name, params[:prompt_id]),
-                include_blank: "Choose a prompt…",
-                class: "mt-1.5 w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900",
-                required: true %>
-          <% if @prompts.any? %>
-            <p class="mt-2 text-xs text-ink-500">Prompts are managed in the admin library.</p>
-          <% end %>
-        </div>
-
-        <div>
-          <label for="caption" class="block text-sm font-medium text-ink-900">Caption <span class="font-normal text-ink-500">(optional)</span></label>
-          <%= text_area_tag :caption, params[:caption], rows: 3, class: "mt-1.5 w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900", placeholder: "Caption used when you publish…" %>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-          <%= submit_tag "Create draft & generate video", class: "rb-btn-primary px-4 py-2 text-sm" %>
-          <%= link_to "Back to uploads", library_path(folder: "uploads"), class: "rb-btn-ghost-on-light px-4 py-2 text-sm" %>
-        </div>
+<div class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+  <% @selected_media.each do |media| %>
+    <div class="min-w-0">
+      <% if media.file.attached? %>
+        <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
+      <% else %>
+        <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-xs text-ink-500">Missing</div>
       <% end %>
     </div>
+  <% end %>
+</div>
+
+<%= form_with url: smm_posts_path, method: :post, class: "mt-8 max-w-xl space-y-5" do %>
+  <% @selected_media.each do |media| %>
+    <%= hidden_field_tag "library_media_ids[]", media.id %>
+  <% end %>
+
+  <div>
+    <label for="prompt_id" class="block text-sm font-medium text-ink-900">Prompt</label>
+    <%= select_tag :prompt_id,
+          options_from_collection_for_select(@prompts, :id, :name, params[:prompt_id]),
+          include_blank: "Choose a prompt…",
+          class: "mt-1.5 w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900",
+          required: true %>
+    <% if @prompts.any? %>
+      <p class="mt-2 text-xs text-ink-500">Prompts are managed in the admin library.</p>
+    <% end %>
   </div>
-</section>
+
+  <div>
+    <label for="caption" class="block text-sm font-medium text-ink-900">Caption <span class="font-normal text-ink-500">(optional)</span></label>
+    <%= text_area_tag :caption, params[:caption], rows: 3, class: "mt-1.5 w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900", placeholder: "Caption used when you publish…" %>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <%= submit_tag "Create draft & generate video", class: "rb-btn-primary px-4 py-2 text-sm" %>
+    <%= link_to "Back to uploads", library_uploads_path, class: "rb-btn-ghost-on-light px-4 py-2 text-sm" %>
+  </div>
+<% end %>

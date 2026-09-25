@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Rocketbox" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Rocketbox">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag "tailwind", "swiper-bundle.min", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <% section, title, tabs = app_nav %>
+  <body class="min-h-screen bg-ink-900/[0.03] font-sans text-ink-900 antialiased">
+    <div class="flex min-h-screen">
+      <input type="checkbox" id="app-nav-toggle" class="peer sr-only">
+
+      <aside class="hidden w-52 shrink-0 flex-col max-sm:peer-checked:flex sm:flex sm:sticky sm:top-0 sm:h-screen sm:py-4 sm:pl-3">
+        <div class="px-3 pt-2">
+          <%= render "shared/logo", path: library_uploads_path, aria_label: "Rocketbox library" %>
+        </div>
+
+        <%= render "layouts/app/primary_nav", section: section %>
+      </aside>
+
+      <div class="flex min-w-0 flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 sm:pl-2">
+        <header class="flex flex-wrap items-center gap-3 px-1 pb-3 sm:px-2">
+          <label for="app-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
+            Menu
+          </label>
+          <h1 class="font-manrope text-xl font-bold tracking-tight sm:text-2xl"><%= title %></h1>
+
+          <div class="ml-auto flex flex-wrap items-center gap-2">
+            <% if Current.user&.admin? %>
+              <%= link_to monitor_path, class: "rb-btn-ghost-on-light inline-flex items-center gap-1.5 px-3 py-2 text-sm" do %>
+                <%= heroicon "cog" %>
+                Monitor
+              <% end %>
+            <% end %>
+            <%= link_to profile_settings_path,
+                  class: "rb-btn-ghost-on-light inline-flex items-center gap-1.5 px-3 py-2 text-sm",
+                  aria: { selected: section == :profile } do %>
+              <%= heroicon "user" %>
+              My profile
+            <% end %>
+          </div>
+        </header>
+
+        <% if tabs.any? %>
+          <%= render "layouts/app/secondary_nav", tabs: tabs %>
+        <% end %>
+
+        <main class="rb-surface-raised mt-3 min-h-0 flex-1 p-5 sm:p-6 lg:p-8">
+          <%= yield %>
+        </main>
+      </div>
+    </div>
+    <%= render "shared/flashes" %>
+  </body>
+</html>

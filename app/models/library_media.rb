@@ -15,16 +15,6 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("image/") || kind.in?(%w[photo sticker])
   end
 
-  def story_video?
-    return false unless file.attached?
-
-    file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
-  end
-
-  def story_publishable?
-    story_image? || story_video?
-  end
-
   private
 
     def channel_identity_present
