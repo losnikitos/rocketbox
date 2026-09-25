@@ -1,0 +1,71 @@
+<% content_for(:title, "Generation ##{@media_generation.id} — Monitor") %>
+
+<% if @media_generation.in_progress? %>
+  <% content_for :head do %>
+    <meta http-equiv="refresh" content="5">
+  <% end %>
+<% end %>
+
+<div class="space-y-6">
+  <div>
+    <%= link_to "← All generations", monitor_media_generations_path, class: "text-xs font-medium text-ink-500 hover:text-ink-900" %>
+  </div>
+
+  <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 class="font-manrope text-base font-bold text-ink-900">Generation #<%= @media_generation.id %></h2>
+      <span class="rounded-full px-2.5 py-0.5 text-xs font-medium <%= generation_status_class(@media_generation) %>">
+        <%= @media_generation.status.tr("_", " ") %>
+      </span>
+    </div>
+
+    <dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2">
+      <div>
+        <dt class="text-ink-500">Model</dt>
+        <dd class="mt-0.5 font-medium text-ink-900"><%= @media_generation.model %></dd>
+      </div>
+      <div>
+        <dt class="text-ink-500">Type</dt>
+        <dd class="mt-0.5 font-medium text-ink-900"><%= @media_generation.media_type %></dd>
+      </div>
+      <div>
+        <dt class="text-ink-500">Created</dt>
+        <dd class="mt-0.5 font-medium text-ink-900"><%= @media_generation.created_at.to_fs(:long) %></dd>
+      </div>
+      <div>
+        <dt class="text-ink-500">By</dt>
+        <dd class="mt-0.5 font-medium text-ink-900"><%= @media_generation.user&.email || "—" %></dd>
+      </div>
+    </dl>
+
+    <div class="mt-5">
+      <p class="text-sm text-ink-500">Prompt</p>
+      <p class="mt-1 whitespace-pre-wrap text-sm text-ink-900"><%= @media_generation.prompt %></p>
+    </div>
+
+    <% if @media_generation.failed? && @media_generation.error_message.present? %>
+      <div class="<%= tw_alert_error_classes %> mt-5" role="alert">
+        <%= @media_generation.error_message %>
+      </div>
+    <% end %>
+
+    <% if @media_generation.in_progress? %>
+      <p class="mt-5 text-sm text-ink-500">Still generating… this page refreshes every 5s.</p>
+    <% end %>
+  </div>
+
+  <% if @media_generation.succeeded? && @media_generation.file.attached? %>
+    <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+      <h3 class="font-manrope text-sm font-bold text-ink-900">Result</h3>
+      <div class="mt-4">
+        <% if @media_generation.image? %>
+          <%= image_tag @media_generation.file, class: "max-h-[70vh] w-auto max-w-full rounded-lg" %>
+        <% else %>
+          <video controls class="max-h-[70vh] w-full max-w-2xl rounded-lg bg-black" preload="metadata">
+            <source src="<%= url_for(@media_generation.file) %>" type="<%= @media_generation.file.content_type %>">
+          </video>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

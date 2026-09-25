@@ -25,6 +25,14 @@ module ApplicationHelper
     "mb-4 rounded-[10px] border border-signal-red/35 bg-ink-900/5 px-3 py-2 text-sm text-ink-900"
   end
 
+  def generation_status_class(generation)
+    case generation.status
+    when "succeeded" then "text-signal-green"
+    when "failed" then "text-signal-red"
+    else "text-ink-500"
+    end
+  end
+
   def render_markdown(text)
     renderer = Redcarpet::Render::HTML.new(
       filter_html: true,

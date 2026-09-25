@@ -1,0 +1,76 @@
+<% content_for(:title, "Media generations — Monitor") %>
+
+<div class="space-y-6">
+  <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+    <h2 class="font-manrope text-base font-bold text-ink-900">New generation</h2>
+    <p class="mt-1 text-sm text-ink-600">Prompt + model. Result lands here when the job finishes.</p>
+
+    <%= form_with model: @media_generation, url: monitor_media_generations_path, class: "mt-5 space-y-4" do |form| %>
+      <% if @media_generation.errors.any? %>
+        <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
+          <p class="font-medium"><%= pluralize(@media_generation.errors.count, "issue") %> to fix:</p>
+          <ul class="list-inside list-disc text-sm">
+            <% @media_generation.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= form.label :model, class: tw_label_classes %>
+        <%= form.select :model, MediaGeneration.model_options, {}, class: tw_input_classes %>
+      </div>
+
+      <div>
+        <%= form.label :prompt, class: tw_label_classes %>
+        <%= form.text_area :prompt, rows: 4, required: true, placeholder: "Describe the image or video…", class: tw_input_classes %>
+      </div>
+
+      <div>
+        <%= form.submit "Generate", class: "rb-btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+    <h2 class="font-manrope text-base font-bold text-ink-900">Recent</h2>
+
+    <% if @media_generations.any? %>
+      <ul class="mt-4 divide-y divide-ink-900/10">
+        <% @media_generations.each do |generation| %>
+          <li class="flex flex-wrap items-start gap-4 py-4 first:pt-0 last:pb-0">
+            <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-900/5">
+              <% if generation.succeeded? && generation.file.attached? %>
+                <% if generation.image? %>
+                  <%= image_tag generation.file, class: "h-full w-full object-cover" %>
+                <% else %>
+                  <video class="h-full w-full object-cover" muted preload="metadata">
+                    <source src="<%= url_for(generation.file) %>" type="<%= generation.file.content_type %>">
+                  </video>
+                <% end %>
+              <% else %>
+                <div class="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-wide text-ink-400">
+                  <%= generation.status.tr("_", " ") %>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <%= link_to monitor_media_generation_path(generation), class: "block group" do %>
+                <p class="truncate text-sm font-medium text-ink-900 group-hover:underline"><%= truncate(generation.prompt, length: 120) %></p>
+                <p class="mt-1 text-xs text-ink-500">
+                  <%= generation.media_type %> · <%= generation.model %> ·
+                  <span class="<%= generation_status_class(generation) %>"><%= generation.status.tr("_", " ") %></span>
+                  · <%= time_ago_in_words(generation.created_at) %> ago
+                </p>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="mt-3 text-sm text-ink-500">No generations yet.</p>
+    <% end %>
+  </div>
+</div>

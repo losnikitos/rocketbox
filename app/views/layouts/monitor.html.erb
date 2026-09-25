@@ -38,6 +38,15 @@
                     aria: { current: (current_page?(monitor_path) ? "page" : nil) } %>
             </li>
             <li>
+              <%= link_to "Media generations",
+                    monitor_media_generations_path,
+                    class: [
+                      "block rounded-[10px] px-3 py-2 text-sm font-medium transition hover:bg-ink-900/5",
+                      (controller_name == "monitor_media_generations" ? "bg-rocket/15 text-ink-900" : "text-ink-700"),
+                    ].join(" "),
+                    aria: { current: (controller_name == "monitor_media_generations" ? "page" : nil) } %>
+            </li>
+            <li>
               <%= link_to "Jobs",
                     "/jobs",
                     class: "block rounded-[10px] px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5" %>
@@ -67,6 +76,13 @@
                     (current_page?(monitor_path) ? "border-rocket text-ink-900" : "border-transparent text-ink-500 hover:text-ink-900"),
                   ].join(" "),
                   aria: { current: (current_page?(monitor_path) ? "page" : nil) } %>
+            <%= link_to "Media generations",
+                  monitor_media_generations_path,
+                  class: [
+                    "-mb-px border-b-2 pb-2 text-sm font-medium",
+                    (controller_name == "monitor_media_generations" ? "border-rocket text-ink-900" : "border-transparent text-ink-500 hover:text-ink-900"),
+                  ].join(" "),
+                  aria: { current: (controller_name == "monitor_media_generations" ? "page" : nil) } %>
             <%= link_to "Jobs",
                   "/jobs",
                   class: "-mb-px border-b-2 border-transparent pb-2 text-sm font-medium text-ink-500 hover:text-ink-900" %>

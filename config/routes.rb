@@ -64,6 +64,9 @@ Rails.application.routes.draw do
   end
 
   get "monitor", to: "monitor#show", as: :monitor
+  scope path: "monitor", as: "monitor" do
+    resources :media_generations, only: %i[index show new create], controller: "monitor_media_generations"
+  end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
