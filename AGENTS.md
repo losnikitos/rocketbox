@@ -19,7 +19,12 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 **Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 
 ## Production
+- URL: https://rocketbox.plus
 - Runner: `bin/kamal app exec --reuse "bin/rails runner '...'"` (aliases: `bin/kamal console`, `shell`, `logs`; see [DEPLOY.md](./docs/DEPLOY.md)).
+
+## Dev
+- Local: http://localhost:3003 (`bin/dev`)
+- Tunnel (public webhooks): https://dev.rocketbox.plus (`make tunnel`)
 
 # Documentation Index
 
