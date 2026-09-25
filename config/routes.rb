@@ -35,6 +35,12 @@ Rails.application.routes.draw do
     get "library(/:folder)", to: "accounts#show", as: :library,
         defaults: { folder: "uploads" }, constraints: { folder: /uploads|stories|reels/ }
 
+    resources :posts, only: [ :index, :new, :create, :show ], module: :accounts do
+      member do
+        post :publish
+      end
+    end
+
     scope path: "profile", as: "profile" do
       scope module: :accounts do
         resource :settings, only: [ :show ]
@@ -48,7 +54,6 @@ Rails.application.routes.draw do
 
     delete "library/media/:id", to: "library_media#destroy", as: :library_media
     post "library/media/:id/instagram_story", to: "instagram_stories#create", as: :library_instagram_story
-    post "library/media/:id/improve", to: "library_media_improves#create", as: :library_improve
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

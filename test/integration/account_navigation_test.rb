@@ -31,6 +31,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Library folders']"
     assert_select "nav[aria-label='Profile sections']", count: 0
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
+    assert_select "a[href=?]", posts_path, text: "Posts"
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
   end
 

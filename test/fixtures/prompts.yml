@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+cinematic:
+  name: Cinematic shop reel
+  body: Create a vertical Instagram Reel from the reference photos with smooth camera moves.
+  active: true
+  position: 1
+
+before_after:
+  name: Before → after energy
+  body: Turn these photos into a dynamic vertical Instagram Reel with energetic cuts.
+  active: true
+  position: 2
+
+inactive:
+  name: Inactive prompt
+  body: Should not appear in the user library.
+  active: false
+  position: 99
