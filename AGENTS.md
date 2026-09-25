@@ -44,3 +44,6 @@ Authentication and session login.
 
 ### [DEPLOY.md](./docs/DEPLOY.md)
 How the app is deployed and operated in production.
+
+### [ICONS.md](./docs/ICONS.md)
+Heroicons: `heroicon "name"` — no variant or size unless needed.

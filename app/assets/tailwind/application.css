@@ -2,6 +2,13 @@
 
 @import "tailwindcss";
 
+@layer base {
+  /* Heroicons ship viewBox only — give bare `heroicon "name"` a default size. */
+  svg[data-slot="icon"] {
+    @apply size-6 shrink-0;
+  }
+}
+
 @theme {
   --color-ink-900: #0e0e0f;
   --color-ink-800: #17171a;

@@ -36,7 +36,16 @@
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <% if Current.user %>
         <% if controller_path.start_with?("accounts") %>
-          <%= link_to "My profile", profile_settings_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
+          <% if Current.user.admin? %>
+            <%= link_to monitor_path, class: "rb-btn-ghost inline-flex items-center gap-1.5 px-3 py-2 text-sm" do %>
+              <%= heroicon "cog" %>
+              Monitor
+            <% end %>
+          <% end %>
+          <%= link_to profile_settings_path, class: "rb-btn-ghost inline-flex items-center gap-1.5 px-3 py-2 text-sm" do %>
+            <%= heroicon "user" %>
+            My profile
+          <% end %>
         <% else %>
           <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>
         <% end %>

@@ -7,13 +7,29 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "should show library on app library" do
+  test "should show library uploads by default" do
     get library_url
     assert_response :success
-    assert_select "h1", "Library"
+    assert_select "h1", "Uploads"
+    assert_select "nav[aria-label='Library folders']"
+    assert_select "a[href=?][aria-current='page']", library_path(folder: "uploads"), text: "Uploads"
+    assert_select "a[href=?]", library_path(folder: "stories"), text: "Stories"
+    assert_select "a[href=?]", library_path(folder: "reels"), text: "Reels"
     assert_select "nav[aria-label='Profile sections']", count: 0
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
+  end
+
+  test "stories and reels folders are empty" do
+    get library_url(folder: "stories")
+    assert_response :success
+    assert_select "h1", "Stories"
+    assert_select "a[href=?][aria-current='page']", library_path(folder: "stories"), text: "Stories"
+
+    get library_url(folder: "reels")
+    assert_response :success
+    assert_select "h1", "Reels"
+    assert_select "a[href=?][aria-current='page']", library_path(folder: "reels"), text: "Reels"
   end
 
   test "shows publish button for story media" do

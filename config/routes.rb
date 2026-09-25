@@ -32,7 +32,8 @@ Rails.application.routes.draw do
   # Customer portal at /app (landing page stays at /)
   scope :app do
     get "/", to: redirect("/app/library"), as: :app
-    get "library", to: "accounts#show", as: :library
+    get "library(/:folder)", to: "accounts#show", as: :library,
+        defaults: { folder: "uploads" }, constraints: { folder: /uploads|stories|reels/ }
 
     scope path: "profile", as: "profile" do
       scope module: :accounts do

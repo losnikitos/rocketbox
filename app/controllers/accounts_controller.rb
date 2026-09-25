@@ -13,7 +13,8 @@ class AccountsController < ApplicationController
   ].freeze
 
   def show
-    @library_media = Current.user.library_media.with_attached_file.order(created_at: :desc)
+    @folder = params[:folder].presence_in(%w[uploads stories reels]) || "uploads"
+    @library_media = Current.user.library_media.with_attached_file.order(created_at: :desc) if @folder == "uploads"
   end
 
   def checkout

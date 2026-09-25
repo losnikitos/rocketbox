@@ -21,15 +21,27 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", session_path(user.sessions.last), count: 0
   end
 
-  test "app library has no section nav and links to profile" do
+  test "app library has folder nav and links to profile" do
     sign_in_as(users(:lazaro_nixon))
 
     get library_url
 
     assert_response :success
-    assert_select "h1", "Library"
+    assert_select "h1", "Uploads"
+    assert_select "nav[aria-label='Library folders']"
     assert_select "nav[aria-label='Profile sections']", count: 0
     assert_select "a[href=?]", profile_settings_path, text: "My profile"
+    assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
+  end
+
+  test "admin sees monitor link next to my profile" do
+    sign_in_as(users(:admin_user))
+
+    get library_url
+
+    assert_response :success
+    assert_select "a[href=?]", profile_settings_path, text: "My profile"
+    assert_select "a[href=?]", monitor_path, text: "Monitor"
   end
 
   test "settings page shows log out action" do
