@@ -10,7 +10,7 @@ class Accounts::BusinessControllerTest < ActionDispatch::IntegrationTest
   test "should show business" do
     get business_url
     assert_response :success
-    assert_select "h2", "Business"
+    assert_select "h2", "Lazaro Cuts"
     assert_select "form[action=?]", business_path
     assert_select "input[name='user[homepage_url]']"
   end

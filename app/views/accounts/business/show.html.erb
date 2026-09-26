@@ -1,41 +1,48 @@
 <% content_for(:title, "Business — Rocketbox") %>
 
-<h2 class="font-manrope text-lg font-bold text-ink-900">Business</h2>
-<p class="mt-2 text-sm text-ink-600">Name, logo, and hours used across your marketing.</p>
-
 <%= form_with model: Current.account, url: business_path, method: :patch, multipart: true,
-      class: "mt-6 space-y-4",
+      class: "space-y-8",
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
-  <div>
-    <%= form.label :business_name, "Name", class: tw_label_classes %>
-    <%= autosave_field do %>
-      <%= form.text_field :business_name, required: true, autocomplete: "organization", class: tw_input_autosave_classes %>
+  <div class="flex flex-col items-center text-center">
+    <%= form.label :logo, class: "group relative cursor-pointer" do %>
+      <% if Current.account.logo.attached? %>
+        <%= image_tag Current.account.logo.variant(resize_to_limit: [ 384, 384 ]),
+              alt: "#{Current.account.business_name} logo",
+              class: "size-48 rounded-2xl object-cover ring-1 ring-ink-900/10 transition group-hover:ring-ink-900/25" %>
+      <% else %>
+        <span class="flex size-48 items-center justify-center rounded-2xl bg-ink-900/5 text-ink-400 ring-1 ring-ink-900/10 transition group-hover:bg-ink-900/10 group-hover:ring-ink-900/25">
+          <%= heroicon "camera", options: { class: "size-12" } %>
+        </span>
+      <% end %>
+      <span class="sr-only">Change logo</span>
+      <%= form.file_field :logo, accept: "image/*", class: "sr-only" %>
     <% end %>
+
+    <h2 class="mt-4 font-manrope text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+      <%= Current.account.business_name.presence || "Your business" %>
+    </h2>
   </div>
 
-  <div>
-    <%= form.label :homepage_url, "Homepage URL", class: tw_label_classes %>
-    <%= autosave_field do %>
-      <%= form.url_field :homepage_url, autocomplete: "url", placeholder: "https://", class: tw_input_autosave_classes %>
-    <% end %>
-  </div>
+  <div class="mx-auto max-w-md space-y-4">
+    <div>
+      <%= form.label :business_name, "Name", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.text_field :business_name, required: true, autocomplete: "organization", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
 
-  <div>
-    <%= form.label :logo, "Logo", class: tw_label_classes %>
-    <% if Current.account.logo.attached? %>
-      <div class="mb-2">
-        <%= image_tag Current.account.logo.variant(resize_to_limit: [ 160, 160 ]), alt: "#{Current.account.business_name} logo", class: "size-20 rounded-lg object-cover" %>
-      </div>
-    <% end %>
-    <%= autosave_field do %>
-      <%= form.file_field :logo, accept: "image/*", class: "mt-1 block w-full pr-10 text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-900/5 file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink-900" %>
-    <% end %>
-  </div>
+    <div>
+      <%= form.label :homepage_url, "Homepage URL", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.url_field :homepage_url, autocomplete: "url", placeholder: "https://", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
 
-  <div>
-    <%= form.label :business_hours, "Business hours", class: tw_label_classes %>
-    <%= autosave_field do %>
-      <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_autosave_classes %>
-    <% end %>
+    <div>
+      <%= form.label :business_hours, "Business hours", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
   </div>
 <% end %>
