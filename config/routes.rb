@@ -76,7 +76,7 @@ Rails.application.routes.draw do
       patch "subscription_status", to: "accounts#subscription_status"
     end
 
-    delete "library/media/:id", to: "library_media#destroy", as: :library_media
+    resources :library_media, only: %i[create destroy], path: "library/media"
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

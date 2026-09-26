@@ -1,5 +1,14 @@
 <% content_for(:title, "Uploads — Rocketbox") %>
 
+<%= form_with url: library_media_index_path, multipart: true, class: "hidden",
+      data: { controller: "drop-upload" } do %>
+  <%= file_field_tag "files[]",
+        multiple: true,
+        accept: "image/*,video/*",
+        id: "library-upload-input",
+        data: { drop_upload_target: "input", action: "change->drop-upload#changed" } %>
+<% end %>
+
 <div data-controller="library-select" data-library-select-max-value="<%= SmmPost::MAX_MEDIA %>">
   <% if @library_media.present? %>
     <div class="space-y-8">
@@ -71,12 +80,9 @@
         </button>
       </form>
     </div>
-  <% elsif Current.account.telegram_user_id.blank? && Current.account.whatsapp_phone.blank? %>
-    <p class="text-sm text-ink-600">
-      Set your <%= link_to "messaging integrations", profile_integrations_path, class: "font-medium text-ink-900 underline underline-offset-2" %>
-      so inbound media can be attached here.
-    </p>
   <% else %>
-    <p class="text-sm text-ink-600">No media yet. Send a photo or video to the bot and it will show up here.</p>
+    <p class="text-sm text-ink-600">
+      No media yet. Drop photos or videos anywhere here<% if Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present? %>, or send a photo to the bot<% end %>.
+    </p>
   <% end %>
 </div>
