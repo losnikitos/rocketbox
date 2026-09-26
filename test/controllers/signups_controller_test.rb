@@ -62,11 +62,28 @@ class SignupsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to app_url
   end
 
-  test "existing email redirects to sign in" do
+  test "existing email otp signs in and skips profile fields" do
+    email = users(:lazaro_nixon).email
+
     post sign_up_name_url, params: { name: "Ada" }
     post sign_up_business_url, params: { business_name: "Ada Cuts" }
-    post sign_up_email_url, params: { email: users(:lazaro_nixon).email }
-    assert_redirected_to sign_in_url(email_hint: users(:lazaro_nixon).email)
+
+    assert_emails 1 do
+      post sign_up_email_url, params: { email: email }
+    end
+    assert_redirected_to sign_up_email_code_url
+
+    Rails.cache.delete("login_otp_throttle:#{email}")
+    challenge = LoginChallenge.issue!(email)
+
+    assert_no_difference -> { User.count } do
+      post sign_up_email_code_url, params: { otp: challenge[:code] }
+    end
+    assert_redirected_to app_url
+
+    user = users(:lazaro_nixon).reload
+    assert_nil user.name
+    assert_nil user.business_name
   end
 
   test "each step shows back link" do

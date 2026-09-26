@@ -50,4 +50,8 @@ Rails `generates_token_for :email_verification` (2 days, bound to email). Sent v
 
 [`app/controllers/identity/email_verifications_controller.rb`](/app/controllers/identity/email_verifications_controller.rb) — link with `sid` marks `verified: true`; signed-in users can resend. Changing email ([`app/controllers/identity/emails_controller.rb`](/app/controllers/identity/emails_controller.rb)) clears verified and re-sends.
 
-OTP/magic-link login and signup email OTP already set `verified: true`.
+OTP/magic-link success creates or finds the user, then redirects to `/app`.
+
+Sign-in UI uses the same auth shell as signup ([`layouts/auth`](/app/views/layouts/auth.html.erb): wave background, no marketing header/footer, shared email/OTP steps under [`shared/auth/`](/app/views/shared/auth/)).
+
+If someone enters an existing email during signup, the email OTP step still runs; a correct code signs them in (name/business draft discarded) and lands on `/app`.

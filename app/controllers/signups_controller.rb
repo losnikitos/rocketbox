@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class SignupsController < ApplicationController
-  layout "signup"
+  include AuthFlow
+
+  layout "auth"
   skip_before_action :authenticate
 
   # ponytail: stub SMS OTP; wire WhatsApp/SMS when ready
@@ -59,11 +61,6 @@ class SignupsController < ApplicationController
       return render :email, status: :unprocessable_entity
     end
 
-    if User.exists?(email: email)
-      redirect_to sign_in_path(email_hint: email), notice: "You already have an account. Sign in instead."
-      return
-    end
-
     update_draft(email: email)
     issue_email_otp!(email)
     redirect_to sign_up_email_code_path
@@ -71,7 +68,7 @@ class SignupsController < ApplicationController
 
   def email_code
     @email = draft[:email]
-    @otp_code = session[:signup_otp_code] if Rails.env.development?
+    @otp_code = otp_preview_code
   end
 
   def email_code_submit
@@ -83,9 +80,17 @@ class SignupsController < ApplicationController
     email = draft[:email]
     unless LoginChallenge.verify_code!(email, params[:otp])
       @email = email
-      @otp_code = session[:signup_otp_code] if Rails.env.development?
+      @otp_code = otp_preview_code
       flash.now[:alert] = "That code is invalid or expired"
       return render :email_code, status: :unprocessable_entity
+    end
+
+    if (user = User.find_by(email: email))
+      user.update!(verified: true) unless user.verified?
+      start_session!(user)
+      clear_draft!
+      redirect_to app_path, notice: "Signed in successfully"
+      return
     end
 
     user = User.create!(
@@ -145,7 +150,7 @@ class SignupsController < ApplicationController
 
     def clear_draft!
       session.delete(:signup)
-      session.delete(:signup_otp_code)
+      clear_otp_preview!
     end
 
     def next_step_path
@@ -173,26 +178,5 @@ class SignupsController < ApplicationController
       return if Current.user
 
       redirect_to sign_up_path
-    end
-
-    def issue_email_otp!(email)
-      challenge = LoginChallenge.issue!(email)
-      if challenge == :throttled
-        return
-      end
-
-      session[:signup_otp_code] = challenge[:code] if Rails.env.development?
-
-      UserMailer.with(
-        email: challenge[:email],
-        otp_code: challenge[:code],
-        magic_token: challenge[:token]
-      ).login_otp.deliver_later
-    end
-
-    def start_session!(user)
-      session_record = user.sessions.create!
-      cookies.signed.permanent[:session_token] = { value: session_record.id, httponly: true }
-      Current.session = session_record
     end
 end

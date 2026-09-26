@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Get started — Rocketbox" %></title>
+    <title><%= content_for(:title) || "Rocketbox" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -22,7 +22,7 @@
     </div>
 
     <div class="relative z-10 flex items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:px-8">
-      <%= link_to "← Back", signup_back_path, class: "text-sm font-medium text-ink-500 transition-colors hover:text-ink-900" %>
+      <%= link_to "← Back", auth_back_path, class: "text-sm font-medium text-ink-500 transition-colors hover:text-ink-900" %>
       <div>
         <%= yield :top_right %>
       </div>

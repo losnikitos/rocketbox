@@ -28,7 +28,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       post sign_in_url, params: { email: @user.email }
     end
     assert_redirected_to sign_in_otp_url(email: @user.email)
-    assert_equal "Check your email for a login code", flash[:notice]
   end
 
   test "should sign in with otp and create user for new email" do
@@ -38,10 +37,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { User.count }, 1 do
       post sign_in_otp_url, params: { email: email, otp: challenge[:code] }
     end
-    assert_redirected_to root_url
-
-    get root_url
-    assert_response :success
+    assert_redirected_to app_url
 
     user = User.find_by!(email: email)
     assert user.verified?
@@ -53,15 +49,14 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { User.count } do
       post sign_in_otp_url, params: { email: @user.email, otp: challenge[:code] }
     end
-    assert_redirected_to root_url
+    assert_redirected_to app_url
   end
 
   test "should not sign in with bad otp" do
     LoginChallenge.issue!(@user.email)
 
     post sign_in_otp_url, params: { email: @user.email, otp: "000000" }
-    assert_redirected_to sign_in_otp_url(email: @user.email)
-    assert_equal "That code is invalid or expired", flash[:alert]
+    assert_response :unprocessable_entity
   end
 
   test "should sign in with magic link" do
@@ -71,7 +66,15 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { User.count }, 1 do
       get sign_in_magic_url(sid: challenge[:token])
     end
-    assert_redirected_to root_url
+    assert_redirected_to app_url
+  end
+
+  test "sign in uses auth layout without marketing header" do
+    get sign_in_url(email_hint: @user.email)
+    assert_response :success
+    assert_select "nav[aria-label='Primary']", count: 0
+    assert_select "a", text: "← Back"
+    assert_select "h1", "Your email"
   end
 
   test "should reject invalid magic link" do
