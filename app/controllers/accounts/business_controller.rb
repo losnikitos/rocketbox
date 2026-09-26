@@ -11,7 +11,7 @@ module Accounts
       attrs = business_params
       attrs.delete(:logo) if attrs[:logo].blank?
 
-      if Current.user.update(attrs)
+      if Current.account.update(attrs)
         redirect_to business_path, notice: "Business updated."
       else
         render :show, status: :unprocessable_entity

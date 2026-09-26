@@ -43,6 +43,8 @@ Rails.application.routes.draw do
   scope :app do
     get "/", to: redirect("/app/library/uploads"), as: :app
 
+    resource :account_selection, only: :update, module: :accounts
+
     scope path: "library", module: :accounts do
       get "/", to: redirect("/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads

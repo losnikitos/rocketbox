@@ -7,7 +7,7 @@ class LibraryMediaController < ApplicationController
       return
     end
 
-    media = Current.user.library_media.find(params[:id])
+    media = Current.account.library_media.find(params[:id])
     media.destroy!
     redirect_to library_uploads_path, notice: "Media removed."
   rescue ActiveRecord::RecordNotFound

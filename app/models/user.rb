@@ -24,6 +24,10 @@ class User < ApplicationRecord
     role == "admin"
   end
 
+  def account_label
+    business_name.presence || email
+  end
+
   def self.find_or_create_from_login!(email)
     user = find_or_initialize_by(email: email)
     if user.new_record?

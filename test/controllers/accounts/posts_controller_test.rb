@@ -74,9 +74,10 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "SMM"
     assert_select "h2", "Posts"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", smm_posts_path, text: "Posts"
-    assert_select "a[href=?]", smm_post_path(post_record) do
-      assert_select "video[muted][preload=metadata]:not([controls])"
-    end
+    assert_select "[data-controller=video-preview]"
+    assert_select "video[muted][loop][preload=metadata]:not([controls])"
+    assert_select "button[aria-label='Play video']"
+    assert_select "a[href=?]", smm_post_path(post_record)
   end
 
   private

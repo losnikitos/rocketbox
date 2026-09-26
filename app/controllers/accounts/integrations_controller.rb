@@ -8,7 +8,7 @@ module Accounts
     end
 
     def update
-      if Current.user.update(integrations_params)
+      if Current.account.update(integrations_params)
         backfill_orphan_media!
         redirect_to profile_integrations_path, notice: "Account updated."
       else
@@ -28,13 +28,13 @@ module Accounts
       end
 
       def backfill_orphan_media!
-        if Current.user.telegram_user_id.present?
-          LibraryMedia.where(from_id: Current.user.telegram_user_id, user_id: nil)
-            .update_all(user_id: Current.user.id)
+        if Current.account.telegram_user_id.present?
+          LibraryMedia.where(from_id: Current.account.telegram_user_id, user_id: nil)
+            .update_all(user_id: Current.account.id)
         end
-        if Current.user.whatsapp_phone.present?
-          LibraryMedia.where(whatsapp_from: Current.user.whatsapp_phone, user_id: nil)
-            .update_all(user_id: Current.user.id)
+        if Current.account.whatsapp_phone.present?
+          LibraryMedia.where(whatsapp_from: Current.account.whatsapp_phone, user_id: nil)
+            .update_all(user_id: Current.account.id)
         end
       end
   end

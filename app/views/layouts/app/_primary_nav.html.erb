@@ -1,4 +1,17 @@
 <%# locals: (section:) %>
+<% if Current.user&.admin? %>
+  <div class="mt-4 px-2">
+    <%= form_with url: account_selection_path, method: :patch do %>
+      <label for="account_user_id" class="mb-1 block text-xs font-medium text-ink-500">Customer</label>
+      <%= select_tag :user_id,
+            options_from_collection_for_select(User.order(:business_name, :email), :id, :account_label, Current.account.id),
+            id: "account_user_id",
+            class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
+            onchange: "this.form.requestSubmit()" %>
+    <% end %>
+  </div>
+<% end %>
+
 <nav aria-label="Primary" class="mt-6 flex-1 px-2">
   <ul class="flex flex-col gap-0.5">
     <li>

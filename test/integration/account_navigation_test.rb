@@ -56,6 +56,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", monitor_path, text: "Monitor"
+    assert_select "select#account_user_id"
   end
 
   test "settings page shows log out action" do

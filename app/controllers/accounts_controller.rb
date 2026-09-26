@@ -24,21 +24,21 @@ class AccountsController < ApplicationController
       return
     end
 
-    sub = Current.user.subscription
+    sub = Current.account.subscription
     session_params = {
       mode: "subscription",
       line_items: [ { price: price_id, quantity: 1 } ],
       success_url: profile_subscription_url + "?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: profile_subscription_url,
-      client_reference_id: Current.user.id.to_s,
-      metadata: { user_id: Current.user.id.to_s },
-      subscription_data: { metadata: { user_id: Current.user.id.to_s } }
+      client_reference_id: Current.account.id.to_s,
+      metadata: { user_id: Current.account.id.to_s },
+      subscription_data: { metadata: { user_id: Current.account.id.to_s } }
     }
 
     if sub.stripe_customer_id.present?
       session_params[:customer] = sub.stripe_customer_id
     else
-      session_params[:customer_email] = Current.user.email
+      session_params[:customer_email] = Current.account.email
     end
 
     session = Stripe::Checkout::Session.create(session_params)
@@ -49,7 +49,7 @@ class AccountsController < ApplicationController
   end
 
   def portal
-    sub = Current.user.subscription
+    sub = Current.account.subscription
     if sub.stripe_customer_id.blank?
       redirect_to profile_subscription_path, alert: "Subscribe first to manage billing."
       return
@@ -77,7 +77,7 @@ class AccountsController < ApplicationController
       return
     end
 
-    subscription = Current.user.subscription
+    subscription = Current.account.subscription
     stripe_status = (status == "not_subscribed" ? nil : status)
 
     subscription.update!(

@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
 
   before_action :set_current_request_details
   before_action :resume_session
+  before_action :set_current_account
   before_action :set_footer_documents
   before_action :authenticate
 
@@ -11,6 +12,20 @@ class ApplicationController < ActionController::Base
     def resume_session
       if session_record = Session.find_by_id(cookies.signed[:session_token])
         Current.session = session_record
+      end
+    end
+
+    def set_current_account
+      return unless Current.user&.admin?
+
+      id = session[:account_user_id]
+      return if id.blank?
+
+      account = User.find_by(id: id)
+      if account
+        Current.account = account
+      else
+        session.delete(:account_user_id)
       end
     end
 

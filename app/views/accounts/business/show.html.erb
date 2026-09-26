@@ -3,12 +3,12 @@
 <h2 class="font-manrope text-lg font-bold text-ink-900">Business</h2>
 <p class="mt-2 text-sm text-ink-600">Name, logo, and hours used across your marketing.</p>
 
-<%= form_with model: Current.user, url: business_path, method: :patch, multipart: true, class: "mt-6 space-y-4" do |form| %>
-  <% if Current.user.errors.any? %>
+<%= form_with model: Current.account, url: business_path, method: :patch, multipart: true, class: "mt-6 space-y-4" do |form| %>
+  <% if Current.account.errors.any? %>
     <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
-      <p class="font-medium"><%= pluralize(Current.user.errors.count, "error") %> prevented saving:</p>
+      <p class="font-medium"><%= pluralize(Current.account.errors.count, "error") %> prevented saving:</p>
       <ul class="list-inside list-disc text-sm">
-        <% Current.user.errors.each do |error| %>
+        <% Current.account.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
       </ul>
@@ -22,9 +22,9 @@
 
   <div>
     <%= form.label :logo, "Logo", class: tw_label_classes %>
-    <% if Current.user.logo.attached? %>
+    <% if Current.account.logo.attached? %>
       <div class="mb-2">
-        <%= image_tag Current.user.logo.variant(resize_to_limit: [ 160, 160 ]), alt: "#{Current.user.business_name} logo", class: "size-20 rounded-lg object-cover" %>
+        <%= image_tag Current.account.logo.variant(resize_to_limit: [ 160, 160 ]), alt: "#{Current.account.business_name} logo", class: "size-20 rounded-lg object-cover" %>
       </div>
     <% end %>
     <%= form.file_field :logo, accept: "image/*", class: "mt-1 block w-full text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-900/5 file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink-900" %>

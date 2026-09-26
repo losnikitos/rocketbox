@@ -3,8 +3,10 @@
 lazaro_nixon:
   email: lazaronixon@hotmail.com
   verified: true
+  business_name: Lazaro Cuts
 
 admin_user:
   email: admin@example.com
   verified: true
   role: admin
+  business_name: Rocketbox Admin

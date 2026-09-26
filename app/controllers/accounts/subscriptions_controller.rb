@@ -5,7 +5,7 @@ module Accounts
     layout "app"
 
     def show
-      @subscription = Current.user.subscription
+      @subscription = Current.account.subscription
     end
   end
 end
