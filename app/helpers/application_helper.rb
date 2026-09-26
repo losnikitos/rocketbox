@@ -51,6 +51,16 @@ module ApplicationHelper
     end
   end
 
+  # Today / Yesterday / Thursday / Sun 20 Sep / Fri 31 Dec 2025
+  def upload_day_label(date)
+    today = Date.current
+    return "Today" if date == today
+    return "Yesterday" if date == today - 1
+    return date.strftime("%A") if date >= today.beginning_of_week
+    label = "#{date.strftime('%a')} #{date.day} #{date.strftime('%b')}"
+    date.year == today.year ? label : "#{label} #{date.year}"
+  end
+
   def render_markdown(text)
     renderer = Redcarpet::Render::HTML.new(
       filter_html: true,
