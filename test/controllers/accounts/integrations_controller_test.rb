@@ -32,6 +32,15 @@ class Accounts::IntegrationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 90504516, @user.telegram_user_id
   end
 
+  test "autosave update returns ok without redirect" do
+    patch profile_integrations_url,
+      params: { user: { whatsapp_phone: "15551234567" } },
+      headers: { "X-Autosave" => "1", "Accept" => "application/json" }
+
+    assert_response :ok
+    assert_equal "15551234567", @user.reload.whatsapp_phone
+  end
+
   test "backfills orphan library media when telegram_user_id is saved" do
     orphan = LibraryMedia.create!(
       telegram_file_id: "file-1",

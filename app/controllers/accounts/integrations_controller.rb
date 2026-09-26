@@ -10,8 +10,12 @@ module Accounts
     def update
       if Current.account.update(integrations_params)
         backfill_orphan_media!
+        return head :ok if autosave_request?
+
         redirect_to profile_integrations_path, notice: "Account updated."
       else
+        return render_autosave_error(Current.account) if autosave_request?
+
         render :show, status: :unprocessable_entity
       end
     end

@@ -9,6 +9,24 @@ module ApplicationHelper
     "mt-1 block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-ink-900 shadow-none placeholder:text-ink-400 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 sm:text-sm"
   end
 
+  def tw_input_autosave_classes
+    "#{tw_input_classes} pr-10"
+  end
+
+  # Wraps a field so autosave can show a green check inside on the right.
+  def autosave_field(&)
+    tag.div(class: "relative", data: { autosave_field: true }) do
+      concat capture(&)
+      concat(
+        tag.span(
+          class: "pointer-events-none absolute right-3 top-2.5 text-signal-green opacity-0 transition-opacity duration-150 data-saved:opacity-100",
+          data: { autosave_target: "indicator" },
+          aria: { hidden: true }
+        ) { heroicon("check-circle", variant: :mini, options: { class: "size-5" }) }
+      )
+    end
+  end
+
   def tw_btn_primary_classes
     "rb-btn-primary w-full"
   end

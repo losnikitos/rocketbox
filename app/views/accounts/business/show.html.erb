@@ -3,21 +3,21 @@
 <h2 class="font-manrope text-lg font-bold text-ink-900">Business</h2>
 <p class="mt-2 text-sm text-ink-600">Name, logo, and hours used across your marketing.</p>
 
-<%= form_with model: Current.account, url: business_path, method: :patch, multipart: true, class: "mt-6 space-y-4" do |form| %>
-  <% if Current.account.errors.any? %>
-    <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
-      <p class="font-medium"><%= pluralize(Current.account.errors.count, "error") %> prevented saving:</p>
-      <ul class="list-inside list-disc text-sm">
-        <% Current.account.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
+<%= form_with model: Current.account, url: business_path, method: :patch, multipart: true,
+      class: "mt-6 space-y-4",
+      data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <div>
     <%= form.label :business_name, "Name", class: tw_label_classes %>
-    <%= form.text_field :business_name, required: true, autocomplete: "organization", class: tw_input_classes %>
+    <%= autosave_field do %>
+      <%= form.text_field :business_name, required: true, autocomplete: "organization", class: tw_input_autosave_classes %>
+    <% end %>
+  </div>
+
+  <div>
+    <%= form.label :homepage_url, "Homepage URL", class: tw_label_classes %>
+    <%= autosave_field do %>
+      <%= form.url_field :homepage_url, autocomplete: "url", placeholder: "https://", class: tw_input_autosave_classes %>
+    <% end %>
   </div>
 
   <div>
@@ -27,13 +27,15 @@
         <%= image_tag Current.account.logo.variant(resize_to_limit: [ 160, 160 ]), alt: "#{Current.account.business_name} logo", class: "size-20 rounded-lg object-cover" %>
       </div>
     <% end %>
-    <%= form.file_field :logo, accept: "image/*", class: "mt-1 block w-full text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-900/5 file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink-900" %>
+    <%= autosave_field do %>
+      <%= form.file_field :logo, accept: "image/*", class: "mt-1 block w-full pr-10 text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-900/5 file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink-900" %>
+    <% end %>
   </div>
 
   <div>
     <%= form.label :business_hours, "Business hours", class: tw_label_classes %>
-    <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_classes %>
+    <%= autosave_field do %>
+      <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_autosave_classes %>
+    <% end %>
   </div>
-
-  <%= form.submit "Save business", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-40" %>
 <% end %>

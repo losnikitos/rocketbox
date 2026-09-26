@@ -3,18 +3,9 @@
 <h2 class="font-manrope text-lg font-bold text-ink-900">Integrations</h2>
 <p class="mt-2 text-sm text-ink-600">Instagram, WhatsApp, and Telegram credentials for posting and inbound media.</p>
 
-<%= form_with model: Current.account, url: profile_integrations_path, method: :patch, class: "mt-6 space-y-8" do |form| %>
-  <% if Current.account.errors.any? %>
-    <div class="<%= tw_alert_error_classes %> space-y-1" role="alert">
-      <p class="font-medium"><%= pluralize(Current.account.errors.count, "error") %> prevented saving:</p>
-      <ul class="list-inside list-disc text-sm">
-        <% Current.account.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
+<%= form_with model: Current.account, url: profile_integrations_path, method: :patch,
+      class: "mt-6 space-y-8",
+      data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <section class="space-y-4">
     <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
       <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
@@ -23,12 +14,16 @@
 
     <div>
       <%= form.label :instagram_user_id, "User id", class: tw_label_classes %>
-      <%= form.text_field :instagram_user_id, class: tw_input_classes, autocomplete: "off" %>
+      <%= autosave_field do %>
+        <%= form.text_field :instagram_user_id, class: tw_input_autosave_classes, autocomplete: "off" %>
+      <% end %>
     </div>
 
     <div>
       <%= form.label :instagram_access_token, "Access token", class: tw_label_classes %>
-      <%= form.password_field :instagram_access_token, value: Current.account.instagram_access_token, class: tw_input_classes, autocomplete: "off" %>
+      <%= autosave_field do %>
+        <%= form.password_field :instagram_access_token, value: Current.account.instagram_access_token, class: tw_input_autosave_classes, autocomplete: "off" %>
+      <% end %>
     </div>
   </section>
 
@@ -40,7 +35,9 @@
 
     <div>
       <%= form.label :whatsapp_phone, "Phone", class: tw_label_classes %>
-      <%= form.text_field :whatsapp_phone, class: tw_input_classes, autocomplete: "off", placeholder: "15551234567" %>
+      <%= autosave_field do %>
+        <%= form.text_field :whatsapp_phone, class: tw_input_autosave_classes, autocomplete: "off", placeholder: "15551234567" %>
+      <% end %>
       <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +).</p>
     </div>
   </section>
@@ -53,9 +50,9 @@
 
     <div>
       <%= form.label :telegram_user_id, "User id", class: tw_label_classes %>
-      <%= form.number_field :telegram_user_id, class: tw_input_classes, autocomplete: "off" %>
+      <%= autosave_field do %>
+        <%= form.number_field :telegram_user_id, class: tw_input_autosave_classes, autocomplete: "off" %>
+      <% end %>
     </div>
   </section>
-
-  <%= form.submit "Save integrations", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-40" %>
 <% end %>

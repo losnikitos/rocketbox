@@ -57,3 +57,9 @@
     <% end %>
   </ul>
 </nav>
+
+<div class="mt-auto px-2 pb-2">
+  <%= button_to "Log out", session_path(Current.session), method: :delete,
+        form: { class: "w-full" },
+        class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5" %>
+</div>

@@ -64,4 +64,14 @@ class ApplicationController < ActionController::Base
     def set_footer_documents
       @footer_documents = Document.published.order(:title)
     end
+
+    def autosave_request?
+      request.headers["X-Autosave"].present?
+    end
+
+    def render_autosave_error(record)
+      render json: {
+        error: record.errors.full_messages.to_sentence.presence || "Couldn't save."
+      }, status: :unprocessable_entity
+    end
 end

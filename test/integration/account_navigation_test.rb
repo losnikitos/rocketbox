@@ -59,7 +59,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "select#account_user_id"
   end
 
-  test "settings page shows log out action" do
+  test "settings page shows profile tabs and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_settings_url
@@ -71,12 +71,12 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", profile_integrations_path, text: "Integrations"
     assert_select "nav[aria-label='Secondary'] a[href=?]", profile_subscription_path, text: "Subscription"
     assert_select "h2", text: "Integrations", count: 0
-    assert_select "form[action=?]", session_path(user.sessions.last) do
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
   end
 
-  test "integrations page shows credentials form without log out" do
+  test "integrations page shows credentials form and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_integrations_url
@@ -84,17 +84,21 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", "Integrations"
     assert_select "form[action=?]", profile_integrations_path
-    assert_select "form[action=?]", session_path(user.sessions.last), count: 0
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
+      assert_select "button", "Log out"
+    end
   end
 
-  test "subscription page shows billing controls without log out" do
+  test "subscription page shows billing controls and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_subscription_url
 
     assert_response :success
     assert_select "h2", "Subscription"
-    assert_select "form[action=?]", session_path(user.sessions.last), count: 0
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
+      assert_select "button", "Log out"
+    end
   end
 
   test "non-admin cannot see admin subscription controls" do
