@@ -5,18 +5,28 @@ Rails.application.routes.draw do
   get  "sign_in/otp", to: "sessions#otp", as: :sign_in_otp
   post "sign_in/otp", to: "sessions#otp_create"
   get  "sign_in/magic", to: "sessions#magic", as: :sign_in_magic
-  get  "sign_in/password", to: "sessions#password", as: :sign_in_password
-  post "sign_in/password", to: "sessions#password_create"
   post "dev_sign_in", to: "sessions#dev" if Rails.env.development?
-  get  "sign_up", to: "registrations#new"
-  post "sign_up", to: "registrations#create"
+
+  get  "sign_up", to: "signups#show", as: :sign_up
+  get  "sign_up/name", to: "signups#name", as: :sign_up_name
+  post "sign_up/name", to: "signups#name_submit"
+  get  "sign_up/business", to: "signups#business", as: :sign_up_business
+  post "sign_up/business", to: "signups#business_submit"
+  get  "sign_up/email", to: "signups#email", as: :sign_up_email
+  post "sign_up/email", to: "signups#email_submit"
+  get  "sign_up/email_code", to: "signups#email_code", as: :sign_up_email_code
+  post "sign_up/email_code", to: "signups#email_code_submit"
+  get  "sign_up/phone", to: "signups#phone", as: :sign_up_phone
+  post "sign_up/phone", to: "signups#phone_submit"
+  post "sign_up/phone/skip", to: "signups#phone_skip", as: :sign_up_phone_skip
+  get  "sign_up/phone_code", to: "signups#phone_code", as: :sign_up_phone_code
+  post "sign_up/phone_code", to: "signups#phone_code_submit"
+
   resources :sessions, only: [ :index, :show, :destroy ]
   delete "sign_out", to: "sessions#destroy_current", as: :sign_out
-  resource  :password, only: [ :edit, :update ]
   namespace :identity do
     resource :email,              only: [ :edit, :update ]
     resource :email_verification, only: [ :show, :create ]
-    resource :password_reset,     only: [ :new, :edit, :create, :update ]
   end
   root "home#index"
 

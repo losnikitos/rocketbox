@@ -1,6 +1,5 @@
 <% content_for(:title, "Confirm email — Rocketbox") %>
 <%= render "shared/auth/otp_step",
-      form_url: sign_in_otp_path,
+      form_url: sign_up_email_code_path,
       email: @email,
-      otp_code: @otp_code,
-      hidden_email: true %>
+      otp_code: @otp_code %>

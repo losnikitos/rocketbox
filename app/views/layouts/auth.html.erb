@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Rocketbox" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%= stylesheet_link_tag "tailwind", "swiper-bundle.min", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="flex min-h-screen flex-col bg-white font-sans text-ink-900 antialiased">
+    <div
+      class="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      data-controller="hero-wave"
+      aria-hidden="true"
+    >
+      <canvas data-hero-wave-target="canvas" class="absolute inset-0 h-full w-full"></canvas>
+    </div>
+
+    <div class="relative z-10 flex items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:px-8">
+      <%= link_to "← Back", auth_back_path, class: "text-sm font-medium text-ink-500 transition-colors hover:text-ink-900" %>
+      <div>
+        <%= yield :top_right %>
+      </div>
+    </div>
+
+    <main class="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8">
+      <%= yield %>
+    </main>
+
+    <%= render "shared/flashes" %>
+  </body>
+</html>

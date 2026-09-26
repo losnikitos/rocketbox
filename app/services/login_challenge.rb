@@ -24,6 +24,19 @@ class LoginChallenge
       { email:, code:, token: }
     end
 
+    def issue_and_deliver!(email)
+      challenge = issue!(email)
+      return challenge if challenge == :throttled
+
+      UserMailer.with(
+        email: challenge[:email],
+        otp_code: challenge[:code],
+        magic_token: challenge[:token]
+      ).login_otp.deliver_later
+
+      challenge
+    end
+
     def verify_code!(email, code)
       email = normalize(email)
       payload = Rails.cache.read(otp_key(email))

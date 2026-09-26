@@ -1,0 +1,5 @@
+<% content_for(:title, "Your email — Rocketbox") %>
+<%= render "shared/auth/email_step",
+      form_url: sign_up_email_path,
+      email: @email,
+      subtitle: "We’ll send a confirmation code here." %>

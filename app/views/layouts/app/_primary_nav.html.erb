@@ -17,6 +17,14 @@
         SMM
       <% end %>
     </li>
+    <li class="mt-2 border-t border-ink-900/10 pt-2">
+      <%= link_to profile_settings_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :profile } do %>
+        <%= heroicon "user", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        Profile
+      <% end %>
+    </li>
     <% if Current.user&.admin? %>
       <li class="mt-2 border-t border-ink-900/10 pt-2">
         <%= link_to monitor_path,

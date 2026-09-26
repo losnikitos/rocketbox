@@ -13,6 +13,12 @@ class ActiveSupport::TestCase
 
   # Add more helper methods to be used by all tests here...
   def sign_in_as(user)
-    post(sign_in_password_url, params: { email: user.email, password: "Secret1*3*5*" }); user
+    previous_cache = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    challenge = LoginChallenge.issue!(user.email)
+    post(sign_in_otp_url, params: { email: user.email, otp: challenge[:code] })
+    user
+  ensure
+    Rails.cache = previous_cache
   end
 end

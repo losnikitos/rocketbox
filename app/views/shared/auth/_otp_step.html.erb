@@ -1,0 +1,20 @@
+<%# locals: (form_url:, email:, otp_code: nil, submit: "Continue", hidden_email: false) %>
+<%= render layout: "shared/auth_card" do %>
+  <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Confirm your email</h1>
+  <p class="mt-1 text-center text-sm text-ink-600">
+    We sent a code to <strong><%= email %></strong>
+  </p>
+
+  <%= form_with url: form_url, class: "mt-8 space-y-5" do |form| %>
+    <% if hidden_email %>
+      <%= form.hidden_field :email, value: email %>
+    <% end %>
+    <div>
+      <%= form.label :otp, "Confirmation code", class: tw_label_classes %>
+      <%= form.text_field :otp, value: otp_code, required: true, autofocus: true, autocomplete: "one-time-code", inputmode: "numeric", pattern: "[0-9]*", maxlength: 6, class: tw_input_classes %>
+    </div>
+    <div class="pt-1">
+      <%= form.submit submit, class: tw_btn_primary_classes %>
+    </div>
+  <% end %>
+<% end %>

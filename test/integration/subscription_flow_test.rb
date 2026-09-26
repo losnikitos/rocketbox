@@ -23,7 +23,16 @@ class SubscriptionFlowTest < ActionDispatch::IntegrationTest
     token = SubscriptionLink.generate!("reader@example.com")
 
     get subscription_access_url(t: token)
-    assert_redirected_to sign_up_path(email_hint: "reader@example.com")
+    assert_redirected_to sign_up_name_url
+    follow_redirect!
+    assert_response :success
+
+    get sign_up_business_url
+    # skip ahead: email should be in draft from token
+    post sign_up_name_url, params: { name: "Reader" }
+    post sign_up_business_url, params: { business_name: "Reader Co" }
+    get sign_up_email_url
+    assert_select "input[name=email][value=?]", "reader@example.com"
   end
 
   test "invalid subscription token redirects to request form" do
