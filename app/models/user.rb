@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :media_generations, dependent: :nullify
   has_many :smm_posts, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
+  has_one_attached :logo
 
   after_create :create_default_subscription
 

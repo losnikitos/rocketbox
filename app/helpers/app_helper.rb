@@ -20,6 +20,8 @@ module AppHelper
         [ smm_stories_path, "Stories", false ],
         [ smm_posts_path, "Posts", true ]
       ] ]
+    when "accounts/business"
+      [ :business, "Business", [] ]
     when "accounts/settings", "accounts/integrations", "accounts/subscriptions"
       [ :profile, "Profile", [
         [ profile_settings_path, "Settings", controller_path == "accounts/settings" ],

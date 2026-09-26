@@ -59,6 +59,10 @@ Rails.application.routes.draw do
       end
     end
 
+    scope module: :accounts do
+      resource :business, only: [ :show, :update ], controller: "business"
+    end
+
     scope path: "profile", as: "profile" do
       scope module: :accounts do
         resource :settings, only: [ :show ]

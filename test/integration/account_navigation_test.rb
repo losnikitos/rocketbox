@@ -31,9 +31,21 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
+    assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "a[href=?]", smm_posts_path, text: "SMM"
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
+  end
+
+  test "business page shows primary Business nav" do
+    sign_in_as(users(:lazaro_nixon))
+
+    get business_url
+
+    assert_response :success
+    assert_select "h1", "Business"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", business_path, text: /Business/
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
   end
 
   test "admin sees monitor link in primary nav" do
