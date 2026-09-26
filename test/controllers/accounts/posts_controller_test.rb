@@ -74,10 +74,49 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "SMM"
     assert_select "h2", "Posts"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", smm_posts_path, text: "Posts"
-    assert_select "[data-controller=video-preview]"
-    assert_select "video[muted][loop][preload=metadata]:not([controls])"
-    assert_select "button[aria-label='Play video']"
     assert_select "a[href=?]", smm_post_path(post_record)
+    assert_select "a[href=?] video[muted][preload=metadata]:not([controls])", smm_post_path(post_record)
+    assert_select "a[href=?] span", smm_post_path(post_record), text: "ready"
+    assert_select "section h3", "Today"
+  end
+
+  test "react saves thumbs up instantly" do
+    post_record = create_ready_post!
+
+    post react_smm_post_url(post_record), params: { reaction: "up" }, as: :json
+    assert_response :success
+    assert_equal "up", post_record.reload.reaction
+    assert_nil post_record.reaction_comment
+  end
+
+  test "react saves thumbs down with optional comment" do
+    post_record = create_ready_post!
+
+    post react_smm_post_url(post_record), params: { reaction: "down" }, as: :json
+    assert_response :success
+    assert_equal "down", post_record.reload.reaction
+
+    post react_smm_post_url(post_record),
+         params: { reaction: "down", reaction_comment: "Too dark" },
+         as: :json
+    assert_response :success
+    assert_equal "Too dark", post_record.reload.reaction_comment
+  end
+
+  test "react rejects invalid reaction" do
+    post_record = create_ready_post!
+
+    post react_smm_post_url(post_record), params: { reaction: "meh" }, as: :json
+    assert_response :unprocessable_entity
+  end
+
+  test "react clears reaction when blank" do
+    post_record = create_ready_post!
+    post_record.update!(reaction: "up")
+
+    post react_smm_post_url(post_record), params: { reaction: "" }, as: :json
+    assert_response :success
+    assert_nil post_record.reload.reaction
   end
 
   private

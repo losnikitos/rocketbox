@@ -74,6 +74,24 @@ module Accounts
       redirect_to smm_post_path(@post), notice: "Publishing to Instagram…"
     end
 
+    def react
+      @post = Current.account.smm_posts.find(params[:id])
+      reaction = params[:reaction].to_s.presence
+      unless reaction.nil? || SmmPost::REACTIONS.include?(reaction)
+        return render json: { error: "Invalid reaction" }, status: :unprocessable_entity
+      end
+
+      attrs = { reaction: }
+      if reaction != "down"
+        attrs[:reaction_comment] = nil
+      elsif params.key?(:reaction_comment)
+        attrs[:reaction_comment] = params[:reaction_comment].to_s.strip.presence
+      end
+
+      @post.update!(attrs)
+      render json: { reaction: @post.reaction, reaction_comment: @post.reaction_comment }
+    end
+
     private
 
       def selected_library_media

@@ -57,6 +57,7 @@ Rails.application.routes.draw do
       resources :posts, only: %i[index new create show] do
         member do
           post :publish
+          post :react
         end
       end
     end

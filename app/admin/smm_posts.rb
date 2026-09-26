@@ -1,5 +1,5 @@
 ActiveAdmin.register SmmPost do
-  permit_params :user_id, :prompt_id, :status, :caption, :error_message
+  permit_params :user_id, :prompt_id, :status, :caption, :error_message, :reaction, :reaction_comment
 
   index do
     selectable_column
@@ -7,6 +7,7 @@ ActiveAdmin.register SmmPost do
     column :user
     column :prompt
     column :status
+    column :reaction
     column :published_at
     column :created_at
     actions
@@ -18,6 +19,8 @@ ActiveAdmin.register SmmPost do
       row :user
       row :prompt
       row :status
+      row :reaction
+      row :reaction_comment
       row :caption
       row :error_message
       row :generation_request_id
@@ -44,6 +47,8 @@ ActiveAdmin.register SmmPost do
       f.input :user
       f.input :prompt
       f.input :status, as: :select, collection: SmmPost::STATUSES
+      f.input :reaction, as: :select, collection: SmmPost::REACTIONS, include_blank: true
+      f.input :reaction_comment
       f.input :caption
       f.input :error_message
     end

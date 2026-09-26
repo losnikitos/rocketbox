@@ -7,9 +7,9 @@
   <% @selected_media.each do |media| %>
     <div class="min-w-0">
       <% if media.file.attached? %>
-        <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-square w-full object-cover" %>
+        <%= image_tag url_for(media.file), alt: media.kind, class: "aspect-2/3 w-full rounded-lg object-cover" %>
       <% else %>
-        <div class="flex aspect-square items-center justify-center bg-ink-900/5 text-xs text-ink-500">Missing</div>
+        <div class="flex aspect-2/3 items-center justify-center rounded-lg bg-ink-900/5 text-xs text-ink-500">Missing</div>
       <% end %>
     </div>
   <% end %>
