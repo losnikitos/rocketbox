@@ -31,9 +31,21 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
+    assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "a[href=?]", smm_posts_path, text: "SMM"
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
+  end
+
+  test "business page shows primary Business nav" do
+    sign_in_as(users(:lazaro_nixon))
+
+    get business_url
+
+    assert_response :success
+    assert_select "h1", "Business"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", business_path, text: /Business/
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
   end
 
   test "admin sees monitor link in primary nav" do
@@ -44,9 +56,10 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", monitor_path, text: "Monitor"
+    assert_select "select#account_user_id"
   end
 
-  test "settings page shows log out action" do
+  test "settings page shows profile tabs and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_settings_url
@@ -58,12 +71,12 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", profile_integrations_path, text: "Integrations"
     assert_select "nav[aria-label='Secondary'] a[href=?]", profile_subscription_path, text: "Subscription"
     assert_select "h2", text: "Integrations", count: 0
-    assert_select "form[action=?]", session_path(user.sessions.last) do
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
   end
 
-  test "integrations page shows credentials form without log out" do
+  test "integrations page shows credentials form and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_integrations_url
@@ -71,17 +84,21 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h2", "Integrations"
     assert_select "form[action=?]", profile_integrations_path
-    assert_select "form[action=?]", session_path(user.sessions.last), count: 0
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
+      assert_select "button", "Log out"
+    end
   end
 
-  test "subscription page shows billing controls without log out" do
+  test "subscription page shows billing controls and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_subscription_url
 
     assert_response :success
     assert_select "h2", "Subscription"
-    assert_select "form[action=?]", session_path(user.sessions.last), count: 0
+    assert_select "aside form[action=?]", session_path(user.sessions.last) do
+      assert_select "button", "Log out"
+    end
   end
 
   test "non-admin cannot see admin subscription controls" do

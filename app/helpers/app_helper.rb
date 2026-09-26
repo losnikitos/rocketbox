@@ -20,6 +20,8 @@ module AppHelper
         [ smm_stories_path, "Stories", false ],
         [ smm_posts_path, "Posts", true ]
       ] ]
+    when "accounts/business"
+      [ :business, "Business", [] ]
     when "accounts/settings", "accounts/integrations", "accounts/subscriptions"
       [ :profile, "Profile", [
         [ profile_settings_path, "Settings", controller_path == "accounts/settings" ],
@@ -29,5 +31,26 @@ module AppHelper
     else
       [ nil, "Rocketbox", [] ]
     end
+  end
+
+  def smm_post_status_text_class(status)
+    case status.to_s
+    when "ready" then "text-signal-green"
+    when "published" then "text-rocket"
+    when "failed" then "text-signal-red"
+    when "generating" then "text-ink-700"
+    else "text-ink-500"
+    end
+  end
+
+  def smm_post_status_pill_class(status)
+    bg = case status.to_s
+    when "ready" then "bg-signal-green/15"
+    when "published" then "bg-rocket/15"
+    when "failed" then "bg-signal-red/15"
+    when "generating" then "bg-signal-yellow/30"
+    else "bg-ink-900/5"
+    end
+    "#{bg} #{smm_post_status_text_class(status)}"
   end
 end

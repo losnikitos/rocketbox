@@ -5,7 +5,7 @@ module Accounts
     layout "app"
 
     def index
-      @posts = Current.user.smm_posts.includes(:prompt, { library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
+      @posts = Current.account.smm_posts.includes(:prompt, { library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
     end
 
     def new
@@ -20,7 +20,7 @@ module Accounts
         return
       end
 
-      @post = Current.user.smm_posts.new
+      @post = Current.account.smm_posts.new
     end
 
     def create
@@ -35,12 +35,12 @@ module Accounts
 
       unless prompt
         flash.now[:alert] = "Choose a prompt from the library."
-        @post = Current.user.smm_posts.new(caption: params[:caption])
+        @post = Current.account.smm_posts.new(caption: params[:caption])
         render :new, status: :unprocessable_entity
         return
       end
 
-      @post = Current.user.smm_posts.new(
+      @post = Current.account.smm_posts.new(
         prompt:,
         caption: params[:caption].to_s.strip.presence,
         status: "draft"
@@ -59,11 +59,11 @@ module Accounts
     end
 
     def show
-      @post = Current.user.smm_posts.includes(:prompt, :library_media, generated_video_attachment: :blob).find(params[:id])
+      @post = Current.account.smm_posts.includes(:prompt, :library_media, generated_video_attachment: :blob).find(params[:id])
     end
 
     def publish
-      @post = Current.user.smm_posts.find(params[:id])
+      @post = Current.account.smm_posts.find(params[:id])
       unless @post.publishable?
         redirect_to smm_post_path(@post), alert: "This post is not ready to publish yet."
         return
@@ -74,13 +74,31 @@ module Accounts
       redirect_to smm_post_path(@post), notice: "Publishing to Instagram…"
     end
 
+    def react
+      @post = Current.account.smm_posts.find(params[:id])
+      reaction = params[:reaction].to_s.presence
+      unless reaction.nil? || SmmPost::REACTIONS.include?(reaction)
+        return render json: { error: "Invalid reaction" }, status: :unprocessable_entity
+      end
+
+      attrs = { reaction: }
+      if reaction != "down"
+        attrs[:reaction_comment] = nil
+      elsif params.key?(:reaction_comment)
+        attrs[:reaction_comment] = params[:reaction_comment].to_s.strip.presence
+      end
+
+      @post.update!(attrs)
+      render json: { reaction: @post.reaction, reaction_comment: @post.reaction_comment }
+    end
+
     private
 
       def selected_library_media
         ids = Array(params[:library_media_ids]).map(&:presence).compact.map(&:to_i).uniq
         return [] if ids.empty?
 
-        media_by_id = Current.user.library_media.with_attached_file.where(id: ids).index_by(&:id)
+        media_by_id = Current.account.library_media.with_attached_file.where(id: ids).index_by(&:id)
         ids.filter_map { |id| media_by_id[id] }
       end
   end

@@ -46,5 +46,31 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_uploads_url
     assert_equal "Media not found.", flash[:alert]
   end
+
+  test "uploads photo files into the library" do
+    user = sign_in_as(users(:lazaro_nixon))
+    file = fixture_file_upload("logo.png", "image/png")
+
+    assert_difference -> { user.library_media.count }, 1 do
+      post library_media_index_url, params: { files: [ file ] }
+    end
+
+    media = user.library_media.order(:id).last
+    assert media.file.attached?
+    assert_equal "photo", media.kind
+    assert_redirected_to library_uploads_url
+    assert_equal "Uploaded 1 file.", flash[:notice]
+  end
+
+  test "rejects empty upload" do
+    sign_in_as(users(:lazaro_nixon))
+
+    assert_no_difference -> { LibraryMedia.count } do
+      post library_media_index_url, params: { files: [] }
+    end
+
+    assert_redirected_to library_uploads_url
+    assert_equal "Drop a photo or video to upload.", flash[:alert]
+  end
 end
 

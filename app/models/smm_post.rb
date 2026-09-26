@@ -2,6 +2,7 @@
 
 class SmmPost < ApplicationRecord
   STATUSES = %w[draft generating ready published failed].freeze
+  REACTIONS = %w[up down].freeze
   MAX_MEDIA = 7
 
   belongs_to :user
@@ -11,6 +12,7 @@ class SmmPost < ApplicationRecord
   has_one_attached :generated_video
 
   validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :reaction, inclusion: { in: REACTIONS }, allow_nil: true
   validate :media_count_within_limits
   validate :media_must_be_images
 

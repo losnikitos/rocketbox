@@ -33,7 +33,7 @@
       </aside>
 
       <div class="flex min-w-0 flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 sm:pl-2">
-        <header class="flex flex-wrap items-center gap-3 px-1 pb-3 sm:px-2">
+        <header class="flex flex-wrap items-center gap-3 px-1 pt-2 <%= tabs.any? ? "pb-3" : "pb-0" %> sm:px-2">
           <label for="app-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
             Menu
           </label>
@@ -41,10 +41,10 @@
         </header>
 
         <% if tabs.any? %>
-          <%= render "layouts/app/secondary_nav", tabs: tabs %>
+          <%= render "layouts/app/secondary_nav", tabs: tabs, show_upload: section == :library %>
         <% end %>
 
-        <main class="rb-surface-raised mt-3 min-h-0 flex-1 p-5 sm:p-6 lg:p-8">
+        <main class="rb-surface-raised mt-3 min-h-0 flex-1 p-5 transition-colors data-[dragging]:bg-rocket/5 data-[dragging]:ring-2 data-[dragging]:ring-inset data-[dragging]:ring-rocket sm:p-6 lg:p-8">
           <%= yield %>
         </main>
       </div>

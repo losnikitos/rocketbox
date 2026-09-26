@@ -43,6 +43,8 @@ Rails.application.routes.draw do
   scope :app do
     get "/", to: redirect("/app/library/uploads"), as: :app
 
+    resource :account_selection, only: :update, module: :accounts
+
     scope path: "library", module: :accounts do
       get "/", to: redirect("/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads
@@ -55,8 +57,13 @@ Rails.application.routes.draw do
       resources :posts, only: %i[index new create show] do
         member do
           post :publish
+          post :react
         end
       end
+    end
+
+    scope module: :accounts do
+      resource :business, only: [ :show, :update ], controller: "business"
     end
 
     scope path: "profile", as: "profile" do
@@ -70,7 +77,7 @@ Rails.application.routes.draw do
       patch "subscription_status", to: "accounts#subscription_status"
     end
 
-    delete "library/media/:id", to: "library_media#destroy", as: :library_media
+    resources :library_media, only: %i[create destroy], path: "library/media"
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

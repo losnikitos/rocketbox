@@ -5,10 +5,6 @@
 <dl class="mt-6 space-y-3 text-sm">
   <div class="flex justify-between gap-4">
     <dt class="text-ink-500">Email</dt>
-    <dd class="font-medium text-ink-900"><%= Current.user.email %></dd>
+    <dd class="font-medium text-ink-900"><%= Current.account.email %></dd>
   </div>
 </dl>
-
-<div class="mt-8">
-  <%= button_to "Log out", session_path(Current.session), method: :delete, form: { class: "inline-flex" }, class: "rb-btn-ghost-on-light" %>
-</div>

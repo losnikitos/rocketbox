@@ -5,7 +5,7 @@ module Accounts
     layout "app"
 
     def uploads
-      @library_media = Current.user.library_media.with_attached_file.order(created_at: :desc)
+      @library_media = Current.account.library_media.with_attached_file.order(created_at: :desc)
     end
   end
 end
