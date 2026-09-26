@@ -6,3 +6,4 @@ admin_css: bin/rails dartsass:watch
 # Run `stripe login` once. Copy the "webhook signing secret" from logs into .env as STRIPE_WEBHOOK_SECRET=whsec_...
 stripe: stripe listen --forward-to http://127.0.0.1:3003/stripe/webhook
 telegram: bin/rails telegram:poll
+tunnel: make tunnel
