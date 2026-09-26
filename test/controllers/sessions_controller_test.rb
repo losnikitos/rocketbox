@@ -80,23 +80,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "That login link is invalid or expired", flash[:alert]
   end
 
-  test "should sign in with password" do
-    post sign_in_password_url, params: { email: @user.email, password: "Secret1*3*5*" }
-    assert_redirected_to root_url
-
-    get root_url
-    assert_response :success
-  end
-
-  test "should not sign in with wrong password" do
-    post sign_in_password_url, params: { email: @user.email, password: "SecretWrong1*3" }
-    assert_redirected_to sign_in_password_url(email_hint: @user.email)
-    assert_equal "That email or password is incorrect", flash[:alert]
-
-    get root_url
-    assert_response :success
-  end
-
   test "should sign out" do
     sign_in_as @user
 

@@ -12,7 +12,8 @@ module Subscriptions
         return
       end
 
-      redirect_to sign_up_path(email_hint: email)
+      session[:signup] = (session[:signup] || {}).merge("email" => email)
+      redirect_to sign_up_name_path
     end
   end
 end

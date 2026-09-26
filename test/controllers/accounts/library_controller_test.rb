@@ -15,7 +15,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
     assert_select "nav[aria-label='Secondary'] a", text: "Reels", count: 0
-    assert_select "a[href=?]", profile_settings_path, text: "My profile"
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "button[popovertarget='use-cases-menu']", count: 0
   end
 

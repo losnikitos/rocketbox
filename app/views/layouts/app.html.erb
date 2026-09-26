@@ -38,15 +38,6 @@
             Menu
           </label>
           <h1 class="font-manrope text-xl font-bold tracking-tight sm:text-2xl"><%= title %></h1>
-
-          <div class="ml-auto flex flex-wrap items-center gap-2">
-            <%= link_to profile_settings_path,
-                  class: "rb-btn-ghost-on-light inline-flex items-center gap-1.5 px-3 py-2 text-sm",
-                  aria: { selected: section == :profile } do %>
-              <%= heroicon "user" %>
-              My profile
-            <% end %>
-          </div>
         </header>
 
         <% if tabs.any? %>

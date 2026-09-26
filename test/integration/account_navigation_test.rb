@@ -3,12 +3,12 @@
 require "test_helper"
 
 class AccountNavigationTest < ActionDispatch::IntegrationTest
-  test "logged out header shows sign in without sign up" do
+  test "logged out header shows sign in and get started" do
     get root_url
 
     assert_response :success
     assert_select "a[href=?]", sign_in_path, minimum: 1
-    assert_select "a[href=?]", sign_up_path, count: 0
+    assert_select "a[href=?]", sign_up_path, text: /Get started for free/
   end
 
   test "logged in landing header links to dashboard" do
@@ -31,8 +31,8 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
-    assert_select "a[href=?]", profile_settings_path, text: "My profile"
-    assert_select "a[href=?]", smm_posts_path, text: "Posts"
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
+    assert_select "a[href=?]", smm_posts_path, text: "SMM"
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
   end
 
@@ -42,7 +42,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     get library_uploads_url
 
     assert_response :success
-    assert_select "a[href=?]", profile_settings_path, text: "My profile"
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", monitor_path, text: "Monitor"
   end
 

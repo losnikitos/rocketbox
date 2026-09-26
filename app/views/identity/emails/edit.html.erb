@@ -28,11 +28,6 @@
       <%= form.email_field :email, required: true, autofocus: true, autocomplete: "email", class: tw_input_classes %>
     </div>
 
-    <div>
-      <%= form.label :password_challenge, Current.user.verified? ? "Current password" : "Password", class: tw_label_classes %>
-      <%= form.password_field :password_challenge, required: true, autocomplete: "current-password", class: tw_input_classes %>
-    </div>
-
     <div class="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
       <%= form.submit "Save changes", class: tw_btn_primary_classes + " sm:w-auto sm:min-w-40" %>
       <%= link_to "Back", root_path, class: "text-center text-sm text-ink-600 hover:text-ink-900 sm:text-left" %>

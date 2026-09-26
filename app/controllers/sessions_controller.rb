@@ -1,5 +1,5 @@
 class SessionsController < ApplicationController
-  skip_before_action :authenticate, only: %i[ new create otp otp_create magic password password_create dev ]
+  skip_before_action :authenticate, only: %i[ new create otp otp_create magic dev ]
 
   before_action :set_session, only: :destroy
 
@@ -51,18 +51,6 @@ class SessionsController < ApplicationController
     sign_in_from_email!(email)
   rescue ActiveSupport::MessageVerifier::InvalidSignature
     redirect_to sign_in_path, alert: "That login link is invalid or expired"
-  end
-
-  def password
-  end
-
-  def password_create
-    if user = User.authenticate_by(email: params[:email], password: params[:password])
-      start_session!(user)
-      redirect_to root_path, notice: "Signed in successfully"
-    else
-      redirect_to sign_in_password_path(email_hint: params[:email]), alert: "That email or password is incorrect"
-    end
   end
 
   def dev
