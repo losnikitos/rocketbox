@@ -64,10 +64,12 @@ Rails.application.routes.draw do
       resource :business, only: [ :show, :update ], controller: "business"
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
+          patch :apply, on: :member
+        end
+        resources :suggestions, only: [] do
           member do
             patch :apply
             patch :reject
-            post :add_media
           end
         end
       end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_222201) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_222949) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -68,7 +68,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_222201) do
     t.json "extracted"
     t.integer "link_id", null: false
     t.string "provider", null: false
-    t.json "rejected", default: [], null: false
     t.string "screenshot_url"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
@@ -314,6 +313,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_222201) do
     t.index ["user_id"], name: "index_subscriptions_on_user_id", unique: true
   end
 
+  create_table "suggestions", force: :cascade do |t|
+    t.integer "crawl_id", null: false
+    t.datetime "created_at", null: false
+    t.string "key", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.text "value", null: false
+    t.index ["crawl_id"], name: "index_suggestions_on_crawl_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "address"
     t.text "business_description"
@@ -361,4 +370,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_222201) do
   add_foreign_key "smm_posts", "prompts"
   add_foreign_key "smm_posts", "users"
   add_foreign_key "subscriptions", "users"
+  add_foreign_key "suggestions", "crawls"
 end
