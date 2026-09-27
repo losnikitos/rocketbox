@@ -40,6 +40,12 @@
                     class: "block rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900",
                     aria: { selected: controller_name == "monitor_media_generations" } %>
             </li>
+            <li>
+              <%= link_to "Onboarding",
+                    monitor_onboarding_path,
+                    class: "block rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-rocket/15 aria-selected:text-ink-900",
+                    aria: { selected: current_page?(monitor_onboarding_path) } %>
+            </li>
             <li class="my-2 border-t border-ink-900/10" aria-hidden="true"></li>
             <li>
               <%= link_to "/jobs",
@@ -63,7 +69,7 @@
         </nav>
       </aside>
 
-      <div class="min-w-0 flex-1 bg-stone-50">
+      <div class="flex min-w-0 flex-1 flex-col bg-stone-50">
         <header class="border-b border-ink-900/10 bg-white">
           <div class="flex items-center gap-3 px-4 pt-3 sm:px-6">
             <label for="monitor-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
@@ -85,9 +91,17 @@
           </nav>
         </header>
 
-        <main class="px-4 py-6 sm:px-6">
-          <%= yield %>
-        </main>
+        <div class="flex flex-1">
+          <main class="min-w-0 flex-1 px-4 py-6 sm:px-6">
+            <%= yield %>
+          </main>
+
+          <% if content_for?(:aside) %>
+            <aside class="w-56 shrink-0 border-l border-ink-900/10 max-lg:hidden">
+              <%= yield :aside %>
+            </aside>
+          <% end %>
+        </div>
       </div>
     </div>
     <%= render "shared/flashes" %>

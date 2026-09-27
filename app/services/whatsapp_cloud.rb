@@ -22,6 +22,11 @@ module WhatsappCloud
       raise("credentials.whatsapp.phone_number_id is missing")
   end
 
+  def display_phone
+    Rails.application.credentials.dig(:whatsapp, :display_phone).presence ||
+      raise("credentials.whatsapp.display_phone is missing")
+  end
+
   def app_secret
     Rails.application.credentials.dig(:whatsapp, :app_secret).presence
   end

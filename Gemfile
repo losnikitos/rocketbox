@@ -98,3 +98,5 @@ gem "faraday", "~> 2.14"
 gem "ruby_llm", "= 2.0.0"
 
 gem "mission_control-jobs", "~> 1.3"
+
+gem "rqrcode", "~> 3.2"

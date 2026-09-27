@@ -8,6 +8,7 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
 2. [WhatsappWebhooksController](/app/controllers/whatsapp_webhooks_controller.rb) skips CSRF/auth, verifies `hub.verify_token` on GET, optionally checks `X-Hub-Signature-256` against `app_secret` on POST, then enqueues [ProcessWhatsappUpdateJob](/app/jobs/process_whatsapp_update_job.rb).
 3. The job persists an [IncomingMessage](/app/models/incoming_message.rb) per message ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreWhatsappMedia](/app/services/store_whatsapp_media.rb): extract media → skip if `whatsapp_media_id` already stored → download via Graph API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised).
+   - **Connect** (`START_<code>`, from the signup step) → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) finds the user by `whatsapp_connect_code`, sets `whatsapp_phone` to the sender (clearing it from any other user), clears the code (single use), backfills orphan media, and replies “Welcome to Rocketbox 👋 / Your account is connected.” Any `START_…` from an already linked phone just re-sends the welcome (handy for debugging). Other unknown codes fall through to the LLM reply.
    - **Text-only** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): resolve user by `whatsapp_phone` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Account backfills orphan media with that `whatsapp_from`. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.
 
@@ -19,6 +20,7 @@ Under `whatsapp` in Rails credentials:
 
 - `access_token` — required; Graph API token used by [WhatsappCloud](/app/services/whatsapp_cloud.rb). Generate via Meta Business Settings > System users > Nikita (`61594348875817`)
 - `phone_number_id` — required; Cloud API phone number id (not the display number)
+- `display_phone` — required for signup; the number users message, digits only (e.g. `447451273884`), used in the `wa.me` connect link
 - `app_secret` — optional; if set, webhook POSTs must send a matching `X-Hub-Signature-256`
 - `webhook_verify_token` — required for Meta hub verification; same string as in the Meta webhook “Verify token” field
 
@@ -100,4 +102,4 @@ Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
 | Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/accounts/show.html.erb](/app/views/accounts/show.html.erb) (`/app/library`) |
-| Tests | [test/services/store_whatsapp_media_test.rb](/test/services/store_whatsapp_media_test.rb), [test/controllers/whatsapp_webhooks_controller_test.rb](/test/controllers/whatsapp_webhooks_controller_test.rb) |
+| Tests | [test/services/store_whatsapp_media_test.rb](/test/services/store_whatsapp_media_test.rb), [test/services/reply_whatsapp_message_test.rb](/test/services/reply_whatsapp_message_test.rb), [test/controllers/whatsapp_webhooks_controller_test.rb](/test/controllers/whatsapp_webhooks_controller_test.rb) |

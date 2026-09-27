@@ -25,6 +25,8 @@ class ReplyWhatsappMessage
       next if text.blank?
 
       from = message["from"].to_s
+      next if connect!(from, text)
+
       user = User.find_by(whatsapp_phone: from.presence)
       chat = Chat.create!
       response = chat
@@ -38,6 +40,22 @@ class ReplyWhatsappMessage
   end
 
   private
+
+    def connect!(from, text)
+      code = text.strip[/\ASTART_(\w+)\z/, 1]
+      return false unless code && from.present?
+
+      if (user = User.find_by(whatsapp_connect_code: code))
+        User.where(whatsapp_phone: from).where.not(id: user.id).update_all(whatsapp_phone: nil)
+        user.update!(whatsapp_phone: from, whatsapp_connect_code: nil)
+        LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
+      elsif !User.exists?(whatsapp_phone: from)
+        return false
+      end
+
+      WhatsappCloud.send_text(to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
+      true
+    end
 
     def each_message
       Array(@payload.dig("entry")).each do |entry|

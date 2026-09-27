@@ -59,18 +59,15 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "select#account_user_id"
   end
 
-  test "settings page shows profile tabs and sidebar log out" do
+  test "profile page has no tabs and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
     get profile_settings_url
 
     assert_response :success
     assert_select "h1", "Profile"
-    assert_select "h2", "Settings"
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", profile_settings_path, text: "Settings"
-    assert_select "nav[aria-label='Secondary'] a[href=?]", profile_integrations_path, text: "Integrations"
-    assert_select "nav[aria-label='Secondary'] a[href=?]", profile_subscription_path, text: "Subscription"
-    assert_select "h2", text: "Integrations", count: 0
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", profile_settings_path, text: /Profile/
+    assert_select "nav[aria-label='Secondary']", count: 0
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
@@ -79,11 +76,12 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "integrations page shows credentials form and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    get profile_integrations_url
+    get integrations_url
 
     assert_response :success
-    assert_select "h2", "Integrations"
-    assert_select "form[action=?]", profile_integrations_path
+    assert_select "h1", "Integrations"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", integrations_path, text: /Integrations/
+    assert_select "form[action=?]", integrations_path
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
@@ -92,10 +90,11 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "subscription page shows billing controls and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    get profile_subscription_url
+    get subscription_url
 
     assert_response :success
-    assert_select "h2", "Subscription"
+    assert_select "h1", "Subscription"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", subscription_path, text: /Subscription/
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
@@ -104,24 +103,24 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "non-admin cannot see admin subscription controls" do
     sign_in_as(users(:lazaro_nixon))
 
-    get profile_subscription_url
+    get subscription_url
 
     assert_response :success
     assert_select "h3", text: "Admin controls", count: 0
-    assert_select "form[action=?]", profile_subscription_status_path, count: 0
+    assert_select "form[action=?]", subscription_status_path, count: 0
   end
 
   test "admin can adjust their own subscription status" do
     admin = sign_in_as(users(:admin_user))
 
-    get profile_subscription_url
+    get subscription_url
 
     assert_response :success
     assert_select "h3", "Admin controls"
-    assert_select "form[action=?]", profile_subscription_status_path
+    assert_select "form[action=?]", subscription_status_path
 
-    patch profile_subscription_status_path, params: { subscription_status: "trialing" }
-    assert_redirected_to profile_subscription_path
+    patch subscription_status_path, params: { subscription_status: "trialing" }
+    assert_redirected_to subscription_path
 
     admin.subscription.reload
     assert_equal "trialing", admin.subscription.status
@@ -131,8 +130,8 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "non-admin cannot update subscription status" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    patch profile_subscription_status_path, params: { subscription_status: "active" }
-    assert_redirected_to profile_subscription_path
+    patch subscription_status_path, params: { subscription_status: "active" }
+    assert_redirected_to subscription_path
 
     user.subscription.reload
     assert_not user.subscription.active?

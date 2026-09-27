@@ -38,11 +38,13 @@ UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp
 
 Multi-step wizard ([`SignupsController`](/app/controllers/signups_controller.rb), layout [`signup`](/app/views/layouts/signup.html.erb) with hero wave):
 
-1. Name → 2. Business name → 3. Email → 4. Email OTP (Postmark `login_otp`; code also shown on page in development) → creates user + session → 5. Phone (skippable) → 6. Phone OTP stub (`000000` shown; SMS not implemented) → `/app`.
+1. Name → 2. Business name → 3. Email → 4. Email OTP (Postmark `login_otp`; code also shown on page in development) → creates user + session → 5. Connect WhatsApp (skippable) → `/app`.
 
-Draft for steps 1–3 lives in `session[:signup]`. Existing email redirects to sign-in. Phone stores on `whatsapp_phone`.
+Draft for steps 1–3 lives in `session[:signup]`. Existing email redirects to sign-in.
 
-Routes: `GET /sign_up` plus `/sign_up/name`, `/business`, `/email`, `/email_code`, `/phone`, `/phone_code`, and `POST /sign_up/phone/skip`.
+Connect WhatsApp: the page shows `https://wa.me/<display_phone>?text=START_<code>` (button on mobile; QR + open link + copy on desktop). `code` is `users.whatsapp_connect_code`. When the message arrives, the webhook sets `whatsapp_phone` ([WHATSAPP.md](./WHATSAPP.md)). The page polls every 3s and redirects to `/app` once the phone is linked.
+
+Routes: `GET /sign_up` plus `/sign_up/name`, `/business`, `/email`, `/email_code`, `/whatsapp`, and `POST /sign_up/whatsapp/skip`.
 
 ## Email verification
 

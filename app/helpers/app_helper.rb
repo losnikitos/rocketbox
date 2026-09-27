@@ -22,12 +22,12 @@ module AppHelper
       ] ]
     when "accounts/business"
       [ :business, "Business", [] ]
-    when "accounts/settings", "accounts/integrations", "accounts/subscriptions"
-      [ :profile, "Profile", [
-        [ profile_settings_path, "Settings", controller_path == "accounts/settings" ],
-        [ profile_integrations_path, "Integrations", controller_path == "accounts/integrations" ],
-        [ profile_subscription_path, "Subscription", controller_path == "accounts/subscriptions" ]
-      ] ]
+    when "accounts/integrations"
+      [ :integrations, "Integrations", [] ]
+    when "accounts/subscriptions"
+      [ :subscription, "Subscription", [] ]
+    when "accounts/settings"
+      [ :profile, "Profile", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

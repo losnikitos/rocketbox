@@ -12,7 +12,7 @@ module Accounts
         backfill_orphan_media!
         return head :ok if autosave_request?
 
-        redirect_to profile_integrations_path, notice: "Account updated."
+        redirect_to integrations_path, notice: "Account updated."
       else
         return render_autosave_error(Current.account) if autosave_request?
 

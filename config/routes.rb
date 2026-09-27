@@ -16,11 +16,8 @@ Rails.application.routes.draw do
   post "sign_up/email", to: "signups#email_submit"
   get  "sign_up/email_code", to: "signups#email_code", as: :sign_up_email_code
   post "sign_up/email_code", to: "signups#email_code_submit"
-  get  "sign_up/phone", to: "signups#phone", as: :sign_up_phone
-  post "sign_up/phone", to: "signups#phone_submit"
-  post "sign_up/phone/skip", to: "signups#phone_skip", as: :sign_up_phone_skip
-  get  "sign_up/phone_code", to: "signups#phone_code", as: :sign_up_phone_code
-  post "sign_up/phone_code", to: "signups#phone_code_submit"
+  get  "sign_up/whatsapp", to: "signups#whatsapp", as: :sign_up_whatsapp
+  post "sign_up/whatsapp/skip", to: "signups#whatsapp_skip", as: :sign_up_whatsapp_skip
 
   resources :sessions, only: [ :index, :show, :destroy ]
   delete "sign_out", to: "sessions#destroy_current", as: :sign_out
@@ -64,17 +61,21 @@ Rails.application.routes.draw do
 
     scope module: :accounts do
       resource :business, only: [ :show, :update ], controller: "business"
+      resource :integrations, only: [ :show, :update ]
+      resource :subscription, only: [ :show ]
     end
 
-    scope path: "profile", as: "profile" do
-      scope module: :accounts do
-        resource :settings, only: [ :show ]
-        resource :integrations, only: [ :show, :update ]
-        resource :subscription, only: [ :show ], path: "subscriptions"
-      end
+    scope path: "subscription", as: "subscription" do
       post "checkout", to: "accounts#checkout"
       post "portal", to: "accounts#portal"
-      patch "subscription_status", to: "accounts#subscription_status"
+      patch "status", to: "accounts#subscription_status"
+    end
+
+    scope path: "profile", as: "profile", module: :accounts do
+      resource :settings, only: [ :show ]
+      get "instagram/authorize", to: "instagram_authorizations#new", as: :instagram_authorize
+      get "instagram/callback", to: "instagram_authorizations#callback", as: :instagram_callback
+      post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh
     end
 
     resources :library_media, only: %i[create destroy], path: "library/media"
@@ -102,6 +103,8 @@ Rails.application.routes.draw do
 
   get "monitor", to: "monitor#show", as: :monitor
   scope path: "monitor", as: "monitor" do
+    get "onboarding", to: "monitor#onboarding", as: :onboarding
+    post "onboarding/reset", to: "monitor#reset_onboarding", as: :onboarding_reset
     resources :media_generations, only: %i[index show new create], controller: "monitor_media_generations"
   end
 
