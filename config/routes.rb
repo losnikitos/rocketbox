@@ -62,10 +62,12 @@ Rails.application.routes.draw do
 
     scope module: :accounts do
       resource :business, only: [ :show, :update ], controller: "business"
-      resources :crawls, only: %i[index create show], path: "crawl" do
-        member do
-          patch :apply
-          post :add_media
+      resources :links, only: %i[index create show destroy] do
+        resources :crawls, only: :create do
+          member do
+            patch :apply
+            post :add_media
+          end
         end
       end
       resource :integrations, only: [ :show, :update ]

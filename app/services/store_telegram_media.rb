@@ -35,7 +35,7 @@ class StoreTelegramMedia
 
     file = TelegramBot.client.api.get_file(file_id: tg_media.file_id)
     media = download_and_store!(message:, tg_media:, kind:, file_path: file.file_path)
-    react_ok(message)
+    TelegramBot.react(message)
     media
   end
 
@@ -84,15 +84,5 @@ class StoreTelegramMedia
     def attach_to_incoming_message!(external_id, blob)
       IncomingMessage.find_by(channel: "telegram", external_id: external_id.to_s.presence)
         &.attachments&.attach(blob)
-    end
-
-    def react_ok(message)
-      TelegramBot.client.api.set_message_reaction(
-        chat_id: message.chat.id,
-        message_id: message.message_id,
-        reaction: [ { type: "emoji", emoji: "👍" } ]
-      )
-    rescue StandardError => e
-      Rails.logger.warn("Telegram reaction failed: #{e.class}: #{e.message}")
     end
 end

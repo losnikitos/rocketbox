@@ -1,0 +1,49 @@
+<% content_for(:title, "Links — Rocketbox") %>
+
+<div class="mx-auto max-w-3xl space-y-10">
+  <section aria-labelledby="new-link-heading">
+    <h2 id="new-link-heading" class="text-sm font-medium text-ink-900">Add a link</h2>
+    <p class="mt-1 text-sm text-ink-500">Your website, Google Maps listing, booking page, reviews — anything about the business. You can also send links to the Rocketbox bot.</p>
+
+    <%= form_with model: @link, url: links_path, class: "mt-4 flex items-start gap-2" do |f| %>
+      <div class="min-w-0 flex-1">
+        <%= f.url_field :url, required: true, placeholder: "https://", "aria-label": "URL", class: tw_input_classes %>
+        <% if @link.errors.any? %>
+          <p class="mt-2 <%= tw_alert_error_classes %>" role="alert"><%= @link.errors.full_messages.to_sentence %></p>
+        <% end %>
+      </div>
+      <%= f.button type: :submit, class: "rb-btn-primary shrink-0 gap-1.5 px-3.5 py-1.5 text-sm" do %>
+        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Add
+      <% end %>
+    <% end %>
+  </section>
+
+  <% if @links.any? %>
+    <section aria-labelledby="links-heading">
+      <h2 id="links-heading" class="text-sm font-medium text-ink-900">Links</h2>
+      <ul class="mt-3 divide-y divide-ink-900/5 rounded-lg border border-ink-900/10 bg-white">
+        <% @links.each do |link| %>
+          <li class="flex items-center transition hover:bg-ink-900/3">
+            <%= link_to link_path(link), class: "flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pl-4" do %>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-ink-900"><%= link.title %></p>
+                <p class="truncate text-xs text-ink-500">
+                  <%= Link::SOURCES[link.source] %> · <%= time_ago_in_words(link.created_at) %> ago · <%= link.url %>
+                </p>
+              </div>
+              <% if (crawl = link.crawls.last) %>
+                <%= render "accounts/crawls/status", crawl: crawl %>
+              <% end %>
+            <% end %>
+            <%= button_to link_path(link), method: :delete, "aria-label": "Remove #{link.url}",
+                  form: { class: "px-2", data: { turbo_confirm: "Remove this link and its crawls?" } },
+                  class: "rounded-lg p-2 text-ink-400 transition hover:bg-ink-900/5 hover:text-signal-red" do %>
+              <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

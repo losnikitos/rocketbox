@@ -2,28 +2,17 @@
 
 module Accounts
   class CrawlsController < ApplicationController
-    layout "app"
-
-    before_action :set_crawl, only: %i[show apply add_media]
-
-    def index
-      @crawl = Crawl.new(provider: Crawl::PROVIDERS.keys.first, data_instruction: Prompt.body_for!(:crawl_business))
-      @crawls = Current.account.crawls.order(created_at: :desc)
-    end
+    before_action :set_link
+    before_action :set_crawl, only: %i[apply add_media]
 
     def create
-      @crawl = Current.account.crawls.new(params.expect(crawl: %i[url provider data_instruction]))
-      if @crawl.save
-        CrawlBusinessJob.perform_later(@crawl.id)
-        redirect_to crawl_path(@crawl)
+      crawl = @link.crawls.new(params.expect(crawl: %i[provider data_instruction]))
+      if crawl.save
+        CrawlBusinessJob.perform_later(crawl.id)
+        redirect_to link_path(@link)
       else
-        @crawls = Current.account.crawls.order(created_at: :desc)
-        render :index, status: :unprocessable_entity
+        redirect_to link_path(@link), alert: crawl.errors.full_messages.to_sentence
       end
-    end
-
-    def show
-      @imported = Current.account.library_media.where(source_url: @crawl.media_urls).pluck(:source_url, :id).to_h
     end
 
     # `field` is a Crawl::FIELDS key or "logo"; without it, applies all fields, the logo, and every photo and video.
@@ -49,26 +38,30 @@ module Accounts
       end
 
       if errors.any?
-        redirect_to crawl_path(@crawl), alert: "Couldn't download #{errors.size} #{"item".pluralize(errors.size)}. #{errors.join("; ")}"
+        redirect_to link_path(@link), alert: "Couldn't download #{errors.size} #{"item".pluralize(errors.size)}. #{errors.join("; ")}"
       else
-        redirect_to crawl_path(@crawl), notice: "Business updated."
+        redirect_to link_path(@link), notice: "Business updated."
       end
     end
 
     def add_media
       url = params[:url].to_s
-      return redirect_to crawl_path(@crawl), alert: "That file isn't part of this crawl." unless url.in?(@crawl.media_urls)
+      return redirect_to link_path(@link), alert: "That file isn't part of this crawl." unless url.in?(@crawl.media_urls)
 
       Current.account.library_media.import_url!(url)
-      redirect_to crawl_path(@crawl, anchor: "media-#{@crawl.media_urls.index(url)}"), notice: "Added to library."
+      redirect_to link_path(@link, anchor: "media-#{@crawl.media_urls.index(url)}"), notice: "Added to library."
     rescue RemoteFile::Error => e
-      redirect_to crawl_path(@crawl), alert: "Couldn't download: #{e.message}"
+      redirect_to link_path(@link), alert: "Couldn't download: #{e.message}"
     end
 
     private
 
+      def set_link
+        @link = Current.account.links.find(params[:link_id])
+      end
+
       def set_crawl
-        @crawl = Current.account.crawls.find(params[:id])
+        @crawl = @link.crawls.find(params[:id])
       end
 
       def attach_logo!(url)

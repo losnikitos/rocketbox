@@ -13,19 +13,13 @@ class Crawl < ApplicationRecord
     "business_hours" => :business_hours
   }.freeze
 
-  belongs_to :user
+  belongs_to :link
+  delegate :url, :user, to: :link
 
   enum :status, %w[pending done failed].index_by(&:itself)
 
-  validates :url, format: { with: %r{\Ahttps?://\S+\z}i, message: "must start with http:// or https://" }
   validates :provider, inclusion: { in: PROVIDERS.keys }
   validates :data_instruction, presence: true
-
-  normalizes :url, with: ->(url) { url.strip }
-
-  def title
-    extracted&.dig("business_name").presence || url[%r{\Ahttps?://([^/?#]+)}i, 1] || url
-  end
 
   def account_attributes
     FIELDS.to_h { |key, column| [ column, extracted&.dig(key).to_s.strip ] }.compact_blank

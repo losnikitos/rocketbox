@@ -28,6 +28,12 @@ class ReplyWhatsappMessage
       next if connect!(from, text)
 
       user = User.find_by(whatsapp_phone: from.presence)
+      if user && (urls = Link.urls_in(text)).any?
+        urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "whatsapp" } }
+        react_ok(from, message["id"])
+        next
+      end
+
       chat = Chat.create!
       response = chat
         .with_instructions(INSTRUCTIONS)
@@ -55,6 +61,12 @@ class ReplyWhatsappMessage
 
       WhatsappCloud.send_text(to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
       true
+    end
+
+    def react_ok(from, message_id)
+      WhatsappCloud.react(to: from, message_id:)
+    rescue StandardError => e
+      Rails.logger.warn("WhatsApp reaction failed: #{e.class}: #{e.message}")
     end
 
     def each_message

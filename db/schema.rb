@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_220000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -66,13 +66,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.text "data_instruction", null: false
     t.text "error"
     t.json "extracted"
+    t.integer "link_id", null: false
     t.string "provider", null: false
     t.string "screenshot_url"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.string "url", null: false
-    t.integer "user_id", null: false
-    t.index ["user_id"], name: "index_crawls_on_user_id"
+    t.index ["link_id"], name: "index_crawls_on_link_id"
   end
 
   create_table "documents", force: :cascade do |t|
@@ -120,6 +119,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.index ["user_id", "source_url"], name: "index_library_media_on_user_id_and_source_url"
     t.index ["user_id"], name: "index_library_media_on_user_id"
     t.index ["whatsapp_media_id"], name: "index_library_media_on_whatsapp_media_id", unique: true
+  end
+
+  create_table "links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "source", default: "app", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "url"], name: "index_links_on_user_id_and_url", unique: true
+    t.index ["user_id"], name: "index_links_on_user_id"
   end
 
   create_table "media_generations", force: :cascade do |t|
@@ -339,9 +348,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
-  add_foreign_key "crawls", "users"
+  add_foreign_key "crawls", "links"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "users"
+  add_foreign_key "links", "users"
   add_foreign_key "media_generations", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "sessions", "users"

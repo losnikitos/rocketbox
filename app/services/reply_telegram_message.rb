@@ -25,6 +25,11 @@ class ReplyTelegramMessage
     return if StoreTelegramMedia.media?(message)
 
     user = User.find_by(telegram_user_id: message.from&.id)
+    if user && (urls = Link.urls_in(message.text)).any?
+      urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "telegram" } }
+      return TelegramBot.react(message)
+    end
+
     chat = Chat.create!
     response = chat
       .with_instructions(INSTRUCTIONS)
