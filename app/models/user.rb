@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :library_media, dependent: :nullify
   has_many :media_generations, dependent: :nullify
   has_many :smm_posts, dependent: :destroy
+  has_many :crawls, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
   has_one_attached :logo
   has_one_attached :instagram_avatar

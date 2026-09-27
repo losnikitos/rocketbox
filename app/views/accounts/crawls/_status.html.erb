@@ -1,0 +1,5 @@
+<%# locals: (crawl:) %>
+<% css = { "pending" => "bg-signal-yellow/30 text-ink-700", "done" => "bg-signal-green/15 text-signal-green", "failed" => "bg-signal-red/15 text-signal-red" } %>
+<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium <%= css.fetch(crawl.status) %>">
+  <%= crawl.pending? ? "Crawling…" : crawl.status.humanize %>
+</span>
