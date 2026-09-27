@@ -15,11 +15,12 @@ class Accounts::BusinessControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='user[homepage_url]']"
   end
 
-  test "should update business name, homepage, and hours" do
+  test "should update business name, homepage, address, and hours" do
     patch business_url, params: {
       user: {
         business_name: "Ada Cuts",
         homepage_url: "https://adacuts.example",
+        address: "1 Main St, Springfield",
         business_hours: "Mon–Fri 9–6"
       }
     }
@@ -30,6 +31,7 @@ class Accounts::BusinessControllerTest < ActionDispatch::IntegrationTest
     @user.reload
     assert_equal "Ada Cuts", @user.business_name
     assert_equal "https://adacuts.example", @user.homepage_url
+    assert_equal "1 Main St, Springfield", @user.address
     assert_equal "Mon–Fri 9–6", @user.business_hours
   end
 

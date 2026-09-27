@@ -39,6 +39,13 @@
     </div>
 
     <div>
+      <%= form.label :address, "Address", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.text_field :address, autocomplete: "street-address", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
+
+    <div>
       <%= form.label :business_hours, "Business hours", class: tw_label_classes %>
       <%= autosave_field do %>
         <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_autosave_classes %>
