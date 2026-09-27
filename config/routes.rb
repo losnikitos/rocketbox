@@ -79,7 +79,12 @@ Rails.application.routes.draw do
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh
     end
 
-    resources :library_media, only: %i[create destroy], path: "library/media"
+    resources :library_media, only: %i[create update destroy], path: "library/media" do
+      member do
+        post :extract
+        patch :apply_extraction
+      end
+    end
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

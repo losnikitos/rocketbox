@@ -3,6 +3,20 @@
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   has_one_attached :file
+  has_one_attached :extracted_logo
+
+  # Extracted business-card field => User column.
+  CARD_FIELDS = {
+    "business_name" => :business_name,
+    "phone" => :phone,
+    "person_name" => :name,
+    "address" => :address,
+    "website" => :homepage_url,
+    "business_description" => :business_description
+  }.freeze
+
+  enum :media_type, %w[business_card interior exterior logo customer_before customer_after misc].index_by(&:itself),
+       validate: { allow_nil: true }
 
   validates :kind, presence: true
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
@@ -12,6 +26,15 @@ class LibraryMedia < ApplicationRecord
     return false unless file.attached?
 
     file.content_type.to_s.start_with?("image/") || kind.in?(%w[photo sticker])
+  end
+
+  def extraction_status
+    extracted_info&.dig("status")
+  end
+
+  def extracted_account_attributes
+    fields = extracted_info&.dig("fields") || {}
+    CARD_FIELDS.to_h { |key, column| [ column, fields[key].to_s.strip ] }.compact_blank
   end
 
   def self.kind_for(content_type)

@@ -10,7 +10,16 @@ class Prompt < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
 
+  validates :key, uniqueness: true, allow_nil: true
+
+  normalizes :key, with: ->(key) { key.presence }
+
+  # Keyed prompts are system prompts, looked up by key rather than picked by users.
   def self.library
-    active.ordered
+    active.where(key: nil).ordered
+  end
+
+  def self.body_for!(key)
+    active.find_by!(key: key.to_s).body
   end
 end

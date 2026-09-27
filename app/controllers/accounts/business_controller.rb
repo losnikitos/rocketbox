@@ -25,7 +25,7 @@ module Accounts
     private
 
       def business_params
-        params.require(:user).permit(:business_name, :homepage_url, :address, :business_hours, :logo)
+        params.require(:user).permit(:business_name, :business_description, :homepage_url, :phone, :address, :business_hours, :logo)
       end
   end
 end

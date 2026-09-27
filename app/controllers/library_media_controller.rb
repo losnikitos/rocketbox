@@ -12,6 +12,37 @@ class LibraryMediaController < ApplicationController
     end
   end
 
+  def update
+    media = Current.account.library_media.find(params[:id])
+    if media.update(params.expect(library_media: [ :media_type ]))
+      redirect_to library_upload_path(media), notice: "Media type saved."
+    else
+      redirect_to library_upload_path(media), alert: media.errors.full_messages.to_sentence
+    end
+  end
+
+  def extract
+    media = Current.account.library_media.find(params[:id])
+    unless media.business_card? && media.story_image?
+      return redirect_to library_upload_path(media), alert: "Only business card photos can be read."
+    end
+
+    media.extracted_logo.purge
+    media.update!(extracted_info: { "status" => "pending" })
+    ExtractBusinessCardJob.perform_later(media.id)
+    redirect_to library_upload_path(media)
+  end
+
+  def apply_extraction
+    media = Current.account.library_media.find(params[:id])
+    Current.account.update!(media.extracted_account_attributes)
+    if (logo = media.extracted_logo).attached?
+      # Copy, not share: re-extracting purges the card's logo blob.
+      Current.account.logo.attach(io: StringIO.new(logo.download), filename: logo.filename, content_type: logo.content_type)
+    end
+    redirect_to library_upload_path(media), notice: "Business updated from card."
+  end
+
   def destroy
     unless Current.user.admin?
       redirect_to library_uploads_path, alert: "You are not allowed to remove media."
