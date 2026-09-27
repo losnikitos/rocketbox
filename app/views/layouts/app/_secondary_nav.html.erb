@@ -4,11 +4,10 @@
     <% if tab == :separator %>
       <span class="mx-1 h-4 w-px bg-ink-900/15" aria-hidden="true"></span>
     <% else %>
-      <% path, label, selected = tab %>
-      <%= link_to label,
-            path,
+      <% path, label, selected, count = tab %>
+      <%= link_to path,
             class: "rounded-full px-3.5 py-1.5 text-sm font-medium transition aria-selected:bg-ink-900 aria-selected:text-white text-ink-600 hover:bg-ink-900/5 hover:text-ink-900",
-            aria: { selected: selected, current: (selected ? "page" : nil) } %>
+            aria: { selected: selected, current: (selected ? "page" : nil) } do %><%= label %><% if count %> <span class="ml-0.5 text-xs tabular-nums opacity-60"><%= count %></span><% end %><% end %>
     <% end %>
   <% end %>
   <% if show_upload %>

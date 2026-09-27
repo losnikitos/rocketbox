@@ -39,6 +39,9 @@
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
                 <% end %>
                 <div class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-ink-900/10" aria-hidden="true"></div>
+                <% if media.media_type %>
+                  <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm"><%= media.media_type.humanize %></span>
+                <% end %>
                 <div class="absolute right-1 top-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <%= render "shared/admin_links/library_media", library_media: media %>
                 </div>
@@ -55,13 +58,29 @@
     >
       <p class="text-sm text-ink-700">
         <span class="font-semibold text-ink-900" data-library-select-target="count">0</span>
-        selected · create a draft Instagram post
+        selected
       </p>
-      <form id="create-instagram-post" action="<%= new_smm_post_path %>" method="get" class="sm:mt-0">
-        <button type="submit" class="rb-btn-primary px-4 py-2 text-sm">
-          Create Instagram post
-        </button>
-      </form>
+      <div class="flex items-center gap-2">
+        <%= form_with url: bulk_update_library_media_index_path, method: :patch do %>
+          <select
+            name="media_type"
+            aria-label="Set media type"
+            data-action="change->library-select#setMediaType"
+            class="rounded-lg border border-ink-900/15 bg-white px-2.5 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30"
+          >
+            <option value="" disabled selected hidden>Set media type…</option>
+            <% LibraryMedia.media_types.each_key do |t| %>
+              <option value="<%= t %>"><%= t.humanize %></option>
+            <% end %>
+            <option value="">Not set</option>
+          </select>
+        <% end %>
+        <form id="create-instagram-post" action="<%= new_smm_post_path %>" method="get">
+          <button type="submit" class="rb-btn-primary px-4 py-2 text-sm">
+            Create Instagram post
+          </button>
+        </form>
+      </div>
     </div>
   <% elsif LibraryMedia.media_types.key?(params[:type]) %>
     <p class="text-sm text-ink-600">No <%= params[:type].pluralize.humanize(capitalize: false) %> yet.</p>
