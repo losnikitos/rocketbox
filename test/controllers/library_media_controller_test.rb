@@ -60,6 +60,24 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?
   end
 
+  test "bulk sets media type within the account only" do
+    other = LibraryMedia.create!(kind: "photo", user: @admin)
+    foreign = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
+
+    patch bulk_update_library_media_index_url, params: { media_type: "interior", ids: [ @media.id, other.id, foreign.id ] }
+    assert_redirected_to library_uploads_url
+    assert_equal "Media type saved for 2 files.", flash[:notice]
+    assert_equal %w[interior interior], [ @media.reload.media_type, other.reload.media_type ]
+    assert_nil foreign.reload.media_type
+
+    patch bulk_update_library_media_index_url, params: { media_type: "", ids: [ @media.id ] }
+    assert_nil @media.reload.media_type
+
+    patch bulk_update_library_media_index_url, params: { media_type: "bogus", ids: [ other.id ] }
+    assert_equal "interior", other.reload.media_type
+    assert_equal "Unknown media type.", flash[:alert]
+  end
+
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
     @media.update!(media_type: "business_card", extracted_info: {

@@ -26,7 +26,9 @@ module Accounts
         provider: @crawl&.provider || Crawl::PROVIDERS.keys.first,
         data_instruction: @crawl&.data_instruction || Prompt.body_for!(:crawl_business)
       )
-      @imported = @crawl ? Current.account.library_media.where(source_url: @crawl.media_urls).pluck(:source_url, :id).to_h : {}
+      @suggestions = @crawl ? @crawl.suggestions.to_a : []
+      applied_urls = @suggestions.select { |s| s.media? && s.applied? }.map(&:value)
+      @imported = Current.account.library_media.where(source_url: applied_urls).pluck(:source_url, :id).to_h
     end
 
     def destroy

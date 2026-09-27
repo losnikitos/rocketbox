@@ -1,7 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Multi-select library media. Checkboxes use form="create-instagram-post"
-// so selected ids submit with the sticky-bar GET form.
+// so selected ids submit with the sticky-bar GET form; setMediaType copies
+// them into the bulk media-type form.
 export default class extends Controller {
   static targets = ["item", "checkbox", "bar", "count"]
   static values = { max: { type: Number, default: 7 } }
@@ -27,6 +28,19 @@ export default class extends Controller {
     event.preventDefault()
     this.checkboxTargets.forEach((box) => { box.checked = false })
     this.sync()
+  }
+
+  setMediaType(event) {
+    const form = event.target.form
+    form.querySelectorAll('input[name="ids[]"]').forEach((input) => input.remove())
+    this.checkboxTargets.filter((box) => box.checked).forEach((box) => {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = "ids[]"
+      input.value = box.value
+      form.append(input)
+    })
+    form.requestSubmit()
   }
 
   enforceMax(preferred) {

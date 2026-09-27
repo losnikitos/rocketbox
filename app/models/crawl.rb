@@ -14,6 +14,7 @@ class Crawl < ApplicationRecord
   }.freeze
 
   belongs_to :link
+  has_many :suggestions, -> { order(:id) }, dependent: :destroy
   delegate :url, :user, to: :link
 
   enum :status, %w[pending done failed].index_by(&:itself)
@@ -39,5 +40,14 @@ class Crawl < ApplicationRecord
 
   def media_urls
     photo_urls + video_urls
+  end
+
+  # One pending row per proposed change; values the account already has are skipped.
+  def create_suggestions!
+    imported = user.library_media.where(source_url: media_urls).pluck(:source_url)
+    rows = account_attributes.filter_map { |column, value| [ FIELDS.key(column), value ] unless user[column].to_s.strip == value }
+    rows << [ "logo", logo_url ] if logo_url
+    rows += (photo_urls - imported).map { |url| [ "photo", url ] } + (video_urls - imported).map { |url| [ "video", url ] }
+    rows.each { |key, value| suggestions.create!(key: key, value: value) }
   end
 end

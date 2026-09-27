@@ -15,7 +15,7 @@ class LibraryMedia < ApplicationRecord
     "business_description" => :business_description
   }.freeze
 
-  enum :media_type, %w[business_card interior exterior logo customer_before customer_after misc].index_by(&:itself),
+  enum :media_type, %w[business_card interior exterior logo customer misc].index_by(&:itself),
        validate: { allow_nil: true }
 
   validates :kind, presence: true

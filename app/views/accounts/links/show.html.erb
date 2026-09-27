@@ -66,10 +66,9 @@
     <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">Crawl failed: <%= @crawl.error %></p>
 
   <% when "done" %>
-    <% extracted = @crawl.account_attributes %>
-    <% changed = extracted.reject { |column, value| account[column].to_s.strip == value } %>
-    <% missing_media = @crawl.media_urls.reject { |url| @imported.key?(url) } %>
-    <% up_to_date = changed.empty? && @crawl.logo_url.nil? && missing_media.empty? %>
+    <% business, media = @suggestions.partition { |suggestion| !suggestion.media? } %>
+    <% pending_media = media.count(&:pending?) %>
+    <% up_to_date = @suggestions.none?(&:pending?) %>
 
     <div class="flex flex-col gap-6 lg:flex-row">
       <section class="min-w-0 flex-1 rounded-lg border border-ink-900/10 bg-white p-4" aria-labelledby="business-heading">
@@ -82,40 +81,44 @@
           <% end %>
         </div>
 
-        <% if extracted.empty? && @crawl.logo_url.nil? %>
-          <p class="mt-3 text-sm text-ink-500">No business details were found on this page.</p>
+        <% if business.empty? %>
+          <p class="mt-3 text-sm text-ink-500">No new business details on this page.</p>
         <% else %>
           <dl class="mt-3 divide-y divide-ink-900/5 font-mono text-xs">
-            <% Crawl::FIELDS.each do |key, column| %>
-              <% next unless extracted.key?(column) %>
+            <% business.each do |suggestion| %>
               <div class="py-2">
                 <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
-                  <%= key.humanize %>
-                  <% if changed.key?(column) %>
-                    <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: key },
-                          class: "text-xs font-medium text-rocket hover:underline" %>
-                  <% end %>
+                  <%= suggestion.key.humanize %>
+                  <span class="flex items-center gap-3">
+                    <% if suggestion.pending? %>
+                      <%= button_to "Cancel", reject_link_suggestion_path(@link, suggestion), method: :patch,
+                            class: "text-xs text-ink-500 hover:text-ink-900 hover:underline" %>
+                    <% end %>
+                    <% unless suggestion.applied? %>
+                      <%= button_to "Apply", apply_link_suggestion_path(@link, suggestion), method: :patch,
+                            class: "text-xs font-medium text-rocket hover:underline" %>
+                    <% end %>
+                  </span>
                 </dt>
-                <%= render "shared/field_diff", current: account[column], value: extracted[column], source: "From page" %>
-              </div>
-            <% end %>
-
-            <% if @crawl.logo_url %>
-              <div class="py-2">
-                <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
-                  Logo
-                  <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: "logo" },
-                        class: "text-xs font-medium text-rocket hover:underline" %>
-                </dt>
-                <dd class="flex items-center gap-3">
-                  <% if account.logo.attached? %>
-                    <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
-                  <% else %>
-                    <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
-                  <% end %>
-                  <%= heroicon "arrow-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
-                  <img src="<%= @crawl.logo_url %>" alt="Logo from page" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain ring-2 ring-green-300">
-                </dd>
+                <% if suggestion.key != "logo" %>
+                  <%= render "shared/field_diff", current: account[Crawl::FIELDS[suggestion.key]], value: suggestion.value, source: "From page", status: suggestion.status %>
+                <% elsif suggestion.pending? %>
+                  <dd class="flex items-center gap-3">
+                    <% if account.logo.attached? %>
+                      <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
+                    <% else %>
+                      <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
+                    <% end %>
+                    <%= heroicon "arrow-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
+                    <img src="<%= suggestion.value %>" alt="Logo from page" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain ring-2 ring-green-300">
+                  </dd>
+                <% else %>
+                  <dd class="flex items-start gap-1.5 text-ink-500">
+                    <%= heroicon (suggestion.applied? ? "check" : "x-mark"), variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
+                    <img src="<%= suggestion.value %>" alt="Logo from page (<%= suggestion.status %>)" referrerpolicy="no-referrer"
+                         class="size-16 rounded-lg bg-white object-contain ring-1 ring-ink-900/10 <%= "opacity-50" if suggestion.rejected? %>">
+                  </dd>
+                <% end %>
               </div>
             <% end %>
           </dl>
@@ -133,34 +136,56 @@
     </div>
 
     <section aria-labelledby="media-heading">
-      <h3 id="media-heading" class="text-sm font-medium text-ink-900">
-        Photos &amp; videos
-        <span class="font-normal text-ink-500"><%= @crawl.media_urls.size %></span>
-      </h3>
-      <% if @crawl.media_urls.empty? %>
-        <p class="mt-1 text-sm text-ink-500">No photos or videos were found on this page.</p>
+      <div class="flex items-center justify-between gap-2">
+        <h3 id="media-heading" class="text-sm font-medium text-ink-900">
+          Photos &amp; videos
+          <span class="font-normal text-ink-500"><%= media.size %></span>
+        </h3>
+        <% if pending_media.positive? %>
+          <%= button_to apply_link_crawl_path(@link, @crawl), method: :patch, params: { media: 1 },
+                class: "rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs" do %>
+            <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+            Add all to library (<%= pending_media %>)
+          <% end %>
+        <% end %>
+      </div>
+      <% if media.empty? %>
+        <p class="mt-1 text-sm text-ink-500">No new photos or videos on this page.</p>
       <% else %>
         <ul class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <% @crawl.media_urls.each_with_index do |url, index| %>
-            <li id="media-<%= index %>" class="flex flex-col gap-2">
-              <div class="aspect-square overflow-hidden rounded-lg bg-ink-900/5">
-                <% if url.in?(@crawl.video_urls) %>
-                  <video src="<%= url %>" muted controls preload="metadata" class="size-full object-cover"></video>
+          <% media.each do |suggestion| %>
+            <li id="suggestion-<%= suggestion.id %>" class="flex flex-col gap-2">
+              <div class="aspect-square overflow-hidden rounded-lg bg-ink-900/5 <%= "opacity-50" if suggestion.rejected? %>">
+                <% if suggestion.key == "video" %>
+                  <video src="<%= suggestion.value %>" muted controls preload="metadata" class="size-full object-cover"></video>
                 <% else %>
-                  <img src="<%= url %>" alt="" loading="lazy" referrerpolicy="no-referrer" class="size-full object-cover">
+                  <img src="<%= suggestion.value %>" alt="" loading="lazy" referrerpolicy="no-referrer" class="size-full object-cover">
                 <% end %>
               </div>
-              <% if (media_id = @imported[url]) %>
-                <%= link_to library_upload_path(media_id), class: "inline-flex items-center gap-1 self-start text-xs text-ink-500 hover:text-ink-900" do %>
-                  <%= heroicon "check", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                  In library
+              <% if suggestion.applied? %>
+                <% if (media_id = @imported[suggestion.value]) %>
+                  <%= link_to library_upload_path(media_id), class: "inline-flex items-center gap-1 self-start text-xs text-ink-500 hover:text-ink-900" do %>
+                    <%= heroicon "check", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                    In library
+                  <% end %>
+                <% else %>
+                  <span class="inline-flex items-center gap-1 self-start text-xs text-ink-500">
+                    <%= heroicon "check", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                    Added
+                  </span>
                 <% end %>
               <% else %>
-                <%= button_to add_media_link_crawl_path(@link, @crawl), params: { url: url },
-                      class: "rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs" do %>
-                  <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                  Add to library
-                <% end %>
+                <div class="flex items-center gap-3">
+                  <%= button_to apply_link_suggestion_path(@link, suggestion), method: :patch,
+                        class: "rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs" do %>
+                    <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                    Add to library
+                  <% end %>
+                  <% if suggestion.pending? %>
+                    <%= button_to "Skip", reject_link_suggestion_path(@link, suggestion), method: :patch,
+                          class: "text-xs text-ink-500 hover:text-ink-900 hover:underline" %>
+                  <% end %>
+                </div>
               <% end %>
             </li>
           <% end %>

@@ -64,7 +64,10 @@ class CrawlBusiness
       when "getbro" then GetBro.extract(@crawl.url, data_instruction: @crawl.data_instruction, schema: FIELDS)
       end
 
-    @crawl.update!(status: "done", error: nil, extracted: self.class.normalize(result[:extracted]), screenshot_url: result[:screenshot_url])
+    @crawl.transaction do
+      @crawl.update!(status: "done", error: nil, extracted: self.class.normalize(result[:extracted]), screenshot_url: result[:screenshot_url])
+      @crawl.create_suggestions!
+    end
   rescue Firecrawl::Error, GetBro::Error, Faraday::Error => e
     @crawl.update!(status: "failed", error: e.message)
   rescue StandardError => e

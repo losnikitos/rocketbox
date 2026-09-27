@@ -13,7 +13,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Library"
     assert_select "nav[aria-label='Primary']"
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Uploads"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "All 0"
     assert_select "nav[aria-label='Secondary'] label[for=?]", "library-upload-input", text: "Upload"
     assert_select "nav[aria-label='Secondary'] a", text: "Reels", count: 0
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
@@ -33,8 +33,25 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[action=?]", new_smm_post_path
     assert_select "input[data-library-select-target=?]", "checkbox"
+    assert_select "form[action=?] select[name=media_type]", bulk_update_library_media_index_path
     assert_select "button", text: "Publish as Instagram story", count: 0
     assert_select "button", text: "Improve with AI", count: 0
+  end
+
+  test "filters uploads by media type tab" do
+    card = LibraryMedia.create!(kind: "photo", media_type: "business_card", user: @user)
+    card.file.attach(io: StringIO.new("img"), filename: "card.jpg", content_type: "image/jpeg")
+    interior = LibraryMedia.create!(kind: "photo", media_type: "interior", user: @user)
+    interior.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
+
+    get library_uploads_url(type: "business_card")
+    assert_response :success
+    assert_select "a[href=?]", library_upload_path(card)
+    assert_select "a[href=?]", library_upload_path(interior), count: 0
+    assert_select "li span", text: "Business card"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "business_card"), text: "Business Card 1"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", library_uploads_path, text: "All 2"
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(type: "logo"), text: "Logo 0"
   end
 
   test "tiles link to media show page with details panel" do

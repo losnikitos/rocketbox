@@ -21,6 +21,16 @@ class LibraryMediaController < ApplicationController
     end
   end
 
+  def bulk_update
+    media_type = params[:media_type].presence
+    unless media_type.nil? || LibraryMedia.media_types.key?(media_type)
+      return redirect_back_or_to library_uploads_path, alert: "Unknown media type."
+    end
+
+    count = Current.account.library_media.where(id: params[:ids]).update_all(media_type:, updated_at: Time.current)
+    redirect_back_or_to library_uploads_path, notice: "Media type saved for #{helpers.pluralize(count, "file")}."
+  end
+
   def extract
     media = Current.account.library_media.find(params[:id])
     unless media.business_card? && media.story_image?

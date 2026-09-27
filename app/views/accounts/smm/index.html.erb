@@ -1,0 +1,11 @@
+<% content_for(:title, "SMM — Rocketbox") %>
+
+<h2 class="font-manrope text-lg font-bold text-ink-900">All</h2>
+
+<% if @posts.present? %>
+  <%= render "accounts/posts/grid", posts: @posts %>
+<% else %>
+  <p class="mt-6 text-sm text-ink-600">
+    Nothing yet. <%= link_to "Select images in uploads", library_uploads_path, class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
+  </p>
+<% end %>

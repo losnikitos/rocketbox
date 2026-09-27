@@ -1,6 +1,16 @@
-<%# locals: (current:, value:, source:) %>
+<%# locals: (current:, value:, source:, status: "pending") %>
 <% current = current.to_s.strip.presence %>
-<% if current != value %>
+<% if status == "applied" || current == value %>
+  <dd class="flex items-start gap-1.5 rounded bg-ink-900/3 px-2 py-1 text-ink-500">
+    <%= heroicon "check", variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
+    <span class="whitespace-pre-wrap"><%= value %><span class="sr-only"> (<%= status == "applied" ? "applied" : "unchanged" %>)</span></span>
+  </dd>
+<% elsif status == "rejected" %>
+  <dd class="flex items-start gap-1.5 rounded bg-ink-900/3 px-2 py-1 text-ink-500">
+    <%= heroicon "x-mark", variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
+    <span class="whitespace-pre-wrap"><del><%= value %></del><span class="sr-only"> (rejected)</span></span>
+  </dd>
+<% else %>
   <dd class="flex gap-1.5 rounded-t bg-red-50 px-2 py-1 text-red-800">
     <span aria-hidden="true">−</span><span class="sr-only">Current:</span>
     <% if current %><del class="whitespace-pre-wrap"><%= current %></del><% else %><span class="italic text-red-800/60">Not set</span><% end %>
@@ -8,10 +18,5 @@
   <dd class="flex gap-1.5 rounded-b bg-green-50 px-2 py-1 text-green-800">
     <span aria-hidden="true">+</span><span class="sr-only"><%= source %>:</span>
     <span class="whitespace-pre-wrap"><%= value %></span>
-  </dd>
-<% else %>
-  <dd class="flex items-start gap-1.5 rounded bg-ink-900/3 px-2 py-1 text-ink-500">
-    <%= heroicon "check", variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
-    <span class="whitespace-pre-wrap"><%= value %><span class="sr-only"> (unchanged)</span></span>
   </dd>
 <% end %>

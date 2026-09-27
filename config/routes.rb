@@ -49,7 +49,7 @@ Rails.application.routes.draw do
     end
 
     scope path: "smm", module: :accounts, as: :smm do
-      get "/", to: redirect("/app/smm/posts")
+      get "/", to: "smm#index", as: :root
       get "reels", to: "smm#reels"
       get "stories", to: "smm#stories"
       resources :posts, only: %i[index new create show] do
@@ -64,9 +64,12 @@ Rails.application.routes.draw do
       resource :business, only: [ :show, :update ], controller: "business"
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
+          patch :apply, on: :member
+        end
+        resources :suggestions, only: [] do
           member do
             patch :apply
-            post :add_media
+            patch :reject
           end
         end
       end
@@ -88,6 +91,7 @@ Rails.application.routes.draw do
     end
 
     resources :library_media, only: %i[create update destroy], path: "library/media" do
+      patch :bulk_update, on: :collection
       member do
         post :extract
         patch :apply_extraction

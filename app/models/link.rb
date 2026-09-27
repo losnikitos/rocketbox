@@ -5,6 +5,7 @@ class Link < ApplicationRecord
 
   belongs_to :user
   has_many :crawls, dependent: :destroy
+  has_many :suggestions, through: :crawls
 
   validates :url, format: { with: %r{\Ahttps?://\S+\z}i, message: "must start with http:// or https://" },
     uniqueness: { scope: :user_id, message: "is already in your links" }
