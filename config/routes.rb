@@ -45,6 +45,7 @@ Rails.application.routes.draw do
     scope path: "library", module: :accounts do
       get "/", to: redirect("/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads
+      get "uploads/:id", to: "library#show", as: :library_upload
     end
 
     scope path: "smm", module: :accounts, as: :smm do

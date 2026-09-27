@@ -7,5 +7,9 @@ module Accounts
     def uploads
       @library_media = Current.account.library_media.with_attached_file.order(created_at: :desc)
     end
+
+    def show
+      @media = Current.account.library_media.with_attached_file.find(params[:id])
+    end
   end
 end

@@ -1,0 +1,47 @@
+<% content_for(:title, "#{@media.kind.humanize} — Uploads — Rocketbox") %>
+<% blob = @media.file.blob if @media.file.attached? %>
+
+<div class="flex flex-col gap-6 md:flex-row">
+  <div class="flex min-w-0 flex-1 flex-col gap-4">
+    <%= link_to library_uploads_path, class: "inline-flex items-center gap-1 self-start text-sm text-ink-600 hover:text-ink-900" do %>
+      <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Uploads
+    <% end %>
+    <div class="flex flex-1 items-center justify-center rounded-lg bg-ink-900/5 p-4">
+      <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+    </div>
+  </div>
+
+  <aside class="w-full shrink-0 md:w-64 md:border-l md:border-ink-900/10 md:pl-6 lg:w-72">
+    <div class="flex items-center justify-between gap-2">
+      <h2 class="text-sm font-medium text-ink-900">Details</h2>
+      <%= render "shared/admin_links/library_media", library_media: @media %>
+    </div>
+
+    <dl class="mt-4 space-y-3 text-sm">
+      <% [
+           [ "Type", @media.kind.humanize ],
+           [ "Source", @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
+           [ "Uploaded", l(@media.created_at, format: :long) ],
+           [ "File name", blob&.filename ],
+           [ "Format", blob&.content_type ],
+           [ "Size", blob && number_to_human_size(blob.byte_size) ],
+           [ "Dimensions", blob&.metadata&.values_at("width", "height")&.compact&.join(" × ").presence ],
+           [ "Duration", blob&.metadata&.dig("duration")&.then { |s| "#{s.round(1)} s" } ]
+         ].each do |label, value| %>
+        <% next if value.blank? %>
+        <div>
+          <dt class="text-ink-500"><%= label %></dt>
+          <dd class="mt-0.5 break-all text-ink-900"><%= value %></dd>
+        </div>
+      <% end %>
+    </dl>
+
+    <% if blob %>
+      <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light mt-6 gap-1.5 px-3.5 py-1.5 text-sm" do %>
+        <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Download
+      <% end %>
+    <% end %>
+  </aside>
+</div>

@@ -6,7 +6,7 @@ module AppHelper
     case controller_path
     when "accounts/library"
       [ :library, "Library", [
-        [ library_uploads_path, "Uploads", action_name == "uploads" ]
+        [ library_uploads_path, "Uploads", true ]
       ] ]
     when "accounts/smm"
       [ :smm, "SMM", [

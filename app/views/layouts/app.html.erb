@@ -41,7 +41,7 @@
         </header>
 
         <% if tabs.any? %>
-          <%= render "layouts/app/secondary_nav", tabs: tabs, show_upload: section == :library %>
+          <%= render "layouts/app/secondary_nav", tabs: tabs, show_upload: section == :library && action_name == "uploads" %>
         <% end %>
 
         <main class="rb-surface-raised mt-3 min-h-0 flex-1 p-5 transition-colors data-[dragging]:bg-rocket/5 data-[dragging]:ring-2 data-[dragging]:ring-inset data-[dragging]:ring-rocket sm:p-6 lg:p-8">
