@@ -101,9 +101,9 @@ class SignupsController < ApplicationController
   end
 
   def whatsapp
-    return whatsapp_skip if Current.user.whatsapp_phone.present? && !admin_preview?
+    return whatsapp_skip if Current.account.whatsapp_phone.present? && !admin_preview?
 
-    @whatsapp_url = "https://wa.me/#{WhatsappCloud.display_phone}?text=START_#{Current.user.whatsapp_connect_code!}"
+    @whatsapp_url = "https://wa.me/#{WhatsappCloud.display_phone}?text=START_#{Current.account.whatsapp_connect_code!}"
   end
 
   def whatsapp_skip

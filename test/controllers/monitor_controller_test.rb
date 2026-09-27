@@ -52,6 +52,19 @@ class MonitorControllerTest < ActionDispatch::IntegrationTest
     WhatsappCloud.define_singleton_method(:display_phone, original)
   end
 
+  test "whatsapp connect code is issued to the selected customer" do
+    admin = sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+    customer.update!(whatsapp_phone: nil, whatsapp_connect_code: nil)
+    patch account_selection_url, params: { user_id: customer.id }
+
+    get sign_up_whatsapp_url
+
+    assert_response :success
+    assert customer.reload.whatsapp_connect_code.present?
+    assert_nil admin.reload.whatsapp_connect_code
+  end
+
   test "non-admin is redirected" do
     sign_in_as(users(:lazaro_nixon))
     get monitor_onboarding_url
