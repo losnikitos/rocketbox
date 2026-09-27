@@ -1,9 +1,8 @@
 <% content_for(:title, "Integrations — Rocketbox") %>
 
-<h2 class="font-manrope text-lg font-bold text-ink-900">Integrations</h2>
-<p class="mt-2 text-sm text-ink-600">Instagram, WhatsApp, and Telegram credentials for posting and inbound media.</p>
+<p class="text-sm text-ink-600">Instagram, WhatsApp, and Telegram credentials for posting and inbound media.</p>
 
-<%= form_with model: Current.account, url: profile_integrations_path, method: :patch,
+<%= form_with model: Current.account, url: integrations_path, method: :patch,
       class: "mt-6 space-y-8",
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <section class="space-y-4">
@@ -13,20 +12,60 @@
         Instagram
       </h3>
 
-      <% if Current.account.instagram_authorized? %>
-        <span class="inline-flex items-center gap-1.5 text-sm font-medium text-signal-green">
-          <%= heroicon "check-circle", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
-          Authorized
-        </span>
-      <% else %>
-        <%= link_to "Authorize", profile_instagram_authorize_path, class: "rb-btn-primary", data: { turbo: false } %>
-      <% end %>
+      <div class="flex items-center gap-3">
+        <% if Current.account.instagram_authorized? %>
+          <span class="inline-flex items-center gap-1.5 text-sm font-medium text-signal-green">
+            <% if Current.account.instagram_avatar.attached? %>
+              <%= image_tag Current.account.instagram_avatar, class: "size-5 rounded-full", alt: "" %>
+            <% else %>
+              <%= heroicon "check-circle", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+            <% end %>
+            <% if (handle = Current.account.instagram_username).present? %>
+              <%= link_to "@#{handle}", "https://www.instagram.com/#{handle}", target: "_blank", rel: "noopener", class: "hover:underline" %>
+            <% else %>
+              Authorized
+            <% end %>
+          </span>
+        <% else %>
+          <%= link_to "Authorize", profile_instagram_authorize_path, class: "rb-btn-primary", data: { turbo: false } %>
+        <% end %>
+
+        <%= tag.button "Fetch info", type: :submit, form: "instagram-refresh",
+              disabled: !Current.account.instagram_authorized?,
+              class: "rb-btn-ghost disabled:cursor-not-allowed disabled:opacity-50" %>
+      </div>
     </div>
 
     <details>
-      <summary class="cursor-pointer text-sm text-ink-600 hover:text-ink-900">Credentials</summary>
+      <summary class="cursor-pointer text-sm text-ink-600 hover:text-ink-900">Details</summary>
 
       <div class="mt-4 space-y-4">
+        <% if (profile = Current.account.instagram_profile).present? %>
+          <div class="flex items-start gap-4">
+            <% if Current.account.instagram_avatar.attached? %>
+              <%= image_tag Current.account.instagram_avatar, class: "size-16 shrink-0 rounded-full", alt: "" %>
+            <% end %>
+            <dl class="grid flex-1 gap-3 text-sm sm:grid-cols-2">
+              <% profile.each do |key, value| %>
+                <div>
+                  <dt class="text-ink-500"><%= key.tr("_", " ").capitalize %></dt>
+                  <dd class="mt-0.5 break-words text-ink-900">
+                    <% if value.is_a?(Integer) %>
+                      <%= number_with_delimiter(value) %>
+                    <% elsif value.to_s.start_with?("https://", "http://") %>
+                      <%= link_to value, value, target: "_blank", rel: "noopener", class: "rb-text-link" %>
+                    <% else %>
+                      <%= value %>
+                    <% end %>
+                  </dd>
+                </div>
+              <% end %>
+            </dl>
+          </div>
+        <% else %>
+          <p class="text-sm text-ink-500">No profile info fetched yet.</p>
+        <% end %>
+
         <div>
           <%= form.label :instagram_user_id, "User id", class: tw_label_classes %>
           <%= autosave_field do %>
@@ -73,3 +112,5 @@
     </div>
   </section>
 <% end %>
+
+<%= form_with url: profile_instagram_refresh_path, id: "instagram-refresh" do %><% end %>

@@ -11,6 +11,9 @@ class User < ApplicationRecord
   has_many :smm_posts, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
   has_one_attached :logo
+  has_one_attached :instagram_avatar
+
+  store_accessor :instagram_profile, :username, prefix: :instagram
 
   after_create :create_default_subscription
 
@@ -26,6 +29,20 @@ class User < ApplicationRecord
 
   def instagram_authorized?
     instagram_user_id.present? && instagram_access_token.present?
+  end
+
+  # Signed CDN picture URLs expire, so the picture is stored as an attachment instead of in the profile.
+  def refresh_instagram_profile!
+    raise InstagramOauth::Error, "Authorize Instagram first." if instagram_access_token.blank?
+
+    profile = InstagramOauth.profile(instagram_access_token)
+    picture_url = profile.delete("profile_picture_url")
+    update!(instagram_user_id: profile.fetch("user_id").to_s, instagram_profile: profile)
+
+    picture = picture_url && InstagramOauth.picture(picture_url)
+    picture ? instagram_avatar.attach(**picture, filename: "#{instagram_username}.jpg") : instagram_avatar.purge
+  rescue KeyError => e
+    raise InstagramOauth::Error, "Instagram did not return #{e.key}."
   end
 
   def account_label

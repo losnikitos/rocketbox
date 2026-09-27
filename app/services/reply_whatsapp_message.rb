@@ -43,12 +43,16 @@ class ReplyWhatsappMessage
 
     def connect!(from, text)
       code = text.strip[/\ASTART_(\w+)\z/, 1]
-      user = code && from.present? && User.find_by(whatsapp_connect_code: code)
-      return false unless user
+      return false unless code && from.present?
 
-      User.where(whatsapp_phone: from).where.not(id: user.id).update_all(whatsapp_phone: nil)
-      user.update!(whatsapp_phone: from, whatsapp_connect_code: nil)
-      LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
+      if (user = User.find_by(whatsapp_connect_code: code))
+        User.where(whatsapp_phone: from).where.not(id: user.id).update_all(whatsapp_phone: nil)
+        user.update!(whatsapp_phone: from, whatsapp_connect_code: nil)
+        LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
+      elsif !User.exists?(whatsapp_phone: from)
+        return false
+      end
+
       WhatsappCloud.send_text(to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
       true
     end

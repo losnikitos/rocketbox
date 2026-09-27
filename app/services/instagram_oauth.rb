@@ -12,7 +12,11 @@ class InstagramOauth
     }.to_query
   end
 
-  # Returns [instagram_user_id, long_lived_access_token].
+  PROFILE_FIELDS = %w[
+    user_id username name account_type profile_picture_url biography website followers_count follows_count media_count
+  ].freeze
+
+  # Returns a long-lived access token.
   # ponytail: long-lived tokens expire after 60 days and we don't refresh them; owner re-authorizes.
   # Upgrade: store expires_in and run a job hitting graph.instagram.com/refresh_access_token.
   def self.exchange(code:, redirect_uri:)
@@ -20,13 +24,20 @@ class InstagramOauth
       client_id: app_id, client_secret: app_secret, grant_type: "authorization_code", redirect_uri:, code:)
     short = short["data"]&.first || short
 
-    token = request(:get, "https://graph.instagram.com/access_token",
+    request(:get, "https://graph.instagram.com/access_token",
       grant_type: "ig_exchange_token", client_secret: app_secret, access_token: short.fetch("access_token")).fetch("access_token")
-    user_id = request(:get, "#{PublishInstagramReel::GRAPH_BASE}/me", fields: "user_id", access_token: token).fetch("user_id")
-
-    [ user_id.to_s, token ]
   rescue KeyError => e
     raise Error, "Instagram did not return #{e.key}."
+  end
+
+  def self.profile(access_token)
+    request(:get, "#{PublishInstagramReel::GRAPH_BASE}/me", fields: PROFILE_FIELDS.join(","), access_token:)
+  end
+
+  # Returns attach-ready { io:, content_type: }, or nil if the download fails.
+  def self.picture(url)
+    response = Faraday.get(url)
+    { io: StringIO.new(response.body), content_type: response.headers["content-type"] } if response.success?
   end
 
   def self.request(method, url, params)
