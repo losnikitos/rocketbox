@@ -37,6 +37,27 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: "Improve with AI", count: 0
   end
 
+  test "tiles link to media show page with details panel" do
+    media = LibraryMedia.create!(kind: "photo", user: @user)
+    media.file.attach(io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg")
+
+    get library_uploads_url
+    assert_select "a[href=?] img", library_upload_path(media)
+
+    get library_upload_url(media)
+    assert_response :success
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path
+    assert_select "img[src]"
+    assert_select "aside dd", text: "cut.jpg"
+  end
+
+  test "cannot view another account's media" do
+    media = LibraryMedia.create!(kind: "photo", user: users(:admin_user))
+
+    get library_upload_url(media)
+    assert_response :not_found
+  end
+
   test "requires sign in" do
     delete session_url(@user.sessions.last)
     get library_uploads_url

@@ -10,17 +10,6 @@ export default class extends Controller {
     this.sync()
   }
 
-  selectItem(event) {
-    if (event.target.closest("a, button, form, input, label, video")) return
-
-    const box = event.currentTarget.querySelector('input[type="checkbox"][data-library-select-target="checkbox"]')
-    if (!box) return
-
-    box.checked = !box.checked
-    this.enforceMax(box)
-    this.sync()
-  }
-
   changed(event) {
     this.enforceMax(event.target)
     this.sync()

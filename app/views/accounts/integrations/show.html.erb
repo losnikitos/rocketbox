@@ -7,9 +7,11 @@
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <section class="space-y-4">
     <div class="flex items-center justify-between gap-4">
-      <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
-        <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-        Instagram
+      <h3 id="instagram" class="font-manrope text-base font-bold text-ink-900">
+        <a href="#instagram" class="inline-flex items-center gap-2 hover:underline">
+          <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+          Instagram
+        </a>
       </h3>
 
       <div class="flex items-center gap-3">
@@ -84,24 +86,43 @@
   </section>
 
   <section class="space-y-4 border-t border-ink-900/10 pt-6">
-    <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
-      <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-      WhatsApp
-    </h3>
+    <div class="flex items-center justify-between gap-4">
+      <h3 id="whatsapp" class="font-manrope text-base font-bold text-ink-900">
+        <a href="#whatsapp" class="inline-flex items-center gap-2 hover:underline">
+          <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+          WhatsApp
+        </a>
+      </h3>
 
-    <div>
-      <%= form.label :whatsapp_phone, "Phone", class: tw_label_classes %>
-      <%= autosave_field do %>
-        <%= form.text_field :whatsapp_phone, class: tw_input_autosave_classes, autocomplete: "off", placeholder: "15551234567" %>
+      <% if (phone = Current.account.whatsapp_phone).present? %>
+        <span class="inline-flex items-center gap-1.5 text-sm font-medium text-signal-green">
+          <%= heroicon "check-circle", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+          +<%= phone %>
+        </span>
+      <% else %>
+        <%= link_to "Authorize", sign_up_whatsapp_path, class: "rb-btn-primary", data: { turbo: false } %>
       <% end %>
-      <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +).</p>
     </div>
+
+    <details>
+      <summary class="cursor-pointer text-sm text-ink-600 hover:text-ink-900">Details</summary>
+
+      <div class="mt-4">
+        <%= form.label :whatsapp_phone, "Phone", class: tw_label_classes %>
+        <%= autosave_field do %>
+          <%= form.text_field :whatsapp_phone, class: tw_input_autosave_classes, autocomplete: "off", placeholder: "15551234567" %>
+        <% end %>
+        <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +).</p>
+      </div>
+    </details>
   </section>
 
   <section class="space-y-4 border-t border-ink-900/10 pt-6">
-    <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
-      <%= image_tag "brands/telegram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-      Telegram
+    <h3 id="telegram" class="font-manrope text-base font-bold text-ink-900">
+      <a href="#telegram" class="inline-flex items-center gap-2 hover:underline">
+        <%= image_tag "brands/telegram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+        Telegram
+      </a>
     </h3>
 
     <div>

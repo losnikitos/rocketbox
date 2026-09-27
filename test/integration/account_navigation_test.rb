@@ -87,6 +87,19 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "integrations page links to WhatsApp auth until connected" do
+    user = sign_in_as(users(:lazaro_nixon))
+    user.update!(whatsapp_phone: nil)
+
+    get integrations_url
+    assert_select "a[href=?]", sign_up_whatsapp_path, text: "Authorize"
+
+    user.update!(whatsapp_phone: "15551234567")
+    get integrations_url
+    assert_select "a[href=?]", sign_up_whatsapp_path, count: 0
+    assert_select "span", text: /\+15551234567/
+  end
+
   test "subscription page shows billing controls and sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 

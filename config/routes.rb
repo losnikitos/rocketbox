@@ -45,6 +45,7 @@ Rails.application.routes.draw do
     scope path: "library", module: :accounts do
       get "/", to: redirect("/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads
+      get "uploads/:id", to: "library#show", as: :library_upload
     end
 
     scope path: "smm", module: :accounts, as: :smm do
@@ -78,7 +79,12 @@ Rails.application.routes.draw do
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh
     end
 
-    resources :library_media, only: %i[create destroy], path: "library/media"
+    resources :library_media, only: %i[create update destroy], path: "library/media" do
+      member do
+        post :extract
+        patch :apply_extraction
+      end
+    end
   end
 
   post "stripe/webhook", to: "stripe_webhooks#create"

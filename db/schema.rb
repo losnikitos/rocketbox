@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_173515) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_190000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -91,8 +91,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_173515) do
   create_table "library_media", force: :cascade do |t|
     t.integer "chat_id"
     t.datetime "created_at", null: false
+    t.json "extracted_info"
     t.integer "from_id"
     t.string "kind", null: false
+    t.string "media_type"
     t.string "telegram_file_id"
     t.string "telegram_file_unique_id"
     t.datetime "updated_at", null: false
@@ -138,10 +140,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_173515) do
     t.boolean "active", default: true, null: false
     t.text "body", null: false
     t.datetime "created_at", null: false
+    t.string "key"
     t.string "name", null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_prompts_on_active"
+    t.index ["key"], name: "index_prompts_on_key", unique: true
     t.index ["position"], name: "index_prompts_on_position"
   end
 
@@ -286,6 +290,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_173515) do
 
   create_table "users", force: :cascade do |t|
     t.string "address"
+    t.text "business_description"
     t.text "business_hours"
     t.string "business_name"
     t.datetime "created_at", null: false
@@ -295,6 +300,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_173515) do
     t.json "instagram_profile"
     t.string "instagram_user_id"
     t.string "name"
+    t.string "phone"
     t.string "role", default: "user", null: false
     t.bigint "telegram_user_id"
     t.datetime "updated_at", null: false

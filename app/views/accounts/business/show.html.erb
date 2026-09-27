@@ -32,9 +32,23 @@
     </div>
 
     <div>
+      <%= form.label :business_description, "Description", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.text_area :business_description, rows: 3, placeholder: "What your business does", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
+
+    <div>
       <%= form.label :homepage_url, "Homepage URL", class: tw_label_classes %>
       <%= autosave_field do %>
         <%= form.url_field :homepage_url, autocomplete: "url", placeholder: "https://", class: tw_input_autosave_classes %>
+      <% end %>
+    </div>
+
+    <div>
+      <%= form.label :phone, "Phone", class: tw_label_classes %>
+      <%= autosave_field do %>
+        <%= form.telephone_field :phone, autocomplete: "tel", class: tw_input_autosave_classes %>
       <% end %>
     </div>
 
