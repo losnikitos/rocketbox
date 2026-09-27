@@ -133,10 +133,19 @@
     </div>
 
     <section aria-labelledby="media-heading">
-      <h3 id="media-heading" class="text-sm font-medium text-ink-900">
-        Photos &amp; videos
-        <span class="font-normal text-ink-500"><%= @crawl.media_urls.size %></span>
-      </h3>
+      <div class="flex items-center justify-between gap-2">
+        <h3 id="media-heading" class="text-sm font-medium text-ink-900">
+          Photos &amp; videos
+          <span class="font-normal text-ink-500"><%= @crawl.media_urls.size %></span>
+        </h3>
+        <% if missing_media.any? %>
+          <%= button_to add_media_link_crawl_path(@link, @crawl),
+                class: "rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs" do %>
+            <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+            Add all to library (<%= missing_media.size %>)
+          <% end %>
+        <% end %>
+      </div>
       <% if @crawl.media_urls.empty? %>
         <p class="mt-1 text-sm text-ink-500">No photos or videos were found on this page.</p>
       <% else %>

@@ -33,7 +33,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "All"
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
-    assert_select "a[href=?]", smm_posts_path, text: "SMM"
+    assert_select "a[href=?]", smm_root_path, text: "SMM"
     assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
   end
 

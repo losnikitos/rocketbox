@@ -49,7 +49,7 @@ Rails.application.routes.draw do
     end
 
     scope path: "smm", module: :accounts, as: :smm do
-      get "/", to: redirect("/app/smm/posts")
+      get "/", to: "smm#index", as: :root
       get "reels", to: "smm#reels"
       get "stories", to: "smm#stories"
       resources :posts, only: %i[index new create show] do

@@ -10,18 +10,8 @@ module AppHelper
         :separator,
         *LibraryMedia.media_types.keys.map { |t| [ library_uploads_path(type: t), t.titleize, params[:type] == t ] }
       ] ]
-    when "accounts/smm"
-      [ :smm, "SMM", [
-        [ smm_reels_path, "Reels", action_name == "reels" ],
-        [ smm_stories_path, "Stories", action_name == "stories" ],
-        [ smm_posts_path, "Posts", false ]
-      ] ]
-    when "accounts/posts"
-      [ :smm, "SMM", [
-        [ smm_reels_path, "Reels", false ],
-        [ smm_stories_path, "Stories", false ],
-        [ smm_posts_path, "Posts", true ]
-      ] ]
+    when "accounts/smm", "accounts/posts"
+      [ :smm, "SMM", smm_tabs ]
     when "accounts/business"
       [ :business, "Business", [] ]
     when "accounts/links"
@@ -35,6 +25,17 @@ module AppHelper
     else
       [ nil, "Rocketbox", [] ]
     end
+  end
+
+  def smm_tabs
+    posts = controller_path == "accounts/posts"
+    [
+      [ smm_root_path, "All", !posts && action_name == "index" ],
+      :separator,
+      [ smm_reels_path, "Reels", action_name == "reels" ],
+      [ smm_stories_path, "Stories", action_name == "stories" ],
+      [ smm_posts_path, "Posts", posts ]
+    ]
   end
 
   def smm_post_status_text_class(status)

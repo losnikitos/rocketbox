@@ -29,32 +29,44 @@ module Accounts
           errors << "Logo: #{e.message}"
         end
       end
-      if field.nil?
-        @crawl.media_urls.each do |url|
-          Current.account.library_media.import_url!(url)
-        rescue RemoteFile::Error => e
-          errors << "#{RemoteFile.filename(url)}: #{e.message}"
-        end
-      end
+      errors.concat(import_media(@crawl.media_urls)) if field.nil?
 
       if errors.any?
-        redirect_to link_path(@link), alert: "Couldn't download #{errors.size} #{"item".pluralize(errors.size)}. #{errors.join("; ")}"
+        redirect_to link_path(@link), alert: download_alert(errors)
       else
         redirect_to link_path(@link), notice: "Business updated."
       end
     end
 
+    # Without `url`, adds every photo and video from the crawl.
     def add_media
-      url = params[:url].to_s
-      return redirect_to link_path(@link), alert: "That file isn't part of this crawl." unless url.in?(@crawl.media_urls)
+      url = params[:url].presence
+      return redirect_to link_path(@link), alert: "That file isn't part of this crawl." if url && !url.in?(@crawl.media_urls)
 
-      Current.account.library_media.import_url!(url)
-      redirect_to link_path(@link, anchor: "media-#{@crawl.media_urls.index(url)}"), notice: "Added to library."
-    rescue RemoteFile::Error => e
-      redirect_to link_path(@link), alert: "Couldn't download: #{e.message}"
+      errors = import_media(url ? [ url ] : @crawl.media_urls)
+      anchor = "media-#{@crawl.media_urls.index(url)}" if url
+      if errors.any?
+        redirect_to link_path(@link, anchor: anchor), alert: download_alert(errors)
+      else
+        redirect_to link_path(@link, anchor: anchor), notice: "Added to library."
+      end
     end
 
     private
+
+      # Returns one error message per file that failed to download.
+      def import_media(urls)
+        urls.filter_map do |url|
+          Current.account.library_media.import_url!(url)
+          nil
+        rescue RemoteFile::Error => e
+          "#{RemoteFile.filename(url)}: #{e.message}"
+        end
+      end
+
+      def download_alert(errors)
+        "Couldn't download #{errors.size} #{"item".pluralize(errors.size)}. #{errors.join("; ")}"
+      end
 
       def set_link
         @link = Current.account.links.find(params[:link_id])

@@ -94,7 +94,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     get link_url(@link)
     assert_response :success
     assert_select "form[action=?]", apply_link_crawl_path(@link, @crawl)
-    assert_select "form[action=?]", add_media_link_crawl_path(@link, @crawl), count: 2
+    assert_select "form[action=?]", add_media_link_crawl_path(@link, @crawl), count: 3
     assert_select "textarea[name='crawl[data_instruction]']", text: "x"
   end
 
@@ -128,6 +128,18 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     assert @user.logo.attached?
     assert_equal %w[photo video], @user.library_media.order(:id).pluck(:kind)
     assert_equal [ PHOTO, VIDEO ], @user.library_media.order(:id).pluck(:source_url)
+  end
+
+  test "add_media without a url adds every missing photo and video" do
+    post add_media_link_crawl_url(@link, @crawl), params: { url: PHOTO }
+    post add_media_link_crawl_url(@link, @crawl)
+
+    assert_redirected_to link_url(@link)
+    assert_equal [ PHOTO, VIDEO ], @user.library_media.order(:id).pluck(:source_url)
+    assert_not @user.reload.logo.attached?
+
+    get link_url(@link)
+    assert_select "form[action=?]", add_media_link_crawl_path(@link, @crawl), count: 0
   end
 
   test "add_media only takes urls from the crawl and other users' links are hidden" do

@@ -47,7 +47,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href=?]", library_upload_path(card)
     assert_select "a[href=?]", library_upload_path(interior), count: 0
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "business_card"), text: "Business Cards"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "business_card"), text: "Business Card"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", library_uploads_path, text: "All"
   end
 
