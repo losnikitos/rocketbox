@@ -22,6 +22,8 @@ module AppHelper
       ] ]
     when "accounts/business"
       [ :business, "Business", [] ]
+    when "accounts/crawls"
+      [ :crawl, "Crawl", [] ]
     when "accounts/integrations"
       [ :integrations, "Integrations", [] ]
     when "accounts/subscriptions"

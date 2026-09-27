@@ -46,24 +46,9 @@
     <% else %>
       <dl class="mt-3 divide-y divide-ink-900/5 font-mono text-xs">
         <% extracted.each do |column, value| %>
-          <% current = account[column].presence %>
           <div class="py-2">
             <dt class="mb-1 font-sans text-ink-500"><%= labels.fetch(column) %></dt>
-            <% if changed.key?(column) %>
-              <dd class="flex gap-1.5 rounded-t bg-red-50 px-2 py-1 text-red-800">
-                <span aria-hidden="true">−</span><span class="sr-only">Current:</span>
-                <% if current %><del class="whitespace-pre-wrap"><%= current %></del><% else %><span class="italic text-red-800/60">Not set</span><% end %>
-              </dd>
-              <dd class="flex gap-1.5 rounded-b bg-green-50 px-2 py-1 text-green-800">
-                <span aria-hidden="true">+</span><span class="sr-only">From card:</span>
-                <span class="whitespace-pre-wrap"><%= value %></span>
-              </dd>
-            <% else %>
-              <dd class="flex items-start gap-1.5 rounded bg-ink-900/3 px-2 py-1 text-ink-500">
-                <%= heroicon "check", variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
-                <span class="whitespace-pre-wrap"><%= value %><span class="sr-only"> (unchanged)</span></span>
-              </dd>
-            <% end %>
+            <%= render "shared/field_diff", current: account[column], value: value, source: "From card" %>
           </div>
         <% end %>
 

@@ -12,6 +12,13 @@ before_after:
   active: true
   position: 2
 
+crawl_business:
+  key: crawl_business
+  name: "Crawl: extract business profile"
+  body: Extract the business profile, photos, and videos.
+  active: true
+  position: 0
+
 inactive:
   name: Inactive prompt
   body: Should not appear in the user library.

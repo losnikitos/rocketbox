@@ -1,0 +1,145 @@
+<% content_for(:title, "#{@crawl.title} — Crawl — Rocketbox") %>
+<% account = Current.account %>
+
+<div class="space-y-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0 space-y-1">
+      <%= link_to crawls_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+        <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Crawl
+      <% end %>
+      <h2 class="flex items-center gap-2 text-lg font-semibold text-ink-900">
+        <span class="truncate"><%= @crawl.title %></span>
+        <%= render "accounts/crawls/status", crawl: @crawl %>
+      </h2>
+      <p class="truncate text-xs text-ink-500">
+        <%= Crawl::PROVIDERS[@crawl.provider] %> · <%= time_ago_in_words(@crawl.created_at) %> ago ·
+        <%= link_to @crawl.url, @crawl.url, target: "_blank", rel: "noopener", class: "hover:text-ink-900 hover:underline" %>
+      </p>
+    </div>
+    <% unless @crawl.pending? %>
+      <%= button_to crawls_path, params: { crawl: @crawl.slice(:url, :provider, :data_instruction) },
+            class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+        <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Crawl again
+      <% end %>
+    <% end %>
+  </div>
+
+  <% case @crawl.status %>
+  <% when "pending" %>
+    <% content_for :head do %>
+      <meta http-equiv="refresh" content="5">
+    <% end %>
+    <p class="flex items-center gap-2 text-sm text-ink-600" role="status">
+      <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4 animate-spin", "aria-hidden": true } %>
+      Crawling the page. This can take a couple of minutes…
+    </p>
+
+  <% when "failed" %>
+    <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">Crawl failed: <%= @crawl.error %></p>
+
+  <% when "done" %>
+    <% extracted = @crawl.account_attributes %>
+    <% changed = extracted.reject { |column, value| account[column].to_s.strip == value } %>
+    <% missing_media = @crawl.media_urls.reject { |url| @imported.key?(url) } %>
+    <% up_to_date = changed.empty? && @crawl.logo_url.nil? && missing_media.empty? %>
+
+    <div class="flex flex-col gap-6 lg:flex-row">
+      <section class="min-w-0 flex-1 rounded-lg border border-ink-900/10 bg-white p-4" aria-labelledby="business-heading">
+        <div class="flex items-center justify-between gap-2">
+          <h3 id="business-heading" class="text-sm font-medium text-ink-900">Business</h3>
+          <%= button_to apply_crawl_path(@crawl), method: :patch, disabled: up_to_date,
+                class: "rb-btn-primary gap-1.5 px-3.5 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50" do %>
+            <%= heroicon "check", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+            <%= up_to_date ? "Everything applied" : "Apply everything" %>
+          <% end %>
+        </div>
+
+        <% if extracted.empty? && @crawl.logo_url.nil? %>
+          <p class="mt-3 text-sm text-ink-500">No business details were found on this page.</p>
+        <% else %>
+          <dl class="mt-3 divide-y divide-ink-900/5 font-mono text-xs">
+            <% Crawl::FIELDS.each do |key, column| %>
+              <% next unless extracted.key?(column) %>
+              <div class="py-2">
+                <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
+                  <%= key.humanize %>
+                  <% if changed.key?(column) %>
+                    <%= button_to "Apply", apply_crawl_path(@crawl), method: :patch, params: { field: key },
+                          class: "text-xs font-medium text-rocket hover:underline" %>
+                  <% end %>
+                </dt>
+                <%= render "shared/field_diff", current: account[column], value: extracted[column], source: "From page" %>
+              </div>
+            <% end %>
+
+            <% if @crawl.logo_url %>
+              <div class="py-2">
+                <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
+                  Logo
+                  <%= button_to "Apply", apply_crawl_path(@crawl), method: :patch, params: { field: "logo" },
+                        class: "text-xs font-medium text-rocket hover:underline" %>
+                </dt>
+                <dd class="flex items-center gap-3">
+                  <% if account.logo.attached? %>
+                    <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
+                  <% else %>
+                    <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
+                  <% end %>
+                  <%= heroicon "arrow-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
+                  <img src="<%= @crawl.logo_url %>" alt="Logo from page" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain ring-2 ring-green-300">
+                </dd>
+              </div>
+            <% end %>
+          </dl>
+        <% end %>
+      </section>
+
+      <% if @crawl.screenshot_url %>
+        <aside class="w-full shrink-0 lg:w-80">
+          <h3 class="text-sm font-medium text-ink-900">Screenshot</h3>
+          <%= link_to @crawl.screenshot_url, target: "_blank", rel: "noopener", class: "mt-3 block" do %>
+            <img src="<%= @crawl.screenshot_url %>" alt="Screenshot of the crawled page" loading="lazy" class="w-full rounded-lg ring-1 ring-ink-900/10">
+          <% end %>
+        </aside>
+      <% end %>
+    </div>
+
+    <section aria-labelledby="media-heading">
+      <h3 id="media-heading" class="text-sm font-medium text-ink-900">
+        Photos &amp; videos
+        <span class="font-normal text-ink-500"><%= @crawl.media_urls.size %></span>
+      </h3>
+      <% if @crawl.media_urls.empty? %>
+        <p class="mt-1 text-sm text-ink-500">No photos or videos were found on this page.</p>
+      <% else %>
+        <ul class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <% @crawl.media_urls.each_with_index do |url, index| %>
+            <li id="media-<%= index %>" class="flex flex-col gap-2">
+              <div class="aspect-square overflow-hidden rounded-lg bg-ink-900/5">
+                <% if url.in?(@crawl.video_urls) %>
+                  <video src="<%= url %>" muted controls preload="metadata" class="size-full object-cover"></video>
+                <% else %>
+                  <img src="<%= url %>" alt="" loading="lazy" referrerpolicy="no-referrer" class="size-full object-cover">
+                <% end %>
+              </div>
+              <% if (media_id = @imported[url]) %>
+                <%= link_to library_upload_path(media_id), class: "inline-flex items-center gap-1 self-start text-xs text-ink-500 hover:text-ink-900" do %>
+                  <%= heroicon "check", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                  In library
+                <% end %>
+              <% else %>
+                <%= button_to add_media_crawl_path(@crawl), params: { url: url },
+                      class: "rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs" do %>
+                  <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                  Add to library
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+  <% end %>
+</div>
