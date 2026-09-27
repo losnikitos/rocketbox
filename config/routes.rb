@@ -66,6 +66,7 @@ Rails.application.routes.draw do
         resources :crawls, only: :create do
           member do
             patch :apply
+            patch :reject
             post :add_media
           end
         end

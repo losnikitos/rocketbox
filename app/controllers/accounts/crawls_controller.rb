@@ -3,7 +3,7 @@
 module Accounts
   class CrawlsController < ApplicationController
     before_action :set_link
-    before_action :set_crawl, only: %i[apply add_media]
+    before_action :set_crawl, only: %i[apply reject add_media]
 
     def create
       crawl = @link.crawls.new(params.expect(crawl: %i[provider data_instruction]))
@@ -15,14 +15,14 @@ module Accounts
       end
     end
 
-    # `field` is a Crawl::FIELDS key or "logo"; without it, applies all fields, the logo, and every photo and video.
+    # `field` is a Crawl::FIELDS key or "logo"; without it, applies all non-rejected fields, the logo, and every photo and video.
     def apply
       field = params[:field].presence
       attrs = @crawl.account_attributes
-      Current.account.update!(field ? attrs.slice(Crawl::FIELDS[field]) : attrs)
+      Current.account.update!(field ? attrs.slice(Crawl::FIELDS[field]) : attrs.except(*Crawl::FIELDS.values_at(*@crawl.rejected)))
 
       errors = []
-      if @crawl.logo_url && (field.nil? || field == "logo")
+      if @crawl.logo_url && (field ? field == "logo" : !@crawl.rejected.include?("logo"))
         begin
           attach_logo!(@crawl.logo_url)
         rescue RemoteFile::Error => e
@@ -36,6 +36,15 @@ module Accounts
       else
         redirect_to link_path(@link), notice: "Business updated."
       end
+    end
+
+    # `field` is a Crawl::FIELDS key or "logo".
+    def reject
+      field = params[:field]
+      return head :bad_request unless Crawl::FIELDS.key?(field) || field == "logo"
+
+      @crawl.update!(rejected: @crawl.rejected | [ field ])
+      redirect_to link_path(@link)
     end
 
     # Without `url`, adds every photo and video from the crawl.

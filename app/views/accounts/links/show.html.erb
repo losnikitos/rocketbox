@@ -69,7 +69,8 @@
     <% extracted = @crawl.account_attributes %>
     <% changed = extracted.reject { |column, value| account[column].to_s.strip == value } %>
     <% missing_media = @crawl.media_urls.reject { |url| @imported.key?(url) } %>
-    <% up_to_date = changed.empty? && @crawl.logo_url.nil? && missing_media.empty? %>
+    <% logo_rejected = @crawl.rejected.include?("logo") %>
+    <% up_to_date = changed.except(*Crawl::FIELDS.values_at(*@crawl.rejected)).empty? && (@crawl.logo_url.nil? || logo_rejected) && missing_media.empty? %>
 
     <div class="flex flex-col gap-6 lg:flex-row">
       <section class="min-w-0 flex-1 rounded-lg border border-ink-900/10 bg-white p-4" aria-labelledby="business-heading">
@@ -88,15 +89,22 @@
           <dl class="mt-3 divide-y divide-ink-900/5 font-mono text-xs">
             <% Crawl::FIELDS.each do |key, column| %>
               <% next unless extracted.key?(column) %>
+              <% rejected = @crawl.rejected.include?(key) %>
               <div class="py-2">
                 <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
                   <%= key.humanize %>
                   <% if changed.key?(column) %>
-                    <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: key },
-                          class: "text-xs font-medium text-rocket hover:underline" %>
+                    <span class="flex items-center gap-3">
+                      <% unless rejected %>
+                        <%= button_to "Cancel", reject_link_crawl_path(@link, @crawl), method: :patch, params: { field: key },
+                              class: "text-xs text-ink-500 hover:text-ink-900 hover:underline" %>
+                      <% end %>
+                      <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: key },
+                            class: "text-xs font-medium text-rocket hover:underline" %>
+                    </span>
                   <% end %>
                 </dt>
-                <%= render "shared/field_diff", current: account[column], value: extracted[column], source: "From page" %>
+                <%= render "shared/field_diff", current: account[column], value: extracted[column], source: "From page", rejected: rejected %>
               </div>
             <% end %>
 
@@ -104,18 +112,31 @@
               <div class="py-2">
                 <dt class="mb-1 flex items-center justify-between gap-2 font-sans text-ink-500">
                   Logo
-                  <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: "logo" },
-                        class: "text-xs font-medium text-rocket hover:underline" %>
+                  <span class="flex items-center gap-3">
+                    <% unless logo_rejected %>
+                      <%= button_to "Cancel", reject_link_crawl_path(@link, @crawl), method: :patch, params: { field: "logo" },
+                            class: "text-xs text-ink-500 hover:text-ink-900 hover:underline" %>
+                    <% end %>
+                    <%= button_to "Apply", apply_link_crawl_path(@link, @crawl), method: :patch, params: { field: "logo" },
+                          class: "text-xs font-medium text-rocket hover:underline" %>
+                  </span>
                 </dt>
-                <dd class="flex items-center gap-3">
-                  <% if account.logo.attached? %>
-                    <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
-                  <% else %>
-                    <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
-                  <% end %>
-                  <%= heroicon "arrow-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
-                  <img src="<%= @crawl.logo_url %>" alt="Logo from page" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain ring-2 ring-green-300">
-                </dd>
+                <% if logo_rejected %>
+                  <dd class="flex items-start gap-1.5 text-ink-500">
+                    <%= heroicon "x-mark", variant: :micro, options: { class: "mt-px size-3.5 shrink-0", "aria-hidden": true } %>
+                    <img src="<%= @crawl.logo_url %>" alt="Logo from page (rejected)" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain opacity-50 ring-1 ring-ink-900/10">
+                  </dd>
+                <% else %>
+                  <dd class="flex items-center gap-3">
+                    <% if account.logo.attached? %>
+                      <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
+                    <% else %>
+                      <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
+                    <% end %>
+                    <%= heroicon "arrow-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
+                    <img src="<%= @crawl.logo_url %>" alt="Logo from page" referrerpolicy="no-referrer" class="size-16 rounded-lg bg-white object-contain ring-2 ring-green-300">
+                  </dd>
+                <% end %>
               </div>
             <% end %>
           </dl>

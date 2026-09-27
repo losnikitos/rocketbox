@@ -116,6 +116,30 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, @user.library_media.count
   end
 
+  test "rejected suggestions stay visible and are skipped by apply everything" do
+    get link_url(@link)
+    assert_select "form[action=?] input[name='field'][value='phone']", reject_link_crawl_path(@link, @crawl)
+
+    patch reject_link_crawl_url(@link, @crawl), params: { field: "phone" }
+    patch reject_link_crawl_url(@link, @crawl), params: { field: "logo" }
+    assert_redirected_to link_url(@link)
+    assert_equal %w[phone logo], @crawl.reload.rejected
+
+    get link_url(@link)
+    assert_select "dd del", text: "+44 20 0000"
+    assert_select "img[alt='Logo from page (rejected)']"
+    assert_select "form[action=?] input[name='field'][value='phone']", reject_link_crawl_path(@link, @crawl), count: 0
+
+    patch apply_link_crawl_url(@link, @crawl)
+    @user.reload
+    assert_equal "Lazaro Fades", @user.business_name
+    assert_nil @user.phone
+    assert_not @user.logo.attached?
+
+    patch reject_link_crawl_url(@link, @crawl), params: { field: "photo_urls" }
+    assert_response :bad_request
+  end
+
   test "applies everything and skips media already in the library" do
     post add_media_link_crawl_url(@link, @crawl), params: { url: PHOTO }
     assert_equal 1, @user.library_media.count

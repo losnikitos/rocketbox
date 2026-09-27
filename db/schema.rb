@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_221000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_222201) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -68,6 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_221000) do
     t.json "extracted"
     t.integer "link_id", null: false
     t.string "provider", null: false
+    t.json "rejected", default: [], null: false
     t.string "screenshot_url"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
