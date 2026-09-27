@@ -17,7 +17,7 @@ class SignupsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to sign_up_name_url
   end
 
-  test "full signup with phone skip" do
+  test "full signup with whatsapp skip" do
     post sign_up_name_url, params: { name: "Ada" }
     assert_redirected_to sign_up_business_url
 
@@ -34,18 +34,18 @@ class SignupsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { User.count }, 1 do
       post sign_up_email_code_url, params: { otp: challenge[:code] }
     end
-    assert_redirected_to sign_up_phone_url
+    assert_redirected_to sign_up_whatsapp_url
 
     user = User.find_by!(email: "ada@example.com")
     assert_equal "Ada", user.name
     assert_equal "Ada Cuts", user.business_name
     assert user.verified?
 
-    post sign_up_phone_skip_url
+    post sign_up_whatsapp_skip_url
     assert_redirected_to app_url
   end
 
-  test "signup with phone confirmation" do
+  test "whatsapp step shows connect link until the phone is linked" do
     post sign_up_name_url, params: { name: "Bob" }
     post sign_up_business_url, params: { business_name: "Bob Barbers" }
     post sign_up_email_url, params: { email: "bob@example.com" }
@@ -54,12 +54,18 @@ class SignupsControllerTest < ActionDispatch::IntegrationTest
     challenge = LoginChallenge.issue!("bob@example.com")
     post sign_up_email_code_url, params: { otp: challenge[:code] }
 
-    post sign_up_phone_url, params: { phone: "+1 (555) 010-9999" }
-    assert_redirected_to sign_up_phone_code_url
-    assert_equal "15550109999", User.find_by!(email: "bob@example.com").whatsapp_phone
+    original = WhatsappCloud.method(:display_phone)
+    WhatsappCloud.define_singleton_method(:display_phone) { "447451273884" }
 
-    post sign_up_phone_code_url, params: { otp: SignupsController::PHONE_STUB_CODE }
+    get sign_up_whatsapp_url
+    user = User.find_by!(email: "bob@example.com")
+    assert_select "a[href=?]", "https://wa.me/447451273884?text=START_#{user.whatsapp_connect_code}", text: /Open WhatsApp/
+
+    user.update!(whatsapp_phone: "15550109999")
+    get sign_up_whatsapp_url
     assert_redirected_to app_url
+  ensure
+    WhatsappCloud.define_singleton_method(:display_phone, original)
   end
 
   test "existing email otp signs in and skips profile fields" do

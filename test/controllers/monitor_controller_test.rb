@@ -1,0 +1,37 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class MonitorControllerTest < ActionDispatch::IntegrationTest
+  test "admin sees onboarding flows" do
+    sign_in_as(users(:admin_user))
+    get monitor_onboarding_url
+
+    assert_response :success
+    assert_select "a[href=?]", sign_up_whatsapp_path, text: "Connect WhatsApp"
+    assert_select "h2", text: "Sign in"
+  end
+
+  test "admin can open guarded signup screens without a draft" do
+    admin = sign_in_as(users(:admin_user))
+    admin.update!(whatsapp_phone: "447000000000")
+    original = WhatsappCloud.method(:display_phone)
+    WhatsappCloud.define_singleton_method(:display_phone) { "447451273884" }
+
+    get sign_up_email_url
+    assert_response :success
+    get sign_up_email_code_url
+    assert_response :success
+    get sign_up_whatsapp_url
+    assert_response :success
+  ensure
+    WhatsappCloud.define_singleton_method(:display_phone, original)
+  end
+
+  test "non-admin is redirected" do
+    sign_in_as(users(:lazaro_nixon))
+    get monitor_onboarding_url
+
+    assert_redirected_to root_url
+  end
+end

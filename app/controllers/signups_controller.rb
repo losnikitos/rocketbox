@@ -6,12 +6,9 @@ class SignupsController < ApplicationController
   layout "auth"
   skip_before_action :authenticate
 
-  # ponytail: stub SMS OTP; wire WhatsApp/SMS when ready
-  PHONE_STUB_CODE = "000000"
-
-  before_action :require_draft_through_business!, only: %i[email email_submit email_code email_code_submit]
-  before_action :require_draft_email!, only: %i[email_code email_code_submit]
-  before_action :require_signed_in_for_phone!, only: %i[phone phone_submit phone_skip phone_code phone_code_submit]
+  before_action :require_draft_through_business!, only: %i[email email_submit email_code email_code_submit], unless: :admin_preview?
+  before_action :require_draft_email!, only: %i[email_code email_code_submit], unless: :admin_preview?
+  before_action :require_signed_in_for_whatsapp!, only: %i[whatsapp whatsapp_skip]
 
   def show
     redirect_to next_step_path
@@ -73,7 +70,7 @@ class SignupsController < ApplicationController
 
   def email_code_submit
     if Current.user
-      redirect_to sign_up_phone_path
+      redirect_to sign_up_whatsapp_path
       return
     end
 
@@ -100,44 +97,26 @@ class SignupsController < ApplicationController
       verified: true
     )
     start_session!(user)
-    redirect_to sign_up_phone_path
+    redirect_to sign_up_whatsapp_path
   end
 
-  def phone
+  def whatsapp
+    return whatsapp_skip if Current.user.whatsapp_phone.present? && !admin_preview?
+
+    @whatsapp_url = "https://wa.me/#{WhatsappCloud.display_phone}?text=START_#{Current.user.whatsapp_connect_code!}"
   end
 
-  def phone_submit
-    phone = params[:phone].to_s.strip
-    if phone.blank?
-      flash.now[:alert] = "Enter your phone number"
-      return render :phone, status: :unprocessable_entity
-    end
-
-    Current.user.update!(whatsapp_phone: phone)
-    redirect_to sign_up_phone_code_path
-  end
-
-  def phone_skip
-    clear_draft!
-    redirect_to app_path, notice: "Welcome! You have signed up successfully"
-  end
-
-  def phone_code
-    @phone_code = PHONE_STUB_CODE
-  end
-
-  def phone_code_submit
-    if params[:otp].to_s.strip != PHONE_STUB_CODE
-      @phone_code = PHONE_STUB_CODE
-      flash.now[:alert] = "That code is invalid"
-      return render :phone_code, status: :unprocessable_entity
-    end
-
+  def whatsapp_skip
     clear_draft!
     redirect_to app_path, notice: "Welcome! You have signed up successfully"
   end
 
   private
+
+    # Admins open any screen from /monitor/onboarding; only the CTAs (POSTs) run the real flow.
+    def admin_preview?
+      request.get? && Current.user&.admin?
+    end
 
     def draft
       session[:signup] ||= {}
@@ -154,7 +133,7 @@ class SignupsController < ApplicationController
     end
 
     def next_step_path
-      return sign_up_phone_path if Current.user
+      return sign_up_whatsapp_path if Current.user
       return sign_up_email_code_path if draft[:email].present?
       return sign_up_email_path if draft[:business_name].present?
       return sign_up_business_path if draft[:name].present?
@@ -174,7 +153,7 @@ class SignupsController < ApplicationController
       redirect_to sign_up_email_path
     end
 
-    def require_signed_in_for_phone!
+    def require_signed_in_for_whatsapp!
       return if Current.user
 
       redirect_to sign_up_path

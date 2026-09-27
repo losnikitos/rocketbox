@@ -7,24 +7,41 @@
       class: "mt-6 space-y-8",
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <section class="space-y-4">
-    <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
-      <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-      Instagram
-    </h3>
+    <div class="flex items-center justify-between gap-4">
+      <h3 class="inline-flex items-center gap-2 font-manrope text-base font-bold text-ink-900">
+        <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+        Instagram
+      </h3>
 
-    <div>
-      <%= form.label :instagram_user_id, "User id", class: tw_label_classes %>
-      <%= autosave_field do %>
-        <%= form.text_field :instagram_user_id, class: tw_input_autosave_classes, autocomplete: "off" %>
+      <% if Current.account.instagram_authorized? %>
+        <span class="inline-flex items-center gap-1.5 text-sm font-medium text-signal-green">
+          <%= heroicon "check-circle", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+          Authorized
+        </span>
+      <% else %>
+        <%= link_to "Authorize", profile_instagram_authorize_path, class: "rb-btn-primary", data: { turbo: false } %>
       <% end %>
     </div>
 
-    <div>
-      <%= form.label :instagram_access_token, "Access token", class: tw_label_classes %>
-      <%= autosave_field do %>
-        <%= form.password_field :instagram_access_token, value: Current.account.instagram_access_token, class: tw_input_autosave_classes, autocomplete: "off" %>
-      <% end %>
-    </div>
+    <details>
+      <summary class="cursor-pointer text-sm text-ink-600 hover:text-ink-900">Credentials</summary>
+
+      <div class="mt-4 space-y-4">
+        <div>
+          <%= form.label :instagram_user_id, "User id", class: tw_label_classes %>
+          <%= autosave_field do %>
+            <%= form.text_field :instagram_user_id, class: tw_input_autosave_classes, autocomplete: "off" %>
+          <% end %>
+        </div>
+
+        <div>
+          <%= form.label :instagram_access_token, "Access token", class: tw_label_classes %>
+          <%= autosave_field do %>
+            <%= form.password_field :instagram_access_token, value: Current.account.instagram_access_token, class: tw_input_autosave_classes, autocomplete: "off" %>
+          <% end %>
+        </div>
+      </div>
+    </details>
   </section>
 
   <section class="space-y-4 border-t border-ink-900/10 pt-6">

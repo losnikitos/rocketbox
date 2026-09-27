@@ -4,4 +4,7 @@ class MonitorController < ApplicationController
 
   def show
   end
+
+  def onboarding
+  end
 end

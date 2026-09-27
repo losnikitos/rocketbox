@@ -24,8 +24,17 @@ class User < ApplicationRecord
     role == "admin"
   end
 
+  def instagram_authorized?
+    instagram_user_id.present? && instagram_access_token.present?
+  end
+
   def account_label
     business_name.presence || email
+  end
+
+  def whatsapp_connect_code!
+    update!(whatsapp_connect_code: SecureRandom.alphanumeric(10)) unless whatsapp_connect_code
+    whatsapp_connect_code
   end
 
   def self.find_or_create_from_login!(email)

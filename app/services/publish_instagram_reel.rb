@@ -19,7 +19,7 @@ class PublishInstagramReel
   end
 
   def call
-    raise Error, "Connect Instagram under Integrations first." if credentials_blank?
+    raise Error, "Connect Instagram under Integrations first." unless @user.instagram_authorized?
     raise Error, "Instagram must fetch the video from a public URL (not localhost). Use production or a tunnel." if private_media_host?
 
     container_id = create_container!
@@ -28,10 +28,6 @@ class PublishInstagramReel
   end
 
   private
-
-    def credentials_blank?
-      @user.instagram_user_id.blank? || @user.instagram_access_token.blank?
-    end
 
     def private_media_host?
       host = URI.parse(@video_url).host.to_s.downcase

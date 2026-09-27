@@ -1,0 +1,75 @@
+<% content_for(:title, "Onboarding — Monitor — Rocketbox") %>
+<% content_for :heading do %>
+  <h1 class="font-manrope text-lg font-bold">Onboarding</h1>
+<% end %>
+
+<%
+  flows = {
+    "Sign up" => [
+      { channel: :web, label: "Name", path: sign_up_name_path },
+      { channel: :web, label: "Business name", path: sign_up_business_path },
+      { channel: :web, label: "Email", path: sign_up_email_path },
+      { channel: :email, label: "User receives OTP + magic link", note: "Postmark login_otp" },
+      { channel: :web, label: "User enters OTP from email", path: sign_up_email_code_path,
+        note: "Existing email: a correct code signs them in and lands on /app" },
+      { channel: :web, label: "User + session created", note: "From the session[:signup] draft" },
+      { channel: :web, label: "Connect WhatsApp", path: sign_up_whatsapp_path,
+        note: "QR / wa.me link. Skip goes to /app" },
+      { channel: :whatsapp, label: "User sends START_<code>" },
+      { channel: :whatsapp, label: "Webhook links whatsapp_phone and replies “Welcome to Rocketbox”",
+        note: "Clears the code, backfills orphan media" },
+      { channel: :web, label: "Page polls every 3s, redirects to /app", path: app_path }
+    ],
+    "Sign in" => [
+      { channel: :web, label: "Email", path: sign_in_path },
+      { channel: :email, label: "User receives OTP + magic link", note: "Postmark login_otp" },
+      { channel: :web, label: "User enters OTP from email", path: sign_in_otp_path(email: Current.user.email),
+        note: "Or clicks the magic link (/sign_in/magic)" },
+      { channel: :web, label: "Find or create user, start session" },
+      { channel: :web, label: "Lands on /app", path: app_path }
+    ]
+  }
+%>
+
+<p class="text-sm text-ink-600">Links open the real screens. CTAs run the real flow.</p>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-2 lg:items-start">
+  <% flows.each do |title, steps| %>
+    <section class="rounded-2xl border border-ink-900/10 bg-white p-6">
+      <h2 class="font-manrope text-base font-bold text-ink-900"><%= title %></h2>
+
+      <ol class="mt-4 flex flex-col items-stretch">
+        <% steps.each_with_index do |step, index| %>
+          <% if index > 0 %>
+            <li class="mx-auto h-4 w-0.5 bg-ink-900/15" aria-hidden="true"></li>
+          <% end %>
+          <li class="flex items-start gap-3 rounded-lg border border-ink-900/10 px-3 py-2">
+            <span class="mt-0.5 inline-flex w-24 shrink-0 items-center gap-1.5 text-xs font-medium text-ink-500">
+              <% case step[:channel] %>
+              <% when :whatsapp %>
+                <%= image_tag "brands/whatsapp.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+                WhatsApp
+              <% when :email %>
+                <%= heroicon "envelope", variant: :mini, options: { class: "size-4 shrink-0", "aria-hidden": true } %>
+                Email
+              <% else %>
+                <%= heroicon "globe-alt", variant: :mini, options: { class: "size-4 shrink-0", "aria-hidden": true } %>
+                Web
+              <% end %>
+            </span>
+            <div class="min-w-0">
+              <% if step[:path] %>
+                <%= link_to step[:label], step[:path], class: "text-sm font-medium text-ink-900 underline underline-offset-2 hover:text-rocket" %>
+              <% else %>
+                <p class="text-sm text-ink-900"><%= step[:label] %></p>
+              <% end %>
+              <% if step[:note] %>
+                <p class="mt-0.5 text-xs text-ink-500"><%= step[:note] %></p>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ol>
+    </section>
+  <% end %>
+</div>
