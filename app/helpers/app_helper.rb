@@ -6,7 +6,9 @@ module AppHelper
     case controller_path
     when "accounts/library"
       [ :library, "Library", [
-        [ library_uploads_path, "Uploads", true ]
+        [ library_uploads_path, "All", params[:type].blank? ],
+        :separator,
+        *LibraryMedia.media_types.keys.map { |t| [ library_uploads_path(type: t), t.titleize, params[:type] == t ] }
       ] ]
     when "accounts/smm"
       [ :smm, "SMM", [

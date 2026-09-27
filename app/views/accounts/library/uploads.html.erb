@@ -63,6 +63,8 @@
         </button>
       </form>
     </div>
+  <% elsif LibraryMedia.media_types.key?(params[:type]) %>
+    <p class="text-sm text-ink-600">No <%= params[:type].pluralize.humanize(capitalize: false) %> yet.</p>
   <% else %>
     <p class="text-sm text-ink-600">
       No media yet. Drop photos or videos anywhere here<% if Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present? %>, or send a photo to the bot<% end %>.
