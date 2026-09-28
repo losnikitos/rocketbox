@@ -19,6 +19,8 @@ module AppHelper
       [ :links, "Links", [] ]
     when "accounts/instagram"
       [ :instagram, "Your profile", [] ]
+    when "accounts/whatsapp"
+      [ :whatsapp, "WhatsApp", [] ]
     when "accounts/subscriptions"
       [ :subscription, "Subscription", [] ]
     when "accounts/settings"

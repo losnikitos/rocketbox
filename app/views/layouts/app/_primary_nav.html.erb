@@ -46,6 +46,14 @@
         </li>
       </ul>
     </li>
+    <li>
+      <%= link_to whatsapp_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :whatsapp } do %>
+        <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+        WhatsApp
+      <% end %>
+    </li>
     <li class="mt-2 border-t border-ink-900/10 pt-2">
       <%= link_to onboarding_path,
             class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",

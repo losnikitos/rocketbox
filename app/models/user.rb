@@ -63,6 +63,12 @@ class User < ApplicationRecord
     logo.attach(io: StringIO.new(attachment.download), filename: attachment.filename, content_type: attachment.content_type)
   end
 
+  # Prefilled as START_<code> on /app/whatsapp; the sender's phone gets linked to this account.
+  # Base58 × 8 ≈ 10^14 combinations; has_secure_token enforces a 24-char minimum.
+  def regenerate_whatsapp_link_code
+    update!(whatsapp_link_code: SecureRandom.base58(8))
+  end
+
   def account_label
     business_name.presence || email.presence || name.presence || "+#{whatsapp_phone}"
   end

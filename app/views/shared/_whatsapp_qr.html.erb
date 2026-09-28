@@ -1,0 +1,27 @@
+<%# locals: (url:) %>
+<div data-controller="whatsapp-connect">
+  <div class="md:hidden">
+    <%= link_to url, class: "#{tw_btn_primary_classes} inline-flex items-center justify-center gap-2" do %>
+      <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+      Open WhatsApp
+    <% end %>
+  </div>
+
+  <div class="hidden md:block">
+    <div class="mx-auto size-48 *:size-full" role="img" aria-label="QR code to open WhatsApp">
+      <%= raw RQRCode::QRCode.new(url).as_svg(use_path: true, viewbox: true, standalone: true) %>
+    </div>
+    <p class="mt-2 text-center text-sm text-ink-600">Scan with your phone camera</p>
+
+    <p class="mt-6 text-center text-sm text-ink-600">
+      Using WhatsApp on this computer?
+      <%= link_to "Open it here", url, class: "font-medium text-ink-900 underline underline-offset-2", target: "_blank", rel: "noopener" %>
+    </p>
+
+    <div class="mt-4 flex gap-2">
+      <input type="text" readonly value="<%= url %>" aria-label="WhatsApp link"
+        class="<%= tw_input_classes %> mt-0! font-mono text-xs" data-whatsapp-connect-target="url">
+      <button type="button" class="rb-btn-ghost-on-light shrink-0" data-action="whatsapp-connect#copy" data-whatsapp-connect-target="copyLabel">Copy</button>
+    </div>
+  </div>
+</div>

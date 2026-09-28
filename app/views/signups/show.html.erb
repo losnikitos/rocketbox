@@ -1,33 +1,10 @@
 <% content_for(:title, "Get started — Rocketbox") %>
 
 <%= render layout: "shared/auth_card" do %>
-  <div data-controller="whatsapp-connect">
-    <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Get started on WhatsApp</h1>
-    <p class="mt-1 text-center text-sm text-ink-600">Send us one message. That’s where you’ll send photos and videos.</p>
+  <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Get started on WhatsApp</h1>
+  <p class="mt-1 text-center text-sm text-ink-600">Send us one message. That’s where you’ll send photos and videos.</p>
 
-    <div class="mt-8 md:hidden">
-      <%= link_to @whatsapp_url, class: "#{tw_btn_primary_classes} inline-flex items-center justify-center gap-2" do %>
-        <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-        Open WhatsApp
-      <% end %>
-    </div>
-
-    <div class="mt-8 hidden md:block">
-      <div class="mx-auto size-48 *:size-full" role="img" aria-label="QR code to open WhatsApp">
-        <%= raw RQRCode::QRCode.new(@whatsapp_url).as_svg(use_path: true, viewbox: true, standalone: true) %>
-      </div>
-      <p class="mt-2 text-center text-sm text-ink-600">Scan with your phone camera</p>
-
-      <p class="mt-6 text-center text-sm text-ink-600">
-        Using WhatsApp on this computer?
-        <%= link_to "Open it here", @whatsapp_url, class: "font-medium text-ink-900 underline underline-offset-2", target: "_blank", rel: "noopener" %>
-      </p>
-
-      <div class="mt-4 flex gap-2">
-        <input type="text" readonly value="<%= @whatsapp_url %>" aria-label="WhatsApp link"
-          class="<%= tw_input_classes %> mt-0! font-mono text-xs" data-whatsapp-connect-target="url">
-        <button type="button" class="rb-btn-ghost-on-light shrink-0" data-action="whatsapp-connect#copy" data-whatsapp-connect-target="copyLabel">Copy</button>
-      </div>
-    </div>
+  <div class="mt-8">
+    <%= render "shared/whatsapp_qr", url: @whatsapp_url %>
   </div>
 <% end %>

@@ -8,7 +8,7 @@ class ListMedia < RubyLLM::Tool
   end
 
   def execute
-    return { error: "No Rocketbox account linked. Set your WhatsApp phone in Profile." } if @user.nil?
+    return { error: "No Rocketbox account linked. Connect WhatsApp from the WhatsApp page in your Rocketbox dashboard." } if @user.nil?
 
     media = @user.library_media.order(created_at: :desc)
     {

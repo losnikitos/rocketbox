@@ -58,6 +58,9 @@ module WhatsappOnboarding
   URL_OPTIONS = { protocol: "https", host: Rails.env.production? ? "rocketbox.plus" : "dev.rocketbox.plus" }.freeze
   EXAMPLE_PHOTO_URL = "https://#{URL_OPTIONS[:host]}/onboarding/barbershop-example.jpg"
 
+  # START_<users.whatsapp_link_code>, prefilled on /app/whatsapp.
+  LINK_PATTERN = /\Astart_(\w+)\z/i
+
   module_function
 
   def ask!(user, step)
@@ -120,6 +123,26 @@ module WhatsappOnboarding
   def instagram_connected!(user)
     send!(user, MESSAGES["instagram_connected"])
     ask!(user, "interior_back")
+  end
+
+  # Attaches the sender's phone to the account the code belongs to instead of creating a new one.
+  def link!(phone, code)
+    user = User.find_by(whatsapp_link_code: code)
+    owner = User.find_by(whatsapp_phone: phone)
+    reply = ->(body) { WhatsappCloud.send_text(phone_number_id: WhatsappCloud.phone_number_id, to: phone, body:) }
+
+    if user.nil?
+      reply.("This link has expired. Open WhatsApp in your Rocketbox dashboard for a new one.")
+    elsif owner && owner != user
+      reply.("This number is already linked to another Rocketbox account.")
+    elsif user.whatsapp_phone && user.whatsapp_phone != phone
+      reply.("This Rocketbox account already has a WhatsApp number. Disconnect it in your dashboard first.")
+    else
+      user.update!(whatsapp_phone: phone)
+      user.regenerate_whatsapp_link_code
+      send!(user, "WhatsApp connected.")
+      ask!(user, "business_card")
+    end
   end
 
   def login_url(user, **params)

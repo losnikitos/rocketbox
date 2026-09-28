@@ -89,12 +89,44 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Profile"
-    assert_select "form[action=?] input[name='user[whatsapp_phone]']", profile_settings_path
+    assert_select "input[name='user[whatsapp_phone]']", count: 0
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", profile_settings_path, text: /Profile/
     assert_select "nav[aria-label='Secondary']", count: 0
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
+  end
+
+  test "whatsapp page without a phone shows a one-time START link" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    get whatsapp_url
+
+    assert_response :success
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", whatsapp_path, text: /WhatsApp/
+    assert_select "input[name='user[whatsapp_phone]']", count: 0
+    assert_select "h2", "Connect WhatsApp"
+    code = user.reload.whatsapp_link_code
+    assert code.present?
+    assert_select "a[href=?]", "https://wa.me/#{WhatsappCloud.display_phone}?text=START_#{code}"
+  end
+
+  test "whatsapp page shows the connected phone and disconnects it" do
+    user = sign_in_as(users(:lazaro_nixon))
+    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "email")
+
+    get whatsapp_url
+
+    assert_select "p", /Connected: \+15551234567/
+    assert_select "a[href^='https://wa.me/']", count: 0
+    assert_select "form[action=?] button", whatsapp_path, text: "Disconnect"
+
+    delete whatsapp_url
+
+    assert_redirected_to whatsapp_url
+    user.reload
+    assert_nil user.whatsapp_phone
+    assert_nil user.whatsapp_pending_question
   end
 
   test "instagram page is selected in nav with sidebar log out" do

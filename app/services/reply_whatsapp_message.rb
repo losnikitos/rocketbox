@@ -27,6 +27,11 @@ class ReplyWhatsappMessage
       from = message["from"].to_s
       user = User.find_by(whatsapp_phone: from.presence)
 
+      if (code = text.strip[WhatsappOnboarding::LINK_PATTERN, 1])
+        WhatsappOnboarding.link!(from, code)
+        next
+      end
+
       if user && text.strip.casecmp?("start")
         WhatsappOnboarding.ask!(user, "business_card")
         next

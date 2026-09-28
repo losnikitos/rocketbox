@@ -61,6 +61,8 @@ Rails.application.routes.draw do
         end
       end
       resource :subscription, only: [ :show ]
+      get "whatsapp", to: "whatsapp#show", as: :whatsapp
+      delete "whatsapp", to: "whatsapp#destroy"
       get "onboarding/:tab", to: "onboarding#show", as: :onboarding, tab: /steps|media/, defaults: { tab: "steps" }
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
       post "onboarding/ask", to: "onboarding#ask", as: :onboarding_ask
