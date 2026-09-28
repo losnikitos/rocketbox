@@ -4,8 +4,13 @@ module Accounts
   class PostsController < ApplicationController
     layout "app"
 
+    KINDS = %w[reels stories posts].freeze
+
     def index
-      @posts = Current.account.smm_posts.includes(:prompt, { library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
+      @kind = params[:kind].presence_in(KINDS)
+      # ponytail: reels/stories aren't modeled yet (every SmmPost is listed under All and Posts); add a kind column when they are.
+      @posts = @kind.in?(%w[reels stories]) ? SmmPost.none :
+        Current.account.smm_posts.includes({ library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
     end
 
     def new
@@ -51,7 +56,7 @@ module Accounts
 
       if @post.save
         GenerateSmmPostVideoJob.perform_later(@post.id)
-        redirect_to smm_post_path(@post), notice: "Draft post created. Generating your Instagram video…"
+        redirect_to instagram_post_path(@post), notice: "Draft post created. Generating your Instagram video…"
       else
         flash.now[:alert] = @post.errors.full_messages.to_sentence
         render :new, status: :unprocessable_entity
@@ -65,23 +70,23 @@ module Accounts
     def publish
       @post = Current.account.smm_posts.find(params[:id])
       unless @post.publishable?
-        redirect_to smm_post_path(@post), alert: "This post is not ready to publish yet."
+        redirect_to instagram_post_path(@post), alert: "This post is not ready to publish yet."
         return
       end
 
       @post.update!(error_message: nil)
       PublishSmmPostJob.perform_later(@post.id)
-      redirect_to smm_post_path(@post), notice: "Publishing to Instagram…"
+      redirect_to instagram_post_path(@post), notice: "Publishing to Instagram…"
     end
 
     def destroy
       unless Current.user.admin?
-        redirect_to smm_root_path, alert: "You are not allowed to remove posts."
+        redirect_to instagram_posts_path, alert: "You are not allowed to remove posts."
         return
       end
 
       Current.account.smm_posts.find(params[:id]).destroy!
-      redirect_to smm_root_path, notice: "Post removed."
+      redirect_to instagram_posts_path, notice: "Post removed."
     end
 
     def react

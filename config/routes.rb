@@ -39,10 +39,8 @@ Rails.application.routes.draw do
       get "uploads/:id", to: "library#show", as: :library_upload
     end
 
-    scope path: "smm", module: :accounts, as: :smm do
-      get "/", to: "smm#index", as: :root
-      get "reels", to: "smm#reels"
-      get "stories", to: "smm#stories"
+    scope path: "instagram", module: :accounts, as: :instagram do
+      get "profile", to: "instagram#show"
       resources :posts, only: %i[index new create show destroy] do
         member do
           post :publish
@@ -64,7 +62,6 @@ Rails.application.routes.draw do
           end
         end
       end
-      resource :integrations, only: [ :show, :update ]
       resource :subscription, only: [ :show ]
       get "onboarding/:tab", to: "onboarding#show", as: :onboarding, tab: /steps|media/, defaults: { tab: "steps" }
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
@@ -79,7 +76,7 @@ Rails.application.routes.draw do
     end
 
     scope path: "profile", as: "profile", module: :accounts do
-      resource :settings, only: [ :show ]
+      resource :settings, only: [ :show, :update ]
       get "instagram/authorize", to: "instagram_authorizations#new", as: :instagram_authorize
       get "instagram/callback", to: "instagram_authorizations#callback", as: :instagram_callback
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh

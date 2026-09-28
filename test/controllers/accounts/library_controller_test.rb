@@ -31,7 +31,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_uploads_url
     assert_response :success
-    assert_select "form[action=?]", new_smm_post_path
+    assert_select "form[action=?]", new_instagram_post_path
     assert_select "input[data-library-select-target=?]", "checkbox"
     assert_select "form[action=?] select[name=media_type]", bulk_update_library_media_index_path
     assert_select "button", text: "Publish as Instagram story", count: 0

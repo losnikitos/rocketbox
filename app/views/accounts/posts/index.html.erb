@@ -1,17 +1,11 @@
 <% content_for(:title, "Posts — Rocketbox") %>
 
-<div class="flex flex-wrap items-end justify-between gap-3">
-  <div>
-    <h2 class="font-manrope text-lg font-bold text-ink-900">Posts</h2>
-    <p class="mt-2 text-sm text-ink-600">Draft Instagram posts generated from your library.</p>
-  </div>
-  <%= link_to "Select media in uploads", library_uploads_path, class: "text-sm font-medium text-ink-900 underline underline-offset-2" %>
-</div>
+<h2 class="font-manrope text-lg font-bold text-ink-900"><%= @kind&.capitalize || "All" %></h2>
 
 <% if @posts.present? %>
   <%= render "accounts/posts/grid", posts: @posts %>
 <% else %>
   <p class="mt-6 text-sm text-ink-600">
-    No posts yet. <%= link_to "Select images in uploads", library_uploads_path, class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
+    Nothing yet. <%= link_to "Select images in uploads", library_uploads_path, class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
   </p>
 <% end %>

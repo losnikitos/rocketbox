@@ -31,6 +31,9 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 ## UI / Tailwind
 Prefer built-in scale utilities over arbitrary values (`rounded-[10px]`, `min-w-[10rem]`, `px-[18px]`, …). Use the nearest step (`rounded-lg`, `min-w-40`, `px-4.5`). Keep arbitrary values only when nothing on the scale fits (e.g. mockup micro-type, email `max-w-[600px]`, one-off layout heights).
 
+## Vocabulary
+- **Island** — a standalone content panel, usually styled `rounded-2xl border border-ink-900/10 bg-white p-6`.
+
 # Documentation Index
 
 ### [STRIPE.md](./docs/STRIPE.md)

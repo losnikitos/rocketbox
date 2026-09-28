@@ -6,7 +6,7 @@
       <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <% items.each do |post| %>
           <li class="group relative min-w-0">
-            <%= link_to smm_post_path(post), class: "relative block" do %>
+            <%= link_to instagram_post_path(post), class: "relative block" do %>
               <% if post.generated_video.attached? %>
                 <%= video_tag url_for(post.generated_video),
                       muted: true,

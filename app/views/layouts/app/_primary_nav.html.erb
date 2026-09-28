@@ -23,12 +23,22 @@
       <% end %>
     </li>
     <li>
-      <%= link_to smm_root_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :smm } do %>
-        <%= heroicon "film", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        SMM
-      <% end %>
+      <span class="inline-flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-ink-700">
+        <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+        Instagram
+      </span>
+      <ul class="flex flex-col gap-0.5">
+        <li>
+          <%= link_to "Profile", instagram_profile_path,
+                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :instagram } %>
+        </li>
+        <li>
+          <%= link_to "Posts", instagram_posts_path,
+                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :posts } %>
+        </li>
+      </ul>
     </li>
     <li class="mt-2 border-t border-ink-900/10 pt-2">
       <%= link_to business_path,
@@ -44,14 +54,6 @@
             aria: { selected: section == :links } do %>
         <%= heroicon "link", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
         Links
-      <% end %>
-    </li>
-    <li>
-      <%= link_to integrations_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :integrations } do %>
-        <%= heroicon "puzzle-piece", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Integrations
       <% end %>
     </li>
     <li>

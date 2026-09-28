@@ -12,7 +12,7 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
    - **Onboarding answer** → if the sender has `whatsapp_pending_question`, the text is saved to that field (`name`, `business_name`, `homepage_url`), the question is cleared, 👍 reaction, no LLM reply.
    - **Links** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): text with `http(s)://` URLs from a linked phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`. Unlinked senders fall through to the LLM reply.
    - **Text-only** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): resolve user by `whatsapp_phone` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
-4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Account backfills orphan media with that `whatsapp_from`. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.
+4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Profile backfills orphan media with that `whatsapp_from`. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to set their WhatsApp phone in Profile.
 
 Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
