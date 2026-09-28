@@ -51,8 +51,9 @@
             </ul>
           </nav>
           <% if @footer_documents&.any? %>
-            <nav aria-label="Legal and informational pages">
-              <ul class="mt-8 space-y-2 text-ink-500 sm:mt-0">
+            <nav aria-label="Legal">
+              <p class="font-medium text-ink-900">Legal</p>
+              <ul class="mt-3 space-y-2 text-ink-500">
                 <% @footer_documents.each do |doc| %>
                   <li>
                     <%= link_to doc.name, document_path(doc), class: "font-medium text-rocket hover:text-rocket-hover" %>
