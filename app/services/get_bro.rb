@@ -44,7 +44,7 @@ module GetBro
 
     { extracted: step.dig("data", "extracted_json"), screenshot_url: screenshot_url }
   ensure
-    connection.delete("/v1/sessions/#{session_id}") if session_id
+    http.delete("/v1/sessions/#{session_id}") if session_id
   end
 
   def create_session(deadline)
@@ -84,13 +84,13 @@ module GetBro
   end
 
   def request!(method, path, body = nil)
-    response = connection.public_send(method, path, body)
+    response = http.public_send(method, path, body)
     raise Error, "GetBro HTTP #{response.status}: #{response.body}" unless response.success?
 
     response.body
   end
 
-  def connection
+  def http
     Faraday.new(url: BASE_URL, headers: { "Authorization" => "Bearer #{api_key}" }, request: { timeout: 180 }) do |f|
       f.request :json
       f.response :json

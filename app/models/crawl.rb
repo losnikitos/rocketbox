@@ -22,6 +22,8 @@ class Crawl < ApplicationRecord
   validates :provider, inclusion: { in: PROVIDERS.keys }
   validates :data_instruction, presence: true
 
+  normalizes :screenshot_url, with: ->(url) { url if url.match?(%r{\Ahttps?://}i) }
+
   def account_attributes
     FIELDS.to_h { |key, column| [ column, extracted&.dig(key).to_s.strip ] }.compact_blank
   end
