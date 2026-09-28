@@ -55,6 +55,18 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_select "td.col-media video[src*='clip.mp4']"
   end
 
+  test "user page shows incoming and outgoing messages in order" do
+    sign_in_as(users(:admin_user))
+    user = users(:lazaro_nixon)
+    incoming = user.incoming_messages.create!(channel: "whatsapp", body: "first in", payload: { "id" => "1" }, created_at: 2.minutes.ago)
+    incoming.attachments.attach(io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg")
+    user.outgoing_messages.create!(channel: "whatsapp", body: "then out", payload: { "to" => "1" }, created_at: 1.minute.ago)
+    get "/admin/users/#{user.id}", headers: @ua
+    assert_response :success
+    assert_match(/first in.*then out/m, response.body)
+    assert_select "td.col-media img[src*='cut.jpg']"
+  end
+
   test "admin can refresh models" do
     sign_in_as(users(:admin_user))
     with_model_refresh_stub(nil) do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_130909) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_150900) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -146,6 +146,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_130909) do
     t.text "thinking_text"
     t.datetime "updated_at", null: false
     t.index ["chat_id"], name: "index_messages_on_chat_id"
+  end
+
+  create_table "outgoing_messages", force: :cascade do |t|
+    t.text "body"
+    t.string "channel", null: false
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.string "external_id"
+    t.string "kind"
+    t.json "payload", null: false
+    t.string "recipient"
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["channel", "external_id"], name: "index_outgoing_messages_on_channel_and_external_id"
+    t.index ["created_at"], name: "index_outgoing_messages_on_created_at"
+    t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
   end
 
   create_table "prompts", force: :cascade do |t|
@@ -343,6 +359,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_130909) do
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "outgoing_messages", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"

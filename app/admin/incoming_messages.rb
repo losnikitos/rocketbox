@@ -1,4 +1,5 @@
 ActiveAdmin.register IncomingMessage do
+  menu parent: "Chats"
   permit_params :channel, :external_id, :sender, :chat_id, :kind, :body, :payload, :user_id
 
   includes :user, attachments_attachments: :blob
@@ -6,21 +7,7 @@ ActiveAdmin.register IncomingMessage do
   index do
     selectable_column
     id_column
-    column :media do |message|
-      div style: "display: flex; gap: 4px;" do
-        message.attachments.each do |attachment|
-          a href: url_for(attachment), target: "_blank", rel: "noopener" do
-            if attachment.image?
-              image_tag url_for(attachment), style: "height: 64px; width: 64px; object-fit: cover;"
-            elsif attachment.video?
-              video_tag url_for(attachment), muted: true, preload: "metadata", style: "height: 64px; width: 64px; object-fit: cover;"
-            else
-              text_node attachment.filename.to_s
-            end
-          end
-        end
-      end
-    end
+    column(:media) { |message| admin_media_thumbs(message.attachments) }
     column :channel
     column :kind
     column :sender

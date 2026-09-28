@@ -61,6 +61,21 @@ module ApplicationHelper
     date.year == today.year ? label : "#{label} #{date.year}"
   end
 
+  # ActiveAdmin: 64px thumbnails linking to each attachment.
+  def admin_media_thumbs(attachments)
+    thumb = "height: 64px; width: 64px; object-fit: cover;"
+    tag.div(style: "display: flex; gap: 4px;") do
+      safe_join(attachments.map do |attachment|
+        link_to url_for(attachment), target: "_blank", rel: "noopener" do
+          if attachment.image? then image_tag(url_for(attachment), style: thumb)
+          elsif attachment.video? then video_tag(url_for(attachment), muted: true, preload: "metadata", style: thumb)
+          else attachment.filename.to_s
+          end
+        end
+      end)
+    end
+  end
+
   def render_markdown(text)
     renderer = Redcarpet::Render::HTML.new(
       filter_html: true,
