@@ -13,8 +13,9 @@ class SmmPost < ApplicationRecord
 
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :reaction, inclusion: { in: REACTIONS }, allow_nil: true
-  validate :media_count_within_limits
-  validate :media_must_be_images
+  # On create only: deleting library media later can leave a post with no media.
+  validate :media_count_within_limits, on: :create
+  validate :media_must_be_images, on: :create
 
   scope :recent, -> { order(created_at: :desc) }
 

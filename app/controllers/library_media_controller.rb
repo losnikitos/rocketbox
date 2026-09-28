@@ -50,14 +50,8 @@ class LibraryMediaController < ApplicationController
   end
 
   def destroy
-    unless Current.user.admin?
-      redirect_to library_uploads_path, alert: "You are not allowed to remove media."
-      return
-    end
-
-    media = Current.account.library_media.find(params[:id])
-    media.destroy!
-    redirect_to library_uploads_path, notice: "Media removed."
+    Current.account.library_media.find(params[:id]).destroy!
+    redirect_to library_uploads_path, notice: "Media deleted."
   rescue ActiveRecord::RecordNotFound
     redirect_to library_uploads_path, alert: "Media not found."
   end

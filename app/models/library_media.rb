@@ -2,6 +2,8 @@
 
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
+  # Posts outlive their source media; only the join rows go.
+  has_many :smm_post_media_items, dependent: :delete_all
   has_one_attached :file
   has_one_attached :extracted_logo
 
