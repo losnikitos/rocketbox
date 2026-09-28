@@ -15,7 +15,7 @@
   <% end %>
 </div>
 
-<%= form_with url: smm_posts_path, method: :post, class: "mt-8 max-w-xl space-y-5" do %>
+<%= form_with url: instagram_posts_path, method: :post, class: "mt-8 max-w-xl space-y-5" do %>
   <% @selected_media.each do |media| %>
     <%= hidden_field_tag "library_media_ids[]", media.id %>
   <% end %>

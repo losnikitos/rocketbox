@@ -8,7 +8,7 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows fetch info only once instagram is authorized" do
-    get instagram_url
+    get instagram_profile_url
     assert_response :success
     assert_select "h1", "Instagram"
     assert_select "a[href=?]", profile_instagram_authorize_path, count: 0
@@ -16,7 +16,7 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /link on WhatsApp/
 
     @user.update!(instagram_user_id: "1", instagram_access_token: "t")
-    get instagram_url
+    get instagram_profile_url
     assert_select "span", text: /Authorized/
     assert_select "form[action=?] button", profile_instagram_refresh_path, text: "Fetch info"
   end
@@ -25,7 +25,7 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     @user.update!(instagram_user_id: "1", instagram_access_token: "t")
     stub_instagram_oauth { post profile_instagram_refresh_url }
 
-    assert_redirected_to instagram_url
+    assert_redirected_to instagram_profile_url
     @user.reload
     assert_equal "ig-user", @user.instagram_user_id
     assert_equal({ "user_id" => "ig-user", "username" => "fadehouse", "followers_count" => 624 }, @user.instagram_profile)
@@ -41,11 +41,11 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
       get profile_instagram_callback_url, params: { code: "abc", state: }
     end
 
-    assert_redirected_to instagram_url
+    assert_redirected_to instagram_profile_url
     assert_equal [ "ig-user", "fadehouse", "long-token-abc" ],
       @user.reload.values_at(:instagram_user_id, :instagram_username, :instagram_access_token)
 
-    get instagram_url
+    get instagram_profile_url
     assert_select "a[href=?]", "https://www.instagram.com/fadehouse", text: "@fadehouse"
     assert_select "dt", text: "Followers count"
     assert_select "dd", text: "624"
@@ -57,7 +57,7 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
       get profile_instagram_callback_url, params: { code: "abc", state: "nope" }
     end
 
-    assert_redirected_to instagram_url
+    assert_redirected_to instagram_profile_url
     assert_nil @user.reload.instagram_access_token
   end
 

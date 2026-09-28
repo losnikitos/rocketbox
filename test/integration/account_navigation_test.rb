@@ -33,7 +33,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: /\AAll/
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
-    assert_select "a[href=?]", smm_root_path, text: "SMM"
+    assert_select "nav[aria-label='Primary'] a[href=?]", instagram_posts_path, text: "Posts"
     assert_select "a[href=?]", onboarding_path, text: "Onboarding", count: 0
     assert_select "a[href='/jobs']", count: 0
     assert_select "a[href='/admin']", count: 0
@@ -83,11 +83,11 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "instagram page is selected in nav with sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    get instagram_url
+    get instagram_profile_url
 
     assert_response :success
     assert_select "h1", "Instagram"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", instagram_path, text: /Instagram/
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", instagram_profile_path, text: "Profile"
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
