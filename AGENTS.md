@@ -14,7 +14,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Not the homepage story:** Setup/run mechanics stay off the public marketing surface. Ads target specific verticals (barbershops, salons, etc.); the site speaks to “your business.”
 
-**Current go-to-market:** Closed beta. Public CTA is join the waitlist at `/try` ([waitlists](/app/controllers/waitlists_controller.rb)). Visitor leaves business link (site or Instagram), email, and phone. We respond with a personalized pack (WhatsApp). If they like it, full onboarding follows (coming soon). Public pricing lives at `/pricing` ([tiers](/app/controllers/pricing_controller.rb)); plan CTAs still go to the waitlist.
+**Current go-to-market:** Public CTA is “Get started for free” at `/sign_up` ([signups](/app/controllers/signups_controller.rb)), which starts onboarding in WhatsApp. Public pricing lives at `/pricing` ([tiers](/app/controllers/pricing_controller.rb)); plan CTAs also go to `/sign_up`.
 
 **Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_125621) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_130909) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -333,14 +333,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_125621) do
     t.string "whatsapp_phone"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
-  end
-
-  create_table "waitlist_entries", force: :cascade do |t|
-    t.string "business_link"
-    t.datetime "created_at", null: false
-    t.string "email"
-    t.string "phone"
-    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

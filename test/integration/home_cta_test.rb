@@ -3,12 +3,12 @@
 require "test_helper"
 
 class HomeCtaTest < ActionDispatch::IntegrationTest
-  test "home shows waitlist CTA and closed beta messaging" do
+  test "home shows get started CTA" do
     get root_path
 
     assert_response :success
     assert_select "h1", text: /handle marketing/i
-    assert_select "a[href='#{try_path}']", text: "Join the waitlist"
+    assert_select "a[href='#{sign_up_path}']", text: "Get started for free"
     assert_select "a[href='#{new_subscribe_path}']", count: 0
     assert_select "form[action='#{subscription_checkout_path}']", count: 0
   end
