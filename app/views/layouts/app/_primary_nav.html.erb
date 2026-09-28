@@ -8,9 +8,9 @@
         <button class="min-w-0 flex-1 text-left"><selectedcontent class="block"></selectedcontent></button>
         <% User.order(:business_name, :email).each do |user| %>
           <option value="<%= user.id %>" <%= "selected" if user.id == Current.account.id %>
-                  class="min-w-0 px-2.5 py-1.5 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden">
-            <span class="block truncate font-medium"><%= user.business_name.presence || user.account_label %></span>
-            <span class="block truncate text-xs text-ink-500"><%= [ ("+#{user.whatsapp_phone}" if user.whatsapp_phone), user.email ].compact_blank.join(" · ") %></span>
+                  class="min-w-0 flex flex-col items-start px-2.5 py-1 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden">
+            <span class="truncate font-medium"><%= user.business_name.presence || user.account_label %></span>
+            <span class="truncate text-xs text-ink-500"><%= [ ("+#{user.whatsapp_phone}" if user.whatsapp_phone), user.email ].compact_blank.join(" · ") %></span>
           </option>
         <% end %>
       </select>
