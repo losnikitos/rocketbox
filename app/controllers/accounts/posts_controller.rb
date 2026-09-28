@@ -74,6 +74,16 @@ module Accounts
       redirect_to smm_post_path(@post), notice: "Publishing to Instagram…"
     end
 
+    def destroy
+      unless Current.user.admin?
+        redirect_to smm_root_path, alert: "You are not allowed to remove posts."
+        return
+      end
+
+      Current.account.smm_posts.find(params[:id]).destroy!
+      redirect_to smm_root_path, notice: "Post removed."
+    end
+
     def react
       @post = Current.account.smm_posts.find(params[:id])
       reaction = params[:reaction].to_s.presence

@@ -18,19 +18,19 @@ class ReplyWhatsappMessage
   end
 
   def call
-    each_message do |message|
+    each_message do |message, phone_number_id|
       next if StoreWhatsappMedia.media?(message)
 
       text = message.dig("text", "body").to_s
       next if text.blank?
 
       from = message["from"].to_s
-      next if connect!(from, text)
+      next if connect!(phone_number_id, from, text)
 
       user = User.find_by(whatsapp_phone: from.presence)
       if user && (urls = Link.urls_in(text)).any?
         urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "whatsapp" } }
-        react_ok(from, message["id"])
+        react_ok(phone_number_id, from, message["id"])
         next
       end
 
@@ -41,13 +41,13 @@ class ReplyWhatsappMessage
         .ask(text)
 
       reply = response.content.to_s.truncate(WHATSAPP_MAX_LENGTH)
-      WhatsappCloud.send_text(to: from, body: reply) if from.present? && reply.present?
+      WhatsappCloud.send_text(phone_number_id:, to: from, body: reply) if from.present? && reply.present?
     end
   end
 
   private
 
-    def connect!(from, text)
+    def connect!(phone_number_id, from, text)
       code = text.strip[/\ASTART_(\w+)\z/, 1]
       return false unless code && from.present?
 
@@ -59,12 +59,12 @@ class ReplyWhatsappMessage
         return false
       end
 
-      WhatsappCloud.send_text(to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
+      WhatsappCloud.send_text(phone_number_id:, to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
       true
     end
 
-    def react_ok(from, message_id)
-      WhatsappCloud.react(to: from, message_id:)
+    def react_ok(phone_number_id, from, message_id)
+      WhatsappCloud.react(phone_number_id:, to: from, message_id:)
     rescue StandardError => e
       Rails.logger.warn("WhatsApp reaction failed: #{e.class}: #{e.message}")
     end
@@ -74,7 +74,8 @@ class ReplyWhatsappMessage
         Array(entry["changes"]).each do |change|
           next unless change["field"] == "messages"
 
-          Array(change.dig("value", "messages")).each { |message| yield message }
+          phone_number_id = change.dig("value", "metadata", "phone_number_id")
+          Array(change.dig("value", "messages")).each { |message| yield message, phone_number_id }
         end
       end
     end

@@ -1,0 +1,24 @@
+<%# Locals: smm_post,
+    links (optional hash — :admin, :remove; default true) %>
+<% smm_post = local_assigns[:smm_post] %>
+<% links = { admin: true, remove: true }.merge(local_assigns.fetch(:links, {})) %>
+<% if Current.user&.admin? && smm_post.present? && (links[:admin] || links[:remove]) %>
+  <% popover_id = "smm-post-admin-links-#{smm_post.id}" %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id:, align: local_assigns.fetch(:align, :right) } do %>
+    <% if links[:admin] %>
+      <%= render "shared/admin_links/item",
+          path: admin_smm_post_path(smm_post),
+          label: "Admin",
+          icon: "cog",
+          chip: "bg-signal-green" %>
+    <% end %>
+    <% if links[:remove] %>
+      <%= render "shared/admin_links/item",
+          path: smm_post_path(smm_post),
+          label: "Remove",
+          icon: "trash",
+          chip: "bg-signal-red",
+          data: { turbo_method: :delete, turbo_confirm: "Remove this post?" } %>
+    <% end %>
+  <% end %>
+<% end %>

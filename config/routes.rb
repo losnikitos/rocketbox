@@ -52,7 +52,7 @@ Rails.application.routes.draw do
       get "/", to: "smm#index", as: :root
       get "reels", to: "smm#reels"
       get "stories", to: "smm#stories"
-      resources :posts, only: %i[index new create show] do
+      resources :posts, only: %i[index new create show destroy] do
         member do
           post :publish
           post :react

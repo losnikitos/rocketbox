@@ -80,6 +80,31 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section h3", "Today"
   end
 
+  test "non-admin cannot remove post" do
+    post_record = build_draft_post!
+
+    assert_no_difference -> { SmmPost.count } do
+      delete smm_post_url(post_record)
+    end
+    assert_redirected_to smm_root_url
+  end
+
+  test "admin sees menu and can remove post" do
+    @user = sign_in_as(users(:admin_user))
+    @media.update!(user: @user)
+    post_record = build_draft_post!
+
+    get smm_root_url
+    assert_select "a[href=?]", admin_smm_post_path(post_record)
+    assert_select "a[href=?][data-turbo-method=delete]", smm_post_path(post_record)
+
+    assert_difference -> { SmmPost.count }, -1 do
+      delete smm_post_url(post_record)
+    end
+    assert_redirected_to smm_root_url
+    assert_equal "Post removed.", flash[:notice]
+  end
+
   test "react saves thumbs up instantly" do
     post_record = create_ready_post!
 
