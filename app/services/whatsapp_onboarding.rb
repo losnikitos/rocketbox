@@ -83,7 +83,12 @@ module WhatsappOnboarding
       media.apply_extraction_to!(user) if media.reload.extraction_status == "done"
       ask!(user, user.logo.attached? ? "instagram" : "logo")
     when "logo"
-      user.copy_logo_from!(media.file)
+      begin
+        ExtractBusinessCard.extract_logo!(media)
+      rescue RubyLLM::Error, Faraday::Error => e
+        Rails.logger.warn("Logo extraction failed for media #{media.id}: #{e.message}")
+      end
+      user.copy_logo_from!(media.extracted_logo.attached? ? media.extracted_logo : media.file)
       ask!(user, "instagram")
     when "interior_back" then ask!(user, "interior_front")
     when "interior_front" then ask!(user, "brand_voice")

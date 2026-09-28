@@ -44,8 +44,8 @@ end
   },
   {
     key: "business_card_logo",
-    name: "Business card: extract logo",
-    body: "Extract only the logo from this business card. Output the logo alone, centered on a plain white square background, with its original colors and shapes preserved. Remove all other text, contact details, card edges, shadows, and background. Do not redesign or add anything."
+    name: "Extract logo",
+    body: "Extract only the logo from this photo (a business card, shop sign, or storefront). Output the logo alone, centered on a plain white square background, with its original colors and shapes preserved. Remove all other text, contact details, card edges, surroundings, shadows, and background. Do not redesign or add anything."
   },
   {
     key: "crawl_business",
