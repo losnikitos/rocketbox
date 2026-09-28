@@ -7,6 +7,9 @@
   <% profile = Current.account.instagram_profile.to_h %>
   <% handle = profile["username"] %>
   <% content_for :header_actions, button_to("Fetch info", profile_instagram_refresh_path, class: "rb-btn-ghost-on-light py-1.5") %>
+  <% content_for :header_actions, button_to("Disconnect", instagram_profile_path, method: :delete,
+        form: { data: { turbo_confirm: "Disconnect #{handle.presence || "Instagram"}?" } },
+        class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5") %>
 
   <section class="mx-auto flex max-w-3xl items-start gap-6 sm:gap-16 sm:px-6">
     <% if Current.account.instagram_avatar.attached? %>

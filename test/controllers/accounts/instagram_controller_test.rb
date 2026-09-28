@@ -32,6 +32,18 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     assert @user.instagram_avatar.attached?
   end
 
+  test "disconnect clears instagram credentials" do
+    @user.update!(instagram_user_id: "1", instagram_access_token: "t", instagram_profile: { "username" => "fadehouse" })
+    get instagram_profile_url
+    assert_select "form[action=?] button", instagram_profile_path, text: "Disconnect"
+
+    delete instagram_profile_url
+
+    assert_redirected_to instagram_profile_url
+    assert_not @user.reload.instagram_authorized?
+    assert_nil @user.instagram_profile
+  end
+
   test "instagram oauth callback stores credentials" do
     stub_instagram_oauth do
       get profile_instagram_authorize_url
