@@ -113,7 +113,7 @@ class SignupsController < ApplicationController
 
   private
 
-    # Admins open any screen from /monitor/onboarding; only the CTAs (POSTs) run the real flow.
+    # Admins open any screen from /app/onboarding; only the CTAs (POSTs) run the real flow.
     def admin_preview?
       request.get? && Current.user&.admin?
     end

@@ -23,6 +23,8 @@ module AppHelper
       [ :subscription, "Subscription", [] ]
     when "accounts/settings"
       [ :profile, "Profile", [] ]
+    when "accounts/onboarding"
+      [ :onboarding, "Onboarding", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end
