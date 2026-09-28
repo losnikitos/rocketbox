@@ -50,8 +50,6 @@ class ApplicationController < ActionController::Base
       return true if controller_name == "documents" && action_name == "show" && (request.get? || request.head?)
       return true if controller_name == "use_cases" && action_name == "show" && (request.get? || request.head?)
       return true if controller_name == "pricing" && action_name == "show" && (request.get? || request.head?)
-      return true if controller_name == "waitlists" && %w[new create thanks].include?(action_name)
-
       false
     end
 

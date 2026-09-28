@@ -3,7 +3,7 @@
 require "test_helper"
 
 class PricingTest < ActionDispatch::IntegrationTest
-  test "pricing page is public and shows tiers with waitlist CTAs" do
+  test "pricing page is public and shows tiers with get started CTAs" do
     get pricing_path
 
     assert_response :success
@@ -15,7 +15,7 @@ class PricingTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /£59/
     assert_select "p", text: /£119/
     assert_select "span", text: "+VAT", count: 3
-    assert_select "a[href='#{try_path}']", text: "Join the waitlist"
+    assert_select "a[href='#{sign_up_path}']", text: "Get started for free"
     assert_select "a[href='#{new_subscribe_path}']", count: 0
     assert_select "form[action='#{subscription_checkout_path}']", count: 0
   end

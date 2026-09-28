@@ -18,10 +18,6 @@ Rails.application.routes.draw do
   end
   root "home#index"
 
-  get "try", to: "waitlists#new", as: :try
-  post "try", to: "waitlists#create"
-  get "try/thanks", to: "waitlists#thanks", as: :try_thanks
-
   get "pricing", to: "pricing#show", as: :pricing
   get "use-cases/:slug", to: "use_cases#show", as: :use_case
   resources :documents, only: [ :show ], param: :slug
