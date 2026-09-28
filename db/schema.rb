@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_150900) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_173632) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -339,6 +339,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_150900) do
     t.json "instagram_profile"
     t.string "instagram_user_id"
     t.string "name"
+    t.string "password_digest"
     t.string "phone"
     t.string "role", default: "user", null: false
     t.bigint "telegram_user_id"

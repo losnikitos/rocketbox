@@ -1,11 +1,13 @@
 <% content_for(:title, "Settings — Rocketbox") %>
 
-<dl class="space-y-3 text-sm max-w-sm">
-  <div class="flex justify-between gap-4">
-    <dt class="text-ink-500">Name</dt>
-    <dd class="font-medium text-ink-900"><%= Current.account.name.presence || "—" %></dd>
-  </div>
-</dl>
+<%= form_with model: Current.account, url: profile_settings_path, method: :patch,
+      class: "max-w-sm",
+      data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
+  <%= form.label :name, class: tw_label_classes %>
+  <%= autosave_field do %>
+    <%= form.text_field :name, class: tw_input_autosave_classes, autocomplete: "name" %>
+  <% end %>
+<% end %>
 
 <%= form_with model: Current.account, url: profile_settings_path, method: :patch,
       class: "mt-6 max-w-sm",
@@ -25,4 +27,15 @@
     <%= form.text_field :whatsapp_phone, class: tw_input_autosave_classes, autocomplete: "off", placeholder: "15551234567" %>
   <% end %>
   <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +). Clear it to unlink.</p>
+<% end %>
+
+<%= form_with model: Current.account, url: profile_settings_path, method: :patch, class: "mt-6 max-w-sm" do |form| %>
+  <%= form.label :password, Current.account.password_digest_in_database.present? ? "Change password" : "Set a password", class: tw_label_classes %>
+  <%= form.password_field :password, class: tw_input_classes, autocomplete: "new-password", minlength: 8, maxlength: 72, required: true %>
+  <% if (error = Current.account.errors.full_messages_for(:password).first) %>
+    <p class="mt-1 text-xs text-signal-red"><%= error %></p>
+  <% else %>
+    <p class="mt-1 text-xs text-ink-500">Sign in with this instead of an email code.</p>
+  <% end %>
+  <%= form.submit "Save password", class: "#{tw_btn_secondary_classes} mt-3" %>
 <% end %>

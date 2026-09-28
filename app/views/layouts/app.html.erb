@@ -38,6 +38,9 @@
             Menu
           </label>
           <h1 class="font-manrope text-xl font-bold tracking-tight sm:text-2xl"><%= title %></h1>
+          <% if content_for?(:header_actions) %>
+            <div class="ml-auto flex items-center gap-2"><%= yield :header_actions %></div>
+          <% end %>
         </header>
 
         <% if tabs.any? %>
