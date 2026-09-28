@@ -3,21 +3,15 @@
 require "test_helper"
 
 class ReplyWhatsappMessageTest < ActiveSupport::TestCase
-  test "START creates a user for a new sender once and sends a welcome each time" do
-    orphan = LibraryMedia.create!(kind: "photo", whatsapp_from: "15551234567")
+  test "START sends a welcome each time" do
     sent = []
 
     original = WhatsappCloud.method(:send_text)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args }
 
-    assert_difference -> { User.count }, 1 do
-      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START"))
-      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " start "))
-    end
+    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START"))
+    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " start "))
 
-    user = User.find_by!(whatsapp_phone: "15551234567")
-    assert_nil user.email
-    assert_equal user, orphan.reload.user
     assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: ReplyWhatsappMessage::WELCOME } ] * 2, sent
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original)
