@@ -125,6 +125,13 @@
           Verify token
           <code class="block truncate font-mono text-ink-900 select-all"><%= WhatsappCloud.webhook_verify_token || "Not set" %></code>
         </p>
+        <% WhatsappCloud::PHONES.each do |env, phone| %>
+          <p class="-mt-1 pl-6 text-xs text-ink-500">
+            <%= env %> number<%= " (this env)" if phone == WhatsappCloud.display_phone %>
+            <%= link_to "+#{phone}", "https://wa.me/#{phone}", target: "_blank", rel: "noopener",
+                  class: "block truncate font-mono text-ink-900 underline underline-offset-2 hover:text-rocket" %>
+          </p>
+        <% end %>
       <% end %>
     <% end %>
   </section>
