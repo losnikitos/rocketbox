@@ -17,8 +17,8 @@ module AppHelper
       [ :business, "Business", [] ]
     when "accounts/links"
       [ :links, "Links", [] ]
-    when "accounts/integrations"
-      [ :integrations, "Integrations", [] ]
+    when "accounts/instagram"
+      [ :instagram, "Instagram", [] ]
     when "accounts/subscriptions"
       [ :subscription, "Subscription", [] ]
     when "accounts/settings"

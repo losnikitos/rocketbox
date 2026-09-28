@@ -72,7 +72,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Profile"
-    assert_select "form[action=?] input[name='user[whatsapp_phone]']", integrations_path
+    assert_select "form[action=?] input[name='user[whatsapp_phone]']", profile_settings_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", profile_settings_path, text: /Profile/
     assert_select "nav[aria-label='Secondary']", count: 0
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
@@ -80,26 +80,17 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "integrations page shows credentials form and sidebar log out" do
+  test "instagram page is selected in nav with sidebar log out" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    get integrations_url
+    get instagram_url
 
     assert_response :success
-    assert_select "h1", "Integrations"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", integrations_path, text: /Integrations/
-    assert_select "form[action=?]", integrations_path
+    assert_select "h1", "Instagram"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", instagram_path, text: /Instagram/
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end
-  end
-
-  test "integrations page shows the connected WhatsApp phone" do
-    user = sign_in_as(users(:lazaro_nixon))
-    user.update!(whatsapp_phone: "15551234567")
-
-    get integrations_url
-    assert_select "span", text: /\+15551234567/
   end
 
   test "subscription page shows billing controls and sidebar log out" do

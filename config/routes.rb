@@ -64,7 +64,7 @@ Rails.application.routes.draw do
           end
         end
       end
-      resource :integrations, only: [ :show, :update ]
+      resource :instagram, only: :show, controller: "instagram"
       resource :subscription, only: [ :show ]
       get "onboarding/:tab", to: "onboarding#show", as: :onboarding, tab: /steps|media/, defaults: { tab: "steps" }
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
@@ -79,7 +79,7 @@ Rails.application.routes.draw do
     end
 
     scope path: "profile", as: "profile", module: :accounts do
-      resource :settings, only: [ :show ]
+      resource :settings, only: [ :show, :update ]
       get "instagram/authorize", to: "instagram_authorizations#new", as: :instagram_authorize
       get "instagram/callback", to: "instagram_authorizations#callback", as: :instagram_callback
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh

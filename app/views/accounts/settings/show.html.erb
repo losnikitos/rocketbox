@@ -1,13 +1,23 @@
 <% content_for(:title, "Settings — Rocketbox") %>
 
-<dl class="space-y-3 text-sm">
+<dl class="space-y-3 text-sm max-w-sm">
   <div class="flex justify-between gap-4">
-    <dt class="text-ink-500">Email</dt>
-    <dd class="font-medium text-ink-900"><%= Current.account.email.presence || "—" %></dd>
+    <dt class="text-ink-500">Name</dt>
+    <dd class="font-medium text-ink-900"><%= Current.account.name.presence || "—" %></dd>
   </div>
 </dl>
 
-<%= form_with model: Current.account, url: integrations_path, method: :patch,
+<%= form_with model: Current.account, url: profile_settings_path, method: :patch,
+      class: "mt-6 max-w-sm",
+      data: { controller: "autosave", action: "change->autosave#queue submit->autosave#submit" } do |form| %>
+  <%= form.label :email, class: tw_label_classes %>
+  <%= autosave_field do %>
+    <%= form.email_field :email, class: tw_input_autosave_classes, autocomplete: "email", required: true %>
+  <% end %>
+  <p class="mt-1 text-xs text-ink-500">We’ll send a verification link to the new address.</p>
+<% end %>
+
+<%= form_with model: Current.account, url: profile_settings_path, method: :patch,
       class: "mt-6 max-w-sm",
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <%= form.label :whatsapp_phone, "WhatsApp phone", class: tw_label_classes %>

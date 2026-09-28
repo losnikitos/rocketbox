@@ -41,6 +41,6 @@ class PublishInstagramReelTest < ActiveSupport::TestCase
       PublishInstagramReel.call(user: @user, video_url: "https://example.com/reel.mp4")
     end
 
-    assert_match(/Integrations/, error.message)
+    assert_match(/Connect Instagram/, error.message)
   end
 end
