@@ -113,12 +113,8 @@
                 form: { data: { turbo_confirm: step[:confirm] || "Reset “#{step[:label]}” for #{user.account_label}?" } },
                 class: "shrink-0 cursor-pointer rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" %>
         <% elsif (!step[:done] || step[:ask_again]) && step[:ask] && user.whatsapp_phone.present? %>
-          <% if current %>
-            <span class="shrink-0 text-xs text-ink-500">Waiting for reply</span>
-          <% else %>
-            <%= button_to "Ask in chat", onboarding_ask_path(field: step[:ask]),
-                  class: "shrink-0 cursor-pointer rounded-lg bg-ink-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-ink-800" %>
-          <% end %>
+          <%= button_to "Ask in chat", onboarding_ask_path(field: step[:ask]),
+                class: "shrink-0 cursor-pointer rounded-lg bg-ink-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-ink-800" %>
         <% end %>
       <% end %>
     <% end %>

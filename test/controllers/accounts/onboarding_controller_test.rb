@@ -6,11 +6,14 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
   setup do
     @sent = sent = []
     @original_send = WhatsappCloud.method(:send_text)
+    @original_cta = WhatsappCloud.method(:send_cta_url)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args }
+    WhatsappCloud.define_singleton_method(:send_cta_url) { |**args| sent << args }
   end
 
   teardown do
     WhatsappCloud.define_singleton_method(:send_text, @original_send)
+    WhatsappCloud.define_singleton_method(:send_cta_url, @original_cta)
   end
 
   test "admin sees onboarding checklist for selected customer" do
@@ -64,7 +67,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     patch account_selection_url, params: { user_id: customer.id }
 
     post onboarding_dashboard_link_url
-    url = @sent.sole[:body][%r{https?://\S+}]
+    url = @sent.sole[:url]
     delete sign_out_url
 
     assert_difference -> { customer.sessions.count }, 1 do
@@ -84,7 +87,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     patch account_selection_url, params: { user_id: customer.id }
 
     post onboarding_ask_url(field: "instagram")
-    url = @sent.sole[:body][%r{https?://\S+}]
+    url = @sent.sole[:url]
     delete sign_out_url
 
     get url
