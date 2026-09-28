@@ -53,12 +53,13 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
   test "onboarding shows the exact WhatsApp messages per step" do
     admin = users(:admin_user)
-    admin.update!(whatsapp_pending_question: "interior_front")
+    admin.update!(whatsapp_phone: "447000000000", whatsapp_pending_question: "interior_front")
     sign_in_as(admin)
 
     get onboarding_url
     assert_response :success
     assert_select "li[aria-current='step']", count: 1, text: /Interior photos/
+    assert_select "li[aria-current='step'] button", text: "Ask in chat"
     assert_select "[popover] p", text: /Instagram’s connected/
     assert_select "[popover] p", text: /stand by the windows/
 

@@ -17,9 +17,7 @@ module WhatsappOnboarding
 
       All you need to do is send photos of your latest cuts. While you’re working on the next one, Autopilot turns them into fresh content.
 
-      To start publishing, follow the link and sign in to your barbershop’s Instagram account:
-
-      %{url}
+      To start publishing, tap the button below and sign in to your barbershop’s Instagram account.
     TEXT
     "instagram_connected" => <<~TEXT.strip,
       Done — Instagram’s connected. From now on, just send your latest cuts here. No need to show the client’s face — the haircut itself is enough. Send one photo, or a few photos of the same cut, at a time.
@@ -65,7 +63,7 @@ module WhatsappOnboarding
   def ask!(user, step)
     case step
     when "instagram"
-      send!(user, format(MESSAGES[step], url: login_url(user, to: "instagram")))
+      send_link!(user, MESSAGES[step], url: login_url(user, to: "instagram"), button: "Connect Instagram")
     when "interior_back"
       deliver!(user) { |to| WhatsappCloud.send_image(phone_number_id: WhatsappCloud.phone_number_id, to:, link: EXAMPLE_PHOTO_URL, caption: MESSAGES[step]) }
     when "brand_voice"
@@ -123,8 +121,8 @@ module WhatsappOnboarding
     Rails.application.routes.url_helpers.sign_in_whatsapp_url(token: user.generate_token_for(:whatsapp_login), **params, **URL_OPTIONS)
   end
 
-  def send_link!(user, url, body)
-    send!(user, "#{body}\n#{url}")
+  def send_link!(user, body, url:, button:)
+    deliver!(user) { |to| WhatsappCloud.send_cta_url(phone_number_id: WhatsappCloud.phone_number_id, to:, body:, display_text: button, url:) }
   end
 
   def send!(user, body)

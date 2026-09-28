@@ -94,6 +94,21 @@ module WhatsappCloud
     })
   end
 
+  # Meta limits: body up to 1024 chars, display_text up to 20.
+  def send_cta_url(phone_number_id:, to:, body:, display_text:, url:)
+    request!(:post, "#{phone_number_id}/messages", {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: to,
+      type: "interactive",
+      interactive: {
+        type: "cta_url",
+        body: { text: body },
+        action: { name: "cta_url", parameters: { display_text:, url: } }
+      }
+    })
+  end
+
   def react(phone_number_id:, to:, message_id:, emoji: "👍")
     request!(:post, "#{phone_number_id}/messages", {
       messaging_product: "whatsapp",

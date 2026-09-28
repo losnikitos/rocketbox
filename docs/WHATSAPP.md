@@ -22,12 +22,12 @@ An automatic chain run by [WhatsappOnboarding](/app/services/whatsapp_onboarding
 
 1. `business_card` — the photo is tagged `business_card`, read inline with [ExtractBusinessCard](/app/services/extract_business_card.rb) and applied to the user (fields + logo).
 2. `logo` — only if the card gave no logo; the photo becomes `user.logo`.
-3. `instagram` — Autopilot pitch + one-time login link that lands on Instagram authorize. The OAuth callback ([InstagramAuthorizationsController](/app/controllers/accounts/instagram_authorizations_controller.rb)) sends `instagram_connected` and moves on.
+3. `instagram` — Autopilot pitch + **Connect Instagram** URL button (one-time login link) that lands on Instagram authorize. The OAuth callback ([InstagramAuthorizationsController](/app/controllers/accounts/instagram_authorizations_controller.rb)) sends `instagram_connected` and moves on.
 4. `interior_back` (sent as the example photo `public/onboarding/barbershop-example.jpg` with the copy as caption), then `interior_front` — both photos are tagged `interior`.
 5. `brand_voice` — Classic / Bold / Wild reply buttons (typing the word works too); saved to `users.brand_voice`, also editable on `/app/business`.
 6. `email` — saved to `users.email` (sends the verification mail); an invalid address re-asks.
 
-On `/app/onboarding` (any user sees their own; admins see the selected account) each step has **Ask in chat** to (re)start the chain from there. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links and the example photo use `https://rocketbox.plus` in production and `https://dev.rocketbox.plus` elsewhere (`WhatsappOnboarding::URL_OPTIONS`), so the tunnel must be up in dev.
+On `/app/onboarding` (any user sees their own; admins see the selected account) each step has **Ask in chat** to (re)start the chain from there. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links go out as `cta_url` interactive messages (`WhatsappOnboarding.send_link!`): a URL button instead of a raw link; body ≤ 1024 chars, button ≤ 20. Links and the example photo use `https://rocketbox.plus` in production and `https://dev.rocketbox.plus` elsewhere (`WhatsappOnboarding::URL_OPTIONS`), so the tunnel must be up in dev.
 
 Admin-triggered messages go out from `WhatsappCloud.phone_number_id` (prod line in production, test line elsewhere). Free-form messages only deliver within Meta's 24h window after the user's last message; outside it the error shows as a flash alert.
 

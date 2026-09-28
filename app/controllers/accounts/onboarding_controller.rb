@@ -26,7 +26,7 @@ module Accounts
 
     def dashboard_link
       user = Current.account
-      WhatsappOnboarding.send_link!(user, WhatsappOnboarding.login_url(user), "Your Rocketbox dashboard (the link works once, for 1 hour):")
+      WhatsappOnboarding.send_link!(user, "Your Rocketbox dashboard. The link works once, for 1 hour.", url: WhatsappOnboarding.login_url(user), button: "Open dashboard")
       redirect_to onboarding_path, notice: "Dashboard link sent to +#{user.whatsapp_phone}"
     rescue WhatsappCloud::Error => e
       redirect_to onboarding_path, alert: e.message
