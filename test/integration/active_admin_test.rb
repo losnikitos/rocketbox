@@ -44,6 +44,17 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "incoming messages index shows media previews" do
+    sign_in_as(users(:admin_user))
+    message = IncomingMessage.create!(channel: "whatsapp", payload: { "id" => "1" })
+    message.attachments.attach(io: StringIO.new("img"), filename: "pic.jpg", content_type: "image/jpeg")
+    message.attachments.attach(io: StringIO.new("vid"), filename: "clip.mp4", content_type: "video/mp4")
+    get "/admin/incoming_messages", headers: @ua
+    assert_response :success
+    assert_select "td.col-media img[src*='pic.jpg']"
+    assert_select "td.col-media video[src*='clip.mp4']"
+  end
+
   test "admin can refresh models" do
     sign_in_as(users(:admin_user))
     with_model_refresh_stub(nil) do
