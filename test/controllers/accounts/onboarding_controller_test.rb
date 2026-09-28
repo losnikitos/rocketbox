@@ -3,22 +3,80 @@
 require "test_helper"
 
 class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @sent = sent = []
+    @original_send = WhatsappCloud.method(:send_text)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args }
+  end
+
+  teardown do
+    WhatsappCloud.define_singleton_method(:send_text, @original_send)
+  end
+
   test "admin sees onboarding checklist for selected customer" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
-    customer.update!(whatsapp_phone: "447000000000")
+    customer.update!(whatsapp_phone: "447000000000", business_name: nil)
     patch account_selection_url, params: { user_id: customer.id }
     get onboarding_url
 
     assert_response :success
-    assert_select "a[href=?]", sign_up_whatsapp_path, text: "WhatsApp code issued"
-    assert_select "li", text: /447000000000/
+    assert_select "li", text: /\+447000000000/
+    assert_select "form[action=?]", onboarding_ask_path(field: "business_name")
+    assert_select "form[action=?]", onboarding_dashboard_link_path
+  end
+
+  test "ask in chat sends the question and the reply target is recorded" do
+    sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+    customer.update!(whatsapp_phone: "447000000000")
+    patch account_selection_url, params: { user_id: customer.id }
+
+    post onboarding_ask_url(field: "business_name")
+
+    assert_redirected_to onboarding_url
+    assert_equal "business_name", customer.reload.whatsapp_pending_question
+    assert_equal [ { phone_number_id: WhatsappCloud.phone_number_id, to: "447000000000", body: "What is your business name?" } ], @sent
+  end
+
+  test "dashboard link logs the customer in once" do
+    sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+    customer.update!(whatsapp_phone: "447000000000")
+    patch account_selection_url, params: { user_id: customer.id }
+
+    post onboarding_dashboard_link_url
+    url = @sent.sole[:body][%r{https?://\S+}]
+    delete sign_out_url
+
+    assert_difference -> { customer.sessions.count }, 1 do
+      get url
+    end
+    assert_redirected_to app_url
+
+    delete sign_out_url
+    get url
+    assert_redirected_to sign_in_url
+  end
+
+  test "instagram ask sends a login link that lands on instagram authorize" do
+    sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+    customer.update!(whatsapp_phone: "447000000000")
+    patch account_selection_url, params: { user_id: customer.id }
+
+    post onboarding_ask_url(field: "instagram")
+    url = @sent.sole[:body][%r{https?://\S+}]
+    delete sign_out_url
+
+    get url
+    assert_redirected_to profile_instagram_authorize_url
   end
 
   test "admin resets whatsapp for selected customer" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
-    customer.update!(whatsapp_phone: "447000000000", whatsapp_connect_code: "abc123")
+    customer.update!(whatsapp_phone: "447000000000", whatsapp_pending_question: "name")
     patch account_selection_url, params: { user_id: customer.id }
 
     post onboarding_reset_url(step: "whatsapp")
@@ -26,7 +84,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to onboarding_url
     customer.reload
     assert_nil customer.whatsapp_phone
-    assert_nil customer.whatsapp_connect_code
+    assert_nil customer.whatsapp_pending_question
   end
 
   test "admin cannot delete themselves" do
@@ -34,35 +92,6 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference("User.count") { post onboarding_reset_url(step: "user") }
     assert User.exists?(admin.id)
-  end
-
-  test "admin can open guarded signup screens without a draft" do
-    admin = sign_in_as(users(:admin_user))
-    admin.update!(whatsapp_phone: "447000000000")
-    original = WhatsappCloud.method(:display_phone)
-    WhatsappCloud.define_singleton_method(:display_phone) { "447451273884" }
-
-    get sign_up_email_url
-    assert_response :success
-    get sign_up_email_code_url
-    assert_response :success
-    get sign_up_whatsapp_url
-    assert_response :success
-  ensure
-    WhatsappCloud.define_singleton_method(:display_phone, original)
-  end
-
-  test "whatsapp connect code is issued to the selected customer" do
-    admin = sign_in_as(users(:admin_user))
-    customer = users(:lazaro_nixon)
-    customer.update!(whatsapp_phone: nil, whatsapp_connect_code: nil)
-    patch account_selection_url, params: { user_id: customer.id }
-
-    get sign_up_whatsapp_url
-
-    assert_response :success
-    assert customer.reload.whatsapp_connect_code.present?
-    assert_nil admin.reload.whatsapp_connect_code
   end
 
   test "non-admin is redirected" do

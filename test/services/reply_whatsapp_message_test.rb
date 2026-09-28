@@ -3,36 +3,42 @@
 require "test_helper"
 
 class ReplyWhatsappMessageTest < ActiveSupport::TestCase
-  test "START_<code> links the sender's phone and sends a welcome" do
-    user = users(:lazaro_nixon)
-    code = user.whatsapp_connect_code!
+  test "START creates a user for a new sender once and sends a welcome each time" do
+    orphan = LibraryMedia.create!(kind: "photo", whatsapp_from: "15551234567")
     sent = []
 
     original = WhatsappCloud.method(:send_text)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args }
 
-    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START_#{code}"))
+    assert_difference -> { User.count }, 1 do
+      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START"))
+      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " start "))
+    end
 
-    user.reload
-    assert_equal "15551234567", user.whatsapp_phone
-    assert_nil user.whatsapp_connect_code
-    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
+    user = User.find_by!(whatsapp_phone: "15551234567")
+    assert_nil user.email
+    assert_equal user, orphan.reload.user
+    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: ReplyWhatsappMessage::WELCOME } ] * 2, sent
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
-  test "START_<code> from an already linked phone re-sends the welcome" do
-    users(:lazaro_nixon).update!(whatsapp_phone: "15551234567", whatsapp_connect_code: nil)
-    sent = []
+  test "reply to a pending question is saved to that field" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "business_name")
+    reactions = []
 
-    original = WhatsappCloud.method(:send_text)
-    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args }
+    original = WhatsappCloud.method(:react)
+    WhatsappCloud.define_singleton_method(:react) { |**args| reactions << args }
 
-    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START_usedcode"))
+    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " Ada Cuts "))
 
-    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
+    user.reload
+    assert_equal "Ada Cuts", user.business_name
+    assert_nil user.whatsapp_pending_question
+    assert_equal 1, reactions.size
   ensure
-    WhatsappCloud.define_singleton_method(:send_text, original)
+    WhatsappCloud.define_singleton_method(:react, original)
   end
 
   test "urls from a linked phone are saved to links with a reaction and no reply" do

@@ -1,12 +1,8 @@
-<% content_for(:title, "Connect WhatsApp — Rocketbox") %>
-<% turbo_refreshes_with method: :morph, scroll: :preserve %>
-<% content_for :top_right do %>
-  <%= button_to "Skip", sign_up_whatsapp_skip_path, method: :post, class: "text-sm font-medium text-ink-500 transition-colors hover:text-ink-900" %>
-<% end %>
+<% content_for(:title, "Get started — Rocketbox") %>
 
 <%= render layout: "shared/auth_card" do %>
   <div data-controller="whatsapp-connect">
-    <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Connect WhatsApp</h1>
+    <h1 class="text-center font-manrope text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">Get started on WhatsApp</h1>
     <p class="mt-1 text-center text-sm text-ink-600">Send us one message. That’s where you’ll send photos and videos.</p>
 
     <div class="mt-8 md:hidden">
@@ -33,7 +29,5 @@
         <button type="button" class="rb-btn-ghost-on-light shrink-0" data-action="whatsapp-connect#copy" data-whatsapp-connect-target="copyLabel">Copy</button>
       </div>
     </div>
-
-    <p class="mt-8 text-center text-sm text-ink-500" aria-live="polite">Waiting for your message…</p>
   </div>
 <% end %>

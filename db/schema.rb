@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_083302) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_105113) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -316,7 +316,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_083302) do
     t.text "business_hours"
     t.string "business_name"
     t.datetime "created_at", null: false
-    t.string "email", null: false
+    t.string "email"
     t.string "homepage_url"
     t.text "instagram_access_token"
     t.json "instagram_profile"
@@ -327,10 +327,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_083302) do
     t.bigint "telegram_user_id"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false, null: false
-    t.string "whatsapp_connect_code"
+    t.datetime "whatsapp_login_at"
+    t.string "whatsapp_pending_question"
     t.string "whatsapp_phone"
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["whatsapp_connect_code"], name: "index_users_on_whatsapp_connect_code", unique: true
     t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
   end
 

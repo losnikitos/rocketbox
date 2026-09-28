@@ -3,6 +3,16 @@
 <dl class="space-y-3 text-sm">
   <div class="flex justify-between gap-4">
     <dt class="text-ink-500">Email</dt>
-    <dd class="font-medium text-ink-900"><%= Current.account.email %></dd>
+    <dd class="font-medium text-ink-900"><%= Current.account.email.presence || "—" %></dd>
   </div>
 </dl>
+
+<%= form_with model: Current.account, url: integrations_path, method: :patch,
+      class: "mt-6 max-w-sm",
+      data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
+  <%= form.label :whatsapp_phone, "WhatsApp phone", class: tw_label_classes %>
+  <%= autosave_field do %>
+    <%= form.text_field :whatsapp_phone, class: tw_input_autosave_classes, autocomplete: "off", placeholder: "15551234567" %>
+  <% end %>
+  <p class="mt-1 text-xs text-ink-500">Digits only, country code included (no +). Clear it to unlink.</p>
+<% end %>

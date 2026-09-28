@@ -5,15 +5,12 @@ module Subscriptions
     skip_before_action :authenticate
 
     def show
-      email = SubscriptionLink.read(params[:t])
-
-      unless email
+      unless SubscriptionLink.read(params[:t])
         redirect_to new_subscribe_path, alert: "That link is invalid or has expired. Request a new subscription link below."
         return
       end
 
-      session[:signup] = (session[:signup] || {}).merge("email" => email)
-      redirect_to sign_up_name_path
+      redirect_to sign_up_path
     end
   end
 end

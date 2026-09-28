@@ -2,24 +2,20 @@
 
 <%
   user = Current.account
-  draft = session[:signup].presence || {}
   steps = [
-    { channel: :web, label: "Name", path: sign_up_name_path,
+    { channel: :whatsapp, label: "WhatsApp linked", path: sign_up_path,
+      done: user.whatsapp_phone.present?, value: user.whatsapp_phone&.then { "+#{_1}" }, reset: "whatsapp" },
+    { channel: :whatsapp, label: "Name", ask: "name",
       done: user.name.present?, value: user.name, reset: "name" },
-    { channel: :web, label: "Business name", path: sign_up_business_path,
+    { channel: :whatsapp, label: "Business name", ask: "business_name",
       done: user.business_name.present?, value: user.business_name, reset: "business_name" },
-    { channel: :email, label: "Email verified", path: sign_up_email_code_path,
-      done: user.verified?, value: user.email, reset: "verified" },
+    { channel: :whatsapp, label: "Website", ask: "homepage_url",
+      done: user.homepage_url.present?, value: user.homepage_url, reset: "homepage_url" },
+    { channel: :instagram, label: "Instagram authorized", path: integrations_path, ask: "instagram",
+      done: user.instagram_authorized?, value: user.instagram_user_id, reset: "instagram" },
     { channel: :web, label: "Signed in", path: sign_in_path,
       done: user.sessions.any?, value: pluralize(user.sessions.count, "session"), reset: "sessions",
       confirm: "Sign out all sessions except yours?" },
-    { channel: :web, label: "WhatsApp code issued", path: sign_up_whatsapp_path,
-      done: user.whatsapp_connect_code.present? || user.whatsapp_phone.present?,
-      value: user.whatsapp_connect_code&.then { "START_#{_1}" }, reset: "whatsapp" },
-    { channel: :whatsapp, label: "WhatsApp linked",
-      done: user.whatsapp_phone.present?, value: user.whatsapp_phone, reset: "whatsapp" },
-    { channel: :instagram, label: "Instagram authorized", path: integrations_path,
-      done: user.instagram_authorized?, value: user.instagram_user_id, reset: "instagram" },
     { channel: :telegram, label: "Telegram linked", path: integrations_path,
       done: user.telegram_user_id.present?, value: user.telegram_user_id, reset: "telegram" },
     { channel: :web, label: "Subscription active", path: subscription_path,
@@ -28,12 +24,21 @@
 %>
 
 <p class="text-xs text-ink-500">
-  #<%= user.id %> · <%= user.email %> · joined <%= time_ago_in_words(user.created_at) %> ago ·
+  #<%= user.id %> · <%= user.account_label %> · joined <%= time_ago_in_words(user.created_at) %> ago ·
   <%= link_to "Active Admin", admin_user_path(user), target: "_blank", rel: "noopener", class: "underline underline-offset-2 hover:text-ink-900" %>
 </p>
 
 <section class="mt-6 max-w-2xl rounded-2xl border border-ink-900/10 bg-white p-6">
-  <h2 class="font-manrope text-base font-bold text-ink-900">Steps</h2>
+  <div class="flex items-center justify-between gap-3">
+    <h2 class="font-manrope text-base font-bold text-ink-900">Steps</h2>
+    <% if user.whatsapp_phone.present? %>
+      <%= button_to onboarding_dashboard_link_path,
+            class: "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" do %>
+        <%= image_tag "brands/whatsapp.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+        Send dashboard link
+      <% end %>
+    <% end %>
+  </div>
 
   <ol class="mt-4 flex flex-col gap-2">
     <% steps.each do |step| %>
@@ -45,9 +50,6 @@
           <% when :whatsapp, :instagram, :telegram %>
             <%= image_tag "brands/#{step[:channel]}.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
             <%= step[:channel].to_s.capitalize %>
-          <% when :email %>
-            <%= heroicon "envelope", variant: :mini, options: { class: "size-4 shrink-0", "aria-hidden": true } %>
-            Email
           <% else %>
             <%= heroicon "globe-alt", variant: :mini, options: { class: "size-4 shrink-0", "aria-hidden": true } %>
             Web
@@ -67,6 +69,13 @@
           <%= button_to "Reset", onboarding_reset_path(step: step[:reset]),
                 form: { data: { turbo_confirm: step[:confirm] || "Reset “#{step[:label]}” for #{user.account_label}?" } },
                 class: "shrink-0 cursor-pointer rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" %>
+        <% elsif !step[:done] && step[:ask] && user.whatsapp_phone.present? %>
+          <% if user.whatsapp_pending_question == step[:ask] %>
+            <span class="shrink-0 text-xs text-ink-500">Waiting for reply</span>
+          <% else %>
+            <%= button_to "Ask in chat", onboarding_ask_path(field: step[:ask]),
+                  class: "shrink-0 cursor-pointer rounded-lg bg-ink-900 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-ink-800" %>
+          <% end %>
         <% end %>
       </li>
     <% end %>
@@ -77,25 +86,14 @@
   <h2 class="font-manrope text-base font-bold text-ink-900">Danger zone</h2>
 
   <div class="mt-4 flex flex-col gap-4">
-    <div class="flex items-center gap-3">
-      <div class="min-w-0 flex-1">
-        <p class="text-sm font-medium text-ink-900">My signup draft</p>
-        <p class="mt-0.5 truncate font-mono text-xs text-ink-500"><%= draft.any? ? draft.to_json : "Empty" %></p>
-      </div>
-      <% if draft.any? %>
-        <%= button_to "Clear draft", onboarding_reset_path(step: "draft"),
-              class: "shrink-0 cursor-pointer rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" %>
-      <% end %>
-    </div>
-
     <% unless user == Current.user %>
       <div class="flex items-center gap-3">
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-ink-900">Delete user</p>
-          <p class="mt-0.5 text-xs text-ink-500">Removes <%= user.email %> so the email can sign up again from scratch.</p>
+          <p class="mt-0.5 text-xs text-ink-500">Removes <%= user.account_label %> so they can sign up again from scratch.</p>
         </div>
         <%= button_to "Delete user", onboarding_reset_path(step: "user"),
-              form: { data: { turbo_confirm: "Delete #{user.email}? This can't be undone." } },
+              form: { data: { turbo_confirm: "Delete #{user.account_label}? This can't be undone." } },
               class: "shrink-0 cursor-pointer rounded-lg border border-signal-red/40 px-2.5 py-1 text-xs font-semibold text-signal-red transition hover:bg-signal-red/5" %>
       </div>
     <% end %>

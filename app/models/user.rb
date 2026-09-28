@@ -5,9 +5,15 @@ class User < ApplicationRecord
     email
   end
 
+  generates_token_for :whatsapp_login, expires_in: 1.hour do
+    whatsapp_login_at
+  end
+
   has_many :sessions, dependent: :destroy
-  has_many :library_media, dependent: :nullify
+  # smm_posts before library_media: post media items reference library media.
   has_many :smm_posts, dependent: :destroy
+  has_many :library_media, dependent: :destroy
+  has_many :incoming_messages, dependent: :destroy
   has_many :links, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
   has_one_attached :logo
@@ -17,10 +23,10 @@ class User < ApplicationRecord
 
   after_create :create_default_subscription
 
-  validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
   validates :role, inclusion: { in: ROLES }
 
-  normalizes :email, with: -> { _1.strip.downcase }
+  normalizes :email, with: -> { _1.strip.downcase.presence }
   normalizes :whatsapp_phone, with: ->(phone) { phone.to_s.gsub(/\D/, "").presence }
 
   def admin?
@@ -46,12 +52,7 @@ class User < ApplicationRecord
   end
 
   def account_label
-    business_name.presence || email
-  end
-
-  def whatsapp_connect_code!
-    update!(whatsapp_connect_code: SecureRandom.alphanumeric(10)) unless whatsapp_connect_code
-    whatsapp_connect_code
+    business_name.presence || email.presence || name.presence || "+#{whatsapp_phone}"
   end
 
   def self.find_or_create_from_login!(email)

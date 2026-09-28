@@ -4,7 +4,7 @@ Passwordless email OTP + magic-link sign-in with cookie-backed sessions.
 
 ## Session model
 
-[`app/models/user.rb`](/app/models/user.rb) — unique normalized email, `verified` flag, `role` (`user` / `admin`), optional `name` / `business_name` / `whatsapp_phone`. Creates a default inactive subscription on signup. OTP/magic-link success uses `User.find_or_create_from_login!` (creates if new; marks `verified: true`).
+[`app/models/user.rb`](/app/models/user.rb) — optional unique normalized email (WhatsApp-created users have none), `verified` flag, `role` (`user` / `admin`), optional `name` / `business_name` / `whatsapp_phone`. Creates a default inactive subscription on signup. OTP/magic-link success uses `User.find_or_create_from_login!` (creates if new; marks `verified: true`).
 
 [`app/models/session.rb`](/app/models/session.rb) — one row per signed-in device; stores `user_agent` and `ip_address` from [`app/models/current.rb`](/app/models/current.rb).
 
@@ -23,6 +23,7 @@ Routes in [`config/routes.rb`](/config/routes.rb):
 - `GET/POST /sign_in` — email form; issues OTP + magic link email
 - `GET/POST /sign_in/otp` — enter code
 - `GET /sign_in/magic?sid=` — one-click login from email
+- `GET /sign_in/whatsapp?token=` — one-click login from WhatsApp (see below)
 - `resources :sessions` (index + destroy)
 - development-only `POST /dev_sign_in`
 
@@ -36,15 +37,13 @@ UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp
 
 ## Sign up
 
-Multi-step wizard ([`SignupsController`](/app/controllers/signups_controller.rb), layout [`signup`](/app/views/layouts/signup.html.erb) with hero wave):
+Onboarding happens in WhatsApp. `GET /sign_up` ([`SignupsController`](/app/controllers/signups_controller.rb), “Get started for free” in the header) shows `https://wa.me/<display_phone>?text=START` — button on mobile; QR + open link + copy on desktop. No web session or email is involved.
 
-1. Name → 2. Business name → 3. Email → 4. Email OTP (Postmark `login_otp`; code also shown on page in development) → creates user + session → 5. Connect WhatsApp (skippable) → `/app`.
+`START` from a new number creates the user (`whatsapp_phone` set, `email` nil) and replies with a welcome ([WHATSAPP.md](./WHATSAPP.md)). Further questions are sent by an admin from `/app/onboarding`.
 
-Draft for steps 1–3 lives in `session[:signup]`. Existing email redirects to sign-in.
+## WhatsApp login link
 
-Connect WhatsApp: the page shows `https://wa.me/<display_phone>?text=START_<code>` (button on mobile; QR + open link + copy on desktop). `code` is `users.whatsapp_connect_code`. When the message arrives, the webhook sets `whatsapp_phone` ([WHATSAPP.md](./WHATSAPP.md)). The page polls every 3s and redirects to `/app` once the phone is linked.
-
-Routes: `GET /sign_up` plus `/sign_up/name`, `/business`, `/email`, `/email_code`, `/whatsapp`, and `POST /sign_up/whatsapp/skip`.
+WhatsApp users get into the web UI via a one-time link: an admin clicks “Send dashboard link” on `/app/onboarding`, which sends `GET /sign_in/whatsapp?token=…` to the user's WhatsApp. The token is `generates_token_for :whatsapp_login` (1 hour, bound to `users.whatsapp_login_at`, which the link bumps — so each link works once). [`SessionsController#whatsapp`](/app/controllers/sessions_controller.rb) starts a session and redirects to `/app`, or to Instagram authorize when `to=instagram` (the Instagram “Ask in chat” link).
 
 ## Email verification
 
@@ -55,5 +54,3 @@ Rails `generates_token_for :email_verification` (2 days, bound to email). Sent v
 OTP/magic-link success creates or finds the user, then redirects to `/app`.
 
 Sign-in UI uses the same auth shell as signup ([`layouts/auth`](/app/views/layouts/auth.html.erb): wave background, no marketing header/footer, shared email/OTP steps under [`shared/auth/`](/app/views/shared/auth/)).
-
-If someone enters an existing email during signup, the email OTP step still runs; a correct code signs them in (name/business draft discarded) and lands on `/app`.

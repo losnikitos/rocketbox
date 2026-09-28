@@ -5,19 +5,10 @@ Rails.application.routes.draw do
   get  "sign_in/otp", to: "sessions#otp", as: :sign_in_otp
   post "sign_in/otp", to: "sessions#otp_create"
   get  "sign_in/magic", to: "sessions#magic", as: :sign_in_magic
+  get  "sign_in/whatsapp", to: "sessions#whatsapp", as: :sign_in_whatsapp
   post "dev_sign_in", to: "sessions#dev" if Rails.env.development?
 
   get  "sign_up", to: "signups#show", as: :sign_up
-  get  "sign_up/name", to: "signups#name", as: :sign_up_name
-  post "sign_up/name", to: "signups#name_submit"
-  get  "sign_up/business", to: "signups#business", as: :sign_up_business
-  post "sign_up/business", to: "signups#business_submit"
-  get  "sign_up/email", to: "signups#email", as: :sign_up_email
-  post "sign_up/email", to: "signups#email_submit"
-  get  "sign_up/email_code", to: "signups#email_code", as: :sign_up_email_code
-  post "sign_up/email_code", to: "signups#email_code_submit"
-  get  "sign_up/whatsapp", to: "signups#whatsapp", as: :sign_up_whatsapp
-  post "sign_up/whatsapp/skip", to: "signups#whatsapp_skip", as: :sign_up_whatsapp_skip
 
   resources :sessions, only: [ :index, :show, :destroy ]
   delete "sign_out", to: "sessions#destroy_current", as: :sign_out
@@ -77,6 +68,8 @@ Rails.application.routes.draw do
       resource :subscription, only: [ :show ]
       get "onboarding", to: "onboarding#show", as: :onboarding
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
+      post "onboarding/ask", to: "onboarding#ask", as: :onboarding_ask
+      post "onboarding/dashboard_link", to: "onboarding#dashboard_link", as: :onboarding_dashboard_link
     end
 
     scope path: "subscription", as: "subscription" do
