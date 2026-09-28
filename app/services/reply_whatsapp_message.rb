@@ -57,8 +57,6 @@ class ReplyWhatsappMessage
     def start!(phone_number_id, from, text)
       return false unless from.present? && text.strip.casecmp?("start")
 
-      user = User.find_or_create_by!(whatsapp_phone: from)
-      LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
       WhatsappCloud.send_text(phone_number_id:, to: from, body: WELCOME)
       true
     end
