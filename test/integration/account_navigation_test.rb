@@ -51,6 +51,22 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
   end
 
+  test "onboarding shows the exact WhatsApp messages per step" do
+    admin = users(:admin_user)
+    admin.update!(whatsapp_pending_question: "interior_front")
+    sign_in_as(admin)
+
+    get onboarding_url
+    assert_response :success
+    assert_select "li[aria-current='step']", count: 1, text: /Interior photos/
+    assert_select "[popover] p", text: /Instagram’s connected/
+    assert_select "[popover] p", text: /stand by the windows/
+
+    get onboarding_url(tab: "media")
+    assert_response :success
+    assert_select "[popover] p", text: /stand by the windows/
+  end
+
   test "admin sees onboarding link in primary nav" do
     sign_in_as(users(:admin_user))
 
