@@ -1,0 +1,49 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "58174549784e1948d34ffa57154f897e007f7f70b146e5767c0468e04ca386e9",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/accounts/links/show.html.erb",
+      "line": 16,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Current.account.links.find(params[:id]).url, Current.account.links.find(params[:id]).url, :target => \"_blank\", :rel => \"noopener\", :class => \"hover:text-ink-900 hover:underline\")",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "accounts/links/show"
+      },
+      "user_input": "Current.account.links.find(params[:id]).url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "Link validates url format as http(s) only."
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "76d3279bf3131f767bea536fe2338f81ba26c7afe43b70570b1679bc57fb7e45",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/views/accounts/links/show.html.erb",
+      "line": 131,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Current.account.links.find(params[:id]).crawls.last.screenshot_url, :target => \"_blank\", :rel => \"noopener\", :class => \"mt-3 block\")",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "accounts/links/show"
+      },
+      "user_input": "Current.account.links.find(params[:id]).crawls.last.screenshot_url",
+      "confidence": "Weak",
+      "cwe_id": [
+        79
+      ],
+      "note": "Crawl normalizes screenshot_url to nil unless it is http(s)."
+    }
+  ],
+  "brakeman_version": "8.0.6"
+}

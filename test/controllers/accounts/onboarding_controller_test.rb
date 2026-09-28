@@ -51,7 +51,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     patch account_selection_url, params: { user_id: customer.id }
 
     get onboarding_url(tab: "media")
-    assert_select "li", text: /Interior\s+1 file/
+    assert_select "li", text: /Interior\b.*1 file/m
     assert_select "li img[alt=photo]"
 
     post onboarding_ask_url(field: "interior_front"), headers: { "Referer" => onboarding_url(tab: "media") }

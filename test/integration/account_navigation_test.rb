@@ -34,7 +34,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", instagram_posts_path, text: "Posts"
-    assert_select "a[href=?]", onboarding_path, text: "Onboarding", count: 0
+    assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path, text: "Onboarding"
     assert_select "a[href='/jobs']", count: 0
     assert_select "a[href='/admin']", count: 0
     assert_select "[data-controller='env-switcher']", count: 0
