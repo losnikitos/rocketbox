@@ -7,17 +7,17 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "shows fetch info only once instagram is authorized" do
+  test "shows connect until authorized, then fetch info" do
     get instagram_profile_url
     assert_response :success
-    assert_select "h1", "Instagram"
-    assert_select "a[href=?]", profile_instagram_authorize_path, count: 0
+    assert_select "h1", "Your profile"
+    assert_select "a[href=?]", profile_instagram_authorize_path, text: "Connect Instagram"
     assert_select "form[action=?]", profile_instagram_refresh_path, count: 0
-    assert_select "p", text: /link on WhatsApp/
 
     @user.update!(instagram_user_id: "1", instagram_access_token: "t")
     get instagram_profile_url
-    assert_select "span", text: /Authorized/
+    assert_select "a[href=?]", profile_instagram_authorize_path, count: 0
+    assert_select "p", text: "No profile info fetched yet."
     assert_select "form[action=?] button", profile_instagram_refresh_path, text: "Fetch info"
   end
 
@@ -46,9 +46,8 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
       @user.reload.values_at(:instagram_user_id, :instagram_username, :instagram_access_token)
 
     get instagram_profile_url
-    assert_select "a[href=?]", "https://www.instagram.com/fadehouse", text: "@fadehouse"
-    assert_select "dt", text: "Followers count"
-    assert_select "dd", text: "624"
+    assert_select "a[href=?]", "https://www.instagram.com/fadehouse", text: "fadehouse"
+    assert_select "li", text: "624 followers"
   end
 
   test "instagram oauth callback rejects bad state" do

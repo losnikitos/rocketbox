@@ -11,7 +11,9 @@
   <% end %>
   <% {
     "WhatsApp use case" => ["brands/whatsapp.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/wa-configurations-v2/?use_case_enum=WHATSAPP_BUSINESS_MESSAGING&selected_tab=wa-configurations-v2&product_route=whatsapp-business&business_id=925995145350263"],
-    "Instagram use case" => ["brands/instagram.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/API-Setup/?product_route=instagram-business&business_id=925995145350263&use_case_enum=INSTAGRAM_BUSINESS&selected_tab=API-Setup"]
+    "Instagram use case" => ["brands/instagram.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/API-Setup/?product_route=instagram-business&business_id=925995145350263&use_case_enum=INSTAGRAM_BUSINESS&selected_tab=API-Setup"],
+    "App review" => ["brands/facebook.svg", "https://developers.facebook.com/apps/1836367217546891/app-review/submissions/?submission_id=1843836450133301&business_id=925995145350263"],
+    "Business verification" => ["brands/facebook.svg", "https://business.facebook.com/latest/settings/security_center/?business_id=925995145350263"]
   }.each do |label, (icon, url)| %>
     <%= link_to url, target: "_blank", rel: "noopener",
           class: "inline-flex items-center gap-2 text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900" do %>
