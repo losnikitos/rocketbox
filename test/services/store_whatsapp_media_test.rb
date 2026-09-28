@@ -21,13 +21,21 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     assert media.file.attached?
   end
 
-  test "tags the first media after a media request with that type" do
+  test "tags the first media after a photo step with its type and asks the next step" do
     user = users(:lazaro_nixon)
-    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "interior")
+    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "interior_back")
+    sent = []
+    original = WhatsappCloud.method(:send_text)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
 
     assert_equal "interior", store_image!(from: "15551234567", media_id: "interior-1").media_type
-    assert_nil user.reload.whatsapp_pending_question
+    assert_equal "interior_front", user.reload.whatsapp_pending_question
+    assert_equal [ WhatsappOnboarding::MESSAGES["interior_front"] ], sent
+
+    user.update!(whatsapp_pending_question: nil)
     assert_nil store_image!(from: "15551234567", media_id: "interior-2").media_type
+  ensure
+    WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
   test "attaches blob to matching IncomingMessage" do

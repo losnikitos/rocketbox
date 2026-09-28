@@ -39,7 +39,7 @@ UI: [`app/views/sessions/new.html.erb`](/app/views/sessions/new.html.erb), [`otp
 
 Onboarding happens in WhatsApp. `GET /sign_up` ([`SignupsController`](/app/controllers/signups_controller.rb), “Get started for free” in the header) shows `https://wa.me/<display_phone>?text=START` — button on mobile; QR + open link + copy on desktop. No web session or email is involved.
 
-Any message from a new number creates the user (`whatsapp_phone` set, `email` nil); `START` also replies with a welcome ([WHATSAPP.md](./WHATSAPP.md)). Further questions are sent by an admin from `/app/onboarding`.
+Any message from a new number creates the user (`whatsapp_phone` set, `email` nil); `START` also starts the onboarding chain ([WHATSAPP.md](./WHATSAPP.md)); any step can be re-sent from `/app/onboarding`.
 
 ## WhatsApp login link
 

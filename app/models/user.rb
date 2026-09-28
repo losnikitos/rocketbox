@@ -21,6 +21,8 @@ class User < ApplicationRecord
 
   store_accessor :instagram_profile, :username, prefix: :instagram
 
+  enum :brand_voice, %w[classic bold wild].index_by(&:itself), validate: { allow_nil: true }
+
   after_create :create_default_subscription
 
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
@@ -49,6 +51,11 @@ class User < ApplicationRecord
     picture ? instagram_avatar.attach(**picture, filename: "#{instagram_username}.jpg") : instagram_avatar.purge
   rescue KeyError => e
     raise InstagramOauth::Error, "Instagram did not return #{e.key}."
+  end
+
+  # Copy, not share: the source blob is purged with its record (or on re-extraction).
+  def copy_logo_from!(attachment)
+    logo.attach(io: StringIO.new(attachment.download), filename: attachment.filename, content_type: attachment.content_type)
   end
 
   def account_label

@@ -8,7 +8,6 @@ class ReplyWhatsappMessage
   TEXT
 
   WHATSAPP_MAX_LENGTH = 4096
-  WELCOME = "Welcome to Rocketbox! 👋\nYou can already start sending photos and videos — we'll turn them into posts."
 
   def self.call(payload)
     new(payload).call
@@ -22,16 +21,19 @@ class ReplyWhatsappMessage
     each_message do |message, phone_number_id|
       next if StoreWhatsappMedia.media?(message)
 
-      text = message.dig("text", "body").to_s
+      text = message.dig("text", "body").presence || message.dig("interactive", "button_reply", "id").to_s
       next if text.blank?
 
       from = message["from"].to_s
-      next if start!(phone_number_id, from, text)
-
       user = User.find_by(whatsapp_phone: from.presence)
-      if (field = user&.whatsapp_pending_question) && WhatsappOnboarding::QUESTIONS.key?(field)
-        user.update!(field => text.strip, whatsapp_pending_question: nil)
-        react_ok(phone_number_id, from, message["id"])
+
+      if user && text.strip.casecmp?("start")
+        WhatsappOnboarding.ask!(user, "business_card")
+        next
+      end
+
+      if user && WhatsappOnboarding.answer!(user, text)
+        react_ok(phone_number_id, from, message["id"]) if user.whatsapp_pending_question.nil?
         next
       end
 
@@ -53,13 +55,6 @@ class ReplyWhatsappMessage
   end
 
   private
-
-    def start!(phone_number_id, from, text)
-      return false unless from.present? && text.strip.casecmp?("start")
-
-      WhatsappCloud.send_text(phone_number_id:, to: from, body: WELCOME)
-      true
-    end
 
     def react_ok(phone_number_id, from, message_id)
       WhatsappCloud.react(phone_number_id:, to: from, message_id:)

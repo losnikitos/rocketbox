@@ -8,8 +8,8 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
 2. [WhatsappWebhooksController](/app/controllers/whatsapp_webhooks_controller.rb) skips CSRF/auth, verifies `hub.verify_token` on GET, optionally checks `X-Hub-Signature-256` against `app_secret` on POST, then enqueues [ProcessWhatsappUpdateJob](/app/jobs/process_whatsapp_update_job.rb).
 3. The job finds or creates a user for each sender by `whatsapp_phone` (no email) — any message from a new number creates one — then persists an [IncomingMessage](/app/models/incoming_message.rb) per message ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreWhatsappMedia](/app/services/store_whatsapp_media.rb): extract media → skip if `whatsapp_media_id` already stored → download via Graph API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised).
-   - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) replies with the welcome (“you can already start sending photos and videos”). Repeating `START` just re-sends the welcome.
-   - **Onboarding answer** → if the sender has `whatsapp_pending_question`, the text is saved to that field (`name`, `business_name`, `homepage_url`), the question is cleared, 👍 reaction, no LLM reply.
+   - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) starts the onboarding chain (asks for the business card). Repeating `START` restarts it.
+   - **Onboarding answer** → text or a button reply to the pending `brand_voice` / `email` step is saved and the chain moves on (see Onboarding), no LLM reply.
    - **Links** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): text with `http(s)://` URLs from a linked phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`. Unlinked senders fall through to the LLM reply.
    - **Text-only** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): resolve user by `whatsapp_phone` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Profile backfills orphan media with that `whatsapp_from`. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to set their WhatsApp phone in Profile.
@@ -18,7 +18,16 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 ## Onboarding
 
-Nothing is asked automatically. On `/app/onboarding` (any user sees their own; admins see the selected account) each missing step has **Ask in chat** — [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb) sends the scripted question from `QUESTIONS` and sets `whatsapp_pending_question`; the next text reply fills it. Instagram's “Ask in chat” sends a one-time login link that lands on Instagram authorize. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links use the host the admin is browsing, so use `https://dev.rocketbox.plus` in dev.
+An automatic chain run by [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb). The copy lives in `MESSAGES`. `ask!` sends a step's message and stores the step in `whatsapp_pending_question`; the reply runs the step and asks the next one:
+
+1. `business_card` — the photo is tagged `business_card`, read inline with [ExtractBusinessCard](/app/services/extract_business_card.rb) and applied to the user (fields + logo).
+2. `logo` — only if the card gave no logo; the photo becomes `user.logo`.
+3. `instagram` — Autopilot pitch + one-time login link that lands on Instagram authorize. The OAuth callback ([InstagramAuthorizationsController](/app/controllers/accounts/instagram_authorizations_controller.rb)) sends `instagram_connected` and moves on.
+4. `interior_back` (sent as the example photo `public/onboarding/barbershop-example.jpg` with the copy as caption), then `interior_front` — both photos are tagged `interior`.
+5. `brand_voice` — Classic / Bold / Wild reply buttons (typing the word works too); saved to `users.brand_voice`, also editable on `/app/business`.
+6. `email` — saved to `users.email` (sends the verification mail); an invalid address re-asks.
+
+On `/app/onboarding` (any user sees their own; admins see the selected account) each step has **Ask in chat** to (re)start the chain from there. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links and the example photo use `https://rocketbox.plus` in production and `https://dev.rocketbox.plus` elsewhere (`WhatsappOnboarding::URL_OPTIONS`), so the tunnel must be up in dev.
 
 Admin-triggered messages go out from `WhatsappCloud.phone_number_id` (prod line in production, test line elsewhere). Free-form messages only deliver within Meta's 24h window after the user's last message; outside it the error shows as a flash alert.
 
@@ -109,7 +118,7 @@ Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display
 | Job | [app/jobs/process_whatsapp_update_job.rb](/app/jobs/process_whatsapp_update_job.rb) |
 | Store media | [app/services/store_whatsapp_media.rb](/app/services/store_whatsapp_media.rb) |
 | LLM reply | [app/services/reply_whatsapp_message.rb](/app/services/reply_whatsapp_message.rb) |
-| Onboarding questions / links | [app/services/whatsapp_onboarding.rb](/app/services/whatsapp_onboarding.rb) |
+| Onboarding chain / links | [app/services/whatsapp_onboarding.rb](/app/services/whatsapp_onboarding.rb) |
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
 | Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/accounts/show.html.erb](/app/views/accounts/show.html.erb) (`/app/library`) |

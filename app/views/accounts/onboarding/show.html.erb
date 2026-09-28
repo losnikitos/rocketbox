@@ -3,25 +3,29 @@
 <%
   user = Current.account
   media_tab = params[:tab] == "media"
+  media_counts = user.library_media.group(:media_type).count
   steps = if media_tab
-    media_counts = user.library_media.group(:media_type).count
-    WhatsappOnboarding::MEDIA_REQUESTS.keys.map do |type|
+    WhatsappOnboarding::MEDIA_REQUESTS.values.uniq.map do |type|
       count = media_counts[type].to_i
-      { channel: :whatsapp, label: type.humanize, path: library_uploads_path(type:), ask: type, ask_again: true,
+      { channel: :whatsapp, label: type.humanize, path: library_uploads_path(type:), ask: WhatsappOnboarding::MEDIA_REQUESTS.key(type), ask_again: true,
         done: count.positive?, value: pluralize(count, "file"),
         previews: user.library_media.where(media_type: type).with_attached_file.order(created_at: :desc).limit(6) }
     end
   else [
     { channel: :whatsapp, label: "WhatsApp linked", path: sign_up_path,
       done: user.whatsapp_phone.present?, value: user.whatsapp_phone&.then { "+#{_1}" }, reset: "whatsapp" },
-    { channel: :whatsapp, label: "Name", ask: "name",
-      done: user.name.present?, value: user.name, reset: "name" },
-    { channel: :whatsapp, label: "Business name", ask: "business_name",
-      done: user.business_name.present?, value: user.business_name, reset: "business_name" },
-    { channel: :whatsapp, label: "Website", ask: "homepage_url",
-      done: user.homepage_url.present?, value: user.homepage_url, reset: "homepage_url" },
+    { channel: :whatsapp, label: "Business card", path: library_uploads_path(type: "business_card"), ask: "business_card",
+      done: media_counts["business_card"].to_i.positive?, value: user.business_name },
+    { channel: :whatsapp, label: "Logo", path: business_path, ask: "logo",
+      done: user.logo.attached? },
     { channel: :instagram, label: "Instagram authorized", path: instagram_profile_path, ask: "instagram",
       done: user.instagram_authorized?, value: user.instagram_user_id, reset: "instagram" },
+    { channel: :whatsapp, label: "Interior photos", path: library_uploads_path(type: "interior"), ask: "interior_back",
+      done: media_counts["interior"].to_i >= 2, value: pluralize(media_counts["interior"].to_i, "photo") },
+    { channel: :whatsapp, label: "Brand voice", path: business_path, ask: "brand_voice",
+      done: user.brand_voice.present?, value: user.brand_voice&.capitalize, reset: "brand_voice" },
+    { channel: :whatsapp, label: "Email", path: profile_settings_path, ask: "email",
+      done: user.email.present?, value: user.email },
     { channel: :web, label: "Signed in", path: sign_in_path,
       done: user.sessions.any?, value: pluralize(user.sessions.count, "session"), reset: "sessions",
       confirm: "Sign out all sessions except yours?" },

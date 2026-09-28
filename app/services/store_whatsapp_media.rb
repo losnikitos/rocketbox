@@ -65,15 +65,15 @@ class StoreWhatsappMedia
       user = User.find_by(whatsapp_phone: from.presence)
       # ponytail: only the first media after a request is tagged, so later photos of an album stay untyped.
       # Upgrade = keep the request open for a short time window.
-      media_type = user&.whatsapp_pending_question.presence_in(WhatsappOnboarding::MEDIA_REQUESTS.keys)
+      step = user&.whatsapp_pending_question.presence_in(WhatsappOnboarding::MEDIA_REQUESTS.keys)
       media = LibraryMedia.create!(
         whatsapp_media_id: media_id,
         whatsapp_from: from.presence,
         kind: kind,
-        media_type:,
+        media_type: WhatsappOnboarding::MEDIA_REQUESTS[step],
         user:
       )
-      user.update!(whatsapp_pending_question: nil) if media_type
+      user.update!(whatsapp_pending_question: nil) if step
 
       blob = ActiveStorage::Blob.create_and_upload!(
         io: io,
@@ -83,6 +83,7 @@ class StoreWhatsappMedia
       media.file.attach(blob)
       attach_to_incoming_message!(message["id"], blob)
       react_ok(message, phone_number_id)
+      WhatsappOnboarding.received!(user, step, media) if step
       media
     ensure
       io&.close if defined?(io)

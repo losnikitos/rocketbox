@@ -20,6 +20,7 @@ module Accounts
 
       Current.account.update!(instagram_access_token: InstagramOauth.exchange(code: params[:code], redirect_uri: profile_instagram_callback_url))
       Current.account.refresh_instagram_profile!
+      continue_onboarding
       redirect_to instagram_profile_path, notice: "Instagram authorized."
     rescue InstagramOauth::Error => e
       redirect_to instagram_profile_path, alert: e.message
@@ -31,5 +32,15 @@ module Accounts
     rescue InstagramOauth::Error => e
       redirect_to instagram_profile_path, alert: e.message
     end
+
+    private
+
+      def continue_onboarding
+        return unless Current.account.whatsapp_pending_question == "instagram"
+
+        WhatsappOnboarding.instagram_connected!(Current.account)
+      rescue WhatsappCloud::Error => e
+        Rails.logger.warn("WhatsApp onboarding after Instagram failed: #{e.message}")
+      end
   end
 end
