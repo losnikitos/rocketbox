@@ -8,12 +8,19 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
 2. [WhatsappWebhooksController](/app/controllers/whatsapp_webhooks_controller.rb) skips CSRF/auth, verifies `hub.verify_token` on GET, optionally checks `X-Hub-Signature-256` against `app_secret` on POST, then enqueues [ProcessWhatsappUpdateJob](/app/jobs/process_whatsapp_update_job.rb).
 3. The job persists an [IncomingMessage](/app/models/incoming_message.rb) per message ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreWhatsappMedia](/app/services/store_whatsapp_media.rb): extract media → skip if `whatsapp_media_id` already stored → download via Graph API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised).
-   - **Connect** (`START_<code>`, from the signup step) → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) finds the user by `whatsapp_connect_code`, sets `whatsapp_phone` to the sender (clearing it from any other user), clears the code (single use), backfills orphan media, and replies “Welcome to Rocketbox 👋 / Your account is connected.” Any `START_…` from an already linked phone just re-sends the welcome (handy for debugging). Other unknown codes fall through to the LLM reply.
+   - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) finds or creates the user by `whatsapp_phone` (no email), backfills orphan media, and replies with the welcome (“you can already start sending photos and videos”). Repeating `START` just re-sends the welcome.
+   - **Onboarding answer** → if the sender has `whatsapp_pending_question`, the text is saved to that field (`name`, `business_name`, `homepage_url`), the question is cleared, 👍 reaction, no LLM reply.
    - **Links** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): text with `http(s)://` URLs from a linked phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`. Unlinked senders fall through to the LLM reply.
    - **Text-only** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb): resolve user by `whatsapp_phone` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Saving a WhatsApp phone on Account backfills orphan media with that `whatsapp_from`. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to link Account → Integrations.
 
 Supported kinds: image (stored as `photo`), video, audio, document, sticker.
+
+## Onboarding
+
+Nothing is asked automatically. On `/app/onboarding` (admin, selected account) each missing step has **Ask in chat** — [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb) sends the scripted question from `QUESTIONS` and sets `whatsapp_pending_question`; the next text reply fills it. Instagram's “Ask in chat” sends a one-time login link that lands on Instagram authorize. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links use the host the admin is browsing, so use `https://dev.rocketbox.plus` in dev.
+
+Admin-triggered messages go out from `WhatsappCloud.phone_number_id` (prod line in production, test line elsewhere). Free-form messages only deliver within Meta's 24h window after the user's last message; outside it the error shows as a flash alert.
 
 ## Credentials
 
@@ -25,7 +32,7 @@ Under `whatsapp` in Rails credentials:
 
 xAI key for replies: `xai.api_key` (see [ruby_llm initializer](/config/initializers/ruby_llm.rb)).
 
-Replies and reactions go out from the number that received the message (`metadata.phone_number_id` in the webhook), so dev and prod need no per-env sender config. `WhatsappCloud.display_phone` (the `wa.me` connect link) is the prod number in production and the test number elsewhere.
+Replies and reactions go out from the number that received the message (`metadata.phone_number_id` in the webhook), so dev and prod need no per-env sender config. `WhatsappCloud.display_phone` (the `wa.me` START link on `/sign_up`) is the prod number in production and the test number elsewhere.
 
 ## Ops
 
@@ -102,6 +109,7 @@ Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display
 | Job | [app/jobs/process_whatsapp_update_job.rb](/app/jobs/process_whatsapp_update_job.rb) |
 | Store media | [app/services/store_whatsapp_media.rb](/app/services/store_whatsapp_media.rb) |
 | LLM reply | [app/services/reply_whatsapp_message.rb](/app/services/reply_whatsapp_message.rb) |
+| Onboarding questions / links | [app/services/whatsapp_onboarding.rb](/app/services/whatsapp_onboarding.rb) |
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
 | Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/accounts/show.html.erb](/app/views/accounts/show.html.erb) (`/app/library`) |

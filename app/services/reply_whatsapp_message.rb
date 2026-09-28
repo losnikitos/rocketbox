@@ -8,6 +8,7 @@ class ReplyWhatsappMessage
   TEXT
 
   WHATSAPP_MAX_LENGTH = 4096
+  WELCOME = "Welcome to Rocketbox! 👋\nYou can already start sending photos and videos — we'll turn them into posts."
 
   def self.call(payload)
     new(payload).call
@@ -25,9 +26,15 @@ class ReplyWhatsappMessage
       next if text.blank?
 
       from = message["from"].to_s
-      next if connect!(phone_number_id, from, text)
+      next if start!(phone_number_id, from, text)
 
       user = User.find_by(whatsapp_phone: from.presence)
+      if (field = user&.whatsapp_pending_question) && WhatsappOnboarding::QUESTIONS.key?(field)
+        user.update!(field => text.strip, whatsapp_pending_question: nil)
+        react_ok(phone_number_id, from, message["id"])
+        next
+      end
+
       if user && (urls = Link.urls_in(text)).any?
         urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "whatsapp" } }
         react_ok(phone_number_id, from, message["id"])
@@ -47,19 +54,12 @@ class ReplyWhatsappMessage
 
   private
 
-    def connect!(phone_number_id, from, text)
-      code = text.strip[/\ASTART_(\w+)\z/, 1]
-      return false unless code && from.present?
+    def start!(phone_number_id, from, text)
+      return false unless from.present? && text.strip.casecmp?("start")
 
-      if (user = User.find_by(whatsapp_connect_code: code))
-        User.where(whatsapp_phone: from).where.not(id: user.id).update_all(whatsapp_phone: nil)
-        user.update!(whatsapp_phone: from, whatsapp_connect_code: nil)
-        LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
-      elsif !User.exists?(whatsapp_phone: from)
-        return false
-      end
-
-      WhatsappCloud.send_text(phone_number_id:, to: from, body: "Welcome to Rocketbox 👋\nYour account is connected.")
+      user = User.find_or_create_by!(whatsapp_phone: from)
+      LibraryMedia.where(whatsapp_from: from, user_id: nil).update_all(user_id: user.id)
+      WhatsappCloud.send_text(phone_number_id:, to: from, body: WELCOME)
       true
     end
 

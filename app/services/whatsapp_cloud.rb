@@ -9,6 +9,8 @@ module WhatsappCloud
 
   API_VERSION = "v21.0"
   GRAPH_BASE = "https://graph.facebook.com/#{API_VERSION}"
+  PHONES = { "Test" => "15551712639", "Prod" => "447451273884" }.freeze
+  PHONE_NUMBER_IDS = { "Test" => "1238456642695224", "Prod" => "1237261782813765" }.freeze
 
   module_function
 
@@ -18,7 +20,11 @@ module WhatsappCloud
   end
 
   def display_phone
-    Rails.env.production? ? "447451273884" : "15551712639"
+    PHONES[Rails.env.production? ? "Prod" : "Test"]
+  end
+
+  def phone_number_id
+    PHONE_NUMBER_IDS[Rails.env.production? ? "Prod" : "Test"]
   end
 
   def app_secret

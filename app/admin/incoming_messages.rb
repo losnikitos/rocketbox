@@ -1,6 +1,35 @@
 ActiveAdmin.register IncomingMessage do
   permit_params :channel, :external_id, :sender, :chat_id, :kind, :body, :payload, :user_id
 
+  includes :user, attachments_attachments: :blob
+
+  index do
+    selectable_column
+    id_column
+    column :media do |message|
+      div style: "display: flex; gap: 4px;" do
+        message.attachments.each do |attachment|
+          a href: url_for(attachment), target: "_blank", rel: "noopener" do
+            if attachment.image?
+              image_tag url_for(attachment), style: "height: 64px; width: 64px; object-fit: cover;"
+            elsif attachment.video?
+              video_tag url_for(attachment), muted: true, preload: "metadata", style: "height: 64px; width: 64px; object-fit: cover;"
+            else
+              text_node attachment.filename.to_s
+            end
+          end
+        end
+      end
+    end
+    column :channel
+    column :kind
+    column :sender
+    column :user
+    column :body
+    column :created_at
+    actions
+  end
+
   show do
     attributes_table do
       row :id

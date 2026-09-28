@@ -72,6 +72,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Profile"
+    assert_select "form[action=?] input[name='user[whatsapp_phone]']", integrations_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", profile_settings_path, text: /Profile/
     assert_select "nav[aria-label='Secondary']", count: 0
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
@@ -93,16 +94,11 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "integrations page links to WhatsApp auth until connected" do
+  test "integrations page shows the connected WhatsApp phone" do
     user = sign_in_as(users(:lazaro_nixon))
-    user.update!(whatsapp_phone: nil)
-
-    get integrations_url
-    assert_select "a[href=?]", sign_up_whatsapp_path, text: "Authorize"
-
     user.update!(whatsapp_phone: "15551234567")
+
     get integrations_url
-    assert_select "a[href=?]", sign_up_whatsapp_path, count: 0
     assert_select "span", text: /\+15551234567/
   end
 

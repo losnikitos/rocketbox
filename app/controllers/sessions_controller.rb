@@ -4,7 +4,7 @@ class SessionsController < ApplicationController
   include AuthFlow
 
   layout "auth", only: %i[new create otp otp_create]
-  skip_before_action :authenticate, only: %i[ new create otp otp_create magic dev ]
+  skip_before_action :authenticate, only: %i[ new create otp otp_create magic whatsapp dev ]
 
   before_action :set_session, only: :destroy
 
@@ -55,6 +55,15 @@ class SessionsController < ApplicationController
     sign_in_from_email!(email)
   rescue ActiveSupport::MessageVerifier::InvalidSignature
     redirect_to sign_in_path, alert: "That login link is invalid or expired"
+  end
+
+  def whatsapp
+    user = User.find_by_token_for(:whatsapp_login, params[:token])
+    return redirect_to(sign_in_path, alert: "That link is invalid or expired. Ask us for a new one in WhatsApp.") unless user
+
+    user.update!(whatsapp_login_at: Time.current)
+    start_session!(user)
+    redirect_to params[:to] == "instagram" ? profile_instagram_authorize_path : app_path
   end
 
   def dev

@@ -25,6 +25,5 @@ module AuthFlow
 
     def clear_otp_preview!
       session.delete(:otp_preview)
-      session.delete(:signup_otp_code)
     end
 end
