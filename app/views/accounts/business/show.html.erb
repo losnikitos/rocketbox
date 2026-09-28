@@ -65,5 +65,18 @@
         <%= form.text_area :business_hours, rows: 4, placeholder: "Mon–Fri 9am–6pm\nSat 10am–4pm\nSun closed", class: tw_input_autosave_classes %>
       <% end %>
     </div>
+
+    <fieldset>
+      <legend class="<%= tw_label_classes %>">Brand voice</legend>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <% { "classic" => "Clean and stylish", "bold" => "Bolder and more unexpected", "wild" => "Strange ideas, hard to scroll past" }.each do |voice, hint| %>
+          <label class="cursor-pointer rounded-lg border border-ink-900/15 px-3 py-2 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+            <%= form.radio_button :brand_voice, voice, class: "sr-only" %>
+            <span class="block text-sm font-medium text-ink-900"><%= voice.capitalize %></span>
+            <span class="mt-0.5 block text-xs text-ink-500"><%= hint %></span>
+          </label>
+        <% end %>
+      </div>
+    </fieldset>
   </div>
 <% end %>

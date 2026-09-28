@@ -37,6 +37,11 @@ class LibraryMedia < ApplicationRecord
     CARD_FIELDS.to_h { |key, column| [ column, fields[key].to_s.strip ] }.compact_blank
   end
 
+  def apply_extraction_to!(user)
+    user.update!(extracted_account_attributes)
+    user.copy_logo_from!(extracted_logo) if extracted_logo.attached?
+  end
+
   # Call on an association (user.library_media.import_url!) so the lookup and the new record are scoped to that user.
   def self.import_url!(url)
     find_by(source_url: url) || begin

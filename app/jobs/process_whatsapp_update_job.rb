@@ -23,7 +23,7 @@ class ProcessWhatsappUpdateJob < ApplicationJob
       StoreWhatsappMedia.call(payload)
     end
 
-    if messages.any? { |message| message["type"] == "text" && message.dig("text", "body").present? }
+    if messages.any? { |message| message["type"].in?(%w[text interactive]) }
       ReplyWhatsappMessage.call(payload)
     end
   end

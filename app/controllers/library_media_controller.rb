@@ -45,11 +45,7 @@ class LibraryMediaController < ApplicationController
 
   def apply_extraction
     media = Current.account.library_media.find(params[:id])
-    Current.account.update!(media.extracted_account_attributes)
-    if (logo = media.extracted_logo).attached?
-      # Copy, not share: re-extracting purges the card's logo blob.
-      Current.account.logo.attach(io: StringIO.new(logo.download), filename: logo.filename, content_type: logo.content_type)
-    end
+    media.apply_extraction_to!(Current.account)
     redirect_to library_upload_path(media), notice: "Business updated from card."
   end
 

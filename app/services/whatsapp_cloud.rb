@@ -69,6 +69,31 @@ module WhatsappCloud
     })
   end
 
+  def send_image(phone_number_id:, to:, link:, caption:)
+    request!(:post, "#{phone_number_id}/messages", {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: to,
+      type: "image",
+      image: { link: link, caption: caption }
+    })
+  end
+
+  # buttons: { "reply_id" => "Title" }; Meta allows up to 3, titles up to 20 chars.
+  def send_buttons(phone_number_id:, to:, body:, buttons:)
+    request!(:post, "#{phone_number_id}/messages", {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: to,
+      type: "interactive",
+      interactive: {
+        type: "button",
+        body: { text: body },
+        action: { buttons: buttons.map { |id, title| { type: "reply", reply: { id:, title: } } } }
+      }
+    })
+  end
+
   def react(phone_number_id:, to:, message_id:, emoji: "👍")
     request!(:post, "#{phone_number_id}/messages", {
       messaging_product: "whatsapp",

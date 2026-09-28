@@ -5,11 +5,9 @@ module Accounts
     layout "app"
 
     RESETS = {
-      "name" => { name: nil },
-      "business_name" => { business_name: nil },
-      "homepage_url" => { homepage_url: nil },
       "whatsapp" => { whatsapp_phone: nil, whatsapp_pending_question: nil },
       "instagram" => { instagram_user_id: nil, instagram_access_token: nil, instagram_profile: nil, instagram_avatar: nil },
+      "brand_voice" => { brand_voice: nil },
       "telegram" => { telegram_user_id: nil }
     }.freeze
 
@@ -18,23 +16,17 @@ module Accounts
 
     def ask
       user = Current.account
-      case field = params[:field]
-      when "instagram"
-        WhatsappOnboarding.send_link!(user, whatsapp_login_url(user, to: "instagram"), "Connect your Instagram so we can post for you:")
-      when *WhatsappOnboarding::PROMPTS.keys
-        WhatsappOnboarding.ask!(user, field)
-      else
-        return head(:unprocessable_entity)
-      end
+      return head(:unprocessable_entity) unless WhatsappOnboarding::MESSAGES.key?(params[:field])
 
-      redirect_to ask_back_path, notice: "Sent to +#{user.whatsapp_phone}"
+      WhatsappOnboarding.ask!(user, params[:field])
+      redirect_back_or_to onboarding_path, notice: "Sent to +#{user.whatsapp_phone}"
     rescue WhatsappCloud::Error => e
-      redirect_to ask_back_path, alert: e.message
+      redirect_back_or_to onboarding_path, alert: e.message
     end
 
     def dashboard_link
       user = Current.account
-      WhatsappOnboarding.send_link!(user, whatsapp_login_url(user), "Your Rocketbox dashboard (the link works once, for 1 hour):")
+      WhatsappOnboarding.send_link!(user, WhatsappOnboarding.login_url(user), "Your Rocketbox dashboard (the link works once, for 1 hour):")
       redirect_to onboarding_path, notice: "Dashboard link sent to +#{user.whatsapp_phone}"
     rescue WhatsappCloud::Error => e
       redirect_to onboarding_path, alert: e.message
@@ -55,15 +47,5 @@ module Accounts
 
       redirect_to onboarding_path, notice: "Reset #{step}"
     end
-
-    private
-
-      def ask_back_path
-        onboarding_path(tab: WhatsappOnboarding::MEDIA_REQUESTS.key?(params[:field]) ? "media" : "steps")
-      end
-
-      def whatsapp_login_url(user, **params)
-        sign_in_whatsapp_url(token: user.generate_token_for(:whatsapp_login), **params)
-      end
   end
 end
