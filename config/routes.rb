@@ -75,6 +75,8 @@ Rails.application.routes.draw do
       end
       resource :integrations, only: [ :show, :update ]
       resource :subscription, only: [ :show ]
+      get "onboarding", to: "onboarding#show", as: :onboarding
+      post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
     end
 
     scope path: "subscription", as: "subscription" do
@@ -117,13 +119,6 @@ Rails.application.routes.draw do
 
   constraints ->(request) { Session.find_by(id: request.cookie_jar.signed[:session_token])&.user&.admin? } do
     mount MissionControl::Jobs::Engine, at: "/jobs"
-  end
-
-  get "monitor", to: "monitor#show", as: :monitor
-  scope path: "monitor", as: "monitor" do
-    get "onboarding", to: "monitor#onboarding", as: :onboarding
-    post "onboarding/reset", to: "monitor#reset_onboarding", as: :onboarding_reset
-    resources :media_generations, only: %i[index show new create], controller: "monitor_media_generations"
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

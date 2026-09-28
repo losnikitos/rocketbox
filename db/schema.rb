@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_222949) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_083302) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -129,19 +129,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_222949) do
     t.integer "user_id", null: false
     t.index ["user_id", "url"], name: "index_links_on_user_id_and_url", unique: true
     t.index ["user_id"], name: "index_links_on_user_id"
-  end
-
-  create_table "media_generations", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error_message"
-    t.string "media_type", null: false
-    t.string "model", null: false
-    t.text "prompt", null: false
-    t.integer "status", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id"
-    t.index ["status", "created_at"], name: "index_media_generations_on_status_and_created_at"
-    t.index ["user_id"], name: "index_media_generations_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -362,7 +349,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_222949) do
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
-  add_foreign_key "media_generations", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"

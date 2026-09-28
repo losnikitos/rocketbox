@@ -7,7 +7,6 @@ class User < ApplicationRecord
 
   has_many :sessions, dependent: :destroy
   has_many :library_media, dependent: :nullify
-  has_many :media_generations, dependent: :nullify
   has_many :smm_posts, dependent: :destroy
   has_many :links, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user

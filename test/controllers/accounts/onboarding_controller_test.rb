@@ -2,13 +2,13 @@
 
 require "test_helper"
 
-class MonitorControllerTest < ActionDispatch::IntegrationTest
+class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
   test "admin sees onboarding checklist for selected customer" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
     patch account_selection_url, params: { user_id: customer.id }
-    get monitor_onboarding_url
+    get onboarding_url
 
     assert_response :success
     assert_select "a[href=?]", sign_up_whatsapp_path, text: "WhatsApp code issued"
@@ -21,9 +21,9 @@ class MonitorControllerTest < ActionDispatch::IntegrationTest
     customer.update!(whatsapp_phone: "447000000000", whatsapp_connect_code: "abc123")
     patch account_selection_url, params: { user_id: customer.id }
 
-    post monitor_onboarding_reset_url(step: "whatsapp")
+    post onboarding_reset_url(step: "whatsapp")
 
-    assert_redirected_to monitor_onboarding_url
+    assert_redirected_to onboarding_url
     customer.reload
     assert_nil customer.whatsapp_phone
     assert_nil customer.whatsapp_connect_code
@@ -32,7 +32,7 @@ class MonitorControllerTest < ActionDispatch::IntegrationTest
   test "admin cannot delete themselves" do
     admin = sign_in_as(users(:admin_user))
 
-    assert_no_difference("User.count") { post monitor_onboarding_reset_url(step: "user") }
+    assert_no_difference("User.count") { post onboarding_reset_url(step: "user") }
     assert User.exists?(admin.id)
   end
 
@@ -67,7 +67,7 @@ class MonitorControllerTest < ActionDispatch::IntegrationTest
 
   test "non-admin is redirected" do
     sign_in_as(users(:lazaro_nixon))
-    get monitor_onboarding_url
+    get onboarding_url
 
     assert_redirected_to root_url
   end

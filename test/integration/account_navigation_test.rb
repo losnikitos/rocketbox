@@ -34,7 +34,10 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "a[href=?]", smm_root_path, text: "SMM"
-    assert_select "a[href=?]", monitor_path, text: "Monitor", count: 0
+    assert_select "a[href=?]", onboarding_path, text: "Onboarding", count: 0
+    assert_select "a[href='/jobs']", count: 0
+    assert_select "a[href='/admin']", count: 0
+    assert_select "[data-controller='env-switcher']", count: 0
   end
 
   test "business page shows primary Business nav" do
@@ -48,15 +51,18 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
   end
 
-  test "admin sees monitor link in primary nav" do
+  test "admin sees onboarding link in primary nav" do
     sign_in_as(users(:admin_user))
 
     get library_uploads_url
 
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
-    assert_select "nav[aria-label='Primary'] a[href=?]", monitor_path, text: "Monitor"
+    assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path, text: "Onboarding"
+    assert_select "nav[aria-label='Primary'] a[href='/jobs']", text: /Jobs/
+    assert_select "nav[aria-label='Primary'] a[href='/admin']", text: /Active Admin/
     assert_select "select#account_user_id"
+    assert_select "[data-controller='env-switcher'][hidden] [data-origin='https://rocketbox.plus']", text: "Production"
   end
 
   test "profile page has no tabs and sidebar log out" do
