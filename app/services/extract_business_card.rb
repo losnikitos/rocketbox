@@ -17,6 +17,15 @@ class ExtractBusinessCard
     new(media:).call
   end
 
+  def self.extract_logo!(media)
+    image = RubyLLM.paint(Prompt.body_for!(:business_card_logo), model: LOGO_MODEL, provider: :xai, with: media.file)
+    media.extracted_logo.attach(
+      io: StringIO.new(image.to_blob),
+      filename: "logo-#{media.id}.#{image.mime_type.split("/").last}",
+      content_type: image.mime_type
+    )
+  end
+
   def initialize(media:)
     @media = media
   end
@@ -31,7 +40,7 @@ class ExtractBusinessCard
     has_logo = info.delete("has_logo") == true
 
     @media.extracted_logo.purge
-    extract_logo! if has_logo
+    self.class.extract_logo!(@media) if has_logo
 
     @media.update!(extracted_info: { "status" => "done", "fields" => info.slice(*LibraryMedia::CARD_FIELDS.keys), "has_logo" => has_logo })
   rescue RubyLLM::Error, Faraday::Error => e
@@ -42,15 +51,6 @@ class ExtractBusinessCard
   end
 
   private
-
-    def extract_logo!
-      image = RubyLLM.paint(Prompt.body_for!(:business_card_logo), model: LOGO_MODEL, provider: :xai, with: @media.file)
-      @media.extracted_logo.attach(
-        io: StringIO.new(image.to_blob),
-        filename: "logo-#{@media.id}.#{image.mime_type.split("/").last}",
-        content_type: image.mime_type
-      )
-    end
 
     def fail!(error)
       @media.update!(extracted_info: { "status" => "failed", "error" => error.message })

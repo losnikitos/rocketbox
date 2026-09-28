@@ -38,6 +38,25 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
+  test "logo step saves the logo extracted from the photo" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "logo")
+    Prompt.create!(key: "business_card_logo", name: "Extract logo", body: "Extract the logo.", active: true)
+    painted = Struct.new(:to_blob, :mime_type).new("painted-logo", "image/png")
+    original_paint = RubyLLM.method(:paint)
+    original_cta = WhatsappCloud.method(:send_cta_url)
+    RubyLLM.define_singleton_method(:paint) { |*_, **_| painted }
+    WhatsappCloud.define_singleton_method(:send_cta_url) { |**_| true }
+
+    store_image!(from: "15551234567", media_id: "logo-photo")
+
+    assert_equal "painted-logo", user.reload.logo.download
+    assert_equal "instagram", user.whatsapp_pending_question
+  ensure
+    RubyLLM.define_singleton_method(:paint, original_paint)
+    WhatsappCloud.define_singleton_method(:send_cta_url, original_cta)
+  end
+
   test "attaches blob to matching IncomingMessage" do
     media = store_image!(from: "15551234567", media_id: "incoming-media")
     incoming = IncomingMessage.find_by!(channel: "whatsapp", external_id: "wamid.incoming-media")
