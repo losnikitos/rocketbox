@@ -39,6 +39,7 @@ Rails.application.routes.draw do
 
     scope path: "instagram", module: :accounts, as: :instagram do
       get "profile", to: "instagram#show"
+      delete "profile", to: "instagram#destroy"
       resources :posts, only: %i[index new create show destroy] do
         member do
           post :publish
