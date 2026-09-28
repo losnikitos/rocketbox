@@ -13,4 +13,10 @@ class ApplicationHelperTest < ActionView::TestCase
       assert_equal "Fri 26 Dec 2025", upload_day_label(Date.new(2025, 12, 26))
     end
   end
+
+  test "render_markdown keeps tables and strips scripts" do
+    html = render_markdown("| a |\n| --- |\n| 1 |\n\n<script>alert(1)</script>")
+    assert_includes html, "<td>1</td>"
+    assert_not_includes html, "<script"
+  end
 end

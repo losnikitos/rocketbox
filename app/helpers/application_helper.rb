@@ -91,6 +91,6 @@ module ApplicationHelper
       superscript: true,
       tables: true
     )
-    sanitize(markdown.render(text.to_s))
+    sanitize(markdown.render(text.to_s), tags: Rails::HTML5::SafeListSanitizer.allowed_tags + %w[table thead tbody tr th td])
   end
 end
