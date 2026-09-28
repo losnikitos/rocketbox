@@ -39,6 +39,27 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ { phone_number_id: WhatsappCloud.phone_number_id, to: "447000000000", body: "What is your business name?" } ], @sent
   end
 
+  test "media step shows count and previews, and asks for that media in chat" do
+    sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+    customer.update!(whatsapp_phone: "447000000000")
+    customer.library_media.create!(kind: "photo", media_type: "interior",
+      file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
+    patch account_selection_url, params: { user_id: customer.id }
+
+    get onboarding_url
+    assert_select "li", text: /Interior/, count: 0
+
+    get onboarding_url(tab: "media")
+    assert_select "li", text: /Interior\s+1 file/
+    assert_select "li img[alt=photo]"
+
+    post onboarding_ask_url(field: "interior")
+    assert_redirected_to onboarding_url(tab: "media")
+    assert_equal "interior", customer.reload.whatsapp_pending_question
+    assert_equal "Send a photo of your interior 📸", @sent.sole[:body]
+  end
+
   test "dashboard link logs the customer in once" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)

@@ -21,6 +21,15 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     assert media.file.attached?
   end
 
+  test "tags the first media after a media request with that type" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "interior")
+
+    assert_equal "interior", store_image!(from: "15551234567", media_id: "interior-1").media_type
+    assert_nil user.reload.whatsapp_pending_question
+    assert_nil store_image!(from: "15551234567", media_id: "interior-2").media_type
+  end
+
   test "attaches blob to matching IncomingMessage" do
     media = store_image!(from: "15551234567", media_id: "incoming-media")
     incoming = IncomingMessage.find_by!(channel: "whatsapp", external_id: "wamid.incoming-media")

@@ -62,12 +62,18 @@ class StoreWhatsappMedia
       io, mime_type, = WhatsappCloud.download_media(media_id)
       filename = filename_for(media_payload, media_id, mime_type)
 
+      user = User.find_by(whatsapp_phone: from.presence)
+      # ponytail: only the first media after a request is tagged, so later photos of an album stay untyped.
+      # Upgrade = keep the request open for a short time window.
+      media_type = user&.whatsapp_pending_question.presence_in(WhatsappOnboarding::MEDIA_REQUESTS.keys)
       media = LibraryMedia.create!(
         whatsapp_media_id: media_id,
         whatsapp_from: from.presence,
         kind: kind,
-        user: User.find_by(whatsapp_phone: from.presence)
+        media_type:,
+        user:
       )
+      user.update!(whatsapp_pending_question: nil) if media_type
 
       blob = ActiveStorage::Blob.create_and_upload!(
         io: io,

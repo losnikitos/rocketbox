@@ -9,10 +9,21 @@ module WhatsappOnboarding
     "homepage_url" => "What's your website or Instagram link?"
   }.freeze
 
+  # Keys are LibraryMedia media_types; the next WhatsApp media the user sends gets that type.
+  MEDIA_REQUESTS = {
+    "business_card" => "Send a photo of your business card 📇",
+    "interior" => "Send a photo of your interior 📸",
+    "exterior" => "Send a photo of your place from the outside 📸",
+    "logo" => "Send your logo 🎨",
+    "customer" => "Send a photo of a happy customer (with their permission) 🙂"
+  }.freeze
+
+  PROMPTS = QUESTIONS.merge(MEDIA_REQUESTS).freeze
+
   module_function
 
   def ask!(user, field)
-    send!(user, QUESTIONS.fetch(field))
+    send!(user, PROMPTS.fetch(field))
     user.update!(whatsapp_pending_question: field)
   end
 

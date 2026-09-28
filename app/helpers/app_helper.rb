@@ -24,7 +24,10 @@ module AppHelper
     when "accounts/settings"
       [ :profile, "Profile", [] ]
     when "accounts/onboarding"
-      [ :onboarding, "Onboarding", [] ]
+      [ :onboarding, "Onboarding", [
+        [ onboarding_path, "Steps", params[:tab] != "media" ],
+        [ onboarding_path(tab: "media"), "Media", params[:tab] == "media" ]
+      ] ]
     else
       [ nil, "Rocketbox", [] ]
     end
