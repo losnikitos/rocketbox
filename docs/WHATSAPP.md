@@ -19,22 +19,24 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 Under `whatsapp` in Rails credentials:
 
-- `access_token` — required; Graph API token used by [WhatsappCloud](/app/services/whatsapp_cloud.rb). Generate via Meta Business Settings > System users > Nikita (`61594348875817`)
-- `phone_number_id` — required; Cloud API phone number id (not the display number)
-- `display_phone` — required for signup; the number users message, digits only (e.g. `447451273884`), used in the `wa.me` connect link
+- `access_token` — required; Graph API token used by [WhatsappCloud](/app/services/whatsapp_cloud.rb). Generate via Meta Business Settings > System users > Nikita (`61594348875817`). Needs access to both the test and prod WABAs.
 - `app_secret` — optional; if set, webhook POSTs must send a matching `X-Hub-Signature-256`
 - `webhook_verify_token` — required for Meta hub verification; same string as in the Meta webhook “Verify token” field
 
 xAI key for replies: `xai.api_key` (see [ruby_llm initializer](/config/initializers/ruby_llm.rb)).
 
+Replies and reactions go out from the number that received the message (`metadata.phone_number_id` in the webhook), so dev and prod need no per-env sender config. `WhatsappCloud.display_phone` (the `wa.me` connect link) is the prod number in production and the test number elsewhere.
+
 ## Ops
 
-Sandbox / test line (dev Meta app) — reference only; runtime values live in credentials where noted:
+One Meta app serves both lines. App-level webhook → `https://rocketbox.plus/whatsapp/webhook`; the test number has a phone-level override → dev (`POST /1238456642695224` with `webhook_configuration.override_callback_uri` + `verify_token`, tunnel must be up; check with `GET /1238456642695224?fields=webhook_configuration`).
+
+Sandbox / test line — reference only:
 
 | What | Value |
 |------|-------|
 | Display number | `+15551712639` / `15551712639` (humans text this; webhook `metadata.display_phone_number`) |
-| Phone number ID | `1238456642695224` → `credentials.whatsapp.phone_number_id` (dev) |
+| Phone number ID | `1238456642695224` |
 | WhatsApp Business account ID (WABA) | `2195816907943950` (`entry[].id`) |
 | Dev sender (Nikita) | `447919397572` (`messages[].from` / `contacts[].wa_id` — link as `users.whatsapp_phone`) |
 
@@ -43,7 +45,7 @@ Production line:
 | What | Value |
 |------|-------|
 | Display number | `+44 7451 273884` / `447451273884` |
-| Phone number ID | `1237261782813765` → `credentials.whatsapp.phone_number_id` (prod) |
+| Phone number ID | `1237261782813765` |
 
 - **Dev callback host:** `https://dev.rocketbox.plus` (SSH reverse tunnel → local `:3003`; see [deploy.yml](/config/deploy.yml) `dev-tunnel` / `make tunnel`). Meta callback: `https://dev.rocketbox.plus/whatsapp/webhook`.
 - **Meta dashboard:** callback URL `https://host/whatsapp/webhook` (prod) or the dev URL above, subscribe to the `messages` field, paste `webhook_verify_token`.

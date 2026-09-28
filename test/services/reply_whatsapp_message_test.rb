@@ -16,7 +16,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     user.reload
     assert_equal "15551234567", user.whatsapp_phone
     assert_nil user.whatsapp_connect_code
-    assert_equal [ { to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
+    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
@@ -30,7 +30,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
 
     ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START_usedcode"))
 
-    assert_equal [ { to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
+    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: "Welcome to Rocketbox 👋\nYour account is connected." } ], sent
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
@@ -49,7 +49,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     2.times { ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "check https://trustpilot.com/review/x.")) }
 
     assert_equal [ [ "https://trustpilot.com/review/x", "whatsapp" ] ], user.links.pluck(:url, :source)
-    assert_equal [ { to: "15551234567", message_id: "wamid.text" } ] * 2, reactions
+    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", message_id: "wamid.text" } ] * 2, reactions
     assert_empty sent
   ensure
     WhatsappCloud.define_singleton_method(:react, original_react)
@@ -64,6 +64,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
           "changes" => [ {
             "field" => "messages",
             "value" => {
+              "metadata" => { "phone_number_id" => "1238456642695224" },
               "messages" => [ {
                 "from" => from,
                 "id" => "wamid.text",

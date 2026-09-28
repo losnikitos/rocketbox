@@ -23,10 +23,10 @@ class StoreWhatsappMedia
 
   def call
     last = nil
-    each_message do |message|
+    each_message do |message, phone_number_id|
       next unless self.class.media?(message)
 
-      last = store_message!(message)
+      last = store_message!(message, phone_number_id)
     end
     last
   end
@@ -38,12 +38,13 @@ class StoreWhatsappMedia
         Array(entry["changes"]).each do |change|
           next unless change["field"] == "messages"
 
-          Array(change.dig("value", "messages")).each { |message| yield message }
+          phone_number_id = change.dig("value", "metadata", "phone_number_id")
+          Array(change.dig("value", "messages")).each { |message| yield message, phone_number_id }
         end
       end
     end
 
-    def store_message!(message)
+    def store_message!(message, phone_number_id)
       type = message["type"].to_s
       kind = MEDIA_TYPES.fetch(type)
       media_payload = message[type]
@@ -75,7 +76,7 @@ class StoreWhatsappMedia
       )
       media.file.attach(blob)
       attach_to_incoming_message!(message["id"], blob)
-      react_ok(message)
+      react_ok(message, phone_number_id)
       media
     ensure
       io&.close if defined?(io)
@@ -102,8 +103,8 @@ class StoreWhatsappMedia
       "whatsapp-#{media_id}.#{ext}"
     end
 
-    def react_ok(message)
-      WhatsappCloud.react(to: message["from"], message_id: message["id"])
+    def react_ok(message, phone_number_id)
+      WhatsappCloud.react(phone_number_id:, to: message["from"], message_id: message["id"])
     rescue StandardError => e
       Rails.logger.warn("WhatsApp reaction failed: #{e.class}: #{e.message}")
     end

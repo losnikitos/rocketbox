@@ -17,14 +17,8 @@ module WhatsappCloud
       raise("credentials.whatsapp.access_token is missing")
   end
 
-  def phone_number_id
-    Rails.application.credentials.dig(:whatsapp, :phone_number_id).presence ||
-      raise("credentials.whatsapp.phone_number_id is missing")
-  end
-
   def display_phone
-    Rails.application.credentials.dig(:whatsapp, :display_phone).presence ||
-      raise("credentials.whatsapp.display_phone is missing")
+    Rails.env.production? ? "447451273884" : "15551712639"
   end
 
   def app_secret
@@ -59,7 +53,7 @@ module WhatsappCloud
     [ io, mime_type, meta ]
   end
 
-  def send_text(to:, body:)
+  def send_text(phone_number_id:, to:, body:)
     request!(:post, "#{phone_number_id}/messages", {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -69,7 +63,7 @@ module WhatsappCloud
     })
   end
 
-  def react(to:, message_id:, emoji: "👍")
+  def react(phone_number_id:, to:, message_id:, emoji: "👍")
     request!(:post, "#{phone_number_id}/messages", {
       messaging_product: "whatsapp",
       recipient_type: "individual",
