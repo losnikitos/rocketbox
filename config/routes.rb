@@ -66,7 +66,7 @@ Rails.application.routes.draw do
       end
       resource :integrations, only: [ :show, :update ]
       resource :subscription, only: [ :show ]
-      get "onboarding", to: "onboarding#show", as: :onboarding
+      get "onboarding/:tab", to: "onboarding#show", as: :onboarding, tab: /steps|media/, defaults: { tab: "steps" }
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset
       post "onboarding/ask", to: "onboarding#ask", as: :onboarding_ask
       post "onboarding/dashboard_link", to: "onboarding#dashboard_link", as: :onboarding_dashboard_link

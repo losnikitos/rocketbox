@@ -2,7 +2,16 @@
 
 <%
   user = Current.account
-  steps = [
+  media_tab = params[:tab] == "media"
+  steps = if media_tab
+    media_counts = user.library_media.group(:media_type).count
+    WhatsappOnboarding::MEDIA_REQUESTS.keys.map do |type|
+      count = media_counts[type].to_i
+      { channel: :whatsapp, label: type.humanize, path: library_uploads_path(type:), ask: type, ask_again: true,
+        done: count.positive?, value: pluralize(count, "file"),
+        previews: user.library_media.where(media_type: type).with_attached_file.order(created_at: :desc).limit(6) }
+    end
+  else [
     { channel: :whatsapp, label: "WhatsApp linked", path: sign_up_path,
       done: user.whatsapp_phone.present?, value: user.whatsapp_phone&.then { "+#{_1}" }, reset: "whatsapp" },
     { channel: :whatsapp, label: "Name", ask: "name",
@@ -20,17 +29,13 @@
       done: user.telegram_user_id.present?, value: user.telegram_user_id, reset: "telegram" },
     { channel: :web, label: "Subscription active", path: subscription_path,
       done: user.subscription&.active?, value: user.subscription&.status }
-  ]
+  ] end
 %>
+<% content_for(:bare, "true") %>
 
-<p class="text-xs text-ink-500">
-  #<%= user.id %> · <%= user.account_label %> · joined <%= time_ago_in_words(user.created_at) %> ago ·
-  <%= link_to "Active Admin", admin_user_path(user), target: "_blank", rel: "noopener", class: "underline underline-offset-2 hover:text-ink-900" %>
-</p>
-
-<section class="mt-6 max-w-2xl rounded-2xl border border-ink-900/10 bg-white p-6">
+<section class="max-w-2xl rounded-2xl border border-ink-900/10 bg-white p-6">
   <div class="flex items-center justify-between gap-3">
-    <h2 class="font-manrope text-base font-bold text-ink-900">Steps</h2>
+    <h2 class="font-manrope text-base font-bold text-ink-900"><%= media_tab ? "Media" : "Steps" %></h2>
     <% if user.whatsapp_phone.present? %>
       <%= button_to onboarding_dashboard_link_path,
             class: "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" do %>
@@ -64,12 +69,23 @@
           <% if step[:value].present? %>
             <p class="mt-0.5 truncate font-mono text-xs text-ink-500"><%= step[:value] %></p>
           <% end %>
+          <% if step[:previews].present? %>
+            <ul class="mt-2 flex gap-1.5">
+              <% step[:previews].each do |media| %>
+                <li>
+                  <%= link_to library_upload_path(media), aria: { label: "Open #{media.kind}" } do %>
+                    <%= render "accounts/library/file", media:, css: "size-10 rounded-md object-cover" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
         </div>
         <% if step[:done] && step[:reset] %>
           <%= button_to "Reset", onboarding_reset_path(step: step[:reset]),
                 form: { data: { turbo_confirm: step[:confirm] || "Reset “#{step[:label]}” for #{user.account_label}?" } },
                 class: "shrink-0 cursor-pointer rounded-lg border border-ink-900/15 px-2.5 py-1 text-xs font-medium text-ink-700 transition hover:bg-ink-900/5" %>
-        <% elsif !step[:done] && step[:ask] && user.whatsapp_phone.present? %>
+        <% elsif (!step[:done] || step[:ask_again]) && step[:ask] && user.whatsapp_phone.present? %>
           <% if user.whatsapp_pending_question == step[:ask] %>
             <span class="shrink-0 text-xs text-ink-500">Waiting for reply</span>
           <% else %>
@@ -82,6 +98,7 @@
   </ol>
 </section>
 
+<% unless media_tab %>
 <section class="mt-6 max-w-2xl rounded-2xl border border-signal-red/30 bg-white p-6">
   <h2 class="font-manrope text-base font-bold text-ink-900">Danger zone</h2>
 
@@ -99,6 +116,7 @@
     <% end %>
   </div>
 </section>
+<% end %>
 
 <% content_for :aside do %>
   <section class="flex flex-col gap-3 px-2 py-2">

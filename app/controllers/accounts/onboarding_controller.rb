@@ -22,15 +22,15 @@ module Accounts
       case field = params[:field]
       when "instagram"
         WhatsappOnboarding.send_link!(user, whatsapp_login_url(user, to: "instagram"), "Connect your Instagram so we can post for you:")
-      when *WhatsappOnboarding::QUESTIONS.keys
+      when *WhatsappOnboarding::PROMPTS.keys
         WhatsappOnboarding.ask!(user, field)
       else
         return head(:unprocessable_entity)
       end
 
-      redirect_to onboarding_path, notice: "Sent to +#{user.whatsapp_phone}"
+      redirect_to ask_back_path, notice: "Sent to +#{user.whatsapp_phone}"
     rescue WhatsappCloud::Error => e
-      redirect_to onboarding_path, alert: e.message
+      redirect_to ask_back_path, alert: e.message
     end
 
     def dashboard_link
@@ -58,6 +58,10 @@ module Accounts
     end
 
     private
+
+      def ask_back_path
+        onboarding_path(tab: WhatsappOnboarding::MEDIA_REQUESTS.key?(params[:field]) ? "media" : "steps")
+      end
 
       def whatsapp_login_url(user, **params)
         sign_in_whatsapp_url(token: user.generate_token_for(:whatsapp_login), **params)
