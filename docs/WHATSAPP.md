@@ -18,7 +18,7 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 ## Onboarding
 
-Nothing is asked automatically. On `/app/onboarding` (admin, selected account) each missing step has **Ask in chat** — [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb) sends the scripted question from `QUESTIONS` and sets `whatsapp_pending_question`; the next text reply fills it. Instagram's “Ask in chat” sends a one-time login link that lands on Instagram authorize. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links use the host the admin is browsing, so use `https://dev.rocketbox.plus` in dev.
+Nothing is asked automatically. On `/app/onboarding` (any user sees their own; admins see the selected account) each missing step has **Ask in chat** — [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb) sends the scripted question from `QUESTIONS` and sets `whatsapp_pending_question`; the next text reply fills it. Instagram's “Ask in chat” sends a one-time login link that lands on Instagram authorize. **Send dashboard link** sends a one-time `/sign_in/whatsapp` link ([LOGIN.md](./LOGIN.md)). Links use the host the admin is browsing, so use `https://dev.rocketbox.plus` in dev.
 
 Admin-triggered messages go out from `WhatsappCloud.phone_number_id` (prod line in production, test line elsewhere). Free-form messages only deliver within Meta's 24h window after the user's last message; outside it the error shows as a flash alert.
 

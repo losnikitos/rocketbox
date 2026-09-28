@@ -3,7 +3,6 @@
 module Accounts
   class OnboardingController < ApplicationController
     layout "app"
-    before_action :authenticate_admin!
 
     RESETS = {
       "name" => { name: nil },

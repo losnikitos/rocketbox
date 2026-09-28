@@ -1,0 +1,35 @@
+<% content_for(:title, "Admin — Rocketbox") %>
+<% content_for(:bare, "true") %>
+
+<section class="flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-white p-6">
+  <h2 class="font-manrope text-base font-bold text-ink-900">Meta</h2>
+  <%= link_to "https://developers.facebook.com/apps/1836367217546891/dashboard/?business_id=925995145350263",
+        target: "_blank", rel: "noopener",
+        class: "inline-flex items-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+    <%= image_tag "brands/facebook.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+    Facebook app
+  <% end %>
+  <% {
+    "WhatsApp use case" => ["brands/whatsapp.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/wa-configurations-v2/?use_case_enum=WHATSAPP_BUSINESS_MESSAGING&selected_tab=wa-configurations-v2&product_route=whatsapp-business&business_id=925995145350263"],
+    "Instagram use case" => ["brands/instagram.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/API-Setup/?product_route=instagram-business&business_id=925995145350263&use_case_enum=INSTAGRAM_BUSINESS&selected_tab=API-Setup"]
+  }.each do |label, (icon, url)| %>
+    <%= link_to url, target: "_blank", rel: "noopener",
+          class: "inline-flex items-center gap-2 text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900" do %>
+      <%= image_tag icon, class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+      <%= label %>
+    <% end %>
+    <% if label == "WhatsApp use case" %>
+      <p class="-mt-1 pl-6 text-xs text-ink-500">
+        Verify token
+        <code class="block truncate font-mono text-ink-900 select-all"><%= WhatsappCloud.webhook_verify_token || "Not set" %></code>
+      </p>
+      <% WhatsappCloud::PHONES.each do |env, phone| %>
+        <p class="-mt-1 pl-6 text-xs text-ink-500">
+          <%= env %> number<%= " (this env)" if phone == WhatsappCloud.display_phone %>
+          <%= link_to "+#{phone}", "https://wa.me/#{phone}", target: "_blank", rel: "noopener",
+                class: "block truncate font-mono text-ink-900 underline underline-offset-2 hover:text-rocket" %>
+        </p>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>
