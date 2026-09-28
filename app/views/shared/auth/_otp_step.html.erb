@@ -17,4 +17,8 @@
       <%= form.submit submit, class: tw_btn_primary_classes %>
     </div>
   <% end %>
+
+  <p class="mt-6 text-center">
+    <%= link_to "Enter password instead", sign_in_password_path(email:), class: "text-sm rb-text-link" %>
+  </p>
 <% end %>

@@ -69,3 +69,6 @@ end
   prompt.assign_attributes(name: attrs[:name], body: attrs[:body].strip, active: true)
   prompt.save!
 end
+
+# Meta app review account (credentials are shared with the submission).
+User.find_or_initialize_by(email: "review@meta.com").update!(password: "review_2026", verified: true)

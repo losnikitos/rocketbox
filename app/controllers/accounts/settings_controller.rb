@@ -24,7 +24,7 @@ module Accounts
     private
 
       def settings_params
-        params.require(:user).permit(:email, :whatsapp_phone)
+        params.require(:user).permit(:name, :email, :whatsapp_phone, :password)
       end
 
       def backfill_orphan_media!

@@ -9,6 +9,10 @@ class User < ApplicationRecord
     whatsapp_login_at
   end
 
+  # Optional: OTP- and WhatsApp-created users have no password.
+  has_secure_password validations: false
+  validates :password, length: { minimum: 8, maximum: 72 }, allow_nil: true
+
   has_many :sessions, dependent: :destroy
   # smm_posts before library_media: post media items reference library media.
   has_many :smm_posts, dependent: :destroy

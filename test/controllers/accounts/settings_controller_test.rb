@@ -16,6 +16,13 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "15551234567", @user.reload.whatsapp_phone
   end
 
+  test "updates name" do
+    patch profile_settings_url, params: { user: { name: "Alan" } }
+
+    assert_redirected_to profile_settings_url
+    assert_equal "Alan", @user.reload.name
+  end
+
   test "changing email unverifies and sends verification" do
     assert_enqueued_email_with UserMailer, :email_verification, params: { user: @user } do
       patch profile_settings_url,
@@ -27,6 +34,20 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
     @user.reload
     assert_equal "new@example.com", @user.email
     assert_not @user.verified?
+  end
+
+  test "sets a password" do
+    patch profile_settings_url, params: { user: { password: "correct horse" } }
+
+    assert_redirected_to profile_settings_url
+    assert @user.reload.authenticate("correct horse")
+  end
+
+  test "rejects a short password" do
+    patch profile_settings_url, params: { user: { password: "short" } }
+
+    assert_response :unprocessable_entity
+    assert_nil @user.reload.password_digest
   end
 
   test "backfills orphan library media when whatsapp_phone is saved" do

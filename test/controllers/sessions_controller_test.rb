@@ -59,6 +59,27 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "otp page links to password sign-in" do
+    get sign_in_otp_url(email: @user.email)
+    assert_select "a[href=?]", sign_in_password_path(email: @user.email), text: "Enter password instead"
+  end
+
+  test "should sign in with password" do
+    @user.update!(password: "correct horse")
+
+    post sign_in_password_url, params: { email: @user.email, password: "correct horse" }
+    assert_redirected_to app_url
+  end
+
+  test "should not sign in with wrong password or without one" do
+    post sign_in_password_url, params: { email: @user.email, password: "anything" }
+    assert_response :unprocessable_entity
+
+    @user.update!(password: "correct horse")
+    post sign_in_password_url, params: { email: @user.email, password: "wrong horse" }
+    assert_response :unprocessable_entity
+  end
+
   test "should sign in with magic link" do
     email = "magic-new@example.com"
     challenge = LoginChallenge.issue!(email)

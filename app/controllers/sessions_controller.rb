@@ -3,8 +3,9 @@
 class SessionsController < ApplicationController
   include AuthFlow
 
-  layout "auth", only: %i[new create otp otp_create]
-  skip_before_action :authenticate, only: %i[ new create otp otp_create magic whatsapp dev ]
+  layout "auth", only: %i[new create otp otp_create password password_create]
+  skip_before_action :authenticate, only: %i[ new create otp otp_create password password_create magic whatsapp dev ]
+  rate_limit to: 10, within: 3.minutes, only: :password_create
 
   before_action :set_session, only: :destroy
 
@@ -47,6 +48,23 @@ class SessionsController < ApplicationController
       @otp_code = otp_preview_code
       flash.now[:alert] = "That code is invalid or expired"
       render :otp, status: :unprocessable_entity
+    end
+  end
+
+  def password
+    @email = LoginChallenge.normalize(params[:email])
+    redirect_to sign_in_path, alert: "Enter your email first" if @email.blank?
+  end
+
+  def password_create
+    @email = LoginChallenge.normalize(params[:email])
+    if user = User.authenticate_by(email: @email, password: params[:password])
+      start_session!(user)
+      clear_otp_preview!
+      redirect_to app_path, notice: "Signed in successfully"
+    else
+      flash.now[:alert] = "Invalid email or password"
+      render :password, status: :unprocessable_entity
     end
   end
 

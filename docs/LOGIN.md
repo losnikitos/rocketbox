@@ -1,6 +1,6 @@
 # Login
 
-Passwordless email OTP + magic-link sign-in with cookie-backed sessions.
+Email OTP + magic-link sign-in, with an optional password as an alternative; cookie-backed sessions.
 
 ## Session model
 
@@ -21,7 +21,8 @@ Unauthenticated users are redirected to `/sign_in`.
 Routes in [`config/routes.rb`](/config/routes.rb):
 
 - `GET/POST /sign_in` — email form; issues OTP + magic link email
-- `GET/POST /sign_in/otp` — enter code
+- `GET/POST /sign_in/otp` — enter code (links to “Enter password instead”)
+- `GET/POST /sign_in/password` — enter password instead of the code
 - `GET /sign_in/magic?sid=` — one-click login from email
 - `GET /sign_in/whatsapp?token=` — one-click login from WhatsApp (see below)
 - `resources :sessions` (index + destroy)
@@ -30,6 +31,8 @@ Routes in [`config/routes.rb`](/config/routes.rb):
 [`app/services/login_challenge.rb`](/app/services/login_challenge.rb) — 6-digit OTP (BCrypt digest in `Rails.cache`, 15 min), magic link via `MessageVerifier`, 60s resend throttle, 5 attempt cap. Always shows “check your email” (no enumeration).
 
 [`app/controllers/sessions_controller.rb`](/app/controllers/sessions_controller.rb) — OTP/magic path creates or finds user then mints session + cookie. Logout destroys a session owned by `Current.user`. Dev shortcut signs in a fixed local user.
+
+Password: `has_secure_password validations: false` on `User` (nullable `password_digest`, 8–72 chars). Users set/change it on `/app/profile/settings` (no current-password check). `SessionsController#password_create` uses `User.authenticate_by` and is `rate_limit`ed (10 / 3 min). The password link shows for every email, so it doesn't reveal whether an account has a password.
 
 Mail: [`UserMailer#login_otp`](/app/mailers/user_mailer.rb) (Postmark `login_otp`) with code + magic URL.
 
