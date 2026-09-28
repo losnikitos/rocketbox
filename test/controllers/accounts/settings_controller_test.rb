@@ -9,11 +9,17 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
 
   test "autosave update returns ok without redirect" do
     patch profile_settings_url,
-      params: { user: { whatsapp_phone: "15551234567" } },
+      params: { user: { name: "Alan" } },
       headers: { "X-Autosave" => "1", "Accept" => "application/json" }
 
     assert_response :ok
-    assert_equal "15551234567", @user.reload.whatsapp_phone
+    assert_equal "Alan", @user.reload.name
+  end
+
+  test "whatsapp phone can't be set from the dashboard" do
+    patch profile_settings_url, params: { user: { whatsapp_phone: "15551234567" } }
+
+    assert_nil @user.reload.whatsapp_phone
   end
 
   test "updates name" do
@@ -48,20 +54,5 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_nil @user.reload.password_digest
-  end
-
-  test "backfills orphan library media when whatsapp_phone is saved" do
-    orphan = LibraryMedia.create!(
-      whatsapp_media_id: "wa-media-1",
-      whatsapp_from: "15551234567",
-      kind: "photo"
-    )
-
-    patch profile_settings_url, params: { user: { whatsapp_phone: "+1 (555) 123-4567" } }
-
-    assert_redirected_to profile_settings_url
-    @user.reload
-    assert_equal "15551234567", @user.whatsapp_phone
-    assert_equal @user.id, orphan.reload.user_id
   end
 end

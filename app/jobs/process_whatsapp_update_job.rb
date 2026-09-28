@@ -16,7 +16,8 @@ class ProcessWhatsappUpdateJob < ApplicationJob
     end
     return if messages.empty?
 
-    messages.filter_map { it["from"].presence }.uniq.each { User.find_or_create_by!(whatsapp_phone: it) }
+    messages.reject { it.dig("text", "body").to_s.strip.match?(WhatsappOnboarding::LINK_PATTERN) }
+      .filter_map { it["from"].presence }.uniq.each { User.find_or_create_by!(whatsapp_phone: it) }
     messages.each { |message| StoreIncomingMessage.whatsapp(message) }
 
     if messages.any? { |message| StoreWhatsappMedia.media?(message) }
