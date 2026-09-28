@@ -60,63 +60,45 @@ module WhatsappCloud
   end
 
   def send_text(phone_number_id:, to:, body:)
-    request!(:post, "#{phone_number_id}/messages", {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "text",
-      text: { preview_url: false, body: body }
-    })
+    send_message!(phone_number_id, to, "text", { preview_url: false, body: body })
   end
 
   def send_image(phone_number_id:, to:, link:, caption:)
-    request!(:post, "#{phone_number_id}/messages", {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "image",
-      image: { link: link, caption: caption }
-    })
+    send_message!(phone_number_id, to, "image", { link: link, caption: caption })
   end
 
   # buttons: { "reply_id" => "Title" }; Meta allows up to 3, titles up to 20 chars.
   def send_buttons(phone_number_id:, to:, body:, buttons:)
-    request!(:post, "#{phone_number_id}/messages", {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "interactive",
-      interactive: {
-        type: "button",
-        body: { text: body },
-        action: { buttons: buttons.map { |id, title| { type: "reply", reply: { id:, title: } } } }
-      }
+    send_message!(phone_number_id, to, "interactive", {
+      type: "button",
+      body: { text: body },
+      action: { buttons: buttons.map { |id, title| { type: "reply", reply: { id:, title: } } } }
     })
   end
 
   # Meta limits: body up to 1024 chars, display_text up to 20.
   def send_cta_url(phone_number_id:, to:, body:, display_text:, url:)
-    request!(:post, "#{phone_number_id}/messages", {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "interactive",
-      interactive: {
-        type: "cta_url",
-        body: { text: body },
-        action: { name: "cta_url", parameters: { display_text:, url: } }
-      }
+    send_message!(phone_number_id, to, "interactive", {
+      type: "cta_url",
+      body: { text: body },
+      action: { name: "cta_url", parameters: { display_text:, url: } }
     })
   end
 
   def react(phone_number_id:, to:, message_id:, emoji: "👍")
-    request!(:post, "#{phone_number_id}/messages", {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "reaction",
-      reaction: { message_id: message_id, emoji: emoji }
-    })
+    send_message!(phone_number_id, to, "reaction", { message_id: message_id, emoji: emoji })
+  end
+
+  def send_message!(phone_number_id, to, type, content)
+    params = { messaging_product: "whatsapp", recipient_type: "individual", to: to, type: type, type.to_sym => content }
+    log = { channel: "whatsapp", recipient: to, kind: type, payload: params, user: User.find_by(whatsapp_phone: to),
+            body: content[:body].is_a?(Hash) ? content[:body][:text] : content[:body] || content[:caption] || content[:emoji] }
+    response = request!(:post, "#{phone_number_id}/messages", params)
+    OutgoingMessage.log(**log, external_id: response.dig("messages", 0, "id"))
+    response
+  rescue => e
+    OutgoingMessage.log(**log, error: "#{e.class}: #{e.message}") if log
+    raise
   end
 
   def valid_signature?(raw_body, signature_header)

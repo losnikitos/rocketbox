@@ -37,6 +37,6 @@ class ReplyTelegramMessage
       .ask(message.text)
 
     text = response.content.to_s.truncate(TELEGRAM_MAX_LENGTH)
-    TelegramBot.client.api.send_message(chat_id: message.chat.id, text: text)
+    TelegramBot.send_message(chat_id: message.chat.id, text: text)
   end
 end

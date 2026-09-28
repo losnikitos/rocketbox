@@ -12,6 +12,8 @@ Inbound media from the bot (photos, video, docs, etc.) for customer content. Tex
    - **Text-only** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): resolve user by `telegram_user_id` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_message` the reply.
 4. Ownership: if `message.from.id` matches a user’s `telegram_user_id`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. `telegram_user_id` is set by an admin in ActiveAdmin. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to set their WhatsApp phone in Profile.
 
+Outbound replies and reactions go through `TelegramBot.send_message` / `react`, which store an [OutgoingMessage](/app/models/outgoing_message.rb) (payload, Telegram `message_id`, or `error`); see `/admin/outgoing_messages`.
+
 Supported kinds: photo (largest size), document, video, audio, voice, video_note, animation, sticker. Edited messages are handled the same as new ones.
 
 ## Credentials

@@ -41,6 +41,8 @@ Under `whatsapp` in Rails credentials:
 
 xAI key for replies: `xai.api_key` (see [ruby_llm initializer](/config/initializers/ruby_llm.rb)).
 
+Every send (text, image, buttons, `cta_url`, reaction) goes through `WhatsappCloud.send_message!`, which stores an [OutgoingMessage](/app/models/outgoing_message.rb) with the request payload, the `wamid` as `external_id`, or the `error` if the send failed (`/admin/outgoing_messages`, filter by user). Login links are visible there too.
+
 Replies and reactions go out from the number that received the message (`metadata.phone_number_id` in the webhook), so dev and prod need no per-env sender config. `WhatsappCloud.display_phone` (the `wa.me` START link on `/sign_up`) is the prod number in production and the test number elsewhere.
 
 ## Ops

@@ -14,6 +14,7 @@ class User < ApplicationRecord
   has_many :smm_posts, dependent: :destroy
   has_many :library_media, dependent: :destroy
   has_many :incoming_messages, dependent: :destroy
+  has_many :outgoing_messages, dependent: :destroy
   has_many :links, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
   has_one_attached :logo
