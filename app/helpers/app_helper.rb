@@ -28,6 +28,8 @@ module AppHelper
         [ onboarding_path, "Steps", params[:tab] != "media" ],
         [ onboarding_path(tab: "media"), "Media", params[:tab] == "media" ]
       ] ]
+    when "accounts/admin"
+      [ :admin, "Admin", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

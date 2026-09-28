@@ -115,10 +115,22 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert User.exists?(admin.id)
   end
 
-  test "non-admin is redirected" do
+  test "non-admin sees own onboarding but not the admin page" do
     sign_in_as(users(:lazaro_nixon))
-    get onboarding_url
 
+    get onboarding_url(tab: "media")
+    assert_response :success
+    assert_select "a[href=?]", admin_path, count: 0
+
+    get admin_url
     assert_redirected_to root_url
+  end
+
+  test "admin sees meta links on admin page" do
+    sign_in_as(users(:admin_user))
+    get admin_url
+
+    assert_response :success
+    assert_select "h2", "Meta"
   end
 end
