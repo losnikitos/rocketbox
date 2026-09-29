@@ -5,6 +5,11 @@ module Accounts
     layout "app"
 
     def uploads
+      if params[:type] == "reviews"
+        @review_media = Current.account.reviews.active.media_attachments.includes(:blob, :record).order(created_at: :desc)
+        return
+      end
+
       @library_media = Current.account.library_media.with_attached_file.order(created_at: :desc)
       @library_media = @library_media.where(media_type: params[:type]) if LibraryMedia.media_types.key?(params[:type])
     end

@@ -1,0 +1,21 @@
+<%# locals: (attachments:) %>
+<% if attachments.any? %>
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <% attachments.each do |file| %>
+      <% review = file.record %>
+      <li class="relative min-w-0 rounded-lg">
+        <%= link_to url_for(file), target: "_blank", rel: "noopener", class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+          <% if file.video? %>
+            <%= video_tag url_for(file), muted: true, playsinline: true, preload: "metadata", class: "aspect-2/3 w-full rounded-lg bg-ink-900/5 object-cover" %>
+          <% else %>
+            <%= image_tag url_for(file), alt: "Photo from #{review.customer_name}", class: "aspect-2/3 w-full rounded-lg object-cover" %>
+          <% end %>
+        <% end %>
+        <div class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-ink-900/10" aria-hidden="true"></div>
+        <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm"><%= review.source.humanize %></span>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-sm text-ink-600">No review photos yet.</p>
+<% end %>

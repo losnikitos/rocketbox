@@ -9,6 +9,9 @@
         data: { drop_upload_target: "input", action: "change->drop-upload#changed" } %>
 <% end %>
 
+<% if @review_media %>
+  <%= render "accounts/library/review_media", attachments: @review_media %>
+<% else %>
 <div data-controller="library-select" data-library-select-max-value="<%= SmmPost::MAX_MEDIA %>">
   <% if @library_media.present? %>
     <div class="space-y-8">
@@ -90,3 +93,4 @@
     </p>
   <% end %>
 </div>
+<% end %>
