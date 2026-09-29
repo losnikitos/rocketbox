@@ -56,26 +56,26 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     admin.update!(whatsapp_phone: "447000000000", whatsapp_pending_question: "interior_front")
     sign_in_as(admin)
 
-    get onboarding_url
+    get onboarding_url(account: admin.id)
     assert_response :success
     assert_select "li[aria-current='step']", count: 1, text: /Interior photos/
     assert_select "li[aria-current='step'] button", text: "Ask in chat"
     assert_select "[popover] p", text: /Instagram’s connected/
     assert_select "[popover] p", text: /stand by the windows/
 
-    get onboarding_url(tab: "media")
+    get onboarding_url(tab: "media", account: admin.id)
     assert_response :success
     assert_select "[popover] p", text: /stand by the windows/
   end
 
   test "admin sees onboarding link in primary nav" do
-    sign_in_as(users(:admin_user))
+    admin = sign_in_as(users(:admin_user))
 
-    get library_uploads_url
+    get library_uploads_url(account: admin.id)
 
     assert_response :success
-    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
-    assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path, text: "Onboarding"
+    assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path(account: admin.id), text: "Profile"
+    assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path(account: admin.id), text: "Onboarding"
     assert_select "nav[aria-label='Primary'] a[href='/jobs']", text: /Jobs/
     assert_select "nav[aria-label='Primary'] a[href='/admin']", text: /Active Admin/
     assert_select "select#account_user_id"
@@ -168,14 +168,14 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "admin can adjust their own subscription status" do
     admin = sign_in_as(users(:admin_user))
 
-    get subscription_url
+    get subscription_url(account: admin.id)
 
     assert_response :success
     assert_select "h3", "Admin controls"
-    assert_select "form[action=?]", subscription_status_path
+    assert_select "form[action=?]", subscription_status_path(account: admin.id)
 
     patch subscription_status_path, params: { subscription_status: "trialing" }
-    assert_redirected_to subscription_path
+    assert_redirected_to subscription_path(account: admin.id)
 
     admin.subscription.reload
     assert_equal "trialing", admin.subscription.status

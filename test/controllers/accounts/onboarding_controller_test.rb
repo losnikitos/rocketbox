@@ -20,24 +20,21 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000", business_name: nil)
-    patch account_selection_url, params: { user_id: customer.id }
-    get onboarding_url
+    get onboarding_url(account: customer.id)
 
     assert_response :success
     assert_select "li", text: /\+447000000000/
-    assert_select "form[action=?]", onboarding_ask_path(field: "business_card")
-    assert_select "form[action=?]", onboarding_dashboard_link_path
+    assert_select "form[action=?]", onboarding_ask_path(field: "business_card", account: customer.id)
+    assert_select "form[action=?]", onboarding_dashboard_link_path(account: customer.id)
   end
 
   test "ask in chat sends the step message and the reply target is recorded" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
-    patch account_selection_url, params: { user_id: customer.id }
+    post onboarding_ask_url(field: "business_card", account: customer.id)
 
-    post onboarding_ask_url(field: "business_card")
-
-    assert_redirected_to onboarding_url
+    assert_redirected_to onboarding_url(account: customer.id)
     assert_equal "business_card", customer.reload.whatsapp_pending_question
     assert_equal [ { phone_number_id: WhatsappCloud.phone_number_id, to: "447000000000", body: WhatsappOnboarding::MESSAGES["business_card"] } ], @sent
   end
@@ -48,9 +45,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     customer.update!(whatsapp_phone: "447000000000")
     customer.library_media.create!(kind: "photo", media_type: "interior",
       file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
-    patch account_selection_url, params: { user_id: customer.id }
-
-    get onboarding_url(tab: "media")
+    get onboarding_url(tab: "media", account: customer.id)
     assert_select "li", text: /Interior\b.*1 file/m
     assert_select "li img[alt=photo]"
 
@@ -64,9 +59,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
-    patch account_selection_url, params: { user_id: customer.id }
-
-    post onboarding_dashboard_link_url
+    post onboarding_dashboard_link_url(account: customer.id)
     url = @sent.sole[:url]
     delete sign_out_url
 
@@ -84,9 +77,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
-    patch account_selection_url, params: { user_id: customer.id }
-
-    post onboarding_ask_url(field: "instagram")
+    post onboarding_ask_url(field: "instagram", account: customer.id)
     url = @sent.sole[:url]
     delete sign_out_url
 
@@ -98,11 +89,9 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000", whatsapp_pending_question: "email")
-    patch account_selection_url, params: { user_id: customer.id }
+    post onboarding_reset_url(step: "whatsapp", account: customer.id)
 
-    post onboarding_reset_url(step: "whatsapp")
-
-    assert_redirected_to onboarding_url
+    assert_redirected_to onboarding_url(account: customer.id)
     customer.reload
     assert_nil customer.whatsapp_phone
     assert_nil customer.whatsapp_pending_question
@@ -127,8 +116,8 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "admin sees meta links on admin page" do
-    sign_in_as(users(:admin_user))
-    get admin_url
+    admin = sign_in_as(users(:admin_user))
+    get admin_url(account: admin.id)
 
     assert_response :success
     assert_select "h2", "Meta"

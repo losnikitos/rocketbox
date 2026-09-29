@@ -27,12 +27,10 @@ Rails.application.routes.draw do
 
   # Customer portal at /app (landing page stays at /)
   scope :app do
-    get "/", to: redirect("/app/library/uploads"), as: :app
-
-    resource :account_selection, only: :update, module: :accounts
+    get "/", to: redirect(path: "/app/library/uploads"), as: :app
 
     scope path: "library", module: :accounts do
-      get "/", to: redirect("/app/library/uploads")
+      get "/", to: redirect(path: "/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads
       get "uploads/:id", to: "library#show", as: :library_upload
     end
@@ -50,6 +48,7 @@ Rails.application.routes.draw do
 
     scope module: :accounts do
       resource :business, only: [ :show, :update ], controller: "business"
+      resources :services, except: :show
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
           patch :apply, on: :member

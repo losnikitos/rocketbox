@@ -41,9 +41,8 @@ class Accounts::ReviewsControllerTest < ActionDispatch::IntegrationTest
     patch review_url(@review)
     assert_response :not_found
 
-    patch account_selection_url, params: { user_id: @user.id }
     assert_difference -> { Review.count } => -1 do
-      delete review_url(@review)
+      delete review_url(@review, account: @user.id)
     end
   end
 

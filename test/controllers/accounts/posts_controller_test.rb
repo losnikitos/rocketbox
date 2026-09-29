@@ -113,14 +113,14 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     @media.update!(user: @user)
     post_record = build_draft_post!
 
-    get instagram_posts_url
-    assert_select "a[href=?]", admin_smm_post_path(post_record)
-    assert_select "a[href=?][data-turbo-method=delete]", instagram_post_path(post_record)
+    get instagram_posts_url(account: @user.id)
+    assert_select "a[href=?]", admin_smm_post_path(post_record, account: @user.id)
+    assert_select "a[href=?][data-turbo-method=delete]", instagram_post_path(post_record, account: @user.id)
 
     assert_difference -> { SmmPost.count }, -1 do
       delete instagram_post_url(post_record)
     end
-    assert_redirected_to instagram_posts_url
+    assert_redirected_to instagram_posts_url(account: @user.id)
     assert_equal "Post removed.", flash[:notice]
   end
 

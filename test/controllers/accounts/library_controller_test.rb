@@ -91,11 +91,11 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     )
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
 
-    get library_uploads_url
+    get library_uploads_url(account: admin.id)
     assert_response :success
     assert_select "[title='Admin actions']"
-    assert_select "a[href=?]", admin_library_media_path(media), text: "Admin"
-    assert_select "a[href=?][data-turbo-method=?]", library_media_path(media), "delete", text: "Remove"
+    assert_select "a[href=?]", admin_library_media_path(media, account: admin.id), text: "Admin"
+    assert_select "a[href=?][data-turbo-method=?]", library_media_path(media, account: admin.id), "delete", text: "Remove"
   end
 
   test "non-admin does not see admin link menu" do

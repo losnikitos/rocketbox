@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_account
   before_action :set_footer_documents
   before_action :authenticate
+  before_action :require_account_param
 
   private
     def resume_session
@@ -18,6 +19,7 @@ class ApplicationController < ActionController::Base
     def set_current_account
       return unless Current.user&.admin?
 
+      session[:account_user_id] = params[:account] if params[:account].present?
       id = session[:account_user_id]
       return if id.blank?
 
@@ -33,6 +35,21 @@ class ApplicationController < ActionController::Base
       return if allow_public_access?
 
       redirect_to sign_in_path unless Current.session
+    end
+
+    # Admins always carry the viewed business in /app URLs so links are shareable.
+    def admin_in_app?
+      Current.user&.admin? && request.path.start_with?("/app")
+    end
+
+    def default_url_options
+      admin_in_app? ? super.merge(account: Current.account.id) : super
+    end
+
+    def require_account_param
+      return unless admin_in_app? && request.get? && params[:account].to_s != Current.account.id.to_s
+
+      redirect_to "#{request.path}?#{request.query_parameters.merge("account" => Current.account.id).to_query}"
     end
 
     # Active Admin (config.authentication_method / current_user_method)
