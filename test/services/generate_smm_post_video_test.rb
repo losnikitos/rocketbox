@@ -5,7 +5,7 @@ require "test_helper"
 class GenerateSmmPostVideoTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @prompt = prompts(:cinematic)
+    @recipe = recipes(:cinematic)
     @media = LibraryMedia.create!(
       telegram_file_id: "f-gen",
       telegram_file_unique_id: "u-gen-media",
@@ -14,7 +14,7 @@ class GenerateSmmPostVideoTest < ActiveSupport::TestCase
     )
     @media.file.attach(io: StringIO.new("fake-image"), filename: "shot.jpg", content_type: "image/jpeg")
 
-    @post = @user.smm_posts.new(prompt: @prompt, status: "draft")
+    @post = @user.smm_posts.new(recipe: @recipe, status: "draft")
     @post.smm_post_media_items.build(library_media: @media, position: 0)
     @post.save!
   end

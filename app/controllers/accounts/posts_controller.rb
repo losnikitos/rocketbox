@@ -14,14 +14,14 @@ module Accounts
     end
 
     def new
-      @prompts = Prompt.library
+      @recipes = Recipe.ordered
       @selected_media = selected_library_media
       if @selected_media.empty?
         redirect_to library_uploads_path, alert: "Select at least one image from your library."
         return
       end
-      if @prompts.empty?
-        redirect_to library_uploads_path, alert: "No prompts are available yet. Ask an admin to add prompts."
+      if @recipes.empty?
+        redirect_to library_uploads_path, alert: "No recipes are available yet. Ask an admin to add recipes."
         return
       end
 
@@ -29,24 +29,24 @@ module Accounts
     end
 
     def create
-      @prompts = Prompt.library
+      @recipes = Recipe.ordered
       @selected_media = selected_library_media
-      prompt = Prompt.library.find_by(id: params[:prompt_id])
+      recipe = Recipe.find_by(id: params[:recipe_id])
 
       if @selected_media.empty?
         redirect_to library_uploads_path, alert: "Select at least one image from your library."
         return
       end
 
-      unless prompt
-        flash.now[:alert] = "Choose a prompt from the library."
+      unless recipe
+        flash.now[:alert] = "Choose a recipe."
         @post = Current.account.smm_posts.new(caption: params[:caption])
         render :new, status: :unprocessable_entity
         return
       end
 
       @post = Current.account.smm_posts.new(
-        prompt:,
+        recipe:,
         caption: params[:caption].to_s.strip.presence,
         status: "draft"
       )
@@ -64,7 +64,7 @@ module Accounts
     end
 
     def show
-      @post = Current.account.smm_posts.includes(:prompt, :library_media, generated_video_attachment: :blob).find(params[:id])
+      @post = Current.account.smm_posts.includes(:recipe, :library_media, generated_video_attachment: :blob).find(params[:id])
     end
 
     def publish

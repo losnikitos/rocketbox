@@ -1,11 +1,11 @@
 ActiveAdmin.register SmmPost do
-  permit_params :user_id, :prompt_id, :status, :caption, :error_message, :reaction, :reaction_comment
+  permit_params :user_id, :recipe_id, :status, :caption, :error_message, :reaction, :reaction_comment
 
   index do
     selectable_column
     id_column
     column :user
-    column :prompt
+    column :recipe
     column :status
     column :reaction
     column :published_at
@@ -17,7 +17,7 @@ ActiveAdmin.register SmmPost do
     attributes_table do
       row :id
       row :user
-      row :prompt
+      row :recipe
       row :status
       row :reaction
       row :reaction_comment
@@ -45,7 +45,7 @@ ActiveAdmin.register SmmPost do
   form do |f|
     f.inputs do
       f.input :user
-      f.input :prompt
+      f.input :recipe
       f.input :status, as: :select, collection: SmmPost::STATUSES
       f.input :reaction, as: :select, collection: SmmPost::REACTIONS, include_blank: true
       f.input :reaction_comment

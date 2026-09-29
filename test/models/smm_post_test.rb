@@ -5,7 +5,7 @@ require "test_helper"
 class SmmPostTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @prompt = prompts(:cinematic)
+    @recipe = recipes(:cinematic)
     @media = LibraryMedia.create!(
       telegram_file_id: "f-model",
       telegram_file_unique_id: "u-model-media",
@@ -16,7 +16,7 @@ class SmmPostTest < ActiveSupport::TestCase
   end
 
   test "requires at least one image" do
-    post = @user.smm_posts.new(prompt: @prompt, status: "draft")
+    post = @user.smm_posts.new(recipe: @recipe, status: "draft")
     assert_not post.valid?
     assert_match(/at least one image/, post.errors[:base].join)
   end
@@ -30,14 +30,14 @@ class SmmPostTest < ActiveSupport::TestCase
     )
     video.file.attach(io: StringIO.new("vid"), filename: "a.mp4", content_type: "video/mp4")
 
-    post = @user.smm_posts.new(prompt: @prompt, status: "draft")
+    post = @user.smm_posts.new(recipe: @recipe, status: "draft")
     post.smm_post_media_items.build(library_media: video, position: 0)
     assert_not post.valid?
     assert_match(/Only images/, post.errors[:base].join)
   end
 
   test "publishable when ready with attached video" do
-    post = @user.smm_posts.new(prompt: @prompt, status: "ready")
+    post = @user.smm_posts.new(recipe: @recipe, status: "ready")
     post.smm_post_media_items.build(library_media: @media, position: 0)
     post.save!
     assert_not post.publishable?

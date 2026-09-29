@@ -21,7 +21,7 @@ class GenerateSmmPostVideo
   end
 
   def call
-    raise Error, "Prompt is missing." if @smm_post.prompt.blank?
+    raise Error, "Recipe prompt is missing." if @smm_post.recipe&.prompt.blank?
     raise Error, "Select at least one image." if source_images.empty?
 
     @smm_post.mark_generating!
@@ -47,7 +47,7 @@ class GenerateSmmPostVideo
     def start_generation!
       body = {
         model: MODEL,
-        prompt: @smm_post.prompt.body,
+        prompt: @smm_post.recipe.prompt,
         duration: DURATION,
         aspect_ratio: ASPECT_RATIO,
         resolution: RESOLUTION

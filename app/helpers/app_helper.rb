@@ -47,6 +47,8 @@ module AppHelper
       ] ]
     when "accounts/admin"
       [ :admin, "Admin", [] ]
+    when "accounts/recipes"
+      [ :recipes, "Recipes", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

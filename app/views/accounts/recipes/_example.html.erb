@@ -1,0 +1,6 @@
+<%# locals: (example:, css:) %>
+<% if example.video? %>
+  <%= video_tag url_for(example), muted: true, playsinline: true, preload: "metadata", class: "bg-ink-900/5 #{css}" %>
+<% else %>
+  <%= image_tag url_for(example), alt: example.filename.to_s, class: css %>
+<% end %>

@@ -6,7 +6,7 @@ class SmmPost < ApplicationRecord
   MAX_MEDIA = 7
 
   belongs_to :user
-  belongs_to :prompt
+  belongs_to :recipe
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
   has_one_attached :generated_video

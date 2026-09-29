@@ -15,7 +15,7 @@ ActiveAdmin.register Prompt do
   form do |f|
     f.inputs do
       f.input :name
-      f.input :key, hint: "System prompts only (e.g. business_card_info). Keyed prompts are hidden from the post prompt picker."
+      f.input :key
       f.input :body
       f.input :active
       f.input :position
