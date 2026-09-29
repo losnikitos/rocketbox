@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_095357) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_114909) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -274,6 +274,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_095357) do
     t.check_constraint "status IN ('pending', 'succeeded', 'failed', 'cancelled')"
   end
 
+  create_table "services", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "duration"
+    t.string "name", null: false
+    t.string "price"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_services_on_user_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -375,6 +386,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_095357) do
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
   add_foreign_key "reviews", "users"
+  add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"

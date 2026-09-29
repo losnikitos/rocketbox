@@ -1,0 +1,37 @@
+<% content_for(:title, "Services — Rocketbox") %>
+
+<div class="mx-auto max-w-3xl space-y-4">
+  <div class="flex justify-end">
+    <%= link_to new_service_path, class: "rb-btn-primary gap-1.5 px-3.5 py-2.25 text-sm" do %>
+      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Add service
+    <% end %>
+  </div>
+
+  <% if @services.any? %>
+    <ul class="divide-y divide-ink-900/5 rounded-lg border border-ink-900/10 bg-white">
+      <% @services.each do |service| %>
+        <li id="<%= dom_id(service) %>" class="flex items-center transition hover:bg-ink-900/3">
+          <%= link_to edit_service_path(service), class: "min-w-0 flex-1 py-3 pl-4" do %>
+            <p class="truncate text-sm font-medium text-ink-900"><%= service.name %></p>
+            <% if (meta = [ service.price, service.duration ].compact_blank.join(" · ")).present? %>
+              <p class="truncate text-xs text-ink-500"><%= meta %></p>
+            <% end %>
+            <% if service.description.present? %>
+              <p class="mt-1 line-clamp-2 text-sm text-ink-700"><%= service.description %></p>
+            <% end %>
+          <% end %>
+          <%= button_to service_path(service), method: :delete, "aria-label": "Remove #{service.name}",
+                form: { class: "px-2", data: { turbo_confirm: "Remove this service?" } },
+                class: "rounded-lg p-2 text-ink-400 transition hover:bg-ink-900/5 hover:text-signal-red" do %>
+            <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
+      Add the services you offer — we'll use them in your posts.
+    </div>
+  <% end %>
+</div>
