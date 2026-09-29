@@ -61,6 +61,7 @@ Rails.application.routes.draw do
           end
         end
       end
+      resources :reviews, only: %i[index update destroy]
       resource :subscription, only: [ :show ]
       get "whatsapp", to: "whatsapp#show", as: :whatsapp
       delete "whatsapp", to: "whatsapp#destroy"

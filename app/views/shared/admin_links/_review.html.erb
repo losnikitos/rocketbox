@@ -1,0 +1,24 @@
+<%# Locals: review,
+    links (optional hash — :admin, :remove; default true) %>
+<% review = local_assigns[:review] %>
+<% links = { admin: true, remove: true }.merge(local_assigns.fetch(:links, {})) %>
+<% if Current.user&.admin? && review.present? && (links[:admin] || links[:remove]) %>
+  <% popover_id = "review-admin-links-#{review.id}" %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id:, align: local_assigns.fetch(:align, :right) } do %>
+    <% if links[:admin] %>
+      <%= render "shared/admin_links/item",
+          path: admin_review_path(review),
+          label: "Admin",
+          icon: "cog",
+          chip: "bg-signal-green" %>
+    <% end %>
+    <% if links[:remove] %>
+      <%= render "shared/admin_links/item",
+          path: review_path(review),
+          label: "Remove",
+          icon: "trash",
+          chip: "bg-signal-red",
+          data: { turbo_method: :delete, turbo_confirm: "Delete this review?" } %>
+    <% end %>
+  <% end %>
+<% end %>
