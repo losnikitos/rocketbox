@@ -15,6 +15,8 @@ class Review < ApplicationRecord
   scope :archived, -> { where.not(archived_at: nil) }
   scope :with_media, -> { where(id: ActiveStorage::Attachment.where(record_type: name, name: "media").select(:record_id)) }
 
+  def self.media_attachments = ActiveStorage::Attachment.where(record: all, name: "media")
+
   def archived? = archived_at.present?
 
   private

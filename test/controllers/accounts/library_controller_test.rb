@@ -54,6 +54,21 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(type: "logo"), text: "Logo 0"
   end
 
+  test "reviews tab shows read-only media from active reviews" do
+    @user.reviews.create!(source: "google", customer_name: "Ana", rating: 5,
+      media: [ { io: file_fixture("logo.png").open, filename: "ana.png", content_type: "image/png" } ])
+    @user.reviews.create!(source: "google", customer_name: "Old", rating: 5, archived_at: Time.current,
+      media: [ { io: file_fixture("logo.png").open, filename: "old.png", content_type: "image/png" } ])
+
+    get library_uploads_url(type: "reviews")
+    assert_response :success
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "reviews"), text: "Reviews 1"
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path, text: "All 0"
+    assert_select "img[alt=?]", "Photo from Ana", count: 1
+    assert_select "img[alt=?]", "Photo from Old", count: 0
+    assert_select "input[data-library-select-target=?]", "checkbox", count: 0
+  end
+
   test "tiles link to media show page with details panel" do
     media = LibraryMedia.create!(kind: "photo", user: @user)
     media.file.attach(io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg")

@@ -9,7 +9,9 @@ module AppHelper
       [ :library, "Library", [
         [ library_uploads_path, "All", params[:type].blank?, counts.values.sum ],
         :separator,
-        *LibraryMedia.media_types.keys.map { |t| [ library_uploads_path(type: t), t.titleize, params[:type] == t, counts[t].to_i ] }
+        *LibraryMedia.media_types.keys.map { |t| [ library_uploads_path(type: t), t.titleize, params[:type] == t, counts[t].to_i ] },
+        :separator,
+        [ library_uploads_path(type: "reviews"), "Reviews", params[:type] == "reviews", Current.account.reviews.active.media_attachments.count ]
       ] ]
     when "accounts/posts"
       [ :posts, "Posts", posts_tabs ]
