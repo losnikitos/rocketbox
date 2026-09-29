@@ -43,13 +43,13 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
   test "shows alert when media not found" do
     delete library_media_url(id: 0)
 
-    assert_redirected_to library_uploads_url
+    assert_redirected_to library_uploads_url(account: @admin.id)
     assert_equal "Media not found.", flash[:alert]
   end
 
   test "sets and clears media type" do
     patch library_media_url(@media), params: { library_media: { media_type: "logo" } }
-    assert_redirected_to library_upload_url(@media)
+    assert_redirected_to library_upload_url(@media, account: @admin.id)
     assert_equal "logo", @media.reload.media_type
 
     patch library_media_url(@media), params: { library_media: { media_type: "" } }
@@ -65,7 +65,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     foreign = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
 
     patch bulk_update_library_media_index_url, params: { media_type: "interior", ids: [ @media.id, other.id, foreign.id ] }
-    assert_redirected_to library_uploads_url
+    assert_redirected_to library_uploads_url(account: @admin.id)
     assert_equal "Media type saved for 2 files.", flash[:notice]
     assert_equal %w[interior interior], [ @media.reload.media_type, other.reload.media_type ]
     assert_nil foreign.reload.media_type
@@ -89,7 +89,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
     patch apply_extraction_library_media_url(@media)
 
-    assert_redirected_to library_upload_url(@media)
+    assert_redirected_to library_upload_url(@media, account: @admin.id)
     @admin.reload
     assert_equal "Fade Co", @admin.business_name
     assert_equal "+1 555 0100", @admin.phone
@@ -103,7 +103,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
   test "extract enqueues the job for business cards only" do
     post extract_library_media_url(@media)
-    assert_redirected_to library_upload_url(@media)
+    assert_redirected_to library_upload_url(@media, account: @admin.id)
     assert_nil @media.reload.extracted_info
 
     @media.update!(media_type: "business_card")

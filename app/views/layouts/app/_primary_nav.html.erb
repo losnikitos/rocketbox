@@ -1,9 +1,9 @@
 <%# locals: (section:) %>
 <% if Current.user&.admin? %>
   <div class="mt-4 px-2">
-    <%= form_with url: account_selection_path, method: :patch do %>
+    <%= form_with url: request.path, method: :get do %>
       <label for="account_user_id" class="mb-1 block text-xs font-medium text-ink-500">Customer</label>
-      <select name="user_id" id="account_user_id" onchange="this.form.requestSubmit()"
+      <select name="account" id="account_user_id" onchange="this.form.requestSubmit()"
               class="flex w-full items-center gap-2 rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-left text-sm text-ink-900 [appearance:base-select] focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 [&::picker(select)]:mt-1 [&::picker(select)]:rounded-lg [&::picker(select)]:border [&::picker(select)]:border-ink-900/15 [&::picker(select)]:[appearance:base-select]">
         <button class="min-w-0 flex-1 text-left"><selectedcontent class="flex min-w-0 flex-col"></selectedcontent></button>
         <% User.order(:business_name, :email).each do |user| %>

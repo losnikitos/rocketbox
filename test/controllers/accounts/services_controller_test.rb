@@ -31,8 +31,8 @@ class Accounts::ServicesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to services_url
     assert_equal [ "Beard trim", "Hot towel" ], service.reload.values_at(:name, :description)
 
-    sign_in_as(users(:admin_user))
-    get edit_service_url(service)
+    admin = sign_in_as(users(:admin_user))
+    get edit_service_url(service, account: admin.id)
     assert_response :not_found
     delete service_url(service)
     assert_response :not_found

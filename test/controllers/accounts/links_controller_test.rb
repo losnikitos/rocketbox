@@ -193,8 +193,8 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "other users' links and suggestions are hidden" do
-    sign_in_as(users(:admin_user))
-    get link_url(@link)
+    admin = sign_in_as(users(:admin_user))
+    get link_url(@link, account: admin.id)
     assert_response :not_found
 
     patch apply_link_suggestion_url(@link, suggestion("phone"))
