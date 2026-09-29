@@ -5,7 +5,7 @@ require "test_helper"
 class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = sign_in_as(users(:lazaro_nixon))
-    @prompt = prompts(:cinematic)
+    @recipe = recipes(:cinematic)
     @media = LibraryMedia.create!(
       telegram_file_id: "f-post",
       telegram_file_unique_id: "u-post-media",
@@ -21,21 +21,20 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_match(/Select at least one image/, flash[:alert])
   end
 
-  test "new shows selected media and prompts" do
+  test "new shows selected media and recipes" do
     get new_instagram_post_url, params: { library_media_ids: [ @media.id ] }
     assert_response :success
     assert_select "h2", "Create Instagram post"
-    assert_select "select[name=prompt_id]"
-    assert_select "option", text: @prompt.name
-    assert_select "option", text: prompts(:inactive).name, count: 0
+    assert_select "select[name=recipe_id]"
+    assert_select "option", text: "#{@recipe.name} (Reel)"
   end
 
-  test "create enqueues video generation" do
+  test "create starts the recipe workflow" do
     assert_difference -> { SmmPost.count }, 1 do
-      assert_enqueued_with(job: GenerateSmmPostVideoJob) do
+      assert_enqueued_with(job: RunWorkflowJob) do
         post instagram_posts_url, params: {
           library_media_ids: [ @media.id ],
-          prompt_id: @prompt.id,
+          recipe_id: @recipe.id,
           caption: "Fresh cut"
         }
       end
@@ -43,9 +42,34 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
 
     post_record = SmmPost.order(:id).last
     assert_redirected_to instagram_post_url(post_record)
-    assert_equal "draft", post_record.status
+    assert_equal "generating", post_record.status
     assert_equal "Fresh cut", post_record.caption
     assert_equal [ @media.id ], post_record.library_media.ids
+    assert_equal %w[photos video reel], post_record.workflow_run.workflow_steps.map(&:key)
+
+    get instagram_post_url(post_record)
+    assert_response :success
+    assert_select "article", count: 3
+    assert_select "button", text: "Pause"
+  end
+
+  test "pause, resume and rerun control the workflow" do
+    post_record = build_draft_post!
+    run = WorkflowRun.start!(post_record)
+
+    post pause_instagram_post_url(post_record)
+    assert run.reload.paused?
+
+    assert_enqueued_with(job: RunWorkflowJob, args: [ run.id ]) { post resume_instagram_post_url(post_record) }
+    assert run.reload.running?
+
+    run.fail!("boom")
+    assert_enqueued_with(job: RunWorkflowJob, args: [ run.id ]) { post rerun_instagram_post_url(post_record, key: "video") }
+    assert run.reload.running?
+    assert_equal "generating", post_record.reload.status
+
+    post rerun_instagram_post_url(post_record, key: "nope")
+    assert_response :unprocessable_entity
   end
 
   test "publish enqueues instagram job when ready" do
@@ -81,20 +105,23 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?] span", instagram_post_path(post_record), text: "ready"
     assert_select "section h3", "Today"
 
-    get instagram_posts_url(kind: "posts")
-    assert_select "h2", "Posts"
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", instagram_posts_path(kind: "posts"), text: "Posts"
+    get instagram_posts_url(kind: "reels")
+    assert_select "h2", "Reels"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", instagram_posts_path(kind: "reels"), text: "Reels"
     assert_select "a[href=?]", instagram_post_path(post_record)
   end
 
-  test "reels and stories kinds are empty for now" do
-    create_ready_post!
+  test "kinds filter by post format" do
+    post_record = create_ready_post!
+    post_record.update!(format: "story")
 
-    %w[reels stories].each do |kind|
+    get instagram_posts_url(kind: "stories")
+    assert_select "h2", "Stories"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", instagram_posts_path(kind: "stories"), text: "Stories"
+    assert_select "a[href=?]", instagram_post_path(post_record)
+
+    %w[reels posts].each do |kind|
       get instagram_posts_url(kind:)
-      assert_response :success
-      assert_select "h2", kind.capitalize
-      assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", instagram_posts_path(kind:), text: kind.capitalize
       assert_select "p", text: /Nothing yet/
     end
   end
@@ -166,7 +193,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
   private
 
     def build_draft_post!
-      post_record = @user.smm_posts.new(prompt: @prompt, status: "draft")
+      post_record = @user.smm_posts.new(recipe: @recipe, status: "draft")
       post_record.smm_post_media_items.build(library_media: @media, position: 0)
       post_record.save!
       post_record
@@ -175,11 +202,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     def create_ready_post!
       post_record = build_draft_post!
       post_record.update!(status: "ready")
-      post_record.generated_video.attach(
-        io: StringIO.new("fake-video"),
-        filename: "reel.mp4",
-        content_type: "video/mp4"
-      )
+      post_record.smm_slides.create!(media: { io: StringIO.new("fake-video"), filename: "reel.mp4", content_type: "video/mp4" })
       post_record
     end
 end

@@ -1,0 +1,33 @@
+<%# locals: (post:) %>
+<% aspect = post.post? ? "aspect-4/5" : "aspect-9/16" %>
+<ol class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2" aria-label="Slides">
+  <% post.smm_slides.each_with_index do |slide, index| %>
+    <li class="w-64 shrink-0 snap-start">
+      <% if slide.video? %>
+        <div class="group relative" data-controller="video-preview">
+          <%= video_tag url_for(slide.media),
+                muted: true,
+                loop: true,
+                preload: "metadata",
+                playsinline: true,
+                class: "#{aspect} w-full rounded-lg bg-ink-900/5 object-cover",
+                data: { video_preview_target: "video" } %>
+          <button type="button"
+                  class="absolute inset-0 z-10 flex cursor-pointer items-center justify-center"
+                  data-video-preview-target="button"
+                  data-action="click->video-preview#toggle"
+                  aria-label="Play video">
+            <span class="flex size-10 items-center justify-center rounded-full bg-black/45 text-white group-data-[playing]:hidden">
+              <%= heroicon "play", options: { class: "size-5 translate-x-px" } %>
+            </span>
+            <span class="hidden size-10 items-center justify-center rounded-full bg-black/45 text-white opacity-0 group-data-[playing]:flex group-data-[playing]:group-hover:opacity-100">
+              <%= heroicon "pause", options: { class: "size-5" } %>
+            </span>
+          </button>
+        </div>
+      <% elsif slide.media.attached? %>
+        <%= image_tag url_for(slide.media), alt: "Slide #{index + 1}", class: "#{aspect} w-full rounded-lg bg-ink-900/5 object-cover" %>
+      <% end %>
+    </li>
+  <% end %>
+</ol>

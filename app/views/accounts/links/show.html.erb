@@ -41,7 +41,10 @@
             Data instruction
           </summary>
           <%= f.text_area :data_instruction, rows: 12, required: true, "aria-label": "Data instruction", class: "#{tw_input_classes} mt-2 font-mono text-xs" %>
-          <p class="mt-1 text-xs text-ink-500">Applies to this crawl only. The default lives in the admin under Prompts → <code>crawl_business</code>.</p>
+          <p class="mt-1 flex items-center gap-1 text-xs text-ink-500">
+            Applies to this crawl only. The default is the <code>crawl_business</code> prompt.
+            <%= render "shared/admin_links/prompt", prompt: Prompt.find_by(key: "crawl_business"), align: :left %>
+          </p>
         </details>
 
         <%= f.button type: :submit, class: "rb-btn-primary gap-1.5 px-3.5 py-1.5 text-sm" do %>

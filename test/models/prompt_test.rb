@@ -3,16 +3,15 @@
 require "test_helper"
 
 class PromptTest < ActiveSupport::TestCase
-  test "library returns active prompts ordered by position" do
-    names = Prompt.library.pluck(:name)
-    assert_equal [ "Cinematic shop reel", "Before → after energy" ], names
-    assert_not_includes names, "Inactive prompt"
+  test "key must be a safe filename" do
+    assert_not Prompt.new(key: "../x", body: "b").valid?
+    assert Prompt.new(key: "new_prompt", body: "b").valid?
   end
 
-  test "requires name and body" do
-    prompt = Prompt.new
-    assert_not prompt.valid?
-    assert_includes prompt.errors[:name], "can't be blank"
-    assert_includes prompt.errors[:body], "can't be blank"
+  test "push upserts prompts/*.md" do
+    Prompt.delete_all
+    Prompt.push
+    assert_equal Rails.root.glob("prompts/*.md").size, Prompt.count
+    assert_equal Rails.root.join("prompts/transition_video.md").read.strip, Prompt.body_for!(:transition_video)
   end
 end

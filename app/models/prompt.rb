@@ -1,25 +1,22 @@
 # frozen_string_literal: true
 
+# LLM prompt bodies, looked up by key. Mirrored as prompts/<key>.md; see docs/PROMPTS.md.
 class Prompt < ApplicationRecord
-  has_many :smm_posts, dependent: :restrict_with_exception
+  DIR = Rails.root.join("prompts")
 
-  validates :name, presence: true
+  validates :key, presence: true, uniqueness: true, format: { with: /\A[a-z0-9_]+\z/ }
   validates :body, presence: true
-  validates :position, numericality: { only_integer: true }
-
-  scope :active, -> { where(active: true) }
-  scope :ordered, -> { order(:position, :name) }
-
-  validates :key, uniqueness: true, allow_nil: true
-
-  normalizes :key, with: ->(key) { key.presence }
-
-  # Keyed prompts are system prompts, looked up by key rather than picked by users.
-  def self.library
-    active.where(key: nil).ordered
-  end
 
   def self.body_for!(key)
-    active.find_by!(key: key.to_s).body
+    find_by!(key: key.to_s).body
+  end
+
+  def self.push
+    DIR.glob("*.md").each { |path| find_or_initialize_by(key: path.basename(".md").to_s).update!(body: path.read.strip) }
+  end
+
+  def self.pull
+    DIR.mkpath
+    find_each { |prompt| DIR.join("#{prompt.key}.md").write("#{prompt.body}\n") }
   end
 end

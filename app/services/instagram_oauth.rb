@@ -31,7 +31,7 @@ class InstagramOauth
   end
 
   def self.profile(access_token)
-    request(:get, "#{PublishInstagramReel::GRAPH_BASE}/me", fields: PROFILE_FIELDS.join(","), access_token:)
+    request(:get, "#{PublishInstagramPost::GRAPH_BASE}/me", fields: PROFILE_FIELDS.join(","), access_token:)
   end
 
   # Returns attach-ready { io:, content_type: }, or nil if the download fails.

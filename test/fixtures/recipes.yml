@@ -1,0 +1,7 @@
+cinematic:
+  name: Cinematic shop reel
+  workflow: CinematicShopReel
+
+before_after:
+  name: Before → after energy
+  workflow: BeforeAfterEnergy

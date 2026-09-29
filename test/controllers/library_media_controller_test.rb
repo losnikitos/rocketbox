@@ -18,7 +18,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     user = sign_in_as(users(:lazaro_nixon))
     media = user.library_media.create!(kind: "photo")
     media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg")
-    post = user.smm_posts.create!(prompt: prompts(:cinematic), smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
+    post = user.smm_posts.create!(recipe: recipes(:cinematic), smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
 
     assert_difference -> { LibraryMedia.count } => -1, -> { SmmPostMediaItem.count } => -1, -> { SmmPost.count } => 0 do
       delete library_media_url(media)

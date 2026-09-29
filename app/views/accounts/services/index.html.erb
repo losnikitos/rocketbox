@@ -1,19 +1,18 @@
 <% content_for(:title, "Services — Rocketbox") %>
+<% content_for :header_actions do %>
+  <%= link_to new_service_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Add service
+  <% end %>
+<% end %>
 
 <div class="mx-auto max-w-3xl space-y-4">
-  <div class="flex justify-end">
-    <%= link_to new_service_path, class: "rb-btn-primary gap-1.5 px-3.5 py-2.25 text-sm" do %>
-      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      Add service
-    <% end %>
-  </div>
-
   <% if @services.any? %>
     <ul class="divide-y divide-ink-900/5 rounded-lg border border-ink-900/10 bg-white">
       <% @services.each do |service| %>
         <li id="<%= dom_id(service) %>" class="flex items-center transition hover:bg-ink-900/3">
           <%= link_to edit_service_path(service), class: "min-w-0 flex-1 py-3 pl-4" do %>
-            <p class="truncate text-sm font-medium text-ink-900"><%= service.name %></p>
+            <p class="truncate text-sm font-semibold text-ink-900"><%= service.name %></p>
             <% if (meta = [ service.price, service.duration ].compact_blank.join(" · ")).present? %>
               <p class="truncate text-xs text-ink-500"><%= meta %></p>
             <% end %>

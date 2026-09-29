@@ -5,7 +5,7 @@ class UserTest < ActiveSupport::TestCase
     user = users(:lazaro_nixon)
     user.sessions.create!
     media = user.library_media.create!(kind: "photo", file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
-    user.smm_posts.create!(prompt: prompts(:cinematic), smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
+    user.smm_posts.create!(recipe: recipes(:cinematic), smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
     user.incoming_messages.create!(channel: "whatsapp", payload: { "x" => 1 })
     user.links.create!(url: "https://example.com").crawls.create!(provider: "firecrawl", data_instruction: "x")
       .suggestions.create!(key: "phone", value: "1")

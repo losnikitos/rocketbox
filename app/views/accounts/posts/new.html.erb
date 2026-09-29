@@ -1,7 +1,7 @@
 <% content_for(:title, "Create Instagram post — Rocketbox") %>
 
 <h2 class="font-manrope text-lg font-bold text-ink-900">Create Instagram post</h2>
-<p class="mt-2 text-sm text-ink-600">Pick a prompt. We’ll generate a Reel from your selected images.</p>
+<p class="mt-2 text-sm text-ink-600">Pick a recipe. We’ll turn your selected images into a post, story, or reel.</p>
 
 <div class="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
   <% @selected_media.each do |media| %>
@@ -21,14 +21,14 @@
   <% end %>
 
   <div>
-    <label for="prompt_id" class="block text-sm font-medium text-ink-900">Prompt</label>
-    <%= select_tag :prompt_id,
-          options_from_collection_for_select(@prompts, :id, :name, params[:prompt_id]),
-          include_blank: "Choose a prompt…",
+    <label for="recipe_id" class="block text-sm font-medium text-ink-900">Recipe</label>
+    <%= select_tag :recipe_id,
+          options_for_select(@recipes.map { [ "#{it.name} (#{[ it.format&.humanize, (pluralize(it.input_count, "image") if it.input_count) ].compact.join(", ")})", it.id ] }, params[:recipe_id]),
+          include_blank: "Choose a recipe…",
           class: "mt-1.5 w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-900",
           required: true %>
-    <% if @prompts.any? %>
-      <p class="mt-2 text-xs text-ink-500">Prompts are managed in the admin library.</p>
+    <% if Current.user.admin? %>
+      <p class="mt-2 text-xs text-ink-500"><%= link_to "Manage recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %></p>
     <% end %>
   </div>
 
@@ -38,7 +38,7 @@
   </div>
 
   <div class="flex flex-wrap gap-3">
-    <%= submit_tag "Create draft & generate video", class: "rb-btn-primary px-4 py-2 text-sm" %>
+    <%= submit_tag "Create draft & generate", class: "rb-btn-primary px-4 py-2 text-sm" %>
     <%= link_to "Back to uploads", library_uploads_path, class: "rb-btn-ghost-on-light px-4 py-2 text-sm" %>
   </div>
 <% end %>

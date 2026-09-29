@@ -42,6 +42,9 @@ Rails.application.routes.draw do
         member do
           post :publish
           post :react
+          post :pause
+          post :resume
+          post :rerun
         end
       end
     end
@@ -49,6 +52,9 @@ Rails.application.routes.draw do
     scope module: :accounts do
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
+      resources :recipes, except: :show do
+        delete "examples/:example_id", action: :destroy_example, on: :member, as: :example
+      end
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
           patch :apply, on: :member
