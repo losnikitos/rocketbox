@@ -42,6 +42,9 @@ Rails.application.routes.draw do
         member do
           post :publish
           post :react
+          post :pause
+          post :resume
+          post :rerun
         end
       end
     end

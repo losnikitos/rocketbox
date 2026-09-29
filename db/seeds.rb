@@ -5,13 +5,12 @@
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
 {
-  "Transition A->B" => "Create a transition between provided images",
-  "Cinematic shop reel" => "Create a vertical Instagram Reel for a local small business. Animate the reference photos into a polished cinematic clip with smooth camera moves, warm natural light, and a confident social-media look. Keep the people and products recognizable. No text overlays.",
-  "Before → after energy" => "Turn these photos into a dynamic vertical Instagram Reel. Start on the first image, then transition through the rest with energetic cuts and subtle motion. Emphasize craftsmanship and transformation. Clean, premium, ready for Instagram Reels. No captions or logos.",
-  "Quiet craftsmanship" => "Generate a calm vertical Instagram Reel from these photos. Soft push-ins, gentle ambient motion, and a refined editorial feel that highlights skill and detail. Keep the scene faithful to the source images. No text overlays."
-}.each do |name, prompt|
-  Recipe.find_or_initialize_by(name:).update!(prompt:, media_type: "reels")
-end
+  "Transition A->B" => "Transition",
+  "Cinematic shop reel" => "CinematicShopReel",
+  "Before → after energy" => "BeforeAfterEnergy",
+  "Quiet craftsmanship" => "QuietCraftsmanship",
+  "Bank holiday story" => "BankHolidayStory"
+}.each { |name, workflow| Recipe.find_or_initialize_by(name:).update!(workflow:) }
 
 [
   {

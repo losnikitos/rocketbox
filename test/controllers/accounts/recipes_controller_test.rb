@@ -15,18 +15,32 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(account: @admin.id), text: /Recipes/
 
+    post recipes_url, params: { recipe: { name: "Story teaser", workflow: "User" } }
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Workflow is not included in the list"
+
+    post recipes_url, params: { recipe: { name: "Second cinematic", workflow: "CinematicShopReel" } }
+    assert_select "li", text: "Workflow has already been taken"
+
+    get new_recipe_url(account: @admin.id)
+    assert_select "select[name='recipe[workflow]'] option[value=BankHolidayStory]"
+    assert_select "select[name='recipe[workflow]'] option[value=CinematicShopReel]", count: 0
+
     post recipes_url, params: { recipe: {
-      name: "Story teaser", prompt: "Make a story", media_type: "story",
+      name: "Story teaser", workflow: "BankHolidayStory",
       examples: [ image("a.jpg"), image("b.jpg") ]
     } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Story teaser")
-    assert recipe.story?
+    assert_equal "story", recipe.format
+    assert_equal 2, recipe.input_count
     assert_equal %w[a.jpg b.jpg], recipe.examples.map { it.filename.to_s }.sort
 
     kept, removed = recipe.examples.sort_by { it.filename.to_s }
     get edit_recipe_url(recipe, account: @admin.id)
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form]", count: 2
+    assert_select "select[name='recipe[workflow]']", count: 0
+    assert_select "article dd", text: "This bank holiday we work as usual"
 
     delete example_recipe_url(recipe, example_id: removed.id)
     assert_redirected_to edit_recipe_url(recipe, account: @admin.id)

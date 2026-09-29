@@ -1,0 +1,16 @@
+<%# locals: (run:) %>
+<section class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="workflow-heading">
+  <div class="flex items-center gap-2">
+    <h3 id="workflow-heading" class="text-sm font-semibold text-ink-900">Workflow</h3>
+    <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
+    <div class="ml-auto flex gap-2">
+      <% if run.running? %>
+        <%= button_to "Pause", pause_instagram_post_path(run.smm_post), class: "rb-btn-ghost-on-light px-3 py-1 text-xs" %>
+      <% elsif run.paused? %>
+        <%= button_to "Resume", resume_instagram_post_path(run.smm_post), class: "rb-btn-primary px-3 py-1 text-xs" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= render "accounts/recipes/schematic", workflow: run.workflow_class, run: %>
+</section>

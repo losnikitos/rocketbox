@@ -9,7 +9,11 @@ class SmmPost < ApplicationRecord
   belongs_to :recipe
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
-  has_one_attached :generated_video
+  has_many :smm_slides, -> { order(:position) }, dependent: :destroy
+  has_one :workflow_run, dependent: :destroy
+
+  # A multi-slide post is a carousel; a multi-slide story publishes as several stories.
+  enum :format, %w[post story reel].index_by(&:itself), validate: true
 
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :reaction, inclusion: { in: REACTIONS }, allow_nil: true
@@ -39,8 +43,12 @@ class SmmPost < ApplicationRecord
     status == "failed"
   end
 
+  def carousel?
+    post? && smm_slides.size > 1
+  end
+
   def publishable?
-    ready? && generated_video.attached?
+    ready? && smm_slides.any? { it.media.attached? }
   end
 
   def mark_generating!
@@ -63,10 +71,13 @@ class SmmPost < ApplicationRecord
 
     def media_count_within_limits
       count = smm_post_media_items.size
+      expected = recipe&.input_count
       if count < 1
         errors.add(:base, "Select at least one image from your library.")
       elsif count > MAX_MEDIA
         errors.add(:base, "Select at most #{MAX_MEDIA} images.")
+      elsif expected && count != expected
+        errors.add(:base, "#{recipe.name} needs exactly #{expected} #{"image".pluralize(expected)}.")
       end
     end
 
@@ -76,7 +87,7 @@ class SmmPost < ApplicationRecord
         next if media.blank?
         next if media.story_image?
 
-        errors.add(:base, "Only images can be used to generate a post video.")
+        errors.add(:base, "Only images can be used as recipe inputs.")
         break
       end
     end

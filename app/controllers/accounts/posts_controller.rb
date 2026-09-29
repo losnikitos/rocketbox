@@ -4,13 +4,13 @@ module Accounts
   class PostsController < ApplicationController
     layout "app"
 
-    KINDS = %w[reels stories posts].freeze
+    FORMATS_BY_KIND = { "reels" => "reel", "stories" => "story", "posts" => "post" }.freeze
+    KINDS = FORMATS_BY_KIND.keys.freeze
 
     def index
       @kind = params[:kind].presence_in(KINDS)
-      # ponytail: reels/stories aren't modeled yet (every SmmPost is listed under All and Posts); add a kind column when they are.
-      @posts = @kind.in?(%w[reels stories]) ? SmmPost.none :
-        Current.account.smm_posts.includes({ library_media: { file_attachment: :blob } }, generated_video_attachment: :blob).recent
+      @posts = Current.account.smm_posts.includes({ library_media: { file_attachment: :blob } }, smm_slides: { media_attachment: :blob }).recent
+      @posts = @posts.where(format: FORMATS_BY_KIND[@kind]) if @kind
     end
 
     def new
@@ -47,6 +47,7 @@ module Accounts
 
       @post = Current.account.smm_posts.new(
         recipe:,
+        format: recipe.format,
         caption: params[:caption].to_s.strip.presence,
         status: "draft"
       )
@@ -55,8 +56,8 @@ module Accounts
       end
 
       if @post.save
-        GenerateSmmPostVideoJob.perform_later(@post.id)
-        redirect_to instagram_post_path(@post), notice: "Draft post created. Generating your Instagram video…"
+        WorkflowRun.start!(@post)
+        redirect_to instagram_post_path(@post), notice: "Draft post created. Generating…"
       else
         flash.now[:alert] = @post.errors.full_messages.to_sentence
         render :new, status: :unprocessable_entity
@@ -64,7 +65,26 @@ module Accounts
     end
 
     def show
-      @post = Current.account.smm_posts.includes(:recipe, :library_media, generated_video_attachment: :blob).find(params[:id])
+      @post = Current.account.smm_posts.includes(:recipe, :library_media, smm_slides: { media_attachment: :blob },
+        workflow_run: { workflow_steps: { outputs_attachments: :blob } }).find(params[:id])
+    end
+
+    def pause
+      workflow_run.pause!
+      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Paused after the current step."
+    end
+
+    def resume
+      workflow_run.resume!
+      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Resumed."
+    end
+
+    # Retry a failed step, or re-run any step and everything after it.
+    def rerun
+      step = workflow_run.workflow_class[params.expect(:key)] or return head(:unprocessable_entity)
+
+      workflow_run.rerun!(step.key)
+      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Running again from #{step.key.humanize}."
     end
 
     def publish
@@ -108,6 +128,10 @@ module Accounts
     end
 
     private
+
+      def workflow_run
+        @workflow_run ||= Current.account.smm_posts.find(params[:id]).workflow_run || raise(ActiveRecord::RecordNotFound)
+      end
 
       def selected_library_media
         ids = Array(params[:library_media_ids]).map(&:presence).compact.map(&:to_i).uniq

@@ -1,11 +1,12 @@
 ActiveAdmin.register SmmPost do
-  permit_params :user_id, :recipe_id, :status, :caption, :error_message, :reaction, :reaction_comment
+  permit_params :user_id, :recipe_id, :format, :status, :caption, :error_message, :reaction, :reaction_comment
 
   index do
     selectable_column
     id_column
     column :user
     column :recipe
+    column :format
     column :status
     column :reaction
     column :published_at
@@ -23,13 +24,18 @@ ActiveAdmin.register SmmPost do
       row :reaction_comment
       row :caption
       row :error_message
-      row :generation_request_id
+      row :format
       row :published_at
       row :created_at
       row :updated_at
-      row :generated_video do |post|
-        if post.generated_video.attached?
-          link_to post.generated_video.filename, rails_blob_path(post.generated_video, disposition: "attachment")
+      row :workflow_run do |post|
+        post.workflow_run && link_to("#{post.workflow_run.status}: #{post.workflow_run.error}", admin_workflow_run_path(post.workflow_run))
+      end
+      row :smm_slides do |post|
+        ul do
+          post.smm_slides.select { it.media.attached? }.each do |slide|
+            li link_to(slide.media.filename, rails_blob_path(slide.media, disposition: "attachment"))
+          end
         end
       end
       row :library_media do |post|
@@ -46,6 +52,7 @@ ActiveAdmin.register SmmPost do
     f.inputs do
       f.input :user
       f.input :recipe
+      f.input :format, as: :select, collection: SmmPost.formats.keys
       f.input :status, as: :select, collection: SmmPost::STATUSES
       f.input :reaction, as: :select, collection: SmmPost::REACTIONS, include_blank: true
       f.input :reaction_comment

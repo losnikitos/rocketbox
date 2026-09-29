@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_181000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -179,10 +179,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
 
   create_table "recipes", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "media_type", default: "reels", null: false
     t.string "name", null: false
-    t.text "prompt", null: false
     t.datetime "updated_at", null: false
+    t.string "workflow", null: false
+    t.index ["workflow"], name: "index_recipes_on_workflow", unique: true
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -319,7 +319,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
     t.text "caption"
     t.datetime "created_at", null: false
     t.text "error_message"
-    t.string "generation_request_id"
+    t.string "format", default: "reel", null: false
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
@@ -331,6 +331,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_smm_posts_on_user_id"
+  end
+
+  create_table "smm_slides", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "smm_post_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["smm_post_id"], name: "index_smm_slides_on_smm_post_id"
   end
 
   create_table "subscriptions", force: :cascade do |t|
@@ -385,6 +393,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
     t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
   end
 
+  create_table "workflow_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.integer "smm_post_id", null: false
+    t.string "status", default: "running", null: false
+    t.datetime "updated_at", null: false
+    t.string "workflow", null: false
+    t.index ["smm_post_id"], name: "index_workflow_runs_on_smm_post_id"
+  end
+
+  create_table "workflow_steps", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.datetime "finished_at"
+    t.string "key", null: false
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.integer "workflow_run_id", null: false
+    t.index ["workflow_run_id", "key"], name: "index_workflow_steps_on_workflow_run_id_and_key", unique: true
+    t.index ["workflow_run_id"], name: "index_workflow_steps_on_workflow_run_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
@@ -401,6 +432,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
   add_foreign_key "smm_post_media_items", "smm_posts"
   add_foreign_key "smm_posts", "recipes"
   add_foreign_key "smm_posts", "users"
+  add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
   add_foreign_key "suggestions", "crawls"
+  add_foreign_key "workflow_runs", "smm_posts"
+  add_foreign_key "workflow_steps", "workflow_runs"
 end

@@ -83,4 +83,11 @@ module AppHelper
     end
     "#{bg} #{smm_post_status_text_class(status)}"
   end
+
+  # "2 × Input image → 2 × AI image → …" in run order.
+  def recipe_summary(recipe)
+    recipe.workflow_class&.steps.to_a.map { it.node::LABEL }
+      .chunk_while { _1 == _2 }.map { it.size > 1 ? "#{it.size} × #{it.first}" : it.first }
+      .join(" → ")
+  end
 end

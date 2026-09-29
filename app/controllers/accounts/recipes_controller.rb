@@ -16,7 +16,7 @@ module Accounts
     end
 
     def create
-      @recipe = Recipe.new(recipe_params)
+      @recipe = Recipe.new(recipe_params(:workflow))
       if @recipe.save
         redirect_to recipes_path, notice: "Recipe added."
       else
@@ -53,8 +53,8 @@ module Accounts
         @recipe = Recipe.find(params[:id])
       end
 
-      def recipe_params
-        params.expect(recipe: [ :name, :prompt, :media_type, examples: [] ])
+      def recipe_params(*extra)
+        params.expect(recipe: [ :name, *extra, examples: [] ])
       end
   end
 end

@@ -1,9 +1,7 @@
 cinematic:
   name: Cinematic shop reel
-  prompt: Create a vertical Instagram Reel from the reference photos with smooth camera moves.
-  media_type: reels
+  workflow: CinematicShopReel
 
 before_after:
   name: Before → after energy
-  prompt: Turn these photos into a dynamic vertical Instagram Reel with energetic cuts.
-  media_type: reels
+  workflow: BeforeAfterEnergy

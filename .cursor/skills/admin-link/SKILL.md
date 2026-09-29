@@ -31,6 +31,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Admin, Remove |
 | SMM post | [`_smm_post`](/app/views/shared/admin_links/_smm_post.html.erb) | Admin, Remove |
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
+| Workflow step | [`_workflow_step`](/app/views/shared/admin_links/_workflow_step.html.erb) | Admin |
 
 ## Usage
 

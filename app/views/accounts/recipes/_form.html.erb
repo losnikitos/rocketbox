@@ -1,6 +1,6 @@
 <%# locals: (recipe:) %>
 <%# Examples sit outside the form (each remove is its own button_to form); fields join it via form="recipe_form". %>
-<div class="mx-auto max-w-2xl space-y-4">
+<div class="space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
@@ -8,28 +8,35 @@
   </nav>
   <%= form_with model: recipe, id: "recipe_form", class: "space-y-4" do |f| %>
     <% if recipe.errors.any? %>
-      <p class="<%= tw_alert_error_classes %>" role="alert"><%= recipe.errors.full_messages.to_sentence %></p>
+      <div class="<%= tw_alert_error_classes %>" role="alert">
+        <ul class="list-inside list-disc">
+          <% recipe.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
     <% end %>
 
-    <div class="grid gap-4 sm:grid-cols-3">
-      <div class="sm:col-span-2">
-        <%= f.label :name, class: tw_label_classes %>
-        <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Cinematic shop reel", class: tw_input_classes %>
-      </div>
-      <div>
-        <%= f.label :media_type, "Target", class: tw_label_classes %>
-        <%= f.select :media_type, Recipe.media_types.keys.map { [ it.humanize, it ] }, {}, class: tw_input_classes %>
-      </div>
+    <div class="max-w-md">
+      <%= f.label :name, class: tw_label_classes %>
+      <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
     </div>
 
-    <div>
-      <%= f.label :prompt, class: tw_label_classes %>
-      <%= f.text_area :prompt, rows: 6, required: true, class: tw_input_classes %>
-    </div>
+    <% if recipe.new_record? %>
+      <div class="max-w-md">
+        <%= f.label :workflow, class: tw_label_classes %>
+        <%= f.select :workflow, Recipe.free_workflows.map { [ it.titleize, it ] }, { include_blank: "Choose a workflow…" }, required: true, class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">Each workflow (a Ruby class in <code>app/workflows</code>) belongs to one recipe.</p>
+      </div>
+    <% end %>
+
+    <% if recipe.workflow_class %>
+      <%= render "schematic", workflow: recipe.workflow_class %>
+    <% end %>
   <% end %>
 
-  <div>
-    <p class="<%= tw_label_classes %>">Examples</p>
+  <div class="max-w-2xl">
+    <h2 id="examples" class="<%= tw_label_classes %> scroll-m-24"><a href="#examples" class="hover:underline">Examples</a></h2>
     <% attached = recipe.examples.select(&:persisted?) %>
     <% if attached.any? %>
       <ul class="mb-3 grid grid-cols-3 gap-3 sm:grid-cols-4">

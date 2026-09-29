@@ -36,13 +36,30 @@ class SmmPostTest < ActiveSupport::TestCase
     assert_match(/Only images/, post.errors[:base].join)
   end
 
-  test "publishable when ready with attached video" do
+  test "publishable when ready with a slide" do
     post = @user.smm_posts.new(recipe: @recipe, status: "ready")
     post.smm_post_media_items.build(library_media: @media, position: 0)
     post.save!
     assert_not post.publishable?
 
-    post.generated_video.attach(io: StringIO.new("v"), filename: "r.mp4", content_type: "video/mp4")
+    post.smm_slides.create!(media: { io: StringIO.new("v"), filename: "r.mp4", content_type: "video/mp4" })
     assert post.publishable?
+    assert post.smm_slides.first.video?
+  end
+
+  test "requires the recipe's number of inputs" do
+    recipe = Recipe.create!(name: "Story", workflow: "BankHolidayStory")
+    post = @user.smm_posts.new(recipe:, status: "draft")
+    post.smm_post_media_items.build(library_media: @media, position: 0)
+    assert_not post.valid?
+    assert_match(/needs exactly 2 images/, post.errors[:base].join)
+  end
+
+  test "a multi-slide post is a carousel" do
+    post = @user.smm_posts.new(recipe: @recipe, format: "post")
+    2.times { post.smm_slides.build }
+    assert post.carousel?
+    post.format = "story"
+    assert_not post.carousel?
   end
 end

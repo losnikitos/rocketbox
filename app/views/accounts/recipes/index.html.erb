@@ -1,8 +1,10 @@
 <% content_for(:title, "Recipes — Rocketbox") %>
-<% content_for :header_actions do %>
-  <%= link_to new_recipe_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
-    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-    Add recipe
+<% if Recipe.free_workflows.any? %>
+  <% content_for :header_actions do %>
+    <%= link_to new_recipe_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Add recipe
+    <% end %>
   <% end %>
 <% end %>
 
@@ -15,9 +17,9 @@
             <div class="min-w-0 flex-1">
               <p class="flex items-center gap-2 text-sm font-semibold text-ink-900">
                 <span class="truncate"><%= recipe.name %></span>
-                <span class="shrink-0 rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium text-ink-700"><%= recipe.media_type.humanize %></span>
+                <span class="shrink-0 rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.format %></span>
               </p>
-              <p class="mt-1 line-clamp-2 text-sm text-ink-700"><%= recipe.prompt %></p>
+              <p class="mt-1 truncate text-sm text-ink-500"><%= recipe_summary(recipe) %></p>
             </div>
             <% if recipe.examples.any? %>
               <div class="flex shrink-0 gap-1">

@@ -20,27 +20,19 @@ class ImproveLibraryMediaTest < ActiveSupport::TestCase
 
   test "creates improved library media from xAI response" do
     improved_bytes = "improved-image-bytes"
-    service = ImproveLibraryMedia.new(media: @media)
-    service.define_singleton_method(:connection) do
-      response = Struct.new(:success?, :body, :status).new(
-        true,
-        { "data" => [ { "b64_json" => Base64.strict_encode64(improved_bytes) } ] },
-        200
-      )
-      conn = Object.new
-      conn.define_singleton_method(:post) { |*_args, &_| response }
-      conn
-    end
-    service.define_singleton_method(:api_key) { "test-key" }
+    original = Xai.method(:edit_image)
+    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| improved_bytes }
 
     assert_difference -> { LibraryMedia.count }, 1 do
-      result = service.call
+      result = ImproveLibraryMedia.call(media: @media)
       assert result.file.attached?
       assert_equal @user, result.user
       assert_equal "photo", result.kind
       assert result.telegram_file_unique_id.start_with?("ai-")
       assert_equal improved_bytes, result.file.download
     end
+  ensure
+    Xai.define_singleton_method(:edit_image, original)
   end
 
   test "rejects non-images" do
