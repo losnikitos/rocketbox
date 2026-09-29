@@ -4,8 +4,6 @@ class ImproveLibraryMedia
   Error = Xai::Error
   TransientError = Xai::TransientError
 
-  PROMPT = "Make this look like professional content for social media advertising."
-
   def self.call(media:)
     new(media:).call
   end
@@ -18,7 +16,7 @@ class ImproveLibraryMedia
     raise Error, "Only images can be improved with AI." unless @media.story_image?
     raise Error, "Media file is missing." unless @media.file.attached?
 
-    store!(Xai.edit_image(prompt: PROMPT, blob: @media.file.blob))
+    store!(Xai.edit_image(prompt: Prompt.body_for!(:improve_library_media), blob: @media.file.blob))
   end
 
   private

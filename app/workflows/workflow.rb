@@ -5,7 +5,7 @@
 #
 #   class BankHolidayStory < Workflow
 #     step :photo_1, Input, slot: 1
-#     step :film_1, AiImage, from: :photo_1, prompt: "…"
+#     step :film_1, AiImage, from: :photo_1, prompt: :bank_holiday_story_film # Prompt key
 #     step :story, Output, from: :film_1, format: "story"
 #   end
 class Workflow

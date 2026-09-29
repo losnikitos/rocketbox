@@ -1,8 +1,5 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-crawl_business:
-  key: crawl_business
-  name: "Crawl: extract business profile"
-  body: Extract the business profile, photos, and videos.
-  active: true
-  position: 0
+<% Rails.root.glob("prompts/*.md").each do |path| %>
+<%= path.basename(".md") %>:
+  key: <%= path.basename(".md") %>
+  body: <%= path.read.strip.to_json %>
+<% end %>

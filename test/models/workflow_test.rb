@@ -16,4 +16,10 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_nil CinematicShopReel.input_count
     assert_includes Workflow.all, BankHolidayStory
   end
+
+  test "every prompt key has a prompts/ file" do
+    Workflow.all.flat_map(&:steps).filter_map { it.params["prompt"] }.uniq.each do |key|
+      assert Rails.root.join("prompts/#{key}.md").exist?, "missing prompts/#{key}.md"
+    end
+  end
 end

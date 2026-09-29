@@ -41,7 +41,6 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
   test "logo step saves the logo extracted from the photo" do
     user = users(:lazaro_nixon)
     user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "logo")
-    Prompt.create!(key: "business_card_logo", name: "Extract logo", body: "Extract the logo.", active: true)
     painted = Struct.new(:to_blob, :mime_type).new("painted-logo", "image/png")
     original_paint = RubyLLM.method(:paint)
     original_cta = WhatsappCloud.method(:send_cta_url)

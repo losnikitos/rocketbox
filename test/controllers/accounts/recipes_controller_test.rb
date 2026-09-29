@@ -38,6 +38,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     kept, removed = recipe.examples.sort_by { it.filename.to_s }
     get edit_recipe_url(recipe, account: @admin.id)
+    assert_select "a[href^=?]", "/admin/prompts/#{prompts(:bank_holiday_story_film).id}/edit", count: 2
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form]", count: 2
     assert_select "select[name='recipe[workflow]']", count: 0
     assert_select "article dd", text: "This bank holiday we work as usual"

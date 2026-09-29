@@ -1,0 +1,1 @@
+Extract only the logo from this photo (a business card, shop sign, or storefront). Output the logo alone, centered on a plain white square background, with its original colors and shapes preserved. Remove all other text, contact details, card edges, surroundings, shadows, and background. Do not redesign or add anything.

@@ -7,7 +7,7 @@ class Workflow
     ICON = "film"
 
     def self.call(inputs:, params:, run:)
-      [ { io: StringIO.new(Xai.generate_video(prompt: params["prompt"], blobs: inputs)), filename: "ai-video.mp4", content_type: "video/mp4" } ]
+      [ { io: StringIO.new(Xai.generate_video(prompt: Prompt.body_for!(params["prompt"]), blobs: inputs)), filename: "ai-video.mp4", content_type: "video/mp4" } ]
     end
   end
 end
