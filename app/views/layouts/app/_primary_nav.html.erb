@@ -5,12 +5,19 @@
       <label for="account_user_id" class="mb-1 block text-xs font-medium text-ink-500">Customer</label>
       <select name="account" id="account_user_id" onchange="this.form.requestSubmit()"
               class="flex w-full items-center gap-2 rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-left text-sm text-ink-900 [appearance:base-select] focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 [&::picker(select)]:mt-1 [&::picker(select)]:rounded-lg [&::picker(select)]:border [&::picker(select)]:border-ink-900/15 [&::picker(select)]:[appearance:base-select]">
-        <button class="min-w-0 flex-1 text-left"><selectedcontent class="flex min-w-0 flex-col"></selectedcontent></button>
-        <% User.order(:business_name, :email).each do |user| %>
+        <button class="min-w-0 flex-1 text-left"><selectedcontent class="flex min-w-0 items-center gap-2"></selectedcontent></button>
+        <% User.with_attached_logo.order(:business_name, :email).each do |user| %>
           <option value="<%= user.id %>" <%= "selected" if user.id == Current.account.id %>
-                  class="min-w-0 flex flex-col items-start px-2.5 py-1 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden">
-            <span class="truncate font-medium"><%= user.business_name.presence || user.account_label %></span>
-            <span class="truncate text-xs text-ink-500"><%= [ ("+#{user.whatsapp_phone}" if user.whatsapp_phone), user.email ].compact_blank.join(" · ") %></span>
+                  class="min-w-0 flex items-center gap-2 px-2.5 py-1 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden">
+            <% if user.logo.attached? %>
+              <%= image_tag user.logo.variant(resize_to_limit: [ 64, 64 ]), alt: "", class: "size-7 shrink-0 rounded-md object-contain" %>
+            <% else %>
+              <span class="size-7 shrink-0 rounded-md bg-ink-900/5"></span>
+            <% end %>
+            <span class="flex min-w-0 flex-col">
+              <span class="truncate font-medium"><%= user.business_name.presence || user.account_label %></span>
+              <span class="truncate text-xs text-ink-500"><%= [ ("+#{user.whatsapp_phone}" if user.whatsapp_phone), user.email ].compact_blank.join(" · ") %></span>
+            </span>
           </option>
         <% end %>
       </select>
