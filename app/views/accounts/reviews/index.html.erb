@@ -55,6 +55,19 @@
         </li>
       <% end %>
     </ul>
+
+    <% if @pages > 1 %>
+      <% link_class = "rounded-lg px-2.5 py-1.5 font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <nav aria-label="Pagination" class="mt-4 grid grid-cols-3 items-center text-sm">
+        <span>
+          <%= link_to "← Newer", reviews_path(request.query_parameters.merge(page: @page - 1)), rel: "prev", class: link_class if @page > 1 %>
+        </span>
+        <span class="text-center text-ink-500 tabular-nums">Page <%= @page %> of <%= @pages %></span>
+        <span class="text-right">
+          <%= link_to "Older →", reviews_path(request.query_parameters.merge(page: @page + 1)), rel: "next", class: link_class if @page < @pages %>
+        </span>
+      </nav>
+    <% end %>
   <% else %>
     <div class="rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
       <%= params[:archived] ? "No archived reviews." : "Reviews we find about your business will show up here." %>

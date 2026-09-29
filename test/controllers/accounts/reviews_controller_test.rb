@@ -32,6 +32,41 @@ class Accounts::ReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_not @review.reload.archived?
   end
 
+  test "tabs filter active reviews by source and pages through them" do
+    @user.reviews.create!(source: "google", customer_name: "Archived Al", rating: 5, archived_at: Time.current)
+    21.times { |i| @user.reviews.create!(source: "google", customer_name: "Guest #{i}", rating: 5, created_at: i.minutes.ago) }
+
+    get reviews_url
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /All\s*22/
+    assert_select "nav[aria-label='Secondary'] a", text: /Google\s*21/
+    assert_select "nav[aria-label='Secondary'] a", text: /Fresha\s*1/
+    assert_select "nav[aria-label='Secondary'] a", text: /Trustpilot/, count: 0
+    assert_select "nav[aria-label='Secondary'] a", text: /Archived\s*1/
+
+    get reviews_url(source: "google")
+    assert_select "ul li[id^='review_']", count: 20
+    assert_select "##{dom_id(@review)}", count: 0
+    assert_select "a[rel='next'][href=?]", reviews_path(source: "google", page: 2)
+
+    get reviews_url(source: "google", page: 2)
+    assert_select "ul li[id^='review_']", count: 1, text: /Guest 20/
+    assert_select "a[rel='next']", count: 0
+
+    get reviews_url(archived: 1, source: "fresha")
+    assert_select "ul li[id^='review_']", count: 1, text: /Archived Al/
+  end
+
+  test "photos tab lists active reviews with media" do
+    @user.reviews.create!(source: "google", customer_name: "No Pics", rating: 5)
+    @user.reviews.create!(source: "google", customer_name: "Old Pics", rating: 5, archived_at: Time.current,
+      media: [ { io: file_fixture("logo.png").open, filename: "old.png", content_type: "image/png" } ])
+
+    get reviews_url(photos: 1)
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Photos\s*1/
+    assert_select "ul li[id^='review_']", count: 1
+    assert_select "##{dom_id(@review)}"
+  end
+
   test "other accounts' reviews are hidden and only admins delete" do
     assert_no_difference -> { Review.count } do
       delete review_url(@review)
