@@ -6,7 +6,7 @@ class Accounts::ReviewsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = sign_in_as(users(:lazaro_nixon))
     @review = @user.reviews.create!(
-      customer_name: "Marco Rossi", rating: 4, body: "Best fade in town.",
+      source: "fresha", customer_name: "Marco Rossi", rating: 4, body: "Best fade in town.",
       media: [ { io: file_fixture("logo.png").open, filename: "cut.png", content_type: "image/png" } ]
     )
   end
@@ -17,6 +17,7 @@ class Accounts::ReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", reviews_path, text: /Reviews/
     assert_select "##{dom_id(@review)}", text: /Marco Rossi.*Best fade in town/m
     assert_select "[aria-label='4 out of 5 stars']"
+    assert_select "##{dom_id(@review)} span", text: "Fresha"
 
     patch review_url(@review)
     assert_redirected_to reviews_url
@@ -53,10 +54,12 @@ class Accounts::ReviewsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, @review.media.count
   end
 
-  test "validates rating and media type" do
-    assert_not @user.reviews.new(customer_name: "A", rating: 0).valid?
-    assert_not @user.reviews.new(customer_name: "A", rating: 6).valid?
-    assert_not @user.reviews.new(customer_name: "A", rating: 5,
+  test "validates source, rating and media type" do
+    assert_not @user.reviews.new(customer_name: "A", rating: 5).valid?
+    assert_not @user.reviews.new(source: "yelp", customer_name: "A", rating: 5).valid?
+    assert_not @user.reviews.new(source: "google", customer_name: "A", rating: 0).valid?
+    assert_not @user.reviews.new(source: "google", customer_name: "A", rating: 6).valid?
+    assert_not @user.reviews.new(source: "google", customer_name: "A", rating: 5,
       media: [ { io: StringIO.new("x"), filename: "a.pdf", content_type: "application/pdf" } ]).valid?
   end
 end

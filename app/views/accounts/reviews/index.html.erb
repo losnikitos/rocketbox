@@ -23,6 +23,7 @@
                       <%= heroicon "star", variant: :mini, options: { class: "size-4 #{i < review.rating ? "text-signal-yellow" : "text-ink-900/15"}", "aria-hidden": true } %>
                     <% end %>
                   </span>
+                  <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium text-ink-700"><%= review.source.humanize %></span>
                   <span class="text-xs text-ink-500"><%= time_ago_in_words(review.created_at) %> ago</span>
                 </div>
               </div>
