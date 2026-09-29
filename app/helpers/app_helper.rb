@@ -17,6 +17,12 @@ module AppHelper
       [ :business, "Business", [] ]
     when "accounts/links"
       [ :links, "Links", [] ]
+    when "accounts/reviews"
+      reviews = Current.account.reviews
+      [ :reviews, "Reviews", [
+        [ reviews_path, "Active", params[:archived].blank?, reviews.active.count ],
+        [ reviews_path(archived: 1), "Archived", params[:archived].present?, reviews.archived.count ]
+      ] ]
     when "accounts/instagram"
       [ :instagram, "Your profile", [] ]
     when "accounts/whatsapp"

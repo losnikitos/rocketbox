@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_174626) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_095357) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -175,6 +175,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_174626) do
     t.index ["active"], name: "index_prompts_on_active"
     t.index ["key"], name: "index_prompts_on_key", unique: true
     t.index ["position"], name: "index_prompts_on_position"
+  end
+
+  create_table "reviews", force: :cascade do |t|
+    t.datetime "archived_at"
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "customer_name", null: false
+    t.integer "rating", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
   create_table "ruby_llm_batches", force: :cascade do |t|
@@ -363,6 +374,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_174626) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
+  add_foreign_key "reviews", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
