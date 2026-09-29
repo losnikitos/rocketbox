@@ -1,5 +1,5 @@
 ActiveAdmin.register Review do
-  permit_params :user_id, :customer_name, :rating, :body, :archived_at, :avatar, media: []
+  permit_params :user_id, :source, :customer_name, :rating, :body, :archived_at, :avatar, media: []
 
   controller do
     # Blank file inputs would otherwise clear the existing attachments.
@@ -14,6 +14,7 @@ ActiveAdmin.register Review do
     selectable_column
     id_column
     column :user
+    column :source
     column :customer_name
     column :rating
     column :archived_at
@@ -25,6 +26,7 @@ ActiveAdmin.register Review do
     attributes_table do
       row :id
       row :user
+      row :source
       row :customer_name
       row :rating
       row :body
@@ -47,6 +49,7 @@ ActiveAdmin.register Review do
   form do |f|
     f.inputs do
       f.input :user
+      f.input :source, as: :select, collection: Review.sources.keys
       f.input :customer_name
       f.input :rating, as: :select, collection: 1..5
       f.input :body

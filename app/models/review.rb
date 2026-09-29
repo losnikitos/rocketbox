@@ -5,6 +5,8 @@ class Review < ApplicationRecord
   has_one_attached :avatar
   has_many_attached :media
 
+  enum :source, %w[google fresha trustpilot].index_by(&:itself), validate: true
+
   validates :customer_name, presence: true
   validates :rating, inclusion: { in: 1..5 }
   validate :media_are_images_or_videos
