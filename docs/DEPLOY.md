@@ -37,6 +37,8 @@ Clear env from deploy config includes `SOLID_QUEUE_IN_PUMA=true` and `MAILER_DEF
 - Solid Cache + Solid Cable in production ([`config/environments/production.rb`](/config/environments/production.rb))
 - Active Storage service `:vps` — disk root from `ACTIVE_STORAGE_ROOT` (default `/var/lib/rocketbox/storage`) in [`config/storage.yml`](/config/storage.yml)
 - Mail: Postmark ([`config/application.rb`](/config/application.rb)); default from `MAIL_FROM` / `noreply@rocketbox.plus`
+- Backups: [`DbBackupJob`](/app/jobs/db_backup_job.rb) runs hourly ([`config/recurring.yml`](/config/recurring.yml)), snapshots `production.sqlite3` with `VACUUM INTO`, gzips it to `s3://festivo/rocketbox/backups/`, and deletes backups older than 7 days. Cache/queue/cable DBs aren't backed up. Run manually: `bin/kamal app exec --reuse "bin/rails runner 'DbBackupJob.perform_now'"`.
+  - Restore: download the latest `.gz` and gunzip it, `bin/kamal app stop`, replace `storage/production.sqlite3` in the `rocketbox_storage` volume (on the host: `docker volume inspect rocketbox_storage` for the path) and delete `production.sqlite3-wal` / `-shm`, then `bin/kamal app boot`.
 
 ## Local vs production processes
 
