@@ -20,10 +20,15 @@ module AppHelper
     when "accounts/links"
       [ :links, "Links", [] ]
     when "accounts/reviews"
-      reviews = Current.account.reviews
+      active = Current.account.reviews.active.group(:source).count
+      photos = params[:photos].present? && params[:archived].blank?
+      source = params[:source] if params[:archived].blank? && !photos
       [ :reviews, "Reviews", [
-        [ reviews_path, "Active", params[:archived].blank?, reviews.active.count ],
-        [ reviews_path(archived: 1), "Archived", params[:archived].present?, reviews.archived.count ]
+        [ reviews_path, "All", params[:archived].blank? && !photos && source.blank?, active.values.sum ],
+        *Review.sources.keys.filter_map { |s| [ reviews_path(source: s), s.humanize, source == s, active[s].to_i ] if active[s] || source == s },
+        [ reviews_path(photos: 1), "Photos", photos, Current.account.reviews.active.with_media.count ],
+        :separator,
+        [ reviews_path(archived: 1), "Archived", params[:archived].present?, Current.account.reviews.archived.count ]
       ] ]
     when "accounts/instagram"
       [ :instagram, "Your profile", [] ]
