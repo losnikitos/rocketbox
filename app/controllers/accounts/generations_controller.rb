@@ -26,7 +26,7 @@ module Accounts
         return redirect_to helpers.library_item_path(media), alert: "That recipe doesn't fit this media." unless recipe
 
         @generation = media.generations.new(recipe:, prompt: params.dig(:generation, :prompt),
-          options: { "model" => params.dig(:generation, :options, :model).presence }.compact)
+          options: params.dig(:generation, :options)&.permit!.to_h || {})
       end
   end
 end
