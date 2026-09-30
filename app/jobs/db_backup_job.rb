@@ -16,7 +16,8 @@ class DbBackupJob < ApplicationJob
       gz_path = "#{db_path}.gz"
 
       # WAL mode: copying the live file can be inconsistent; VACUUM INTO writes a clean snapshot.
-      ActiveRecord::Base.connection.execute("VACUUM INTO '#{db_path}'")
+      conn = ActiveRecord::Base.connection
+      conn.execute("VACUUM INTO #{conn.quote(db_path)}")
       Zlib::GzipWriter.open(gz_path) { |gz| File.open(db_path, "rb") { |f| IO.copy_stream(f, gz) } }
 
       bucket.object("#{PREFIX}production-#{Time.current.utc.iso8601}.sqlite3.gz").upload_file(gz_path)
