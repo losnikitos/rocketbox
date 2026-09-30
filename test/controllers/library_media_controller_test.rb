@@ -30,35 +30,6 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     post.mark_ready!
   end
 
-  test "applies a recipe that fits the media type" do
-    @media.update!(media_type: "interior")
-
-    assert_difference -> { Generation.count } => 1, -> { WorkflowRun.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
-      post apply_recipe_library_media_url(@media, recipe_id: recipes(:cinematic).id)
-    end
-    assert_redirected_to %r{/library/uploads/#{@media.id}\b}
-    generation = @media.generations.sole
-    assert_equal recipes(:cinematic), generation.recipe
-    assert_equal "running", generation.status
-
-    run = generation.workflow_run
-    post stop_library_media_url(generation.generated_media)
-    assert_equal "stopped", run.reload.status
-
-    run.step("photos").update!(status: "running")
-    run.fail!("boom")
-    post rerun_library_media_url(generation.generated_media, key: "photos")
-    assert_redirected_to %r{/library/uploads/#{generation.generated_media.id}\b}
-    assert_equal "running", run.reload.status
-    assert_equal "pending", run.step("photos").status
-
-    @media.update!(media_type: "exterior")
-    assert_no_difference -> { Generation.count } do
-      post apply_recipe_library_media_url(@media, recipe_id: recipes(:cinematic).id)
-    end
-    assert_equal "That recipe doesn't fit this media.", flash[:alert]
-  end
-
   test "cannot delete another account's media" do
     sign_in_as(users(:lazaro_nixon))
 

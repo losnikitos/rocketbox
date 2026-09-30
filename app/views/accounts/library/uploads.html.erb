@@ -39,7 +39,7 @@
                   </label>
                 <% end %>
 
-                <%= link_to library_upload_path(media), aria: { label: "Open #{media.kind}" }, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
                 <% end %>
                 <div class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-ink-900/10" aria-hidden="true"></div>
@@ -49,7 +49,7 @@
                 <% if media.generated_media.any? %>
                   <div class="absolute bottom-2 right-2 z-10 flex gap-2" aria-label="Generated media">
                     <% media.generated_media.first(3).each do |generated| %>
-                      <%= link_to library_upload_path(generated), aria: { label: "Open generated #{generated.kind}" }, class: "block rounded-md shadow-sm ring-2 ring-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                      <%= link_to library_item_path(generated), aria: { label: "Open generated #{generated.kind}" }, class: "block rounded-md shadow-sm ring-2 ring-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                         <%= render "accounts/library/file", media: generated, css: "aspect-2/3 w-12 rounded-md object-cover" %>
                       <% end %>
                     <% end %>

@@ -33,7 +33,8 @@ Rails.application.routes.draw do
       get "/", to: redirect(path: "/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads, defaults: { collection: "inbox" }
       get "photobank", to: "library#uploads", as: :library_photobank, defaults: { collection: "photobank" }
-      get "uploads/:id", to: "library#show", as: :library_upload
+      get "uploads/:id", to: "library#show", as: :library_upload, defaults: { collection: "inbox" }
+      get "photobank/:id", to: "library#show", as: :library_photobank_media, defaults: { collection: "photobank" }
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do
@@ -94,10 +95,10 @@ Rails.application.routes.draw do
       member do
         post :extract
         patch :apply_extraction
-        post :apply_recipe
         post :rerun
         post :stop
       end
+      resources :generations, only: %i[new create], module: :accounts
     end
   end
 

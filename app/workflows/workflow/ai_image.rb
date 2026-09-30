@@ -9,7 +9,7 @@ class Workflow
 
     def self.call(inputs:, params:, run:)
       inputs.map do |blob|
-        { io: StringIO.new(Xai.edit_image(prompt: params["prompt"], blob:)), filename: "ai-image.jpg", content_type: "image/jpeg" }
+        { io: StringIO.new(Xai.edit_image(prompt: params["prompt"], blob:, **run.subject.xai_options)), filename: "ai-image.jpg", content_type: "image/jpeg" }
       end
     end
   end

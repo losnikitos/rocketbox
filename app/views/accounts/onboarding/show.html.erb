@@ -100,7 +100,7 @@
             <ul class="mt-2 flex gap-1.5">
               <% step[:previews].each do |media| %>
                 <li>
-                  <%= link_to library_upload_path(media), aria: { label: "Open #{media.kind}" } do %>
+                  <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" } do %>
                     <%= render "accounts/library/file", media:, css: "size-10 rounded-md object-cover" %>
                   <% end %>
                 </li>

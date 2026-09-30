@@ -90,11 +90,11 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     admin = sign_in_as(users(:admin_user))
     source = LibraryMedia.create!(kind: "photo", media_type: "interior", user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
-    generation = Generation.start!(source, recipes(:cinematic))
+    generation = source.generations.new(recipe: recipes(:cinematic)).start!
     generation.workflow_run.step("photos").update!(status: "running")
     generation.workflow_run.fail!("content policy")
 
-    get "/app/library/uploads/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
+    get "/app/library/photobank/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
     assert_response :success
     assert_select "a[href^='/admin/generations/#{generation.id}']"
     get "/admin/generations/#{generation.id}", headers: @ua

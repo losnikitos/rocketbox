@@ -18,12 +18,12 @@ module Accounts
     end
 
     def show
-      @media = Current.account.library_media.with_attached_file.includes(
+      @collection = params[:collection]
+      @media = Current.account.library_media.where(collection: @collection).with_attached_file.includes(
         generations: [ :recipe, :workflow_run, { generated_media: { file_attachment: :blob } } ],
         origin: [ :recipe, { source_media: { file_attachment: :blob } },
                   { workflow_run: { workflow_steps: { outputs_attachments: :blob } } } ]
       ).find(params[:id])
-      @collection = @media.collection
     end
   end
 end
