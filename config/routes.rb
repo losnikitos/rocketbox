@@ -52,9 +52,7 @@ Rails.application.routes.draw do
     scope module: :accounts do
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
-      resources :recipes, except: :show do
-        delete "examples/:example_id", action: :destroy_example, on: :member, as: :example
-      end
+      resources :recipes, except: :show
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
           patch :apply, on: :member

@@ -47,20 +47,23 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     kept, removed = recipe.examples.sort_by { it.filename.to_s }
     get edit_recipe_url(recipe, account: @admin.id)
-    assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form]", count: 2
+    assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value='']", count: 1
+    assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", kept.signed_id
+    assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", removed.signed_id
+    assert_select "li button[data-action='file-preview#remove']", count: 2
+    assert_select "form[action*='examples']", count: 0
     assert_select "input[name='recipe[workflow]']", count: 0
     assert_select "textarea[name='recipe[prompt]']", text: "Film look"
     assert_select "fieldset[data-workflow=TwoPhotoStory]:not([disabled]) input[name='recipe[texts][text_1]'][value=?]", "This bank holiday we work as usual"
     assert_select "article dd", text: "This bank holiday we work as usual"
     assert_select "article dd", text: "Film look", count: 2
 
-    delete example_recipe_url(recipe, example_id: removed.id)
-    assert_redirected_to edit_recipe_url(recipe, account: @admin.id)
-    assert_equal %w[a.jpg], recipe.reload.examples.map { it.filename.to_s }
-
     patch recipe_url(recipe), params: { recipe: { name: "Story teaser", examples: [ "", kept.signed_id, image("c.jpg") ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     assert_equal %w[a.jpg c.jpg], recipe.reload.examples.map { it.filename.to_s }.sort
+
+    patch recipe_url(recipe), params: { recipe: { name: "Story teaser", examples: [ "" ] } }
+    assert_empty recipe.reload.examples
   end
 
   test "recipes used by posts can't be removed" do
