@@ -5,7 +5,6 @@ require "test_helper"
 class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = sign_in_as(users(:lazaro_nixon))
-    @recipe = recipes(:cinematic)
     @media = LibraryMedia.create!(
       telegram_file_id: "f-post",
       telegram_file_unique_id: "u-post-media",
@@ -15,61 +14,13 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     @media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
   end
 
-  test "new requires selected media" do
-    get new_instagram_post_url
-    assert_redirected_to library_uploads_url
-    assert_match(/Select at least one image/, flash[:alert])
-  end
-
-  test "new shows selected media and recipes" do
-    get new_instagram_post_url, params: { library_media_ids: [ @media.id ] }
-    assert_response :success
-    assert_select "h2", "Create Instagram post"
-    assert_select "select[name=recipe_id]"
-    assert_select "option", text: "#{@recipe.name} (Reel)"
-  end
-
-  test "create starts the recipe workflow" do
-    assert_difference -> { SmmPost.count }, 1 do
-      assert_enqueued_with(job: RunWorkflowJob) do
-        post instagram_posts_url, params: {
-          library_media_ids: [ @media.id ],
-          recipe_id: @recipe.id,
-          caption: "Fresh cut"
-        }
-      end
-    end
-
-    post_record = SmmPost.order(:id).last
-    assert_redirected_to instagram_post_url(post_record)
-    assert_equal "generating", post_record.status
-    assert_equal "Fresh cut", post_record.caption
-    assert_equal [ @media.id ], post_record.library_media.ids
-    assert_equal %w[photos video reel], post_record.workflow_run.workflow_steps.map(&:key)
+  test "show renders a post by its format" do
+    post_record = create_ready_post!
 
     get instagram_post_url(post_record)
     assert_response :success
-    assert_select "article", count: 3
-    assert_select "button", text: "Pause"
-  end
-
-  test "pause, resume and rerun control the workflow" do
-    post_record = build_draft_post!
-    run = WorkflowRun.start!(post_record)
-
-    post pause_instagram_post_url(post_record)
-    assert run.reload.paused?
-
-    assert_enqueued_with(job: RunWorkflowJob, args: [ run.id ]) { post resume_instagram_post_url(post_record) }
-    assert run.reload.running?
-
-    run.fail!("boom")
-    assert_enqueued_with(job: RunWorkflowJob, args: [ run.id ]) { post rerun_instagram_post_url(post_record, key: "video") }
-    assert run.reload.running?
-    assert_equal "generating", post_record.reload.status
-
-    post rerun_instagram_post_url(post_record, key: "nope")
-    assert_response :unprocessable_entity
+    assert_select "p", text: /Posts\s+\/\s+Reel/
+    assert_select "button", text: /publish to Instagram/
   end
 
   test "publish enqueues instagram job when ready" do
@@ -193,7 +144,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
   private
 
     def build_draft_post!
-      post_record = @user.smm_posts.new(recipe: @recipe, status: "draft")
+      post_record = @user.smm_posts.new(status: "draft")
       post_record.smm_post_media_items.build(library_media: @media, position: 0)
       post_record.save!
       post_record

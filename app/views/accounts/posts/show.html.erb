@@ -1,10 +1,4 @@
-<% content_for(:title, "#{@post.recipe.name} — Posts — Rocketbox") %>
-
-<% if @post.workflow_run&.running? %>
-  <% content_for :head do %>
-    <meta http-equiv="refresh" content="5">
-  <% end %>
-<% end %>
+<% content_for(:title, "#{@post.format.humanize} — Posts — Rocketbox") %>
 
 <% status_pill_class = smm_post_status_pill_class(@post.status) %>
 
@@ -13,7 +7,7 @@
     <p class="text-sm text-ink-500">
       <%= link_to "Posts", instagram_posts_path, class: "underline underline-offset-2" %>
       <span class="mx-1">/</span>
-      <%= @post.recipe.name %>
+      <%= @post.format.humanize %>
     </p>
     <% if @post.published_at.present? %>
       <p class="mt-2 text-sm text-ink-600">Published <%= l(@post.published_at, format: :short) %></p>
@@ -77,10 +71,6 @@
     <div class="flex aspect-9/16 w-64 items-center justify-center rounded-lg bg-stone-50 px-3 text-center text-sm text-ink-600">
       Generating with AI…
     </div>
-  <% end %>
-
-  <% if @post.workflow_run %>
-    <%= render "accounts/posts/workflow", run: @post.workflow_run %>
   <% end %>
 </div>
 

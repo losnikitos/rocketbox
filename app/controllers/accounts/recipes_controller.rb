@@ -17,7 +17,7 @@ module Accounts
     end
 
     def create
-      @recipe = Recipe.new(recipe_params(:workflow))
+      @recipe = Recipe.new(recipe_params)
       if @recipe.save
         redirect_to recipes_path, notice: "Recipe added."
       else
@@ -40,7 +40,7 @@ module Accounts
       @recipe.destroy!
       redirect_to recipes_path, notice: "Recipe removed."
     rescue ActiveRecord::DeleteRestrictionError
-      redirect_to recipes_path, alert: "This recipe is used by posts and can't be removed."
+      redirect_to recipes_path, alert: "This recipe has generations and can't be removed."
     end
 
     private
@@ -49,8 +49,8 @@ module Accounts
         @recipe = Recipe.find(params[:id])
       end
 
-      def recipe_params(*extra)
-        params.expect(recipe: [ :name, :media_type, :prompt, *extra, texts: {}, examples: [] ])
+      def recipe_params
+        params.expect(recipe: [ :name, :media_type, :kind, :prompt, examples: [] ])
       end
   end
 end

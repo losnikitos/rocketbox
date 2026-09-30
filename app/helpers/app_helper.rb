@@ -104,27 +104,4 @@ module AppHelper
     end
     "#{bg} #{smm_post_status_text_class(status)}"
   end
-
-  # [[node, count], …] in run order, consecutive steps of the same node merged.
-  def workflow_scheme(workflow)
-    workflow&.steps.to_a.map(&:node).chunk_while { _1 == _2 }.map { [ it.first, it.size ] }
-  end
-
-  # Data types in the workflow picker, one fixed color each: [label, icon, classes].
-  SCHEME_BOXES = {
-    image: [ "Image", "photo", "border-green-200 bg-green-50 text-green-800" ],
-    prompt: [ "Prompt", "sparkles", "border-blue-200 bg-blue-50 text-blue-800" ],
-    video: [ "Video", "film", "border-violet-200 bg-violet-50 text-violet-800" ],
-    text: [ "Text", "chat-bubble-bottom-center-text", "border-amber-200 bg-amber-50 text-amber-800" ]
-  }.freeze
-
-  # [[label, icon, classes], …] e.g. "2 × Image", "Prompt", "2 × Image"; the one recipe prompt is never multiplied.
-  def workflow_boxes(workflow)
-    workflow_scheme(workflow).flat_map do |node, count|
-      node::SCHEME.map do |type|
-        label, icon, css = SCHEME_BOXES.fetch(type)
-        [ count > 1 && type != :prompt ? "#{count} × #{label}" : label, icon, css ]
-      end
-    end
-  end
 end
