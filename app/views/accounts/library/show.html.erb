@@ -1,20 +1,48 @@
 <% content_for(:title, "#{@media.kind.humanize} — #{@collection.humanize} — Rocketbox") %>
 <% blob = @media.file.blob if @media.file.attached? %>
+<% source = @media.origin&.source_media if blob %>
+<% source = nil unless source&.file&.attached? %>
 
 <div class="flex flex-col gap-6 md:flex-row">
-  <div class="flex min-w-0 flex-1 flex-col gap-4">
-    <%= link_to library_collection_path(@collection), class: "inline-flex items-center gap-1 self-start text-sm text-ink-600 hover:text-ink-900" do %>
-      <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      <%= @collection.humanize %>
-    <% end %>
-    <div class="flex flex-1 items-center justify-center rounded-lg bg-white p-4">
+  <div class="group flex min-w-0 flex-1 flex-col gap-4">
+    <div class="grid grid-cols-3 items-center gap-2">
+      <%= link_to library_collection_path(@collection), class: "inline-flex items-center gap-1 justify-self-start text-sm text-ink-600 hover:text-ink-900" do %>
+        <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        <%= @collection.humanize %>
+      <% end %>
+      <% if source %>
+        <div class="flex gap-1 justify-self-center rounded-full bg-ink-900/5 p-1" role="radiogroup" aria-label="Compare">
+          <% [ [ "Before", false ], [ "After", true ] ].each do |label, checked| %>
+            <label class="cursor-pointer rounded-full px-3 py-1 text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+              <%= radio_button_tag "compare", label.downcase, checked, id: "compare-#{label.downcase}", class: "sr-only" %>
+              <%= label %>
+            </label>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="relative flex flex-1 items-center justify-center rounded-lg bg-white p-4">
       <% if blob&.image? %>
-        <button type="button" popovertarget="hero-media" aria-label="View full size" class="cursor-zoom-in">
+        <% after = "group-has-[#compare-before:checked]:hidden" if source %>
+        <% before = "hidden group-has-[#compare-before:checked]:block" %>
+        <% if source %>
+          <label for="compare-before" class="cursor-pointer <%= after %>">
+            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+          </label>
+          <label for="compare-after" class="cursor-pointer <%= before %>">
+            <%= render "accounts/library/file", media: source, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+          </label>
+        <% else %>
           <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+        <% end %>
+        <button type="button" popovertarget="hero-media" aria-label="View full size" title="View full size"
+                class="absolute right-2 top-2 cursor-pointer rounded-full bg-white/90 p-2 text-ink-600 shadow-sm transition hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket">
+          <%= heroicon "arrows-pointing-out", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
         </button>
         <div id="hero-media" popover class="size-full bg-black/90 p-4">
           <button type="button" popovertarget="hero-media" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
-            <%= render "accounts/library/file", media: @media, css: "max-h-full max-w-full" %>
+            <%= render "accounts/library/file", media: @media, css: "max-h-full max-w-full #{after}" %>
+            <%= render "accounts/library/file", media: source, css: "max-h-full max-w-full #{before}" if source %>
           </button>
         </div>
       <% else %>
