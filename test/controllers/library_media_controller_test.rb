@@ -42,6 +42,9 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "running", generation.status
 
     run = generation.workflow_run
+    post stop_library_media_url(generation.generated_media)
+    assert_equal "stopped", run.reload.status
+
     run.step("photos").update!(status: "running")
     run.fail!("boom")
     post rerun_library_media_url(generation.generated_media, key: "photos")

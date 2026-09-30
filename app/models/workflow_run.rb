@@ -4,7 +4,7 @@
 # is a checkpoint. A subject provides recipe, input_media, mark_generating!/mark_ready!/mark_failed!, and
 # store_output!(blobs, format).
 class WorkflowRun < ApplicationRecord
-  STATUSES = %w[running paused complete failed].freeze
+  STATUSES = %w[running paused complete failed stopped].freeze
 
   belongs_to :subject, polymorphic: true
   has_many :workflow_steps, dependent: :destroy
@@ -42,7 +42,7 @@ class WorkflowRun < ApplicationRecord
     raise
   rescue StandardError => e
     Rails.logger.error("[WorkflowRun] run=#{id} step=#{current&.key} #{e.class}: #{e.message}")
-    fail!(e.message)
+    fail!(e.message) unless reload.stopped?
   end
 
   def pause!
@@ -64,10 +64,15 @@ class WorkflowRun < ApplicationRecord
     RunWorkflowJob.perform_later(id)
   end
 
-  def fail!(message)
+  # The provider can't cancel a request it has accepted; the in-flight step's result is discarded.
+  def stop!
+    fail!("Stopped.", status: "stopped") if running?
+  end
+
+  def fail!(message, status: "failed")
     message = message.to_s.truncate(1000)
     workflow_steps.select(&:running?).each { it.update!(status: "failed", error: message, finished_at: Time.current) }
-    update!(status: "failed", error: message)
+    update!(status:, error: message)
     subject.mark_failed!(message)
   end
 

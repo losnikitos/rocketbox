@@ -24,6 +24,8 @@ class WorkflowStep < ApplicationRecord
     update!(status: "running", error: nil, started_at: Time.current, finished_at: nil)
     inputs = definition.from.flat_map { run.step(it).output_blobs }
     results = definition.node.call(inputs:, params: run.subject.recipe.params_for(definition), run:)
+    return if run.reload.stopped?
+
     outputs.attach(results) if results.any?
     update!(status: "complete", finished_at: Time.current)
   end

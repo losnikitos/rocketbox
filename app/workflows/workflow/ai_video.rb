@@ -8,7 +8,7 @@ class Workflow
     SCHEME = %i[prompt video].freeze
 
     def self.call(inputs:, params:, run:)
-      [ { io: StringIO.new(Xai.generate_video(prompt: params["prompt"], blobs: inputs)), filename: "ai-video.mp4", content_type: "video/mp4" } ]
+      [ { io: StringIO.new(Xai.generate_video(prompt: params["prompt"], blobs: inputs, stopped: -> { run.reload.stopped? })), filename: "ai-video.mp4", content_type: "video/mp4" } ]
     end
   end
 end

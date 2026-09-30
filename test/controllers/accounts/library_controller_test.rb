@@ -61,6 +61,8 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
     source.generations.create!(recipe: recipes(:cinematic), generated_media: generated)
     failed = Generation.start!(source, recipes(:cinematic))
+    get library_upload_url(failed.generated_media)
+    assert_select "form[action=?] button", stop_library_media_path(failed.generated_media), text: /Stop/
     failed.workflow_run.step("photos").update!(status: "running")
     failed.workflow_run.fail!("content policy")
 
@@ -77,6 +79,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     get library_upload_url(failed.generated_media)
     assert_select "#workflow-heading", text: "Cinematic shop reel"
     assert_select "section p", text: "content policy"
+    assert_select "form[action=?]", stop_library_media_path(failed.generated_media), count: 0
     assert_select "article#photos form[action=?]", rerun_library_media_path(failed.generated_media, key: "photos")
 
     get library_photobank_url

@@ -8,7 +8,18 @@
       <%= @collection.humanize %>
     <% end %>
     <div class="flex flex-1 items-center justify-center rounded-lg bg-ink-900/5 p-4">
-      <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+      <% if blob&.image? %>
+        <button type="button" popovertarget="hero-media" aria-label="View full size" class="cursor-zoom-in">
+          <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+        </button>
+        <div id="hero-media" popover class="size-full bg-black/90 p-4">
+          <button type="button" popovertarget="hero-media" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
+            <%= render "accounts/library/file", media: @media, css: "max-h-full max-w-full" %>
+          </button>
+        </div>
+      <% else %>
+        <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+      <% end %>
     </div>
 
     <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
@@ -18,6 +29,12 @@
         <div class="flex items-center gap-2">
           <h3 id="workflow-heading" class="text-sm font-semibold text-ink-900"><%= @media.origin.recipe.name %></h3>
           <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
+          <% if run.running? %>
+            <%= button_to stop_library_media_path(@media), class: "rb-btn-ghost-on-light gap-1 px-3 py-1 text-xs" do %>
+              <%= heroicon "stop", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
+              Stop
+            <% end %>
+          <% end %>
           <div class="ml-auto"><%= render "shared/admin_links/generation", generation: @media.origin %></div>
         </div>
         <% if run.error.present? %>
@@ -28,9 +45,9 @@
     <% end %>
   </div>
 
-  <aside class="w-full shrink-0 md:w-64 md:border-l md:border-ink-900/10 md:pl-6 lg:w-72">
+  <aside id="details" class="w-full shrink-0 md:w-96 md:border-l md:border-ink-900/10 md:pl-6 lg:w-108">
     <div class="flex items-center justify-between gap-2">
-      <h2 class="text-sm font-medium text-ink-900">Details</h2>
+      <h2 class="text-sm font-medium text-ink-900"><a href="#details" class="hover:underline">Details</a></h2>
       <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
     </div>
 
@@ -44,8 +61,8 @@
     <% end %>
 
     <% if @media.story_image? %>
-      <section class="mt-6" aria-labelledby="apply-recipe-heading">
-        <h3 id="apply-recipe-heading" class="text-sm text-ink-500">Apply recipe</h3>
+      <section id="apply_recipe" class="mt-6" aria-labelledby="apply-recipe-heading">
+        <h3 id="apply-recipe-heading" class="text-sm text-ink-500"><a href="#apply_recipe" class="hover:underline">Apply recipe</a></h3>
         <% if @media.media_type.nil? %>
           <p class="mt-1 text-sm text-ink-600">Set a media type to see recipes.</p>
         <% elsif (recipes = @media.recipes).empty? %>
@@ -61,11 +78,16 @@
                     <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
                   </div>
                 <% end %>
-                <%= button_to apply_recipe_library_media_path(@media, recipe_id: recipe.id), form_class: "absolute inset-0",
-                      class: "flex size-full cursor-pointer items-start text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
+                <%= link_to edit_recipe_path(recipe), class: "absolute inset-0 flex items-start focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
                   <span class="w-full p-1.5 text-xs font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-5 text-white" : "text-ink-900" %>">
                     <%= recipe.name %>
                   </span>
+                <% end %>
+                <%= button_to apply_recipe_library_media_path(@media, recipe_id: recipe.id), form_class: "absolute bottom-1.5 right-1.5",
+                      class: "inline-flex cursor-pointer items-center gap-1 rounded-md bg-white/85 px-2 py-1 text-xs font-semibold text-ink-900 shadow-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket",
+                      "aria-label": "Run #{recipe.name}" do %>
+                  <%= heroicon "play", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
+                  Run
                 <% end %>
               </li>
             <% end %>
@@ -75,8 +97,8 @@
     <% end %>
 
     <% if @media.generations.any? %>
-      <section class="mt-6" aria-labelledby="generated-heading">
-        <h3 id="generated-heading" class="text-sm text-ink-500">Generated</h3>
+      <section id="generated" class="mt-6" aria-labelledby="generated-heading">
+        <h3 id="generated-heading" class="text-sm text-ink-500"><a href="#generated" class="hover:underline">Generated</a></h3>
         <ul class="mt-2 grid grid-cols-3 gap-2">
           <% @media.generations.sort_by(&:created_at).reverse_each do |generation| %>
             <li class="group relative">
