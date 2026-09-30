@@ -3,7 +3,7 @@
 # A recipe applied to one library media. The result is a photobank media, created up front so a running or
 # failed generation already has a page; the workflow attaches its file when it finishes.
 # `options` are the provider request options (IMAGE_OPTIONS or VIDEO_OPTIONS) for every AI step; the chosen
-# model (one of `models`, enabled in Active Admin) picks the provider.
+# model (one of `models`, enabled in Active Admin) picks the provider. `prompt` is appended to the recipe's prompt.
 class Generation < ApplicationRecord
   # Allowed values per provider and request option. Omitted options use the provider's default.
   IMAGE_OPTIONS = {

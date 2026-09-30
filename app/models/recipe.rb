@@ -32,9 +32,9 @@ class Recipe < ApplicationRecord
     workflow_class&.text_steps.to_a
   end
 
-  # The step's params with this recipe's prompt or text filled in.
-  def params_for(step)
-    return step.params.merge("prompt" => prompt) if step.node.in?(AI_NODES)
+  # The step's params with this recipe's prompt (plus any extra prompt) or text filled in.
+  def params_for(step, extra_prompt = nil)
+    return step.params.merge("prompt" => [ prompt, extra_prompt ].compact_blank.join("\n\n")) if step.node.in?(AI_NODES)
     return step.params.merge("body" => texts[step.key]) if step.node == Workflow::TextOverlay
 
     step.params

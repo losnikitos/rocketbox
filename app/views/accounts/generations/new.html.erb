@@ -38,6 +38,10 @@
       <% if @generation.errors.any? %>
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= @generation.errors.full_messages.to_sentence %></p>
       <% end %>
+      <div>
+        <%= f.label :prompt, "Extra prompt", class: tw_label_classes %>
+        <%= f.text_area :prompt, rows: 3, placeholder: "Added to the recipe's prompt for this generation only", class: tw_input_classes %>
+      </div>
       <% @generation.option_choices.each do |key, choices| %>
         <% if key == "model" %>
           <div>
