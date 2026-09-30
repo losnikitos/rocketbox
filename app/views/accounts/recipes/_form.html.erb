@@ -1,5 +1,5 @@
 <%# locals: (recipe:) %>
-<%# Examples sit outside the form (each remove is its own button_to form); fields join it via form="recipe_form". %>
+<%# Examples sit outside the form for layout; fields join it via form="recipe_form". %>
 <div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
@@ -73,10 +73,16 @@
 
     <div class="min-w-0">
       <h2 id="examples" class="<%= tw_label_classes %> scroll-m-24"><a href="#examples" class="hover:underline">Examples</a></h2>
-      <% attached = recipe.examples.select(&:persisted?) %>
-      <% if attached.any? %>
-        <ul class="mb-3 grid grid-cols-3 gap-3">
-          <% attached.each do |example| %>
+      <div class="rounded-2xl border border-ink-900/10 bg-stone-50 p-6 transition data-dragging:ring-2 data-dragging:ring-rocket/40" data-controller="file-preview"
+           data-action="dragover->file-preview#over dragleave->file-preview#leave drop->file-preview#drop">
+        <% trash = heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        <% remove = { type: "button", data: { action: "file-preview#remove" },
+                      class: "absolute bottom-2 right-2 rounded-lg bg-white/90 p-1.5 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-white hover:text-signal-red focus-visible:opacity-100" } %>
+        <template data-file-preview-target="remove"><%= tag.button trash, **remove %></template>
+        <%# Keeps the key present so removing every example clears them on save. %>
+        <%= hidden_field_tag "recipe[examples][]", "", id: nil, form: "recipe_form" %>
+        <ul class="grid grid-cols-3 gap-3" data-file-preview-target="list">
+          <% recipe.examples.select(&:persisted?).each do |example| %>
             <li class="group relative">
               <% if example.video? %>
                 <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
@@ -91,25 +97,18 @@
                 </div>
               <% end %>
               <%= hidden_field_tag "recipe[examples][]", example.signed_id, id: nil, form: "recipe_form" %>
-              <%= button_to example_recipe_path(recipe, example_id: example.id), method: :delete, "aria-label": "Remove #{example.filename}",
-                    form: { class: "absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
-                            data: { turbo_confirm: "Remove this example?" } },
-                    class: "rounded-lg bg-white/90 p-1.5 text-ink-700 shadow-sm transition hover:bg-white hover:text-signal-red" do %>
-                <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-              <% end %>
+              <%= tag.button trash, **remove, "aria-label": "Remove #{example.filename}" %>
             </li>
           <% end %>
+          <li data-file-preview-target="add">
+            <label class="flex aspect-2/3 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 px-2 text-center text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
+              <%= heroicon "plus", options: { class: "size-6", "aria-hidden": true } %>
+              <span class="text-xs">Drop images or videos</span>
+              <%= file_field_tag "recipe[examples][]", multiple: true, accept: "image/*,video/*", form: "recipe_form", "aria-label": "Add examples",
+                    data: { file_preview_target: "input", action: "change->file-preview#show" }, class: "sr-only" %>
+            </label>
+          </li>
         </ul>
-      <% end %>
-
-      <div class="relative flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 bg-white px-4 py-8 text-center transition hover:border-rocket/50 has-focus-visible:border-rocket">
-        <%= heroicon "arrow-up-tray", options: { class: "size-6 text-ink-400", "aria-hidden": true } %>
-        <p class="text-sm font-medium text-ink-900">Drop images or videos here</p>
-        <p class="text-xs text-ink-500">or click to choose files</p>
-        <output class="text-xs font-medium text-rocket empty:hidden"></output>
-        <%= file_field_tag "recipe[examples][]", multiple: true, accept: "image/*,video/*", form: "recipe_form", "aria-label": "Add examples",
-              onchange: "this.previousElementSibling.textContent = this.files.length ? `${this.files.length} file(s) will be added on save` : ''",
-              class: "absolute inset-0 size-full cursor-pointer opacity-0" %>
       </div>
     </div>
   </div>
