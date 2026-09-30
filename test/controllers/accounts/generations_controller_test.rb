@@ -40,7 +40,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     generation = @media.generations.sole
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
     assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, generation.options)
-    assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5 }, generation.xai_options)
+    assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5, provider: :xai }, generation.ai_options)
     assert_equal "running", generation.status
 
     run = generation.workflow_run
@@ -53,6 +53,22 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
     assert_equal "running", run.reload.status
     assert_equal "pending", run.step("photos").status
+  end
+
+  test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
+    recipe = Recipe.create!(name: "Polish", workflow: "ImageToImage", media_type: "interior", prompt: "Polish the shot.")
+
+    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "gpt-image-2" } })
+    assert_response :success
+    assert_select "select[name='generation[options][model]'] option[selected]", text: "gpt-image-2"
+    assert_select "select[name='generation[options][size]'] option[selected]", text: "1024x1536"
+    assert_select "select[name='generation[options][aspect_ratio]']", count: 0
+
+    post library_media_generations_url(@media, recipe_id: recipe.id), params: {
+      generation: { options: { model: "gpt-image-1-mini", size: "1024x1024", quality: "high", aspect_ratio: "9:16" } }
+    }
+    generation = @media.generations.sole
+    assert_equal({ model: "gpt-image-1-mini", size: "1024x1024", quality: "high", provider: :openai }, generation.ai_options)
   end
 
   test "rejects options xAI doesn't offer" do

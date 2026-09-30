@@ -14,16 +14,15 @@ class WorkflowRunTest < ActiveSupport::TestCase
     end
     @post.save!
 
-    @original_edit = Xai.method(:edit_image)
+    @original_paint = RubyLLM.method(:paint)
     @prompts = []
-    @xai_options = []
-    prompts, xai_options = @prompts, @xai_options
-    bytes = jpeg
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:, **options| prompts << prompt; xai_options << options; bytes }
+    @paint_options = []
+    prompts, paint_options = @prompts, @paint_options
+    stub_paint { |prompt, model:, provider_options:, **| prompts << prompt; paint_options << { model:, provider_options: }; jpeg }
   end
 
   teardown do
-    Xai.define_singleton_method(:edit_image, @original_edit)
+    RubyLLM.define_singleton_method(:paint, @original_paint)
   end
 
   test "runs every step and turns the output into story slides" do
@@ -53,7 +52,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
   end
 
   test "a failed step fails the run and retry picks up from it" do
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| raise Xai::Error, "content policy" }
+    stub_paint { |*, **| raise RubyLLM::Error, "content policy" }
     run = WorkflowRun.start!(@post)
     advance_until_settled(run)
 
@@ -62,8 +61,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     failed = run.workflow_steps.find(&:failed?)
     assert_equal "content policy", failed.error
 
-    bytes = jpeg
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| bytes }
+    stub_paint { |*, **| jpeg }
     run.rerun!(failed.key)
     advance_until_settled(run)
     assert run.complete?
@@ -72,8 +70,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
   test "stop mid-step discards the step's result and re-run continues" do
     post = @post
-    bytes = jpeg
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| WorkflowRun.find_by!(subject: post).stop!; bytes }
+    stub_paint { |*, **| WorkflowRun.find_by!(subject: post).stop!; jpeg }
     run = WorkflowRun.start!(@post)
     advance_until_settled(run)
 
@@ -82,7 +79,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal "Stopped.", stopped.error
     assert_not stopped.outputs.attached?
 
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| bytes }
+    stub_paint { |*, **| jpeg }
     run.rerun!(stopped.key)
     advance_until_settled(run)
     assert run.complete?
@@ -102,7 +99,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
     advance_until_settled(generation.workflow_run)
     assert_equal "complete", generation.reload.status
-    assert_equal [ { model: "grok-imagine-image-2.0", aspect_ratio: "3:4", resolution: "2k" } ], @xai_options
+    assert_equal [ { model: "grok-imagine-image-2.0", provider_options: { aspect_ratio: "3:4", resolution: "2k" } } ], @paint_options
     first_blob = media.reload.file.blob
     assert first_blob
 
@@ -113,6 +110,10 @@ class WorkflowRunTest < ActiveSupport::TestCase
   end
 
   private
+
+    def stub_paint(&block)
+      RubyLLM.define_singleton_method(:paint) { |*args, **kwargs| RubyLLM::Image.new(data: Base64.strict_encode64(block.call(*args, **kwargs))) }
+    end
 
     def advance_until_settled(run)
       20.times do

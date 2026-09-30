@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 class ImproveLibraryMedia
-  Error = Xai::Error
-  TransientError = Xai::TransientError
+  Error = Class.new(StandardError)
 
   def self.call(media:)
     new(media:).call
@@ -16,7 +15,7 @@ class ImproveLibraryMedia
     raise Error, "Only images can be improved with AI." unless @media.story_image?
     raise Error, "Media file is missing." unless @media.file.attached?
 
-    store!(Xai.edit_image(prompt: Prompt.body_for!(:improve_library_media), blob: @media.file.blob))
+    store!(RubyLLM.paint(Prompt.body_for!(:improve_library_media), provider: :xai, with: @media.file.blob).to_blob)
   end
 
   private

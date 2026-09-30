@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Accounts
-  # The draft screen between picking a recipe and running it: an unsaved Generation with its xAI options.
+  # The draft screen between picking a recipe and running it: an unsaved Generation with its AI options.
   class GenerationsController < ApplicationController
     layout "app"
 
@@ -11,7 +11,7 @@ module Accounts
     end
 
     def create
-      @generation.options = params.expect(generation: [ options: Xai::IMAGE_OPTIONS.keys | Xai::VIDEO_OPTIONS.keys ])[:options].to_h
+      @generation.options = params.expect(generation: [ options: {} ])[:options].to_h
       @generation.start!
       redirect_to helpers.library_item_path(@generation.generated_media), notice: "Applying #{@generation.recipe.name}…"
     rescue ActiveRecord::RecordInvalid
@@ -25,7 +25,7 @@ module Accounts
         recipe = media.recipes.find { it.id == params[:recipe_id].to_i }
         return redirect_to helpers.library_item_path(media), alert: "That recipe doesn't fit this media." unless recipe
 
-        @generation = media.generations.new(recipe:)
+        @generation = media.generations.new(recipe:, options: { "model" => params.dig(:generation, :options, :model).presence }.compact)
       end
   end
 end

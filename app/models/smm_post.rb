@@ -71,7 +71,7 @@ class SmmPost < ApplicationRecord
     smm_post_media_items.includes(library_media: { file_attachment: :blob }).map(&:library_media)
   end
 
-  def xai_options = {}
+  def ai_options = {}
 
   # The workflow's output media become the slides.
   def store_output!(blobs, format)

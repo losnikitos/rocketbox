@@ -1,6 +1,8 @@
 RubyLLM.configure do |config|
   config.xai_api_key = Rails.application.credentials.dig(:xai, :api_key)
+  config.openai_api_key = Rails.application.credentials.dig(:openai, :api_key)
   config.default_model = "grok-4.6"
+  config.default_image_model = "grok-imagine-image-2.0"
   config.logger = Rails.logger
 end
 

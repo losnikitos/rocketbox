@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Runs a recipe's Workflow class for a subject (SmmPost or Generation), one step per RunWorkflowJob so every step
-# is a checkpoint. A subject provides recipe, input_media, xai_options (for AI steps),
+# is a checkpoint. A subject provides recipe, input_media, ai_options (for AI steps),
 # mark_generating!/mark_ready!/mark_failed!, and store_output!(blobs, format).
 class WorkflowRun < ApplicationRecord
   STATUSES = %w[running paused complete failed stopped].freeze
@@ -38,8 +38,6 @@ class WorkflowRun < ApplicationRecord
 
     current.execute!
     RunWorkflowJob.perform_later(id)
-  rescue Xai::TransientError
-    raise
   rescue StandardError => e
     Rails.logger.error("[WorkflowRun] run=#{id} step=#{current&.key} #{e.class}: #{e.message}")
     fail!(e.message) unless reload.stopped?
