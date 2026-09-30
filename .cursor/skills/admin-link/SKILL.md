@@ -34,6 +34,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Recipe | [`_recipe`](/app/views/shared/admin_links/_recipe.html.erb) | Admin, Remove |
 | Generation | [`_generation`](/app/views/shared/admin_links/_generation.html.erb) | Admin |
 | Prompt | [`_prompt`](/app/views/shared/admin_links/_prompt.html.erb) | Edit prompt |
+| Media types (library tabs) | [`_media_types`](/app/views/shared/admin_links/_media_types.html.erb) | Media types |
 
 ## Usage
 
