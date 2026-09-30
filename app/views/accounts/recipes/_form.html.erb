@@ -8,7 +8,7 @@
   </nav>
 
   <div class="grid items-start gap-8 @3xl:grid-cols-2">
-    <%= form_with model: recipe, id: "recipe_form", class: "min-w-0 space-y-4" do |f| %>
+    <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
       <% if recipe.errors.any? %>
         <div class="<%= tw_alert_error_classes %>" role="alert">
           <ul class="list-inside list-disc">
