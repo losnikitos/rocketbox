@@ -13,7 +13,7 @@ class Generation < ApplicationRecord
       "quality" => %w[low medium] # grok-imagine-image-2.0 only
     },
     "openai" => {
-      "size" => %w[1024x1024 1024x1536 1536x1024],
+      "size" => %w[1008x1792 1088x1360 1088x1088 1792x1008], # gpt-image-2+ only; 1.x models accept 3 fixed sizes
       "quality" => %w[low medium high]
     }
   }.freeze
@@ -84,7 +84,7 @@ class Generation < ApplicationRecord
 
     def default_options
       model = options["model"].presence || models.first&.model_id
-      return { "model" => model, "size" => "1024x1536" } if provider == "openai"
+      return { "model" => model, "size" => recipe.format == "post" ? "1088x1360" : "1008x1792" } if provider == "openai"
 
       defaults = { "model" => model, "aspect_ratio" => recipe.format == "post" ? "3:4" : "9:16" }
       defaults.merge!(Workflow::AiVideo::DEFAULTS.slice(:resolution, :duration).stringify_keys.transform_values(&:to_s)) if video?
