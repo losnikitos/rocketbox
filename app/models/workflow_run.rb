@@ -38,8 +38,6 @@ class WorkflowRun < ApplicationRecord
 
     current.execute!
     RunWorkflowJob.perform_later(id)
-  rescue Xai::TransientError
-    raise
   rescue StandardError => e
     Rails.logger.error("[WorkflowRun] run=#{id} step=#{current&.key} #{e.class}: #{e.message}")
     fail!(e.message) unless reload.stopped?

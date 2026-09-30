@@ -20,8 +20,8 @@ class ImproveLibraryMediaTest < ActiveSupport::TestCase
 
   test "creates improved library media from xAI response" do
     improved_bytes = "improved-image-bytes"
-    original = Xai.method(:edit_image)
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| improved_bytes }
+    original = RubyLLM.method(:paint)
+    RubyLLM.define_singleton_method(:paint) { |*, **| RubyLLM::Image.new(data: Base64.strict_encode64(improved_bytes)) }
 
     assert_difference -> { LibraryMedia.count }, 1 do
       result = ImproveLibraryMedia.call(media: @media)
@@ -32,7 +32,7 @@ class ImproveLibraryMediaTest < ActiveSupport::TestCase
       assert_equal improved_bytes, result.file.download
     end
   ensure
-    Xai.define_singleton_method(:edit_image, original)
+    RubyLLM.define_singleton_method(:paint, original)
   end
 
   test "rejects non-images" do

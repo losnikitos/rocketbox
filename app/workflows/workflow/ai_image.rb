@@ -8,8 +8,10 @@ class Workflow
     SCHEME = %i[prompt image].freeze
 
     def self.call(inputs:, params:, run:)
+      options = run.subject.xai_options
       inputs.map do |blob|
-        { io: StringIO.new(Xai.edit_image(prompt: params["prompt"], blob:, **run.subject.xai_options)), filename: "ai-image.jpg", content_type: "image/jpeg" }
+        image = RubyLLM.paint(params["prompt"], model: options[:model], provider: :xai, with: blob, provider_options: options.except(:model))
+        { io: StringIO.new(image.to_blob), filename: "ai-image.jpg", content_type: "image/jpeg" }
       end
     end
   end

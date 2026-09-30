@@ -11,7 +11,7 @@ module Accounts
     end
 
     def create
-      @generation.options = params.expect(generation: [ options: Xai::IMAGE_OPTIONS.keys | Xai::VIDEO_OPTIONS.keys ])[:options].to_h
+      @generation.options = params.expect(generation: [ options: Generation::IMAGE_OPTIONS.keys | Generation::VIDEO_OPTIONS.keys ])[:options].to_h
       @generation.start!
       redirect_to helpers.library_item_path(@generation.generated_media), notice: "Applying #{@generation.recipe.name}…"
     rescue ActiveRecord::RecordInvalid
