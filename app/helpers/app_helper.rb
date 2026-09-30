@@ -106,9 +106,4 @@ module AppHelper
       end
     end
   end
-
-  # "2 × Input image → 2 × AI image → …" in run order.
-  def recipe_summary(recipe)
-    workflow_scheme(recipe.workflow_class).map { |node, count| count > 1 ? "#{count} × #{node::LABEL}" : node::LABEL }.join(" → ")
-  end
 end

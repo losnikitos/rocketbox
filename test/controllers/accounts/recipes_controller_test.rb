@@ -68,6 +68,12 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = recipes(:cinematic)
     recipe.smm_posts.create!(user: users(:lazaro_nixon), smm_post_media_items: [ SmmPostMediaItem.new(library_media: story_image) ])
 
+    get recipes_url(account: @admin.id)
+    assert_select "##{dom_id(recipe)} [popover] a[href^='/admin/recipes/#{recipe.id}']"
+    assert_select "##{dom_id(recipe)} [popover] a[href^='/app/recipes/#{recipe.id}?'][data-turbo-method=delete]"
+    get admin_recipe_path(recipe)
+    assert_response :success
+
     assert_no_difference -> { Recipe.count } do
       delete recipe_url(recipe)
     end
