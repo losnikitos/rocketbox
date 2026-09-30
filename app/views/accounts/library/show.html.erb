@@ -7,7 +7,7 @@
       <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       <%= @collection.humanize %>
     <% end %>
-    <div class="flex flex-1 items-center justify-center rounded-lg bg-ink-900/5 p-4">
+    <div class="flex flex-1 items-center justify-center rounded-lg bg-white p-4">
       <% if blob&.image? %>
         <button type="button" popovertarget="hero-media" aria-label="View full size" class="cursor-zoom-in">
           <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
@@ -45,9 +45,9 @@
     <% end %>
   </div>
 
-  <%# Only the Run links target this frame; everything else inside navigates the whole page. %>
+  <%# Only the recipe thumbnails target this frame; everything else inside navigates the whole page. %>
   <turbo-frame id="side_panel" target="_top" class="contents">
-  <aside id="details" class="w-full shrink-0 md:w-96 md:border-l md:border-ink-900/10 md:pl-6 lg:w-108">
+  <aside id="details" class="w-full shrink-0 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108">
     <div class="flex items-center justify-between gap-2">
       <h2 class="text-sm font-medium text-ink-900"><a href="#details" class="hover:underline">Details</a></h2>
       <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
@@ -80,16 +80,11 @@
                     <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
                   </div>
                 <% end %>
-                <%= link_to edit_recipe_path(recipe), class: "absolute inset-0 flex items-start focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
+                <%= link_to new_library_media_generation_path(@media, recipe_id: recipe.id), data: { turbo_frame: "side_panel" },
+                      class: "absolute inset-0 flex items-start focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
                   <span class="w-full p-1.5 text-xs font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-5 text-white" : "text-ink-900" %>">
                     <%= recipe.name %>
                   </span>
-                <% end %>
-                <%= link_to new_library_media_generation_path(@media, recipe_id: recipe.id), data: { turbo_frame: "side_panel" },
-                      class: "absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded-md bg-white/85 px-2 py-1 text-xs font-semibold text-ink-900 shadow-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket",
-                      "aria-label": "Run #{recipe.name}" do %>
-                  <%= heroicon "play", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
-                  Run
                 <% end %>
               </li>
             <% end %>
@@ -126,25 +121,6 @@
       </section>
     <% end %>
 
-    <dl class="mt-4 space-y-3 text-sm">
-      <% [
-           [ "Type", @media.kind.humanize ],
-           [ "Source", @media.origin ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
-           [ "Uploaded", l(@media.created_at, format: :long) ],
-           [ "File name", blob&.filename ],
-           [ "Format", blob&.content_type ],
-           [ "Size", blob && number_to_human_size(blob.byte_size) ],
-           [ "Dimensions", blob&.metadata&.values_at("width", "height")&.compact&.join(" × ").presence ],
-           [ "Duration", blob&.metadata&.dig("duration")&.then { |s| "#{s.round(1)} s" } ]
-         ].each do |label, value| %>
-        <% next if value.blank? %>
-        <div>
-          <dt class="text-ink-500"><%= label %></dt>
-          <dd class="mt-0.5 break-all text-ink-900"><%= value %></dd>
-        </div>
-      <% end %>
-    </dl>
-
     <div class="mt-6 flex flex-wrap gap-2">
       <% if blob %>
         <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
@@ -159,6 +135,31 @@
         Delete
       <% end %>
     </div>
+
+    <details class="group mt-6">
+      <summary class="inline-flex cursor-pointer items-center gap-1 text-sm text-ink-600 hover:text-ink-900">
+        <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
+        Show more
+      </summary>
+      <dl class="mt-3 space-y-3 text-sm">
+        <% [
+             [ "Type", @media.kind.humanize ],
+             [ "Source", @media.origin ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
+             [ "Uploaded", l(@media.created_at, format: :long) ],
+             [ "File name", blob&.filename ],
+             [ "Format", blob&.content_type ],
+             [ "Size", blob && number_to_human_size(blob.byte_size) ],
+             [ "Dimensions", blob&.metadata&.values_at("width", "height")&.compact&.join(" × ").presence ],
+             [ "Duration", blob&.metadata&.dig("duration")&.then { |s| "#{s.round(1)} s" } ]
+           ].each do |label, value| %>
+          <% next if value.blank? %>
+          <div>
+            <dt class="text-ink-500"><%= label %></dt>
+            <dd class="mt-0.5 break-all text-ink-900"><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </details>
   </aside>
   </turbo-frame>
 </div>

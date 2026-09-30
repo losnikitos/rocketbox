@@ -1,0 +1,19 @@
+_fixture:
+  model_class: RubyLLM::ActiveRecord::Model
+
+<% [
+     [ "xai", "grok-imagine-image-2.0", "image", 1 ],
+     [ "openai", "gpt-image-2", "image", 2 ],
+     [ "openai", "gpt-image-1-mini", "image", 3 ],
+     [ "xai", "grok-imagine-video-1.5", "video", 4 ],
+     [ "xai", "grok-imagine-video", "video", 5 ],
+     [ "xai", "grok-imagine-video-beta", "video", nil ]
+   ].each do |provider, model_id, output, position| %>
+<%= model_id.tr(".-", "_") %>:
+  provider: <%= provider %>
+  model_id: <%= model_id %>
+  name: <%= model_id %>
+  modalities: <%= { "input" => %w[text image], "output" => [ output ] }.to_json %>
+  enabled: <%= !position.nil? %>
+  position: <%= position %>
+<% end %>

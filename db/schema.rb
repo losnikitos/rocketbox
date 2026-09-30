@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_170000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -228,6 +228,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.json "capabilities", default: []
     t.integer "context_window"
     t.datetime "created_at", null: false
+    t.boolean "enabled", default: false, null: false
     t.string "family"
     t.date "knowledge_cutoff"
     t.integer "max_output_tokens"
@@ -236,6 +237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.datetime "model_created_at"
     t.string "model_id", null: false
     t.string "name", null: false
+    t.integer "position"
     t.json "pricing", default: {}
     t.string "provider", null: false
     t.datetime "unlisted_at"

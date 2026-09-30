@@ -20,4 +20,9 @@ Rails.application.config.to_prepare do
       def self.ransackable_associations(_auth_object = nil) = reflect_on_all_associations.map { |a| a.name.to_s }
     end
   end
+
+  # Models offered in the app, in the order set by drag-and-drop in Active Admin; unsorted ones go last.
+  RubyLLM::ActiveRecord::Model.define_singleton_method(:enabled) do
+    where(enabled: true).order(arel_table[:position].asc.nulls_last, :id)
+  end
 end

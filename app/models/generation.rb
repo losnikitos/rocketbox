@@ -3,25 +3,22 @@
 # A recipe applied to one library media. The result is a photobank media, created up front so a running or
 # failed generation already has a page; the workflow attaches its file when it finishes.
 # `options` are the provider request options (IMAGE_OPTIONS or VIDEO_OPTIONS) for every AI step; the chosen
-# model picks the provider.
+# model (one of `models`, enabled in Active Admin) picks the provider.
 class Generation < ApplicationRecord
   # Allowed values per provider and request option. Omitted options use the provider's default.
   IMAGE_OPTIONS = {
     "xai" => {
-      "model" => %w[grok-imagine-image-2.0 grok-imagine-image-quality grok-imagine-image],
       "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3 2:1 1:2 19.5:9 9:19.5 20:9 9:20 21:9 5:2],
       "resolution" => %w[1k 2k],
       "quality" => %w[low medium] # grok-imagine-image-2.0 only
     },
     "openai" => {
-      "model" => %w[gpt-image-2 gpt-image-1.5 gpt-image-1-mini],
       "size" => %w[1024x1024 1024x1536 1536x1024],
       "quality" => %w[low medium high]
     }
   }.freeze
   VIDEO_OPTIONS = {
     "xai" => {
-      "model" => %w[grok-imagine-video-1.5 grok-imagine-video],
       "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3],
       "resolution" => %w[480p 720p 1080p], # 1080p on grok-imagine-video-1.5 only
       "duration" => (1..15).map(&:to_s)
@@ -47,10 +44,14 @@ class Generation < ApplicationRecord
 
   def option_sets = video? ? VIDEO_OPTIONS : IMAGE_OPTIONS
 
-  def provider = option_sets.keys.find { option_sets[it]["model"].include?(options["model"]) } || option_sets.keys.first
+  def models
+    @models ||= RubyLLM::ActiveRecord::Model.enabled.where(provider: option_sets.keys).select { it.type == (video? ? :video : :image) }
+  end
+
+  def provider = (models.find { it.model_id == options["model"] } || models.first)&.provider || option_sets.keys.first
 
   # Every provider's models are offered; the other choices come from the chosen model's provider.
-  def option_choices = option_sets[provider].merge("model" => option_sets.values.flat_map { it["model"] })
+  def option_choices = { "model" => models.map(&:model_id) }.merge(option_sets[provider])
 
   def ai_options
     options.symbolize_keys.tap { it[:duration] = it[:duration].to_i if it[:duration] }.merge(provider: provider.to_sym)
@@ -82,7 +83,7 @@ class Generation < ApplicationRecord
   private
 
     def default_options
-      model = options["model"].presence || (video? ? RubyLLM.config.default_video_model : RubyLLM.config.default_image_model)
+      model = options["model"].presence || models.first&.model_id
       return { "model" => model, "size" => "1024x1536" } if provider == "openai"
 
       defaults = { "model" => model, "aspect_ratio" => recipe.format == "post" ? "3:4" : "9:16" }
