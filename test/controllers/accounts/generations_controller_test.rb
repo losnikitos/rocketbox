@@ -64,9 +64,17 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "textarea[name='generation[prompt]']", text: "Warmer."
     assert_select "input[name='generation[options][model]'][value='gpt-image-2'][checked]"
-    assert_select "input[type=radio][name='generation[options][size]'][value='1088x1360'][checked]"
+    assert_select "input[type=radio][name='generation[options][size]'][value='1008x1792'][checked]"
     assert_select "input[type=radio][name='generation[options][quality]'][value=''][checked]"
     assert_select "select[name='generation[options][aspect_ratio]']", count: 0
+
+    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "gpt-image-2", size: "1088x1088", quality: "high" } })
+    assert_select "input[name='generation[options][size]'][value='1088x1088'][checked]"
+    assert_select "input[name='generation[options][quality]'][value='high'][checked]"
+
+    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "grok-imagine-image-2.0", size: "1088x1088", quality: "high" } })
+    assert_select "input[name='generation[options][size]']", count: 0
+    assert_select "input[name='generation[options][quality]'][value=''][checked]"
 
     post library_media_generations_url(@media, recipe_id: recipe.id), params: {
       generation: { options: { model: "gpt-image-2", size: "1088x1088", quality: "high", aspect_ratio: "9:16" } }

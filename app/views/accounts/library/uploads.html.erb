@@ -19,7 +19,7 @@
       <% @library_media.group_by { |m| m.created_at.to_date }.each do |day, items| %>
         <section>
           <h3 class="mb-3 text-sm font-medium text-ink-900"><%= upload_day_label(day) %></h3>
-          <ul class="grid grid-flow-dense grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          <ul class="grid grid-flow-dense grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
             <% items.group_by { it.origin&.source_media || it }.each do |source, group| %>
               <% if group.first.origin %>
                 <li class="min-w-0 rounded-xl bg-ink-900/5 p-2 <%= "col-span-2" if group.size > 1 %>" aria-label="Generated from one source">

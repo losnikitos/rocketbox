@@ -35,8 +35,10 @@ class Generation < ApplicationRecord
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
+  # Keeps whatever the chosen model still offers (e.g. size and quality across a model switch); blank means Auto.
   after_initialize if: -> { new_record? && recipe } do
-    self.options = default_options.merge(options)
+    kept = options.to_h.select { |key, value| option_choices.key?(key) && (value.blank? || value.in?(option_choices[key])) }
+    self.options = default_options.merge(kept)
   end
   before_validation { self.options = options.to_h.slice(*option_choices.keys).compact_blank }
   validate do
@@ -99,9 +101,9 @@ class Generation < ApplicationRecord
 
     def default_options
       model = options["model"].presence || models.first&.model_id
-      return { "model" => model, "size" => video? ? "1008x1792" : "1088x1360" } if provider == "openai"
+      return { "model" => model, "size" => "1008x1792" } if provider == "openai"
 
-      defaults = { "model" => model, "aspect_ratio" => video? ? "9:16" : "3:4" }
+      defaults = { "model" => model, "aspect_ratio" => "9:16" }
       defaults.merge!("resolution" => "720p", "duration" => "8") if video?
       defaults
     end
