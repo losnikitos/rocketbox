@@ -1,81 +1,122 @@
 <%# locals: (recipe:) %>
 <%# Examples sit outside the form (each remove is its own button_to form); fields join it via form="recipe_form". %>
-<div class="space-y-4">
+<div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
     <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
   </nav>
-  <%= form_with model: recipe, id: "recipe_form", class: "space-y-4" do |f| %>
-    <% if recipe.errors.any? %>
-      <div class="<%= tw_alert_error_classes %>" role="alert">
-        <ul class="list-inside list-disc">
-          <% recipe.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
+
+  <div class="grid items-start gap-8 @3xl:grid-cols-2">
+    <%= form_with model: recipe, id: "recipe_form", class: "min-w-0 space-y-4" do |f| %>
+      <% if recipe.errors.any? %>
+        <div class="<%= tw_alert_error_classes %>" role="alert">
+          <ul class="list-inside list-disc">
+            <% recipe.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="max-w-md">
+        <%= f.label :name, class: tw_label_classes %>
+        <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
+      </div>
+
+      <% if recipe.new_record? %>
+        <%# Only the chosen workflow's texts fieldset stays enabled, so hidden ones neither show nor submit. %>
+        <fieldset onchange="this.form.querySelectorAll('fieldset[data-workflow]').forEach(f => f.disabled = f.dataset.workflow !== event.target.value)">
+          <legend class="<%= tw_label_classes %>">Workflow</legend>
+          <div class="flex flex-wrap gap-2">
+            <% Workflow.all.each do |workflow| %>
+              <label class="cursor-pointer rounded-lg border border-ink-900/15 bg-white p-3 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                <%= f.radio_button :workflow, workflow.name, required: true, class: "sr-only" %>
+                <span class="flex items-center gap-2 text-sm font-medium text-ink-900">
+                  <%= workflow.name.titleize %>
+                  <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= workflow.format %></span>
+                </span>
+                <span class="mt-3 flex items-center gap-1 text-xs">
+                  <% workflow_boxes(workflow).each_with_index do |(label, icon, css), index| %>
+                    <%= heroicon "arrow-long-right", variant: :mini, options: { class: "size-4 shrink-0 text-ink-300", "aria-hidden": true } if index.positive? %>
+                    <span class="flex min-w-14 flex-col items-center gap-1 rounded-md border px-2 py-1.5 font-medium whitespace-nowrap <%= css %>">
+                      <%= heroicon icon, options: { class: "size-5", "aria-hidden": true } %>
+                      <%= label %>
+                    </span>
+                  <% end %>
+                </span>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+      <% end %>
+
+      <div>
+        <%= f.label :prompt, class: tw_label_classes %>
+        <%= f.text_area :prompt, required: true, rows: 6, class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">Sent to every AI step of the workflow.</p>
+      </div>
+
+      <% (recipe.new_record? ? Workflow.all : [ recipe.workflow_class ]).compact.select { it.text_steps.any? }.each do |workflow| %>
+        <%= tag.fieldset class: "max-w-md space-y-3 disabled:hidden", data: { workflow: workflow.name }, disabled: recipe.workflow != workflow.name do %>
+          <legend class="<%= tw_label_classes %>">Texts</legend>
+          <% workflow.text_steps.each do |step| %>
+            <% id = "recipe_texts_#{workflow.name.underscore}_#{step.key}" %>
+            <div>
+              <%= label_tag id, "#{step.key.humanize} · #{step.params["position"].to_s.humanize}", class: "text-xs text-ink-500" %>
+              <%= text_field_tag "recipe[texts][#{step.key}]", recipe.texts[step.key], id:, required: true, class: tw_input_classes %>
+            </div>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <div class="min-w-0">
+      <h2 id="examples" class="<%= tw_label_classes %> scroll-m-24"><a href="#examples" class="hover:underline">Examples</a></h2>
+      <% attached = recipe.examples.select(&:persisted?) %>
+      <% if attached.any? %>
+        <ul class="mb-3 grid grid-cols-3 gap-3">
+          <% attached.each do |example| %>
+            <li class="group relative">
+              <% if example.video? %>
+                <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+              <% else %>
+                <button type="button" popovertarget="example-<%= example.id %>" aria-label="View <%= example.filename %>" class="block w-full cursor-zoom-in">
+                  <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+                </button>
+                <div id="example-<%= example.id %>" popover class="size-full bg-black/90 p-4">
+                  <button type="button" popovertarget="example-<%= example.id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
+                    <%= image_tag url_for(example), alt: example.filename.to_s, class: "max-h-full max-w-full" %>
+                  </button>
+                </div>
+              <% end %>
+              <%= hidden_field_tag "recipe[examples][]", example.signed_id, id: nil, form: "recipe_form" %>
+              <%= button_to example_recipe_path(recipe, example_id: example.id), method: :delete, "aria-label": "Remove #{example.filename}",
+                    form: { class: "absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
+                            data: { turbo_confirm: "Remove this example?" } },
+                    class: "rounded-lg bg-white/90 p-1.5 text-ink-700 shadow-sm transition hover:bg-white hover:text-signal-red" do %>
+                <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              <% end %>
+            </li>
           <% end %>
         </ul>
+      <% end %>
+
+      <div class="relative flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 bg-white px-4 py-8 text-center transition hover:border-rocket/50 has-focus-visible:border-rocket">
+        <%= heroicon "arrow-up-tray", options: { class: "size-6 text-ink-400", "aria-hidden": true } %>
+        <p class="text-sm font-medium text-ink-900">Drop images or videos here</p>
+        <p class="text-xs text-ink-500">or click to choose files</p>
+        <output class="text-xs font-medium text-rocket empty:hidden"></output>
+        <%= file_field_tag "recipe[examples][]", multiple: true, accept: "image/*,video/*", form: "recipe_form", "aria-label": "Add examples",
+              onchange: "this.previousElementSibling.textContent = this.files.length ? `${this.files.length} file(s) will be added on save` : ''",
+              class: "absolute inset-0 size-full cursor-pointer opacity-0" %>
       </div>
-    <% end %>
-
-    <div class="max-w-md">
-      <%= f.label :name, class: tw_label_classes %>
-      <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
-    </div>
-
-    <% if recipe.new_record? %>
-      <div class="max-w-md">
-        <%= f.label :workflow, class: tw_label_classes %>
-        <%= f.select :workflow, Recipe.free_workflows.map { [ it.titleize, it ] }, { include_blank: "Choose a workflow…" }, required: true, class: tw_input_classes %>
-        <p class="mt-1 text-xs text-ink-500">Each workflow (a Ruby class in <code>app/workflows</code>) belongs to one recipe.</p>
-      </div>
-    <% end %>
-
-    <% if recipe.workflow_class %>
-      <%= render "schematic", workflow: recipe.workflow_class %>
-    <% end %>
-  <% end %>
-
-  <div class="max-w-2xl">
-    <h2 id="examples" class="<%= tw_label_classes %> scroll-m-24"><a href="#examples" class="hover:underline">Examples</a></h2>
-    <% attached = recipe.examples.select(&:persisted?) %>
-    <% if attached.any? %>
-      <ul class="mb-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-        <% attached.each do |example| %>
-          <li class="group relative">
-            <% if example.video? %>
-              <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-            <% else %>
-              <button type="button" popovertarget="example-<%= example.id %>" aria-label="View <%= example.filename %>" class="block w-full cursor-zoom-in">
-                <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-              </button>
-              <div id="example-<%= example.id %>" popover class="size-full bg-black/90 p-4">
-                <button type="button" popovertarget="example-<%= example.id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
-                  <%= image_tag url_for(example), alt: example.filename.to_s, class: "max-h-full max-w-full" %>
-                </button>
-              </div>
-            <% end %>
-            <%= hidden_field_tag "recipe[examples][]", example.signed_id, id: nil, form: "recipe_form" %>
-            <%= button_to example_recipe_path(recipe, example_id: example.id), method: :delete, "aria-label": "Remove #{example.filename}",
-                  form: { class: "absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
-                          data: { turbo_confirm: "Remove this example?" } },
-                  class: "rounded-lg bg-white/90 p-1.5 text-ink-700 shadow-sm transition hover:bg-white hover:text-signal-red" do %>
-              <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
-
-    <div class="relative flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 bg-white px-4 py-8 text-center transition hover:border-rocket/50 has-focus-visible:border-rocket">
-      <%= heroicon "arrow-up-tray", options: { class: "size-6 text-ink-400", "aria-hidden": true } %>
-      <p class="text-sm font-medium text-ink-900">Drop images or videos here</p>
-      <p class="text-xs text-ink-500">or click to choose files</p>
-      <output class="text-xs font-medium text-rocket empty:hidden"></output>
-      <%= file_field_tag "recipe[examples][]", multiple: true, accept: "image/*,video/*", form: "recipe_form", "aria-label": "Add examples",
-            onchange: "this.previousElementSibling.textContent = this.files.length ? `${this.files.length} file(s) will be added on save` : ''",
-            class: "absolute inset-0 size-full cursor-pointer opacity-0" %>
     </div>
   </div>
+
+  <% if recipe.persisted? %>
+    <%= render "schematic", workflow: recipe.workflow_class, recipe: %>
+  <% end %>
 
   <div class="flex items-center justify-end gap-2">
     <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>

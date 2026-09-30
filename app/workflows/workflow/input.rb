@@ -5,6 +5,7 @@ class Workflow
   class Input
     LABEL = "Input image"
     ICON = "photo"
+    SCHEME = %i[image].freeze
 
     def self.call(inputs:, params:, run:)
       files = run.smm_post.smm_post_media_items.includes(library_media: { file_attachment: :blob })

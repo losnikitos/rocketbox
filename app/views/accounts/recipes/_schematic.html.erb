@@ -1,4 +1,4 @@
-<%# locals: (workflow:, run: nil) %>
+<%# locals: (workflow:, recipe:, run: nil) %>
 <% icons = { "pending" => [ "ellipsis-horizontal-circle", "text-ink-300" ], "running" => [ "arrow-path", "animate-spin text-signal-yellow" ],
              "complete" => [ "check-circle", "text-signal-green" ], "failed" => [ "x-circle", "text-signal-red" ] } %>
 <% borders = { "running" => "border-signal-yellow", "complete" => "border-signal-green", "failed" => "border-signal-red" } %>
@@ -30,18 +30,8 @@
               <% if step.from.many? %>
                 <div><dt class="text-ink-400">From</dt><dd class="text-ink-900"><%= step.from.join(", ") %></dd></div>
               <% end %>
-              <% step.params.each do |name, value| %>
-                <% if name == "prompt" && (prompt = Prompt.find_by(key: value.to_s)) %>
-                  <div>
-                    <dt class="flex items-center justify-between text-ink-400">
-                      <span>Prompt <code><%= prompt.key %></code></span>
-                      <%= render "shared/admin_links/prompt", prompt: %>
-                    </dt>
-                    <dd class="line-clamp-3 text-ink-900" title="<%= prompt.body %>"><%= prompt.body %></dd>
-                  </div>
-                <% else %>
-                  <div><dt class="text-ink-400"><%= name.humanize %></dt><dd class="line-clamp-3 text-ink-900" title="<%= value %>"><%= value %></dd></div>
-                <% end %>
+              <% recipe.params_for(step).each do |name, value| %>
+                <div><dt class="text-ink-400"><%= name.humanize %></dt><dd class="line-clamp-3 text-ink-900" title="<%= value %>"><%= value %></dd></div>
               <% end %>
             </dl>
             <% if record %>

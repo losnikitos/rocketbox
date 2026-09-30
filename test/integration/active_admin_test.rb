@@ -73,7 +73,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     media = LibraryMedia.create!(kind: "photo", user:)
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
     post = user.smm_posts.create!(recipe: recipes(:cinematic), status: "draft", smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
-    run = WorkflowRun.create!(smm_post: post, workflow: "CinematicShopReel")
+    run = WorkflowRun.create!(smm_post: post, workflow: "ImagesToVideo")
     step = run.workflow_steps.create!(key: "video")
 
     get "/app/instagram/posts/#{post.id}?account=#{user.id}", headers: @ua

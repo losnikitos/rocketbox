@@ -54,7 +54,7 @@ module Accounts
       end
 
       def recipe_params(*extra)
-        params.expect(recipe: [ :name, *extra, examples: [] ])
+        params.expect(recipe: [ :name, :prompt, *extra, texts: {}, examples: [] ])
       end
   end
 end

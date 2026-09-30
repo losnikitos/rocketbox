@@ -5,11 +5,11 @@ class Workflow
   class AiImage
     LABEL = "AI image"
     ICON = "sparkles"
+    SCHEME = %i[prompt image].freeze
 
     def self.call(inputs:, params:, run:)
-      prompt = Prompt.body_for!(params["prompt"])
       inputs.map do |blob|
-        { io: StringIO.new(Xai.edit_image(prompt:, blob:)), filename: "ai-image.jpg", content_type: "image/jpeg" }
+        { io: StringIO.new(Xai.edit_image(prompt: params["prompt"], blob:)), filename: "ai-image.jpg", content_type: "image/jpeg" }
       end
     end
   end

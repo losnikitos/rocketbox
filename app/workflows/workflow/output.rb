@@ -5,6 +5,7 @@ class Workflow
   class Output
     LABEL = "Output"
     ICON = "paper-airplane"
+    SCHEME = [].freeze # the format badge already names the output
 
     def self.call(inputs:, params:, run:)
       post = run.smm_post
