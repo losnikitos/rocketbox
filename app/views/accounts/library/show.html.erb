@@ -24,23 +24,19 @@
 
     <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
 
-    <% if (run = @media.origin&.workflow_run) %>
-      <section class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="workflow-heading">
+    <% if (generation = @media.origin) %>
+      <section class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="generation-heading">
         <div class="flex items-center gap-2">
-          <h3 id="workflow-heading" class="text-sm font-semibold text-ink-900"><%= @media.origin.recipe.name %></h3>
-          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
-          <% if run.running? %>
-            <%= button_to stop_library_media_path(@media), class: "rb-btn-ghost-on-light gap-1 px-3 py-1 text-xs" do %>
-              <%= heroicon "stop", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
-              Stop
-            <% end %>
+          <h3 id="generation-heading" class="text-sm font-semibold text-ink-900"><%= generation.recipe.name %></h3>
+          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= generation.status %></span>
+          <% unless generation.running? %>
+            <%= button_to "Retry", rerun_library_media_path(@media), class: "rb-btn-ghost-on-light px-3 py-1 text-xs" %>
           <% end %>
-          <div class="ml-auto"><%= render "shared/admin_links/generation", generation: @media.origin %></div>
+          <div class="ml-auto"><%= render "shared/admin_links/generation", generation: %></div>
         </div>
-        <% if run.error.present? %>
-          <p class="text-sm text-signal-red"><%= run.error %></p>
+        <% if generation.error.present? %>
+          <p class="text-sm text-signal-red"><%= generation.error %></p>
         <% end %>
-        <%= render "accounts/recipes/schematic", workflow: run.workflow_class, recipe: @media.origin.recipe, run: %>
       </section>
     <% end %>
   </div>

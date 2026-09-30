@@ -40,13 +40,10 @@ Rails.application.routes.draw do
     scope path: "instagram", module: :accounts, as: :instagram do
       get "profile", to: "instagram#show"
       delete "profile", to: "instagram#destroy"
-      resources :posts, only: %i[index new create show destroy] do
+      resources :posts, only: %i[index show destroy] do
         member do
           post :publish
           post :react
-          post :pause
-          post :resume
-          post :rerun
         end
       end
     end
@@ -96,7 +93,6 @@ Rails.application.routes.draw do
         post :extract
         patch :apply_extraction
         post :rerun
-        post :stop
       end
       resources :generations, only: %i[new create], module: :accounts
     end

@@ -33,7 +33,6 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Recipe | [`_recipe`](/app/views/shared/admin_links/_recipe.html.erb) | Admin, Remove |
 | Generation | [`_generation`](/app/views/shared/admin_links/_generation.html.erb) | Admin |
-| Workflow step | [`_workflow_step`](/app/views/shared/admin_links/_workflow_step.html.erb) | Admin |
 | Prompt | [`_prompt`](/app/views/shared/admin_links/_prompt.html.erb) | Edit prompt |
 
 ## Usage

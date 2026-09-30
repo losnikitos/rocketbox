@@ -50,22 +50,14 @@ class LibraryMediaController < ApplicationController
     redirect_to helpers.library_item_path(media), notice: "Business updated from card."
   end
 
-  # Retry a generation's failed step, or re-run any step and everything after it.
+  # Runs a generation again, replacing its file.
   def rerun
     media = Current.account.library_media.find(params[:id])
-    run = media.origin&.workflow_run or return head(:not_found)
-    step = run.workflow_class[params.expect(:key)] or return head(:unprocessable_entity)
+    generation = media.origin or return head(:not_found)
+    return head(:unprocessable_entity) if generation.running?
 
-    run.rerun!(step.key)
-    redirect_to helpers.library_item_path(media), notice: "Running again from #{step.key.humanize}."
-  end
-
-  def stop
-    media = Current.account.library_media.find(params[:id])
-    run = media.origin&.workflow_run or return head(:not_found)
-
-    run.stop!
-    redirect_to helpers.library_item_path(media), notice: "Stopped."
+    generation.retry!
+    redirect_to helpers.library_item_path(media), notice: "Running again."
   end
 
   def destroy

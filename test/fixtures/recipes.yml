@@ -1,10 +1,10 @@
 cinematic:
   name: Cinematic shop reel
-  workflow: ImagesToVideo
+  kind: video
   media_type: interior
   prompt: Slow cinematic push-in on the shop.
 
 before_after:
   name: Before → after energy
-  workflow: ImagesToVideo
+  kind: video
   prompt: Energetic before and after reveal.

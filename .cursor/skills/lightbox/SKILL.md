@@ -28,4 +28,4 @@ Images only — videos keep their own controls inline; a full-screen click-to-cl
 
 ## Examples in codebase
 - `app/views/accounts/recipes/_form.html.erb` (recipe examples grid)
-- `app/views/accounts/recipes/_schematic.html.erb` (workflow step output thumbnails)
+- `app/views/accounts/library/show.html.erb` (hero media)

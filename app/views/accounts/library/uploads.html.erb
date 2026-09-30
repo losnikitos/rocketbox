@@ -13,7 +13,7 @@
 <% if @review_media %>
   <%= render "accounts/library/review_media", attachments: @review_media %>
 <% else %>
-<div data-controller="library-select" data-library-select-max-value="<%= SmmPost::MAX_MEDIA %>">
+<div data-controller="library-select">
   <% if @library_media.present? %>
     <div class="space-y-8">
       <% @library_media.group_by { |m| m.created_at.to_date }.each do |day, items| %>
@@ -63,11 +63,6 @@
             <option value="">Not set</option>
           </select>
         <% end %>
-        <form id="create-instagram-post" action="<%= new_instagram_post_path %>" method="get">
-          <button type="submit" class="rb-btn-primary px-4 py-2 text-sm">
-            Create Instagram post
-          </button>
-        </form>
       </div>
     </div>
   <% elsif LibraryMedia.media_types.key?(params[:type]) %>

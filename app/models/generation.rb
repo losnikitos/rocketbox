@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 # A recipe applied to one library media. The result is a photobank media, created up front so a running or
-# failed generation already has a page; the workflow attaches its file when it finishes.
-# `options` are the provider request options (IMAGE_OPTIONS or VIDEO_OPTIONS) for every AI step; the chosen
+# failed generation already has a page; GenerateJob attaches its file when the AI call finishes.
+# `options` are the provider request options (IMAGE_OPTIONS or VIDEO_OPTIONS); the chosen
 # model (one of `models`, enabled in Active Admin) picks the provider. `prompt` is appended to the recipe's prompt.
 class Generation < ApplicationRecord
+  STATUSES = %w[running complete failed].freeze
+
   # Allowed values per provider and request option. Omitted options use the provider's default.
   IMAGE_OPTIONS = {
     "xai" => {
@@ -28,9 +30,10 @@ class Generation < ApplicationRecord
   belongs_to :source_media, class_name: "LibraryMedia", inverse_of: :generations
   belongs_to :recipe
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :origin
-  has_one :workflow_run, as: :subject, dependent: :destroy
 
-  delegate :status, :error, to: :workflow_run, allow_nil: true
+  validates :status, inclusion: { in: STATUSES }
+
+  STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
   after_initialize if: -> { new_record? && recipe } do
     self.options = default_options.merge(options)
@@ -40,7 +43,7 @@ class Generation < ApplicationRecord
     options.each { |key, value| errors.add(:options, "#{key.humanize} #{value} isn't available") unless value.in?(option_choices[key]) }
   end
 
-  def video? = recipe&.format == "reel"
+  def video? = recipe&.video?
 
   def option_sets = video? ? VIDEO_OPTIONS : IMAGE_OPTIONS
 
@@ -62,32 +65,44 @@ class Generation < ApplicationRecord
     build_generated_media(user: source_media.user, kind: video? ? "video" : "photo", collection: "photobank",
       media_type: source_media.media_type)
     save!
-    WorkflowRun.start!(self)
+    GenerateJob.perform_later(id)
     self
   end
 
-  def input_media = [ source_media ]
+  def retry!
+    update!(status: "running", error: nil)
+    GenerateJob.perform_later(id)
+  end
 
-  # Status lives on the workflow run.
-  def mark_generating! = nil
-  def mark_ready! = nil
-  def mark_failed!(_message) = nil
-
-  # Re-runs replace the previous file.
-  def store_output!(blobs, _format)
-    blob = blobs.first or raise Workflow::Error, "The recipe produced no media."
-    generated_media.update!(kind: LibraryMedia.kind_for(blob.content_type), file: blob)
-    [ blob ]
+  # One AI call on the source image; a retry replaces the previous file.
+  def run!
+    opts = ai_options
+    prompt_text = [ recipe.prompt, prompt ].compact_blank.join("\n\n")
+    provider_options = opts.except(:provider, :model)
+    source = source_media.file.blob
+    if video?
+      result = RubyLLM.animate(prompt_text, model: opts[:model], provider: opts[:provider], with: source, provider_options:)
+      file = { io: StringIO.new(result.to_blob), filename: "ai-video.mp4", content_type: "video/mp4" }
+    else
+      provider_options[:output_format] = "jpeg" if opts[:provider] == :openai
+      result = RubyLLM.paint(prompt_text, model: opts[:model], provider: opts[:provider], with: source, provider_options:)
+      file = { io: StringIO.new(result.to_blob), filename: "ai-image.jpg", content_type: "image/jpeg" }
+    end
+    generated_media.update!(kind: video? ? "video" : "photo", file:)
+    update!(status: "complete")
+  rescue StandardError => e
+    Rails.logger.error("[Generation] id=#{id} #{e.class}: #{e.message}")
+    update!(status: "failed", error: e.message.to_s.truncate(1000))
   end
 
   private
 
     def default_options
       model = options["model"].presence || models.first&.model_id
-      return { "model" => model, "size" => recipe.format == "post" ? "1088x1360" : "1008x1792" } if provider == "openai"
+      return { "model" => model, "size" => video? ? "1008x1792" : "1088x1360" } if provider == "openai"
 
-      defaults = { "model" => model, "aspect_ratio" => recipe.format == "post" ? "3:4" : "9:16" }
-      defaults.merge!(Workflow::AiVideo::DEFAULTS.slice(:resolution, :duration).stringify_keys.transform_values(&:to_s)) if video?
+      defaults = { "model" => model, "aspect_ratio" => video? ? "9:16" : "3:4" }
+      defaults.merge!("resolution" => "720p", "duration" => "8") if video?
       defaults
     end
 end

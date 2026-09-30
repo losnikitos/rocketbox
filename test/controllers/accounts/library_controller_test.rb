@@ -31,7 +31,6 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_uploads_url
     assert_response :success
-    assert_select "form[action=?]", new_instagram_post_path
     assert_select "input[data-library-select-target=?]", "checkbox"
     assert_select "form[action=?] select[name=media_type]", bulk_update_library_media_index_path
     assert_select "button", text: "Publish as Instagram story", count: 0
@@ -59,12 +58,12 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: "interior", user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    source.generations.create!(recipe: recipes(:cinematic), generated_media: generated)
+    source.generations.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete")
     failed = source.generations.new(recipe: recipes(:cinematic)).start!
     get library_photobank_media_url(failed.generated_media)
-    assert_select "form[action=?] button", stop_library_media_path(failed.generated_media), text: /Stop/
-    failed.workflow_run.step("photos").update!(status: "running")
-    failed.workflow_run.fail!("content policy")
+    assert_select "#generation-heading + span", text: "running"
+    assert_select "form[action=?]", rerun_library_media_path(failed.generated_media), count: 0
+    failed.update!(status: "failed", error: "content policy")
 
     get library_upload_url(source)
     assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, recipe_id: recipes(:cinematic).id)
@@ -77,10 +76,9 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "#generated-heading", count: 0
 
     get library_photobank_media_url(failed.generated_media)
-    assert_select "#workflow-heading", text: "Cinematic shop reel"
+    assert_select "#generation-heading", text: "Cinematic shop reel"
     assert_select "section p", text: "content policy"
-    assert_select "form[action=?]", stop_library_media_path(failed.generated_media), count: 0
-    assert_select "article#photos form[action=?]", rerun_library_media_path(failed.generated_media, key: "photos")
+    assert_select "form[action=?] button", rerun_library_media_path(failed.generated_media), text: "Retry"
 
     get library_photobank_url
     assert_select "a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/

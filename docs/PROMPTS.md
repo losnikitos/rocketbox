@@ -2,7 +2,7 @@
 
 Service prompts (crawl, business card, media improve) live in the `Prompt` table ([prompt.rb](/app/models/prompt.rb)), looked up by `key` via `Prompt.body_for!(key)`. Code never holds prompt text.
 
-Content prompts are not here: each recipe has its own `prompt` (edited at `/app/recipes`), sent to every AI step of its workflow via `Recipe#params_for`.
+Content prompts are not here: each recipe has its own `prompt` (edited at `/app/recipes`), sent to the single AI call of each generation (`Generation#run!`).
 
 A copy of every prompt is kept in git as [`prompts/<key>.md`](/prompts/) — the file is the body verbatim, no frontmatter.
 

@@ -33,34 +33,32 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#side_panel a[data-turbo-frame=side_panel]", text: "Cancel"
   end
 
-  test "generate saves the options and starts the run; stop and rerun work on it" do
-    assert_difference -> { Generation.count } => 1, -> { WorkflowRun.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
-      post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
-        generation: { prompt: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
-      }
+  test "generate saves the options and enqueues the job; retry runs it again" do
+    assert_difference -> { Generation.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
+      assert_enqueued_with(job: GenerateJob) do
+        post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
+          generation: { prompt: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
+        }
+      end
     end
     generation = @media.generations.sole
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
-    ai_step = recipes(:cinematic).workflow_class.steps.find { it.node.in?(Recipe::AI_NODES) }
-    assert_equal "#{recipes(:cinematic).prompt}\n\nMake it snow.", generation.recipe.params_for(ai_step, generation.prompt)["prompt"]
+    assert_equal "Make it snow.", generation.prompt
     assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, generation.options)
     assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5, provider: :xai }, generation.ai_options)
     assert_equal "running", generation.status
 
-    run = generation.workflow_run
-    post stop_library_media_url(generation.generated_media)
-    assert_equal "stopped", run.reload.status
+    post rerun_library_media_url(generation.generated_media)
+    assert_response :unprocessable_entity
 
-    run.step("photos").update!(status: "running")
-    run.fail!("boom")
-    post rerun_library_media_url(generation.generated_media, key: "photos")
+    generation.update!(status: "failed", error: "boom")
+    assert_enqueued_with(job: GenerateJob, args: [ generation.id ]) { post rerun_library_media_url(generation.generated_media) }
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
-    assert_equal "running", run.reload.status
-    assert_equal "pending", run.step("photos").status
+    assert_equal [ "running", nil ], [ generation.reload.status, generation.error ]
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-    recipe = Recipe.create!(name: "Polish", workflow: "ImageToImage", media_type: "interior", prompt: "Polish the shot.")
+    recipe = Recipe.create!(name: "Polish", media_type: "interior", prompt: "Polish the shot.")
 
     get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { prompt: "Warmer.", options: { model: "gpt-image-2" } })
     assert_response :success
