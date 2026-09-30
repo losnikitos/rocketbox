@@ -128,6 +128,21 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Uploaded 1 file.", flash[:notice]
   end
 
+  test "uploads into the photobank and deletes back to it" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    post library_media_index_url, params: { collection: "photobank", files: [ fixture_file_upload("logo.png", "image/png") ] }
+    media = user.library_media.order(:id).last
+    assert media.photobank?
+    assert_redirected_to library_photobank_url
+
+    delete library_media_url(media)
+    assert_redirected_to library_photobank_url
+
+    post library_media_index_url, params: { collection: "bogus", files: [ fixture_file_upload("logo.png", "image/png") ] }
+    assert user.library_media.order(:id).last.inbox?
+  end
+
   test "rejects empty upload" do
     sign_in_as(users(:lazaro_nixon))
 

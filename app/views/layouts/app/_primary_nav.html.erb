@@ -28,12 +28,22 @@
 <nav aria-label="Primary" class="mt-6 flex-1 px-2">
   <ul class="flex flex-col gap-0.5">
     <li>
-      <%= link_to library_uploads_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :library } do %>
+      <span class="inline-flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-ink-700">
         <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
         Library
-      <% end %>
+      </span>
+      <ul class="flex flex-col gap-0.5">
+        <li>
+          <%= link_to "Inbox", library_uploads_path,
+                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :library } %>
+        </li>
+        <li>
+          <%= link_to "Photobank", library_photobank_path,
+                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :photobank } %>
+        </li>
+      </ul>
     </li>
     <li>
       <span class="inline-flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-ink-700">

@@ -1,7 +1,8 @@
-<% content_for(:title, "Uploads — Rocketbox") %>
+<% content_for(:title, "#{@collection.humanize} — Rocketbox") %>
 
 <%= form_with url: library_media_index_path, multipart: true, class: "hidden",
       data: { controller: "drop-upload" } do %>
+  <%= hidden_field_tag :collection, @collection %>
   <%= file_field_tag "files[]",
         multiple: true,
         accept: "image/*,video/*",
@@ -89,7 +90,7 @@
     <p class="text-sm text-ink-600">No <%= params[:type].pluralize.humanize(capitalize: false) %> yet.</p>
   <% else %>
     <p class="text-sm text-ink-600">
-      No media yet. Drop photos or videos anywhere here<% if Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present? %>, or send a photo to the bot<% end %>.
+      No media yet. Drop photos or videos anywhere here<% if @collection == "inbox" && (Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present?) %>, or send a photo to the bot<% end %>.
     </p>
   <% end %>
 </div>

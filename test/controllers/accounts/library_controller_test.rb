@@ -10,9 +10,9 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "should show library uploads" do
     get library_uploads_url
     assert_response :success
-    assert_select "h1", "Library"
+    assert_select "h1", "Inbox"
     assert_select "nav[aria-label='Primary']"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: /Library/
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Inbox"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: "All 0"
     assert_select "nav[aria-label='Secondary'] label[for=?]", "library-upload-input", text: "Upload"
     assert_select "nav[aria-label='Secondary'] a", text: "Reels", count: 0
@@ -81,6 +81,32 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path
     assert_select "img[src]"
     assert_select "aside dd", text: "cut.jpg"
+  end
+
+  test "photobank lists only curated media, apart from the inbox" do
+    inbox = LibraryMedia.create!(kind: "photo", user: @user)
+    inbox.file.attach(io: StringIO.new("img"), filename: "inbox.jpg", content_type: "image/jpeg")
+    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: "interior", user: @user)
+    curated.file.attach(io: StringIO.new("img"), filename: "curated.jpg", content_type: "image/jpeg")
+
+    get library_photobank_url
+    assert_response :success
+    assert_select "h1", "Photobank"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_photobank_path, text: "Photobank"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_photobank_path, text: "All 1"
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_photobank_path(type: "interior"), text: "Interior 1"
+    assert_select "nav[aria-label='Secondary'] a", text: /Reviews/, count: 0
+    assert_select "input[name=collection][value=photobank]"
+    assert_select "a[href=?]", library_upload_path(curated)
+    assert_select "a[href=?]", library_upload_path(inbox), count: 0
+
+    get library_uploads_url
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path, text: "All 1"
+    assert_select "a[href=?]", library_upload_path(curated), count: 0
+
+    get library_upload_url(curated)
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_photobank_path
+    assert_select "main a[href=?]", library_photobank_path, text: /Photobank/
   end
 
   test "cannot view another account's media" do

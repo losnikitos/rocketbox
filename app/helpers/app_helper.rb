@@ -5,11 +5,16 @@ module AppHelper
   def app_nav
     case controller_path
     when "accounts/library"
-      counts = Current.account.library_media.group(:media_type).count
-      [ :library, "Library", [
-        [ library_uploads_path, "All", params[:type].blank?, counts.values.sum ],
+      counts = Current.account.library_media.where(collection: @collection).group(:media_type).count
+      tabs = [
+        [ library_collection_path(@collection), "All", params[:type].blank?, counts.values.sum ],
         :separator,
-        *LibraryMedia.media_types.keys.map { |t| [ library_uploads_path(type: t), t.titleize, params[:type] == t, counts[t].to_i ] },
+        *LibraryMedia.media_types.keys.map { |t| [ library_collection_path(@collection, type: t), t.titleize, params[:type] == t, counts[t].to_i ] }
+      ]
+      return [ :photobank, "Photobank", tabs ] if @collection == "photobank"
+
+      [ :library, "Inbox", [
+        *tabs,
         :separator,
         [ library_uploads_path(type: "reviews"), "Reviews", params[:type] == "reviews", Current.account.reviews.active.media_attachments.count ]
       ] ]
@@ -58,6 +63,10 @@ module AppHelper
     else
       [ nil, "Rocketbox", [] ]
     end
+  end
+
+  def library_collection_path(collection, **params)
+    collection == "photobank" ? library_photobank_path(**params) : library_uploads_path(**params)
   end
 
   def posts_tabs

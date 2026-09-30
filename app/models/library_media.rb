@@ -19,6 +19,8 @@ class LibraryMedia < ApplicationRecord
 
   enum :media_type, %w[business_card interior exterior logo customer misc].index_by(&:itself),
        validate: { allow_nil: true }
+  # Inbox: everything the owner sends or uploads. Photobank: curated media, manual upload only.
+  enum :collection, %w[inbox photobank].index_by(&:itself), default: "inbox", validate: true
 
   validates :kind, presence: true
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
