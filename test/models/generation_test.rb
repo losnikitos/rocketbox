@@ -5,9 +5,9 @@ require "test_helper"
 class GenerationTest < ActiveSupport::TestCase
   setup do
     user = users(:lazaro_nixon)
-    source = LibraryMedia.create!(kind: "photo", media_type: "interior", user:,
+    source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user:,
       file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Polish", media_type: "interior", prompt: "Polish the shot.")
+    recipe = Recipe.create!(name: "Polish", media_type: media_types(:interior), prompt: "Polish the shot.")
     @generation = source.generations.new(recipe:, prompt: "Warmer.")
     @generation.start!
     @original_paint = RubyLLM.method(:paint)

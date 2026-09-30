@@ -28,7 +28,7 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     original = WhatsappCloud.method(:send_text)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
 
-    assert_equal "interior", store_image!(from: "15551234567", media_id: "interior-1").media_type
+    assert_equal media_types(:interior), store_image!(from: "15551234567", media_id: "interior-1").media_type
     assert_equal "interior_front", user.reload.whatsapp_pending_question
     assert_equal [ WhatsappOnboarding::MESSAGES["interior_front"] ], sent
 

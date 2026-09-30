@@ -46,9 +46,9 @@ module WhatsappOnboarding
     TEXT
   }.freeze
 
-  # Photo step => LibraryMedia media_type the next WhatsApp media gets.
+  # Photo step => MediaType slug the next WhatsApp media gets.
   MEDIA_REQUESTS = {
-    "business_card" => "business_card",
+    "business_card" => "business-card",
     "logo" => "logo",
     "interior_back" => "interior",
     "interior_front" => "interior"

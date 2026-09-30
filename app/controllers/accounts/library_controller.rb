@@ -12,9 +12,9 @@ module Accounts
       end
 
       @library_media = Current.account.library_media.where(collection: @collection).with_attached_file
-        .includes(origin: { source_media: { file_attachment: :blob } }, generated_media: [ { file_attachment: :blob }, :origin ])
+        .includes(:media_type, origin: { source_media: { file_attachment: :blob } }, generated_media: [ { file_attachment: :blob }, :origin ])
         .order(created_at: :desc)
-      @library_media = @library_media.where(media_type: params[:type]) if LibraryMedia.media_types.key?(params[:type])
+      @library_media = @library_media.joins(:media_type).where(media_type: { slug: params[:type] }) if params[:type].present?
     end
 
     def show

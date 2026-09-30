@@ -20,7 +20,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "Kind is not included in the list"
 
     assert_difference -> { Recipe.video.count } do
-      post recipes_url, params: { recipe: { name: "Second cinematic", kind: "video", prompt: "Neon night vibe" } }
+      post recipes_url, params: { recipe: { name: "Second cinematic", kind: "video", prompt: "Neon night vibe", media_type_id: media_types(:interior).id } }
     end
     assert_equal "Neon night vibe", Recipe.find_by!(name: "Second cinematic").prompt
 
@@ -28,7 +28,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=radio][name='recipe[kind]'][value=image][checked]"
     assert_select "input[type=radio][name='recipe[kind]'][value=video]"
 
-    post recipes_url, params: { recipe: { name: "Story teaser", prompt: "Film look", examples: [ image("a.jpg"), image("b.jpg") ] } }
+    post recipes_url, params: { recipe: { name: "Story teaser", prompt: "Film look", media_type_id: media_types(:interior).id, examples: [ image("a.jpg"), image("b.jpg") ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Story teaser")
     assert recipe.image?
@@ -82,16 +82,17 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     get recipes_url(account: @admin.id, media_type: "interior")
     assert_select "##{dom_id(recipes(:cinematic))}"
 
-    post recipes_url, params: { recipe: { name: "Card promo", prompt: "p", media_type: "business_card" } }
+    card = media_types(:business_card)
+    post recipes_url, params: { recipe: { name: "Card promo", prompt: "p", media_type_id: card.id } }
     recipe = Recipe.find_by!(name: "Card promo")
-    assert recipe.business_card?
+    assert_equal card, recipe.media_type
 
     get edit_recipe_url(recipe, account: @admin.id)
-    assert_select "select[name='recipe[media_type]'] option[selected][value=business_card]"
-    patch recipe_url(recipe), params: { recipe: { media_type: "exterior" } }
-    assert recipe.reload.exterior?
+    assert_select "select[name='recipe[media_type_id]'] option[selected][value=?]", card.id.to_s
+    patch recipe_url(recipe), params: { recipe: { media_type_id: media_types(:exterior).id } }
+    assert_equal media_types(:exterior), recipe.reload.media_type
 
-    post recipes_url, params: { recipe: { name: "Bad", prompt: "p", media_type: "nope" } }
+    post recipes_url, params: { recipe: { name: "Bad", prompt: "p", media_type_id: 0 } }
     assert_response :unprocessable_entity
   end
 

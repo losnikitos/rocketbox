@@ -70,7 +70,7 @@ class StoreWhatsappMedia
         whatsapp_media_id: media_id,
         whatsapp_from: from.presence,
         kind: kind,
-        media_type: WhatsappOnboarding::MEDIA_REQUESTS[step],
+        media_type: step && MediaType.find_by(slug: WhatsappOnboarding::MEDIA_REQUESTS[step]),
         user:
       )
       user.update!(whatsapp_pending_question: nil) if step

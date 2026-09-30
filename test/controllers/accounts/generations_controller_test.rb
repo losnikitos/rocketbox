@@ -5,7 +5,7 @@ require "test_helper"
 class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = sign_in_as(users(:admin_user))
-    @media = LibraryMedia.create!(kind: "photo", media_type: "interior", user: @admin)
+    @media = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: @admin)
     @media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
   end
 
@@ -58,7 +58,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-    recipe = Recipe.create!(name: "Polish", media_type: "interior", prompt: "Polish the shot.")
+    recipe = Recipe.create!(name: "Polish", media_type: media_types(:interior), prompt: "Polish the shot.")
 
     get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { prompt: "Warmer.", options: { model: "gpt-image-2" } })
     assert_response :success
@@ -94,7 +94,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a recipe that doesn't fit the media is refused" do
-    @media.update!(media_type: "exterior")
+    @media.update!(media_type: media_types(:exterior))
 
     get new_library_media_generation_url(@media, recipe_id: recipes(:cinematic).id, account: @admin.id)
     assert_redirected_to %r{/library/uploads/#{@media.id}\b}

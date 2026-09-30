@@ -6,5 +6,9 @@
 
 Prompt.push
 
+%w[business_card interior exterior logo customer misc].each do |key|
+  MediaType.find_or_create_by!(slug: key.dasherize) { it.name = key.humanize }
+end
+
 # Meta app review account (credentials are shared with the submission).
 User.find_or_initialize_by(email: "review@meta.com").update!(password: "review_2026", verified: true)

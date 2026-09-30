@@ -2,6 +2,7 @@
 
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
+  belongs_to :media_type, optional: true
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the generation rows go.
@@ -22,14 +23,15 @@ class LibraryMedia < ApplicationRecord
     "business_description" => :business_description
   }.freeze
 
-  enum :media_type, %w[business_card interior exterior logo customer misc].index_by(&:itself),
-       validate: { allow_nil: true }
   # Inbox: everything the owner sends or uploads. Photobank: curated media, manual upload only.
   enum :collection, %w[inbox photobank].index_by(&:itself), default: "inbox", validate: true
 
   validates :kind, presence: true
+  validates :media_type, presence: true, if: :media_type_id
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
+
+  def business_card? = media_type&.slug == "business-card"
 
   def story_image?
     return false unless file.attached?

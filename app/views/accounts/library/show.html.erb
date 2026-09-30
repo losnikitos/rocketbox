@@ -50,9 +50,9 @@
     </div>
 
     <%= form_with model: @media, url: library_media_path(@media), class: "mt-4" do |f| %>
-      <%= f.label :media_type, "Media type", class: "mb-1 block text-sm text-ink-500" %>
-      <%= f.select :media_type,
-            LibraryMedia.media_types.keys.map { |t| [ t.humanize, t ] },
+      <%= f.label :media_type_id, "Media type", class: "mb-1 block text-sm text-ink-500" %>
+      <%= f.select :media_type_id,
+            MediaType.ordered.pluck(:name, :id),
             { include_blank: "Not set" },
             class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
             onchange: "this.form.requestSubmit()" %>
@@ -64,7 +64,7 @@
         <% if @media.media_type.nil? %>
           <p class="mt-1 text-sm text-ink-600">Set a media type to see recipes.</p>
         <% elsif (recipes = @media.recipes).empty? %>
-          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.humanize(capitalize: false) %> recipes yet.</p>
+          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.name.downcase %> recipes yet.</p>
         <% else %>
           <ul class="mt-2 grid grid-cols-3 gap-2">
             <% recipes.each do |recipe| %>

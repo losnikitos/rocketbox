@@ -1,0 +1,5 @@
+<% %w[business_card interior exterior logo customer misc].each do |key| %>
+<%= key %>:
+  name: <%= key.humanize %>
+  slug: <%= key.dasherize %>
+<% end %>
