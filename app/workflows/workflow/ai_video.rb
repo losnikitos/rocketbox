@@ -9,8 +9,8 @@ class Workflow
     DEFAULTS = { aspect_ratio: "9:16", resolution: "720p", duration: 8 }.freeze
 
     def self.call(inputs:, params:, run:)
-      options = DEFAULTS.merge(run.subject.xai_options)
-      video = RubyLLM.animate(params["prompt"], model: options[:model], provider: :xai, with: inputs.first, provider_options: options.except(:model))
+      options = DEFAULTS.merge(run.subject.ai_options)
+      video = RubyLLM.animate(params["prompt"], model: options[:model], provider: options[:provider], with: inputs.first, provider_options: options.except(:provider, :model))
       [ { io: StringIO.new(video.to_blob), filename: "ai-video.mp4", content_type: "video/mp4" } ]
     end
   end

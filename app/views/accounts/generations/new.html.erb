@@ -32,7 +32,8 @@
       </div>
     </section>
 
-    <%= form_with model: @generation, url: library_media_generations_path(media, recipe_id: recipe.id), class: "space-y-4" do |f| %>
+    <%= form_with model: @generation, url: library_media_generations_path(media), class: "space-y-4" do |f| %>
+      <%= hidden_field_tag :recipe_id, recipe.id %>
       <h2 class="text-sm font-medium text-ink-900">Generation options</h2>
       <% if @generation.errors.any? %>
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= @generation.errors.full_messages.to_sentence %></p>
@@ -42,7 +43,8 @@
           <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
           <%= select_tag "generation[options][#{key}]",
                 options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, @generation.options[key]),
-                id: "generation_options_#{key}", include_blank: ("Auto" unless key == "model"), class: tw_input_classes %>
+                id: "generation_options_#{key}", include_blank: ("Auto" unless key == "model"), class: tw_input_classes,
+                onchange: ("this.form.requestSubmit(this.form.elements.refresh)" if key == "model") %>
         </div>
       <% end %>
       <div class="flex gap-2">
@@ -52,6 +54,8 @@
           Generate
         <% end %>
       </div>
+      <%= tag.button name: "refresh", formaction: new_library_media_generation_path(media), formmethod: "get", hidden: true,
+            data: { turbo_frame: ("side_panel" if turbo_frame_request?) } %>
     <% end %>
   </aside>
   </turbo-frame>
