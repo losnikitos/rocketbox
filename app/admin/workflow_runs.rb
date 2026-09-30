@@ -3,7 +3,7 @@ ActiveAdmin.register WorkflowRun do
 
   index do
     id_column
-    column :smm_post
+    column :subject
     column :workflow
     column :status
     column :created_at
@@ -13,7 +13,7 @@ ActiveAdmin.register WorkflowRun do
   show do
     attributes_table do
       row :id
-      row :smm_post
+      row :subject
       row :workflow
       row :status
       row :error

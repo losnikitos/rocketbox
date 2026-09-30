@@ -59,7 +59,7 @@
               <% end %>
               <% if record.failed? || (record.complete? && !run.running?) %>
                 <div class="px-3 pb-3">
-                  <%= button_to record.failed? ? "Retry" : "Re-run", rerun_instagram_post_path(run.smm_post, key: step.key),
+                  <%= button_to record.failed? ? "Retry" : "Re-run", run.subject.is_a?(Generation) ? rerun_library_media_path(run.subject.generated_media, key: step.key) : rerun_instagram_post_path(run.subject, key: step.key),
                         class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
                 </div>
               <% end %>

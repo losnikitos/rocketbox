@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_150000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -83,6 +83,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
+  end
+
+  create_table "generations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "generated_media_id", null: false
+    t.integer "recipe_id", null: false
+    t.integer "source_media_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["generated_media_id"], name: "index_generations_on_generated_media_id", unique: true
+    t.index ["recipe_id"], name: "index_generations_on_recipe_id"
+    t.index ["source_media_id"], name: "index_generations_on_source_media_id"
   end
 
   create_table "incoming_messages", force: :cascade do |t|
@@ -394,11 +405,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
   create_table "workflow_runs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error"
-    t.integer "smm_post_id", null: false
     t.string "status", default: "running", null: false
+    t.integer "subject_id", null: false
+    t.string "subject_type", null: false
     t.datetime "updated_at", null: false
     t.string "workflow", null: false
-    t.index ["smm_post_id"], name: "index_workflow_runs_on_smm_post_id"
+    t.index ["subject_type", "subject_id"], name: "index_workflow_runs_on_subject_type_and_subject_id"
   end
 
   create_table "workflow_steps", force: :cascade do |t|
@@ -418,6 +430,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "crawls", "links"
+  add_foreign_key "generations", "library_media", column: "generated_media_id"
+  add_foreign_key "generations", "library_media", column: "source_media_id"
+  add_foreign_key "generations", "recipes"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
@@ -433,6 +448,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
   add_foreign_key "suggestions", "crawls"
-  add_foreign_key "workflow_runs", "smm_posts"
   add_foreign_key "workflow_steps", "workflow_runs"
 end

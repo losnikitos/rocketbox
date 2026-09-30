@@ -73,7 +73,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     media = LibraryMedia.create!(kind: "photo", user:)
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
     post = user.smm_posts.create!(recipe: recipes(:cinematic), status: "draft", smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
-    run = WorkflowRun.create!(smm_post: post, workflow: "ImagesToVideo")
+    run = WorkflowRun.create!(subject: post, workflow: "ImagesToVideo")
     step = run.workflow_steps.create!(key: "video")
 
     get "/app/instagram/posts/#{post.id}?account=#{user.id}", headers: @ua
@@ -84,6 +84,25 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     get "/admin/workflow_steps/#{step.id}", headers: @ua
     assert_response :success
     assert_match "AiVideo", response.body
+  end
+
+  test "generation is linked from its media page and opens in admin with steps" do
+    admin = sign_in_as(users(:admin_user))
+    source = LibraryMedia.create!(kind: "photo", media_type: "interior", user: admin)
+    source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
+    generation = Generation.start!(source, recipes(:cinematic))
+    generation.workflow_run.step("photos").update!(status: "running")
+    generation.workflow_run.fail!("content policy")
+
+    get "/app/library/uploads/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
+    assert_response :success
+    assert_select "a[href^='/admin/generations/#{generation.id}']"
+    get "/admin/generations/#{generation.id}", headers: @ua
+    assert_response :success
+    assert_match "content policy", response.body
+    assert_select "a[href^='/admin/workflow_steps/']", text: "photos"
+    get "/admin/generations", headers: @ua
+    assert_response :success
   end
 
   test "admin can refresh models" do

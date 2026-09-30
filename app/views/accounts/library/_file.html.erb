@@ -10,6 +10,12 @@
       <span class="text-sm font-medium text-ink-900 break-all"><%= media.file.filename %></span>
     </div>
   <% end %>
+<% elsif media.origin %>
+  <% failed = media.origin.status == "failed" %>
+  <div class="@container flex flex-1 flex-col self-stretch items-center justify-center gap-1 bg-ink-900/5 text-center text-sm <%= css %>" title="<%= media.origin.error %>">
+    <%= heroicon failed ? "x-circle" : "arrow-path", variant: :mini, options: { class: "size-5 shrink-0 #{failed ? "text-signal-red" : "animate-spin text-signal-yellow"}", "aria-hidden": true } %>
+    <span class="sr-only @[6rem]:not-sr-only <%= failed ? "text-signal-red" : "text-ink-500" %>"><%= failed ? "Generation failed" : "Generating…" %></span>
+  </div>
 <% else %>
   <div class="flex items-center justify-center bg-ink-900/5 text-sm text-ink-500 <%= css %>">Missing file</div>
 <% end %>
