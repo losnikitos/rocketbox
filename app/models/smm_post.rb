@@ -72,6 +72,7 @@ class SmmPost < ApplicationRecord
   end
 
   def ai_options = {}
+  def prompt = nil
 
   # The workflow's output media become the slides.
   def store_output!(blobs, format)

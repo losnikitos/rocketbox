@@ -36,11 +36,13 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   test "generate saves the options and starts the run; stop and rerun work on it" do
     assert_difference -> { Generation.count } => 1, -> { WorkflowRun.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
       post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
-        generation: { options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
+        generation: { prompt: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
       }
     end
     generation = @media.generations.sole
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
+    ai_step = recipes(:cinematic).workflow_class.steps.find { it.node.in?(Recipe::AI_NODES) }
+    assert_equal "#{recipes(:cinematic).prompt}\n\nMake it snow.", generation.recipe.params_for(ai_step, generation.prompt)["prompt"]
     assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, generation.options)
     assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5, provider: :xai }, generation.ai_options)
     assert_equal "running", generation.status
@@ -60,8 +62,9 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
     recipe = Recipe.create!(name: "Polish", workflow: "ImageToImage", media_type: "interior", prompt: "Polish the shot.")
 
-    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "gpt-image-2" } })
+    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { prompt: "Warmer.", options: { model: "gpt-image-2" } })
     assert_response :success
+    assert_select "textarea[name='generation[prompt]']", text: "Warmer."
     assert_select "input[name='generation[options][model]'][value='gpt-image-2'][checked]"
     assert_select "input[type=radio][name='generation[options][size]'][value='1088x1360'][checked]"
     assert_select "input[type=radio][name='generation[options][quality]'][value=''][checked]"

@@ -25,7 +25,8 @@ module Accounts
         recipe = media.recipes.find { it.id == params[:recipe_id].to_i }
         return redirect_to helpers.library_item_path(media), alert: "That recipe doesn't fit this media." unless recipe
 
-        @generation = media.generations.new(recipe:, options: { "model" => params.dig(:generation, :options, :model).presence }.compact)
+        @generation = media.generations.new(recipe:, prompt: params.dig(:generation, :prompt),
+          options: { "model" => params.dig(:generation, :options, :model).presence }.compact)
       end
   end
 end
