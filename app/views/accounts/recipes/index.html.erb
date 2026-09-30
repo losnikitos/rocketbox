@@ -6,41 +6,30 @@
   <% end %>
 <% end %>
 
-<div class="mx-auto max-w-3xl space-y-4">
-  <% if @recipes.any? %>
-    <ul class="divide-y divide-ink-900/5 rounded-lg border border-ink-900/10 bg-white">
-      <% @recipes.each do |recipe| %>
-        <li id="<%= dom_id(recipe) %>" class="flex items-center transition hover:bg-ink-900/3">
-          <%= link_to edit_recipe_path(recipe), class: "flex min-w-0 flex-1 items-center gap-4 py-3 pl-4" do %>
-            <div class="min-w-0 flex-1">
-              <p class="flex items-center gap-2 text-sm font-semibold text-ink-900">
-                <span class="truncate"><%= recipe.name %></span>
-                <span class="shrink-0 rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.format %></span>
-              </p>
-              <p class="mt-1 truncate text-sm text-ink-500"><%= recipe_summary(recipe) %></p>
-            </div>
-            <% if recipe.examples.any? %>
-              <div class="flex shrink-0 gap-1">
-                <% recipe.examples.first(3).each do |example| %>
-                  <%= render "example", example:, css: "h-12 w-8 rounded object-cover" %>
-                <% end %>
-                <% if (more = recipe.examples.size - 3).positive? %>
-                  <span class="flex h-12 w-8 items-center justify-center rounded bg-ink-900/5 text-xs text-ink-500">+<%= more %></span>
-                <% end %>
-              </div>
-            <% end %>
-          <% end %>
-          <%= button_to recipe_path(recipe), method: :delete, "aria-label": "Remove #{recipe.name}",
-                form: { class: "px-2", data: { turbo_confirm: "Remove this recipe?" } },
-                class: "rounded-lg p-2 text-ink-400 transition hover:bg-ink-900/5 hover:text-signal-red" do %>
-            <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  <% else %>
-    <div class="rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-      Add a recipe — a workflow and examples that describe how a post is made.
-    </div>
-  <% end %>
-</div>
+<% if @recipes.any? %>
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <% @recipes.each do |recipe| %>
+      <% covered = recipe.examples.any? %>
+      <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+          data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+        <% recipe.examples.each_with_index do |example, index| %>
+          <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+            <%= render "example", example:, css: "size-full object-cover" %>
+          </div>
+        <% end %>
+        <%= link_to edit_recipe_path(recipe), class: "absolute inset-0 flex items-start" do %>
+          <span class="w-full py-4 pr-12 pl-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+            <%= recipe.name %>
+          </span>
+        <% end %>
+        <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
+          <%= render "shared/admin_links/recipe", recipe: %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
+    Add a recipe — a workflow and examples that describe how a post is made.
+  </div>
+<% end %>
