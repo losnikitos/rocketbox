@@ -19,7 +19,7 @@
       <% @library_media.group_by { |m| m.created_at.to_date }.each do |day, items| %>
         <section>
           <h3 class="mb-3 text-sm font-medium text-ink-900"><%= upload_day_label(day) %></h3>
-          <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             <% items.each do |media| %>
               <% selectable = media.story_image? %>
               <li class="group relative min-w-0 rounded-lg" data-library-select-target="item">
@@ -47,10 +47,10 @@
                   <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm"><%= media.media_type.humanize %></span>
                 <% end %>
                 <% if media.generated_media.any? %>
-                  <div class="absolute bottom-2 right-2 z-10 flex -space-x-3" aria-label="Generated media">
+                  <div class="absolute bottom-2 right-2 z-10 flex gap-2" aria-label="Generated media">
                     <% media.generated_media.first(3).each do |generated| %>
                       <%= link_to library_upload_path(generated), aria: { label: "Open generated #{generated.kind}" }, class: "block rounded-md shadow-sm ring-2 ring-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-                        <%= render "accounts/library/file", media: generated, css: "size-8 rounded-md object-cover" %>
+                        <%= render "accounts/library/file", media: generated, css: "aspect-2/3 w-12 rounded-md object-cover" %>
                       <% end %>
                     <% end %>
                   </div>

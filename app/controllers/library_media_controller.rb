@@ -69,6 +69,14 @@ class LibraryMediaController < ApplicationController
     redirect_to library_upload_path(media), notice: "Running again from #{step.key.humanize}."
   end
 
+  def stop
+    media = Current.account.library_media.find(params[:id])
+    run = media.origin&.workflow_run or return head(:not_found)
+
+    run.stop!
+    redirect_to library_upload_path(media), notice: "Stopped."
+  end
+
   def destroy
     media = Current.account.library_media.find(params[:id]).destroy!
     redirect_to helpers.library_collection_path(media.collection), notice: "Media deleted."

@@ -23,7 +23,8 @@ module Xai
   end
 
   # Returns MP4 bytes animated from one image or referencing several.
-  def generate_video(prompt:, blobs:, aspect_ratio: "9:16")
+  # `stopped` is checked between polls; xAI has no cancel endpoint, so it only stops waiting.
+  def generate_video(prompt:, blobs:, aspect_ratio: "9:16", stopped: nil)
     params = { model: VIDEO_MODEL, prompt:, duration: VIDEO_DURATION, aspect_ratio:, resolution: VIDEO_RESOLUTION }
     if blobs.one?
       params[:image] = { url: data_uri(blobs.first), type: "image_url" }
@@ -32,13 +33,14 @@ module Xai
     end
 
     request_id = request!(:post, "videos/generations", params)["request_id"].presence || raise(Error, "xAI did not return a request id.")
-    download!(poll_video!(request_id))
+    download!(poll_video!(request_id, stopped))
   end
 
   private
 
-    def poll_video!(request_id)
+    def poll_video!(request_id, stopped)
       POLL_ATTEMPTS.times do
+        raise Error, "Stopped." if stopped&.call
         payload = request!(:get, "videos/#{request_id}")
         status = payload["status"].to_s
         return payload.dig("video", "url") if status == "done" && payload.dig("video", "url").present?

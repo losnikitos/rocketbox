@@ -69,6 +69,24 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal "ready", @post.reload.status
   end
 
+  test "stop mid-step discards the step's result and re-run continues" do
+    post = @post
+    bytes = jpeg
+    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| WorkflowRun.find_by!(subject: post).stop!; bytes }
+    run = WorkflowRun.start!(@post)
+    advance_until_settled(run)
+
+    assert run.stopped?
+    stopped = run.workflow_steps.find(&:failed?)
+    assert_equal "Stopped.", stopped.error
+    assert_not stopped.outputs.attached?
+
+    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| bytes }
+    run.rerun!(stopped.key)
+    advance_until_settled(run)
+    assert run.complete?
+  end
+
   test "a generation turns its output into library media, without a post" do
     recipe = Recipe.create!(name: "Film", workflow: "ImageToImage", prompt: "Film look", media_type: "interior")
     source = LibraryMedia.create!(kind: "photo", user: @user, media_type: "interior",

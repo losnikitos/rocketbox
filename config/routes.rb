@@ -96,6 +96,7 @@ Rails.application.routes.draw do
         patch :apply_extraction
         post :apply_recipe
         post :rerun
+        post :stop
       end
     end
   end
