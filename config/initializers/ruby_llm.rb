@@ -25,4 +25,10 @@ Rails.application.config.to_prepare do
   RubyLLM::ActiveRecord::Model.define_singleton_method(:enabled) do
     where(enabled: true).order(arel_table[:position].asc.nulls_last, :id)
   end
+
+  # A refresh writes empty modalities for models only the provider API lists (not models.dev);
+  # keep the ones set by hand, or image models fall back to type :chat.
+  RubyLLM::ActiveRecord::Model.before_update do
+    self.modalities = modalities_was if modalities.values.flatten.empty? && modalities_was.present?
+  end
 end

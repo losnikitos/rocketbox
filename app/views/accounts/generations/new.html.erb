@@ -39,17 +39,64 @@
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= @generation.errors.full_messages.to_sentence %></p>
       <% end %>
       <% @generation.option_choices.each do |key, choices| %>
-        <div>
-          <div class="flex items-baseline justify-between gap-2">
-            <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
-            <% if key == "model" && Current.user&.admin? %>
-              <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
-            <% end %>
+        <% if key == "model" %>
+          <div>
+            <div class="flex items-baseline justify-between gap-2">
+              <span id="generation_options_model" class="<%= tw_label_classes %>">Model</span>
+              <% if Current.user&.admin? %>
+                <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
+              <% end %>
+            </div>
+            <div role="radiogroup" aria-labelledby="generation_options_model" class="divide-y divide-ink-900/10 overflow-hidden rounded-lg border border-ink-900/15 bg-white">
+              <% @generation.models.each do |model| %>
+                <label class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-ink-900 transition hover:bg-stone-50">
+                  <%= model.model_id %>
+                  <%= radio_button_tag "generation[options][model]", model.model_id, @generation.options["model"] == model.model_id, class: "size-4 shrink-0 accent-rocket",
+                        onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
+                </label>
+              <% end %>
+            </div>
           </div>
+          <% next %>
+        <% end %>
+        <% if key == "size" %>
+          <fieldset>
+            <legend class="<%= tw_label_classes %>">Size</legend>
+            <div class="grid grid-cols-4 gap-2">
+              <% shapes = { "1008x1792" => [ "Story", "9:16", "h-6 aspect-9/16" ], "1088x1360" => [ "Portrait", "4:5", "h-6 aspect-4/5" ],
+                            "1088x1088" => [ "Square", "1:1", "h-5 aspect-square" ], "1792x1008" => [ "Landscape", "16:9", "w-7 aspect-video" ] } %>
+              <% choices.each do |value| %>
+                <% name, ratio, shape = shapes.fetch(value) %>
+                <label class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-ink-900/15 bg-white p-2 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                  <%= radio_button_tag "generation[options][size]", value, @generation.options["size"] == value, class: "sr-only" %>
+                  <span class="flex h-6 items-center"><span class="<%= shape %> rounded-sm border-2 border-current text-ink-700" aria-hidden="true"></span></span>
+                  <span class="text-sm font-medium text-ink-900"><%= name %></span>
+                  <span class="text-xs text-ink-500"><%= ratio %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+          <% next %>
+        <% end %>
+        <% if key == "quality" %>
+          <fieldset>
+            <legend class="<%= tw_label_classes %>">Quality</legend>
+            <div class="flex gap-1 rounded-full bg-ink-900/5 p-1">
+              <% [ "", *choices ].each do |value| %>
+                <label class="flex-1 cursor-pointer rounded-full px-3 py-1 text-center text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                  <%= radio_button_tag "generation[options][quality]", value, @generation.options["quality"].to_s == value, class: "sr-only" %>
+                  <%= value.presence&.capitalize || "Auto" %>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+          <% next %>
+        <% end %>
+        <div>
+          <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
           <%= select_tag "generation[options][#{key}]",
                 options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, @generation.options[key]),
-                id: "generation_options_#{key}", include_blank: ("Auto" unless key == "model"), class: tw_input_classes,
-                onchange: ("this.form.requestSubmit(this.form.elements.refresh)" if key == "model") %>
+                id: "generation_options_#{key}", include_blank: "Auto", class: tw_input_classes %>
         </div>
       <% end %>
       <div class="flex gap-2">

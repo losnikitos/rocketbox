@@ -16,11 +16,11 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "img[src*=?]", "a.jpg"
     assert_select "h2", text: "Cinematic shop reel"
-    assert_select "select[name='generation[options][model]'] option[selected]", text: "grok-imagine-video-1.5"
-    assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("select[name='generation[options][model]'] option").map(&:text)
+    assert_select "input[name='generation[options][model]'][value='grok-imagine-video-1.5'][checked]"
+    assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("input[name='generation[options][model]']").map { it["value"] }
     assert_select "a[href='/admin/models']", text: "Manage models"
     assert_select "select[name='generation[options][duration]'] option[selected]", text: "8 s"
-    assert_select "select[name='generation[options][quality]']", count: 0
+    assert_select "[name='generation[options][quality]']", count: 0
     assert_select "button", text: /Generate/
     assert_select "a:not([data-turbo-frame])", text: "Cancel"
   end
@@ -28,7 +28,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   test "in the side panel frame, only the panel renders and Cancel reloads just the panel" do
     get new_library_media_generation_url(@media, recipe_id: recipes(:cinematic).id, account: @admin.id), headers: { "Turbo-Frame" => "side_panel" }
     assert_response :success
-    assert_select "turbo-frame#side_panel select[name='generation[options][model]']"
+    assert_select "turbo-frame#side_panel input[name='generation[options][model]']"
     assert_select "a", text: /Source media/, count: 0
     assert_select "turbo-frame#side_panel a[data-turbo-frame=side_panel]", text: "Cancel"
   end
@@ -62,15 +62,16 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
 
     get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "gpt-image-2" } })
     assert_response :success
-    assert_select "select[name='generation[options][model]'] option[selected]", text: "gpt-image-2"
-    assert_select "select[name='generation[options][size]'] option[selected]", text: "1024x1536"
+    assert_select "input[name='generation[options][model]'][value='gpt-image-2'][checked]"
+    assert_select "input[type=radio][name='generation[options][size]'][value='1088x1360'][checked]"
+    assert_select "input[type=radio][name='generation[options][quality]'][value=''][checked]"
     assert_select "select[name='generation[options][aspect_ratio]']", count: 0
 
     post library_media_generations_url(@media, recipe_id: recipe.id), params: {
-      generation: { options: { model: "gpt-image-1-mini", size: "1024x1024", quality: "high", aspect_ratio: "9:16" } }
+      generation: { options: { model: "gpt-image-2", size: "1088x1088", quality: "high", aspect_ratio: "9:16" } }
     }
     generation = @media.generations.sole
-    assert_equal({ model: "gpt-image-1-mini", size: "1024x1024", quality: "high", provider: :openai }, generation.ai_options)
+    assert_equal({ model: "gpt-image-2", size: "1088x1088", quality: "high", provider: :openai }, generation.ai_options)
   end
 
   test "rejects options xAI doesn't offer" do
