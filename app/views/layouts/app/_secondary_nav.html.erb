@@ -10,6 +10,7 @@
             aria: { selected: selected, current: (selected ? "page" : nil) } do %><%= label %><% if count %> <span class="ml-0.5 text-xs tabular-nums opacity-60"><%= count %></span><% end %><% end %>
     <% end %>
   <% end %>
+  <%= render "shared/admin_links/media_types" if controller_path == "accounts/library" %>
   <% if show_upload %>
     <label for="library-upload-input" class="rb-btn-ghost-on-light ml-auto cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
       <%= heroicon "arrow-up-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
