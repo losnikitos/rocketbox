@@ -15,33 +15,44 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(account: @admin.id), text: /Recipes/
 
-    post recipes_url, params: { recipe: { name: "Story teaser", workflow: "User" } }
+    post recipes_url, params: { recipe: { name: "Story teaser", workflow: "User", prompt: "p" } }
     assert_response :unprocessable_entity
     assert_select "li", text: "Workflow is not included in the list"
 
-    post recipes_url, params: { recipe: { name: "Second cinematic", workflow: "CinematicShopReel" } }
-    assert_select "li", text: "Workflow has already been taken"
+    post recipes_url, params: { recipe: { name: "Story teaser", workflow: "TwoPhotoStory", prompt: "Film look", texts: { text_1: "Open" } } }
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Texts can't be blank"
+
+    assert_difference -> { Recipe.where(workflow: "ImagesToVideo").count } do
+      post recipes_url, params: { recipe: { name: "Second cinematic", workflow: "ImagesToVideo", prompt: "Neon night vibe" } }
+    end
+    assert_equal "Neon night vibe", Recipe.find_by!(name: "Second cinematic").prompt
 
     get new_recipe_url(account: @admin.id)
-    assert_select "select[name='recipe[workflow]'] option[value=BankHolidayStory]"
-    assert_select "select[name='recipe[workflow]'] option[value=CinematicShopReel]", count: 0
+    assert_select "input[type=radio][name='recipe[workflow]'][value=?]", "TwoPhotoStory"
+    assert_select "input[type=radio][name='recipe[workflow]'][value=?]", "ImagesToVideo"
+    assert_select "fieldset[data-workflow=TwoPhotoStory][disabled] input[name='recipe[texts][text_1]']"
 
     post recipes_url, params: { recipe: {
-      name: "Story teaser", workflow: "BankHolidayStory",
+      name: "Story teaser", workflow: "TwoPhotoStory", prompt: "Film look",
+      texts: { text_1: "This bank holiday we work as usual", text_2: "Tap link below to book", junk: "x" },
       examples: [ image("a.jpg"), image("b.jpg") ]
     } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Story teaser")
     assert_equal "story", recipe.format
     assert_equal 2, recipe.input_count
+    assert_equal %w[text_1 text_2], recipe.texts.keys
     assert_equal %w[a.jpg b.jpg], recipe.examples.map { it.filename.to_s }.sort
 
     kept, removed = recipe.examples.sort_by { it.filename.to_s }
     get edit_recipe_url(recipe, account: @admin.id)
-    assert_select "a[href^=?]", "/admin/prompts/#{prompts(:bank_holiday_story_film).id}/edit", count: 2
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form]", count: 2
-    assert_select "select[name='recipe[workflow]']", count: 0
+    assert_select "input[name='recipe[workflow]']", count: 0
+    assert_select "textarea[name='recipe[prompt]']", text: "Film look"
+    assert_select "fieldset[data-workflow=TwoPhotoStory]:not([disabled]) input[name='recipe[texts][text_1]'][value=?]", "This bank holiday we work as usual"
     assert_select "article dd", text: "This bank holiday we work as usual"
+    assert_select "article dd", text: "Film look", count: 2
 
     delete example_recipe_url(recipe, example_id: removed.id)
     assert_redirected_to edit_recipe_url(recipe, account: @admin.id)

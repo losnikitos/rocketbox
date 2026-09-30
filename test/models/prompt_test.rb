@@ -12,6 +12,6 @@ class PromptTest < ActiveSupport::TestCase
     Prompt.delete_all
     Prompt.push
     assert_equal Rails.root.glob("prompts/*.md").size, Prompt.count
-    assert_equal Rails.root.join("prompts/transition_video.md").read.strip, Prompt.body_for!(:transition_video)
+    assert_equal Rails.root.join("prompts/crawl_business.md").read.strip, Prompt.body_for!(:crawl_business)
   end
 end

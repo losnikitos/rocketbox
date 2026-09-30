@@ -1,7 +1,9 @@
 cinematic:
   name: Cinematic shop reel
-  workflow: CinematicShopReel
+  workflow: ImagesToVideo
+  prompt: Slow cinematic push-in on the shop.
 
 before_after:
   name: Before → after energy
-  workflow: BeforeAfterEnergy
+  workflow: ImagesToVideo
+  prompt: Energetic before and after reveal.

@@ -48,7 +48,7 @@ class SmmPostTest < ActiveSupport::TestCase
   end
 
   test "requires the recipe's number of inputs" do
-    recipe = Recipe.create!(name: "Story", workflow: "BankHolidayStory")
+    recipe = Recipe.create!(name: "Story", workflow: "TwoPhotoStory", prompt: "Film look", texts: { "text_1" => "Open", "text_2" => "Book" })
     post = @user.smm_posts.new(recipe:, status: "draft")
     post.smm_post_media_items.build(library_media: @media, position: 0)
     assert_not post.valid?

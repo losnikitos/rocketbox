@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 # How a recipe makes a post. Subclasses declare steps in run order; each step runs a node class
-# (Workflow::Input, AiImage, …) on the outputs of the steps named in `from:`.
+# (Workflow::Input, AiImage, …) on the outputs of the steps named in `from:`. Many recipes share a workflow;
+# each fills in its own prompt and texts (Recipe#params_for).
 #
-#   class BankHolidayStory < Workflow
+#   class TwoPhotoStory < Workflow
 #     step :photo_1, Input, slot: 1
-#     step :film_1, AiImage, from: :photo_1, prompt: :bank_holiday_story_film # Prompt key
+#     step :film_1, AiImage, from: :photo_1
 #     step :story, Output, from: :film_1, format: "story"
 #   end
 class Workflow
@@ -31,6 +32,10 @@ class Workflow
 
     def [](key)
       steps.find { it.key == key.to_s }
+    end
+
+    def text_steps
+      steps.select { it.node == TextOverlay }
     end
 
     def format

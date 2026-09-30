@@ -5,7 +5,8 @@ require "test_helper"
 class WorkflowRunTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    recipe = Recipe.create!(name: "Bank holiday", workflow: "BankHolidayStory")
+    recipe = Recipe.create!(name: "Bank holiday", workflow: "TwoPhotoStory", prompt: "Film look",
+      texts: { "text_1" => "Open as usual", "text_2" => "Book now" })
     @post = @user.smm_posts.new(recipe:, status: "draft")
     2.times do |i|
       media = LibraryMedia.create!(kind: "photo", user: @user, file: { io: StringIO.new(jpeg), filename: "#{i}.jpg", content_type: "image/jpeg" })
@@ -14,10 +15,10 @@ class WorkflowRunTest < ActiveSupport::TestCase
     @post.save!
 
     @original_edit = Xai.method(:edit_image)
-    @edits = 0
-    edits = -> { @edits += 1 }
+    @prompts = []
+    prompts = @prompts
     bytes = jpeg
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| edits.call; bytes }
+    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| prompts << prompt; bytes }
   end
 
   teardown do
@@ -32,7 +33,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal "ready", @post.reload.status
     assert_equal "story", @post.format
     assert_equal 2, @post.smm_slides.size
-    assert_equal 2, @edits
+    assert_equal [ "Film look" ] * 2, @prompts
     slide = Vips::Image.new_from_buffer(@post.smm_slides.first.media.download, "")
     assert_equal [ 1080, 1920 ], [ slide.width, slide.height ]
     assert run.workflow_steps.all?(&:complete?)

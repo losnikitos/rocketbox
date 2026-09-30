@@ -8,6 +8,7 @@ class Workflow
   class TextOverlay
     LABEL = "Text"
     ICON = "chat-bubble-bottom-center-text"
+    SCHEME = %i[text].freeze
     DEFAULTS = { "body" => "", "position" => "bottom_center", "size" => "L", "style" => "shade" }.freeze
     # Font size as a fraction of canvas width.
     SIZES = { "S" => 0.05, "M" => 0.065, "L" => 0.08 }.freeze
