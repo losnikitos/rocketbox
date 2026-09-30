@@ -1,21 +1,14 @@
 # frozen_string_literal: true
 
 class Workflow
-  # Incoming media become the post's slides, in `from:` order.
+  # Hands incoming media to the subject (post slides, or a generation's library media), in `from:` order.
   class Output
     LABEL = "Output"
     ICON = "paper-airplane"
     SCHEME = [].freeze # the format badge already names the output
 
     def self.call(inputs:, params:, run:)
-      post = run.smm_post
-      media = inputs.map { it.video? ? it : MediaCanvas.fit(it, params["format"]) }
-      SmmPost.transaction do
-        post.smm_slides.destroy_all
-        media.each_with_index { |item, index| post.smm_slides.create!(position: index, media: item) }
-        post.update!(format: params["format"])
-      end
-      post.smm_slides.map { it.media.blob }
+      run.subject.store_output!(inputs, params["format"])
     end
   end
 end

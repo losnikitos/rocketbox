@@ -5,12 +5,12 @@
     <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
     <div class="ml-auto flex gap-2">
       <% if run.running? %>
-        <%= button_to "Pause", pause_instagram_post_path(run.smm_post), class: "rb-btn-ghost-on-light px-3 py-1 text-xs" %>
+        <%= button_to "Pause", pause_instagram_post_path(run.subject), class: "rb-btn-ghost-on-light px-3 py-1 text-xs" %>
       <% elsif run.paused? %>
-        <%= button_to "Resume", resume_instagram_post_path(run.smm_post), class: "rb-btn-primary px-3 py-1 text-xs" %>
+        <%= button_to "Resume", resume_instagram_post_path(run.subject), class: "rb-btn-primary px-3 py-1 text-xs" %>
       <% end %>
     </div>
   </div>
 
-  <%= render "accounts/recipes/schematic", workflow: run.workflow_class, recipe: run.smm_post.recipe, run: %>
+  <%= render "accounts/recipes/schematic", workflow: run.workflow_class, recipe: run.subject.recipe, run: %>
 </section>

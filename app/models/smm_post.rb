@@ -10,7 +10,7 @@ class SmmPost < ApplicationRecord
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
   has_many :smm_slides, -> { order(:position) }, dependent: :destroy
-  has_one :workflow_run, dependent: :destroy
+  has_one :workflow_run, as: :subject, dependent: :destroy
 
   # A multi-slide post is a carousel; a multi-slide story publishes as several stories.
   enum :format, %w[post story reel].index_by(&:itself), validate: true
@@ -65,6 +65,21 @@ class SmmPost < ApplicationRecord
 
   def mark_published!
     update!(status: "published", published_at: Time.current, error_message: nil)
+  end
+
+  def input_media
+    smm_post_media_items.includes(library_media: { file_attachment: :blob }).map(&:library_media)
+  end
+
+  # The workflow's output media become the slides.
+  def store_output!(blobs, format)
+    media = blobs.map { it.video? ? it : MediaCanvas.fit(it, format) }
+    transaction do
+      smm_slides.destroy_all
+      media.each_with_index { |item, index| smm_slides.create!(position: index, media: item) }
+      update!(format:)
+    end
+    smm_slides.map { it.media.blob }
   end
 
   private

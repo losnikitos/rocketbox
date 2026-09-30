@@ -12,6 +12,20 @@
     </div>
 
     <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
+
+    <% if (run = @media.origin&.workflow_run) %>
+      <section class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="workflow-heading">
+        <div class="flex items-center gap-2">
+          <h3 id="workflow-heading" class="text-sm font-semibold text-ink-900"><%= @media.origin.recipe.name %></h3>
+          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
+          <div class="ml-auto"><%= render "shared/admin_links/generation", generation: @media.origin %></div>
+        </div>
+        <% if run.error.present? %>
+          <p class="text-sm text-signal-red"><%= run.error %></p>
+        <% end %>
+        <%= render "accounts/recipes/schematic", workflow: run.workflow_class, recipe: @media.origin.recipe, run: %>
+      </section>
+    <% end %>
   </div>
 
   <aside class="w-full shrink-0 md:w-64 md:border-l md:border-ink-900/10 md:pl-6 lg:w-72">
@@ -29,10 +43,69 @@
             onchange: "this.form.requestSubmit()" %>
     <% end %>
 
+    <% if @media.story_image? %>
+      <section class="mt-6" aria-labelledby="apply-recipe-heading">
+        <h3 id="apply-recipe-heading" class="text-sm text-ink-500">Apply recipe</h3>
+        <% if @media.media_type.nil? %>
+          <p class="mt-1 text-sm text-ink-600">Set a media type to see recipes.</p>
+        <% elsif (recipes = @media.recipes).empty? %>
+          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.humanize(capitalize: false) %> recipes yet.</p>
+        <% else %>
+          <ul class="mt-2 grid grid-cols-3 gap-2">
+            <% recipes.each do |recipe| %>
+              <% covered = recipe.examples.any? %>
+              <li class="relative aspect-2/3 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+                  data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+                <% recipe.examples.each_with_index do |example, index| %>
+                  <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+                    <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
+                  </div>
+                <% end %>
+                <%= button_to apply_recipe_library_media_path(@media, recipe_id: recipe.id), form_class: "absolute inset-0",
+                      class: "flex size-full cursor-pointer items-start text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
+                  <span class="w-full p-1.5 text-xs font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-5 text-white" : "text-ink-900" %>">
+                    <%= recipe.name %>
+                  </span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </section>
+    <% end %>
+
+    <% if @media.generations.any? %>
+      <section class="mt-6" aria-labelledby="generated-heading">
+        <h3 id="generated-heading" class="text-sm text-ink-500">Generated</h3>
+        <ul class="mt-2 grid grid-cols-3 gap-2">
+          <% @media.generations.sort_by(&:created_at).reverse_each do |generation| %>
+            <li class="group relative">
+              <%= link_to library_upload_path(generation.generated_media), title: generation.recipe.name, class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                <%= render "accounts/library/file", media: generation.generated_media, css: "aspect-2/3 w-full rounded-md object-cover" %>
+              <% end %>
+              <div class="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <%= render "shared/admin_links/generation", generation: %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <% if (origin = @media.origin) %>
+      <section class="mt-6" aria-labelledby="made-from-heading">
+        <h3 id="made-from-heading" class="text-sm text-ink-500">Made from</h3>
+        <%= link_to library_upload_path(origin.source_media), class: "mt-2 flex items-center gap-3 rounded-md text-sm text-ink-900 hover:text-rocket" do %>
+          <%= render "accounts/library/file", media: origin.source_media, css: "size-12 shrink-0 rounded-md object-cover" %>
+          <span>Source media<span class="block text-ink-500"><%= origin.recipe.name %></span></span>
+        <% end %>
+      </section>
+    <% end %>
+
     <dl class="mt-4 space-y-3 text-sm">
       <% [
            [ "Type", @media.kind.humanize ],
-           [ "Source", @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
+           [ "Source", @media.origin ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
            [ "Uploaded", l(@media.created_at, format: :long) ],
            [ "File name", blob&.filename ],
            [ "Format", blob&.content_type ],

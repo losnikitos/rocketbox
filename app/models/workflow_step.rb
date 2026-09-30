@@ -23,7 +23,7 @@ class WorkflowStep < ApplicationRecord
     outputs.purge_later if outputs.attached?
     update!(status: "running", error: nil, started_at: Time.current, finished_at: nil)
     inputs = definition.from.flat_map { run.step(it).output_blobs }
-    results = definition.node.call(inputs:, params: run.smm_post.recipe.params_for(definition), run:)
+    results = definition.node.call(inputs:, params: run.subject.recipe.params_for(definition), run:)
     outputs.attach(results) if results.any?
     update!(status: "complete", finished_at: Time.current)
   end

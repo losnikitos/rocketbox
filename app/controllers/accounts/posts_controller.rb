@@ -71,12 +71,12 @@ module Accounts
 
     def pause
       workflow_run.pause!
-      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Paused after the current step."
+      redirect_to instagram_post_path(workflow_run.subject), notice: "Paused after the current step."
     end
 
     def resume
       workflow_run.resume!
-      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Resumed."
+      redirect_to instagram_post_path(workflow_run.subject), notice: "Resumed."
     end
 
     # Retry a failed step, or re-run any step and everything after it.
@@ -84,7 +84,7 @@ module Accounts
       step = workflow_run.workflow_class[params.expect(:key)] or return head(:unprocessable_entity)
 
       workflow_run.rerun!(step.key)
-      redirect_to instagram_post_path(workflow_run.smm_post), notice: "Running again from #{step.key.humanize}."
+      redirect_to instagram_post_path(workflow_run.subject), notice: "Running again from #{step.key.humanize}."
     end
 
     def publish

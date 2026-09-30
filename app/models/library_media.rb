@@ -4,6 +4,11 @@ class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
+  # Generated media outlive their source; only the generation rows go.
+  has_many :generations, foreign_key: :source_media_id, inverse_of: :source_media, dependent: :destroy
+  has_many :generated_media, through: :generations
+  has_one :origin, class_name: "Generation", foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
+  has_one :source_media, through: :origin
   has_one_attached :file
   has_one_attached :extracted_logo
 
@@ -30,6 +35,13 @@ class LibraryMedia < ApplicationRecord
     return false unless file.attached?
 
     file.content_type.to_s.start_with?("image/") || kind.in?(%w[photo sticker])
+  end
+
+  # Recipes that suit this media and run on a single image.
+  def recipes
+    return [] unless story_image? && media_type
+
+    Recipe.where(media_type:).with_attached_examples.ordered.select { it.input_count.in?([ 1, nil ]) }
   end
 
   def extraction_status

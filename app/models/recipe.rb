@@ -6,6 +6,7 @@ class Recipe < ApplicationRecord
   AI_NODES = [ Workflow::AiImage, Workflow::AiVideo ].freeze
 
   has_many :smm_posts, dependent: :restrict_with_exception
+  has_many :generations, dependent: :restrict_with_exception
   has_many_attached :examples
 
   attr_readonly :workflow

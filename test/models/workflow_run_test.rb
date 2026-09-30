@@ -69,6 +69,28 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal "ready", @post.reload.status
   end
 
+  test "a generation turns its output into library media, without a post" do
+    recipe = Recipe.create!(name: "Film", workflow: "ImageToImage", prompt: "Film look", media_type: "interior")
+    source = LibraryMedia.create!(kind: "photo", user: @user, media_type: "interior",
+      file: { io: StringIO.new(jpeg), filename: "room.jpg", content_type: "image/jpeg" })
+
+    generation = assert_no_difference(-> { SmmPost.count }) { Generation.start!(source, recipe) }
+    media = generation.generated_media
+    assert_equal [ @user, "photo", "photobank", "interior" ], [ media.user, media.kind, media.collection, media.media_type ]
+    assert_not media.file.attached?
+    assert_equal source, media.source_media
+
+    advance_until_settled(generation.workflow_run)
+    assert_equal "complete", generation.reload.status
+    first_blob = media.reload.file.blob
+    assert first_blob
+
+    generation.workflow_run.rerun!("image")
+    advance_until_settled(generation.workflow_run)
+    assert_equal media, generation.reload.generated_media
+    assert_not_equal first_blob, media.reload.file.blob
+  end
+
   private
 
     def advance_until_settled(run)
