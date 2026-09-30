@@ -24,6 +24,11 @@
         <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
       </div>
 
+      <div class="max-w-md">
+        <%= f.label :media_type, "Suitable for", class: tw_label_classes %>
+        <%= f.select :media_type, Recipe.media_types.keys.map { [ it.humanize, it ] }, {}, required: true, class: tw_input_classes %>
+      </div>
+
       <% if recipe.new_record? %>
         <%# Only the chosen workflow's texts fieldset stays enabled, so hidden ones neither show nor submit. %>
         <fieldset onchange="this.form.querySelectorAll('fieldset[data-workflow]').forEach(f => f.disabled = f.dataset.workflow !== event.target.value)">

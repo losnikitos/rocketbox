@@ -9,7 +9,7 @@ module Accounts
 
     def index
       @recipes = Recipe.with_attached_examples.ordered
-      @recipes = @recipes.where(workflow: params[:workflow]) if params[:workflow].present?
+      @recipes = @recipes.where(media_type: params[:media_type]) if params[:media_type].present?
     end
 
     def new
@@ -50,7 +50,7 @@ module Accounts
       end
 
       def recipe_params(*extra)
-        params.expect(recipe: [ :name, :prompt, *extra, texts: {}, examples: [] ])
+        params.expect(recipe: [ :name, :media_type, :prompt, *extra, texts: {}, examples: [] ])
       end
   end
 end

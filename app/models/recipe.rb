@@ -10,6 +10,9 @@ class Recipe < ApplicationRecord
 
   attr_readonly :workflow
 
+  # The library media this recipe suits.
+  enum :media_type, LibraryMedia.media_types, validate: true
+
   before_validation { self.texts = texts.to_h.slice(*text_steps.map(&:key)) }
 
   validates :name, :prompt, presence: true

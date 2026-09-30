@@ -54,11 +54,11 @@ module AppHelper
       [ :admin, "Admin", [] ]
     when "accounts/recipes"
       index = action_name == "index"
-      counts = Recipe.group(:workflow).count
+      counts = Recipe.group(:media_type).count
       [ :recipes, "Recipes", [
-        [ recipes_path, "All", index && params[:workflow].blank?, counts.values.sum ],
+        [ recipes_path, "All", index && params[:media_type].blank?, counts.values.sum ],
         :separator,
-        *Workflow.all.map { |w| [ recipes_path(workflow: w.name), w.name.titleize, index && params[:workflow] == w.name, counts[w.name].to_i ] }
+        *Recipe.media_types.keys.map { |t| [ recipes_path(media_type: t), t.titleize, index && params[:media_type] == t, counts[t].to_i ] }
       ] ]
     else
       [ nil, "Rocketbox", [] ]

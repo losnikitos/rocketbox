@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -175,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_110000) do
 
   create_table "recipes", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "media_type", default: "misc", null: false
     t.string "name", null: false
     t.text "prompt", null: false
     t.json "texts", default: {}, null: false
