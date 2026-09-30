@@ -48,7 +48,13 @@ module AppHelper
     when "accounts/admin"
       [ :admin, "Admin", [] ]
     when "accounts/recipes"
-      [ :recipes, "Recipes", [] ]
+      index = action_name == "index"
+      counts = Recipe.group(:workflow).count
+      [ :recipes, "Recipes", [
+        [ recipes_path, "All", index && params[:workflow].blank?, counts.values.sum ],
+        :separator,
+        *Workflow.all.map { |w| [ recipes_path(workflow: w.name), w.name.titleize, index && params[:workflow] == w.name, counts[w.name].to_i ] }
+      ] ]
     else
       [ nil, "Rocketbox", [] ]
     end
