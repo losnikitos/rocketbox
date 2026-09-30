@@ -9,7 +9,7 @@
         <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
         Source media
       <% end %>
-      <div class="flex flex-1 items-center justify-center rounded-lg bg-ink-900/5 p-4">
+      <div class="flex flex-1 items-center justify-center rounded-lg bg-white p-4">
         <%= render "accounts/library/file", media:, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
       </div>
       <%= render "accounts/recipes/schematic", workflow: recipe.workflow_class, recipe: %>
@@ -17,7 +17,7 @@
   <% end %>
 
   <turbo-frame id="side_panel" target="_top" class="contents">
-  <aside class="w-full shrink-0 space-y-6 md:w-96 md:border-l md:border-ink-900/10 md:pl-6 lg:w-108">
+  <aside class="w-full shrink-0 space-y-6 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108">
     <section class="flex gap-4 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="recipe-heading">
       <% if (example = recipe.examples.first) %>
         <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-20 shrink-0 rounded-md object-cover" %>
