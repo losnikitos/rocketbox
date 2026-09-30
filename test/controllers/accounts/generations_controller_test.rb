@@ -17,6 +17,8 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "img[src*=?]", "a.jpg"
     assert_select "h2", text: "Cinematic shop reel"
     assert_select "select[name='generation[options][model]'] option[selected]", text: "grok-imagine-video-1.5"
+    assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("select[name='generation[options][model]'] option").map(&:text)
+    assert_select "a[href='/admin/models']", text: "Manage models"
     assert_select "select[name='generation[options][duration]'] option[selected]", text: "8 s"
     assert_select "select[name='generation[options][quality]']", count: 0
     assert_select "button", text: /Generate/

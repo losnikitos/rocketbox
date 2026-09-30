@@ -40,7 +40,12 @@
       <% end %>
       <% @generation.option_choices.each do |key, choices| %>
         <div>
-          <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
+          <div class="flex items-baseline justify-between gap-2">
+            <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
+            <% if key == "model" && Current.user&.admin? %>
+              <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
+            <% end %>
+          </div>
           <%= select_tag "generation[options][#{key}]",
                 options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, @generation.options[key]),
                 id: "generation_options_#{key}", include_blank: ("Auto" unless key == "model"), class: tw_input_classes,
