@@ -1,6 +1,7 @@
 cinematic:
   name: Cinematic shop reel
   workflow: ImagesToVideo
+  media_type: interior
   prompt: Slow cinematic push-in on the shop.
 
 before_after:

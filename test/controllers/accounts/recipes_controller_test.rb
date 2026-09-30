@@ -86,15 +86,27 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index tabs filter by workflow" do
+  test "index tabs filter by media type, set on create and edit" do
     @admin = sign_in_as(users(:admin_user))
-    get recipes_url(account: @admin.id, workflow: "TwoPhotoStory")
-    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Two Photo Story/
-    assert_select "nav[aria-label='Secondary'] a", text: /Images To Video\s+2/
+    get recipes_url(account: @admin.id, media_type: "exterior")
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Exterior/
+    assert_select "nav[aria-label='Secondary'] a", text: /Interior\s+1/
     assert_select "##{dom_id(recipes(:cinematic))}", count: 0
 
-    get recipes_url(account: @admin.id, workflow: "ImagesToVideo")
+    get recipes_url(account: @admin.id, media_type: "interior")
     assert_select "##{dom_id(recipes(:cinematic))}"
+
+    post recipes_url, params: { recipe: { name: "Card promo", workflow: "ImagesToVideo", prompt: "p", media_type: "business_card" } }
+    recipe = Recipe.find_by!(name: "Card promo")
+    assert recipe.business_card?
+
+    get edit_recipe_url(recipe, account: @admin.id)
+    assert_select "select[name='recipe[media_type]'] option[selected][value=business_card]"
+    patch recipe_url(recipe), params: { recipe: { media_type: "exterior" } }
+    assert recipe.reload.exterior?
+
+    post recipes_url, params: { recipe: { name: "Bad", workflow: "ImagesToVideo", prompt: "p", media_type: "nope" } }
+    assert_response :unprocessable_entity
   end
 
   private
