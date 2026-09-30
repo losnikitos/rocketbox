@@ -2,13 +2,14 @@
 
 class LibraryMediaController < ApplicationController
   def create
+    collection = LibraryMedia.collections.key?(params[:collection]) ? params[:collection] : "inbox"
     files = Array(params[:files]).select { |f| f.respond_to?(:content_type) }
-    uploaded = files.filter_map { |file| store_upload!(file) }
+    uploaded = files.filter_map { |file| store_upload!(file, collection) }
 
     if uploaded.empty?
-      redirect_to library_uploads_path, alert: "Drop a photo or video to upload."
+      redirect_to helpers.library_collection_path(collection), alert: "Drop a photo or video to upload."
     else
-      redirect_to library_uploads_path, notice: (uploaded.one? ? "Uploaded 1 file." : "Uploaded #{uploaded.size} files.")
+      redirect_to helpers.library_collection_path(collection), notice: (uploaded.one? ? "Uploaded 1 file." : "Uploaded #{uploaded.size} files.")
     end
   end
 
@@ -50,19 +51,19 @@ class LibraryMediaController < ApplicationController
   end
 
   def destroy
-    Current.account.library_media.find(params[:id]).destroy!
-    redirect_to library_uploads_path, notice: "Media deleted."
+    media = Current.account.library_media.find(params[:id]).destroy!
+    redirect_to helpers.library_collection_path(media.collection), notice: "Media deleted."
   rescue ActiveRecord::RecordNotFound
     redirect_to library_uploads_path, alert: "Media not found."
   end
 
   private
 
-    def store_upload!(file)
+    def store_upload!(file, collection)
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind: kind)
+      media = Current.account.library_media.create!(kind:, collection:)
       media.file.attach(file)
       media
     end

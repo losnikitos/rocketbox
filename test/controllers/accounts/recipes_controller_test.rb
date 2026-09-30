@@ -86,6 +86,17 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "index tabs filter by workflow" do
+    @admin = sign_in_as(users(:admin_user))
+    get recipes_url(account: @admin.id, workflow: "TwoPhotoStory")
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Two Photo Story/
+    assert_select "nav[aria-label='Secondary'] a", text: /Images To Video\s+2/
+    assert_select "##{dom_id(recipes(:cinematic))}", count: 0
+
+    get recipes_url(account: @admin.id, workflow: "ImagesToVideo")
+    assert_select "##{dom_id(recipes(:cinematic))}"
+  end
+
   private
 
     def image(name)

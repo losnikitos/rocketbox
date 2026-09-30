@@ -9,6 +9,7 @@ module Accounts
 
     def index
       @recipes = Recipe.with_attached_examples.ordered
+      @recipes = @recipes.where(workflow: params[:workflow]) if params[:workflow].present?
     end
 
     def new
