@@ -59,7 +59,6 @@
       <div>
         <%= f.label :prompt, class: tw_label_classes %>
         <%= f.text_area :prompt, required: true, rows: 6, class: tw_input_classes %>
-        <p class="mt-1 text-xs text-ink-500">Sent to every AI step of the workflow.</p>
       </div>
 
       <% (recipe.new_record? ? Workflow.all : [ recipe.workflow_class ]).compact.select { it.text_steps.any? }.each do |workflow| %>

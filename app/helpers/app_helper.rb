@@ -18,6 +18,8 @@ module AppHelper
         :separator,
         [ library_uploads_path(type: "reviews"), "Reviews", params[:type] == "reviews", Current.account.reviews.active.media_attachments.count ]
       ] ]
+    when "accounts/generations"
+      [ :library, "Generate", [] ]
     when "accounts/posts"
       [ :posts, "Posts", posts_tabs ]
     when "accounts/business"
@@ -67,6 +69,10 @@ module AppHelper
 
   def library_collection_path(collection, **params)
     collection == "photobank" ? library_photobank_path(**params) : library_uploads_path(**params)
+  end
+
+  def library_item_path(media, **params)
+    media.photobank? ? library_photobank_media_path(media, **params) : library_upload_path(media, **params)
   end
 
   def posts_tabs

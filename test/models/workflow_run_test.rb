@@ -16,9 +16,10 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
     @original_edit = Xai.method(:edit_image)
     @prompts = []
-    prompts = @prompts
+    @xai_options = []
+    prompts, xai_options = @prompts, @xai_options
     bytes = jpeg
-    Xai.define_singleton_method(:edit_image) { |prompt:, blob:| prompts << prompt; bytes }
+    Xai.define_singleton_method(:edit_image) { |prompt:, blob:, **options| prompts << prompt; xai_options << options; bytes }
   end
 
   teardown do
@@ -92,7 +93,8 @@ class WorkflowRunTest < ActiveSupport::TestCase
     source = LibraryMedia.create!(kind: "photo", user: @user, media_type: "interior",
       file: { io: StringIO.new(jpeg), filename: "room.jpg", content_type: "image/jpeg" })
 
-    generation = assert_no_difference(-> { SmmPost.count }) { Generation.start!(source, recipe) }
+    generation = source.generations.new(recipe:, options: { "resolution" => "2k", "quality" => "" })
+    assert_no_difference(-> { SmmPost.count }) { generation.start! }
     media = generation.generated_media
     assert_equal [ @user, "photo", "photobank", "interior" ], [ media.user, media.kind, media.collection, media.media_type ]
     assert_not media.file.attached?
@@ -100,6 +102,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
     advance_until_settled(generation.workflow_run)
     assert_equal "complete", generation.reload.status
+    assert_equal [ { model: "grok-imagine-image-2.0", aspect_ratio: "3:4", resolution: "2k" } ], @xai_options
     first_blob = media.reload.file.blob
     assert first_blob
 

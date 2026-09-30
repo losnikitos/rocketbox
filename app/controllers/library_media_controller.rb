@@ -16,9 +16,9 @@ class LibraryMediaController < ApplicationController
   def update
     media = Current.account.library_media.find(params[:id])
     if media.update(params.expect(library_media: [ :media_type ]))
-      redirect_to library_upload_path(media), notice: "Media type saved."
+      redirect_to helpers.library_item_path(media), notice: "Media type saved."
     else
-      redirect_to library_upload_path(media), alert: media.errors.full_messages.to_sentence
+      redirect_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
   end
 
@@ -35,28 +35,19 @@ class LibraryMediaController < ApplicationController
   def extract
     media = Current.account.library_media.find(params[:id])
     unless media.business_card? && media.story_image?
-      return redirect_to library_upload_path(media), alert: "Only business card photos can be read."
+      return redirect_to helpers.library_item_path(media), alert: "Only business card photos can be read."
     end
 
     media.extracted_logo.purge
     media.update!(extracted_info: { "status" => "pending" })
     ExtractBusinessCardJob.perform_later(media.id)
-    redirect_to library_upload_path(media)
+    redirect_to helpers.library_item_path(media)
   end
 
   def apply_extraction
     media = Current.account.library_media.find(params[:id])
     media.apply_extraction_to!(Current.account)
-    redirect_to library_upload_path(media), notice: "Business updated from card."
-  end
-
-  def apply_recipe
-    media = Current.account.library_media.find(params[:id])
-    recipe = media.recipes.find { it.id == params[:recipe_id].to_i }
-    return redirect_to library_upload_path(media), alert: "That recipe doesn't fit this media." unless recipe
-
-    Generation.start!(media, recipe)
-    redirect_to library_upload_path(media), notice: "Applying #{recipe.name}…"
+    redirect_to helpers.library_item_path(media), notice: "Business updated from card."
   end
 
   # Retry a generation's failed step, or re-run any step and everything after it.
@@ -66,7 +57,7 @@ class LibraryMediaController < ApplicationController
     step = run.workflow_class[params.expect(:key)] or return head(:unprocessable_entity)
 
     run.rerun!(step.key)
-    redirect_to library_upload_path(media), notice: "Running again from #{step.key.humanize}."
+    redirect_to helpers.library_item_path(media), notice: "Running again from #{step.key.humanize}."
   end
 
   def stop
@@ -74,7 +65,7 @@ class LibraryMediaController < ApplicationController
     run = media.origin&.workflow_run or return head(:not_found)
 
     run.stop!
-    redirect_to library_upload_path(media), notice: "Stopped."
+    redirect_to helpers.library_item_path(media), notice: "Stopped."
   end
 
   def destroy

@@ -57,36 +57,36 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "source shows recipes and generated media; generated links back to its source" do
     source = LibraryMedia.create!(kind: "photo", media_type: "interior", user: @user)
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
-    generated = LibraryMedia.create!(kind: "photo", media_type: "interior", user: @user)
+    generated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: "interior", user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
     source.generations.create!(recipe: recipes(:cinematic), generated_media: generated)
-    failed = Generation.start!(source, recipes(:cinematic))
-    get library_upload_url(failed.generated_media)
+    failed = source.generations.new(recipe: recipes(:cinematic)).start!
+    get library_photobank_media_url(failed.generated_media)
     assert_select "form[action=?] button", stop_library_media_path(failed.generated_media), text: /Stop/
     failed.workflow_run.step("photos").update!(status: "running")
     failed.workflow_run.fail!("content policy")
 
     get library_upload_url(source)
-    assert_select "form[action=?]", apply_recipe_library_media_path(source, recipe_id: recipes(:cinematic).id)
-    assert_select "form[action*=?]", "recipe_id=#{recipes(:before_after).id}", count: 0
-    assert_select "#generated-heading + ul a[href=?]", library_upload_path(generated)
-    assert_select "#generated-heading + ul a[href=?]", library_upload_path(failed.generated_media), text: /Generation failed/
+    assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, recipe_id: recipes(:cinematic).id)
+    assert_select "a[href*=?]", "recipe_id=#{recipes(:before_after).id}", count: 0
+    assert_select "#generated-heading + ul a[href=?]", library_photobank_media_path(generated)
+    assert_select "#generated-heading + ul a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
 
-    get library_upload_url(generated)
+    get library_photobank_media_url(generated)
     assert_select "section a[href=?]", library_upload_path(source), text: /Cinematic shop reel/
     assert_select "#generated-heading", count: 0
 
-    get library_upload_url(failed.generated_media)
+    get library_photobank_media_url(failed.generated_media)
     assert_select "#workflow-heading", text: "Cinematic shop reel"
     assert_select "section p", text: "content policy"
     assert_select "form[action=?]", stop_library_media_path(failed.generated_media), count: 0
     assert_select "article#photos form[action=?]", rerun_library_media_path(failed.generated_media, key: "photos")
 
     get library_photobank_url
-    assert_select "a[href=?]", library_upload_path(failed.generated_media), text: /Generation failed/
+    assert_select "a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
 
     get library_uploads_url
-    assert_select "[aria-label='Generated media'] a[href=?]", library_upload_path(generated), count: 1
+    assert_select "[aria-label='Generated media'] a[href=?]", library_photobank_media_path(generated), count: 1
   end
 
   test "reviews tab shows read-only media from active reviews" do
@@ -132,16 +132,21 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_photobank_path(type: "interior"), text: "Interior 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Reviews/, count: 0
     assert_select "input[name=collection][value=photobank]"
-    assert_select "a[href=?]", library_upload_path(curated)
+    assert_select "a[href=?]", library_photobank_media_path(curated)
     assert_select "a[href=?]", library_upload_path(inbox), count: 0
 
     get library_uploads_url
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path, text: "All 1"
-    assert_select "a[href=?]", library_upload_path(curated), count: 0
+    assert_select "a[href=?]", library_photobank_media_path(curated), count: 0
 
-    get library_upload_url(curated)
+    get library_photobank_media_url(curated)
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_photobank_path
     assert_select "main a[href=?]", library_photobank_path, text: /Photobank/
+
+    get library_upload_url(curated)
+    assert_response :not_found
+    get library_photobank_media_url(inbox)
+    assert_response :not_found
   end
 
   test "cannot view another account's media" do

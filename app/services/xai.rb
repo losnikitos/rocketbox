@@ -6,8 +6,21 @@ module Xai
   TransientError = Class.new(Error)
 
   API_BASE = "https://api.x.ai/v1"
-  IMAGE_MODEL = "grok-imagine-image-2.0"
-  VIDEO_MODEL = "grok-imagine-video-1.5"
+  # Allowed values per request option; the first model is the default. Omitted options use xAI's default.
+  IMAGE_OPTIONS = {
+    "model" => %w[grok-imagine-image-2.0 grok-imagine-image-quality grok-imagine-image],
+    "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3 2:1 1:2 19.5:9 9:19.5 20:9 9:20 21:9 5:2],
+    "resolution" => %w[1k 2k],
+    "quality" => %w[low medium] # grok-imagine-image-2.0 only
+  }.freeze
+  VIDEO_OPTIONS = {
+    "model" => %w[grok-imagine-video-1.5 grok-imagine-video],
+    "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3],
+    "resolution" => %w[480p 720p 1080p], # 1080p on grok-imagine-video-1.5 only
+    "duration" => (1..15).map(&:to_s)
+  }.freeze
+  IMAGE_MODEL = IMAGE_OPTIONS["model"].first
+  VIDEO_MODEL = VIDEO_OPTIONS["model"].first
   VIDEO_DURATION = 8
   VIDEO_RESOLUTION = "720p"
   POLL_ATTEMPTS = 90
@@ -16,16 +29,16 @@ module Xai
 
   extend self
 
-  # Returns the edited image bytes (JPEG).
-  def edit_image(prompt:, blob:)
-    body = request!(:post, "images/edits", model: IMAGE_MODEL, prompt:, image: { url: data_uri(blob), type: "image_url" }, response_format: "b64_json")
+  # Returns the edited image bytes (JPEG). `options`: aspect_ratio, resolution, quality.
+  def edit_image(prompt:, blob:, model: IMAGE_MODEL, **options)
+    body = request!(:post, "images/edits", model:, prompt:, image: { url: data_uri(blob), type: "image_url" }, response_format: "b64_json", **options)
     Base64.decode64(body.dig("data", 0, "b64_json").presence || raise(Error, "xAI did not return an image."))
   end
 
   # Returns MP4 bytes animated from one image or referencing several.
   # `stopped` is checked between polls; xAI has no cancel endpoint, so it only stops waiting.
-  def generate_video(prompt:, blobs:, aspect_ratio: "9:16", stopped: nil)
-    params = { model: VIDEO_MODEL, prompt:, duration: VIDEO_DURATION, aspect_ratio:, resolution: VIDEO_RESOLUTION }
+  def generate_video(prompt:, blobs:, model: VIDEO_MODEL, duration: VIDEO_DURATION, resolution: VIDEO_RESOLUTION, aspect_ratio: "9:16", stopped: nil)
+    params = { model:, prompt:, duration:, aspect_ratio:, resolution: }
     if blobs.one?
       params[:image] = { url: data_uri(blobs.first), type: "image_url" }
     else
