@@ -7,4 +7,5 @@ cinematic:
 before_after:
   name: Before → after energy
   kind: video
+  media_type: misc
   prompt: Energetic before and after reveal.

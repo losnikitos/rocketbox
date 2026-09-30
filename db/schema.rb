@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -123,7 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.json "extracted_info"
     t.integer "from_id"
     t.string "kind", null: false
-    t.string "media_type"
+    t.integer "media_type_id"
     t.string "source_url"
     t.string "telegram_file_id"
     t.string "telegram_file_unique_id"
@@ -131,6 +131,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.integer "user_id"
     t.string "whatsapp_from"
     t.string "whatsapp_media_id"
+    t.index ["media_type_id"], name: "index_library_media_on_media_type_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
     t.index ["user_id", "source_url"], name: "index_library_media_on_user_id_and_source_url"
     t.index ["user_id"], name: "index_library_media_on_user_id"
@@ -145,6 +146,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.integer "user_id", null: false
     t.index ["user_id", "url"], name: "index_links_on_user_id_and_url", unique: true
     t.index ["user_id"], name: "index_links_on_user_id"
+  end
+
+  create_table "media_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_media_types_on_slug", unique: true
   end
 
   create_table "messages", force: :cascade do |t|
@@ -191,10 +200,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
   create_table "recipes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "kind", default: "image", null: false
-    t.string "media_type", default: "misc", null: false
+    t.integer "media_type_id", null: false
     t.string "name", null: false
     t.text "prompt", null: false
     t.datetime "updated_at", null: false
+    t.index ["media_type_id"], name: "index_recipes_on_media_type_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -413,10 +423,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
   add_foreign_key "generations", "library_media", column: "source_media_id"
   add_foreign_key "generations", "recipes"
   add_foreign_key "incoming_messages", "users"
+  add_foreign_key "library_media", "media_types", on_delete: :nullify
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
+  add_foreign_key "recipes", "media_types"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"

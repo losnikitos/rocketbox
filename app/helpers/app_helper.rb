@@ -5,11 +5,11 @@ module AppHelper
   def app_nav
     case controller_path
     when "accounts/library"
-      counts = Current.account.library_media.where(collection: @collection).group(:media_type).count
+      counts = Current.account.library_media.where(collection: @collection).group(:media_type_id).count
       tabs = [
         [ library_collection_path(@collection), "All", params[:type].blank?, counts.values.sum ],
         :separator,
-        *LibraryMedia.media_types.keys.map { |t| [ library_collection_path(@collection, type: t), t.titleize, params[:type] == t, counts[t].to_i ] }
+        *MediaType.ordered.map { |t| [ library_collection_path(@collection, type: t.slug), t.name, params[:type] == t.slug, counts[t.id].to_i ] }
       ]
       return [ :photobank, "Photobank", tabs ] if @collection == "photobank"
 
@@ -56,11 +56,11 @@ module AppHelper
       [ :admin, "Admin", [] ]
     when "accounts/recipes"
       index = action_name == "index"
-      counts = Recipe.group(:media_type).count
+      counts = Recipe.group(:media_type_id).count
       [ :recipes, "Recipes", [
         [ recipes_path, "All", index && params[:media_type].blank?, counts.values.sum ],
         :separator,
-        *Recipe.media_types.keys.map { |t| [ recipes_path(media_type: t), t.titleize, index && params[:media_type] == t, counts[t].to_i ] }
+        *MediaType.ordered.map { |t| [ recipes_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
       ] ]
     else
       [ nil, "Rocketbox", [] ]

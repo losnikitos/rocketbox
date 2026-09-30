@@ -3,19 +3,20 @@
 <%
   user = Current.account
   media_tab = params[:tab] == "media"
-  media_counts = user.library_media.group(:media_type).count
+  media_counts = user.library_media.joins(:media_type).group("media_types.slug").count
   steps = if media_tab
+    names = MediaType.pluck(:slug, :name).to_h
     WhatsappOnboarding::MEDIA_REQUESTS.values.uniq.map do |type|
       count = media_counts[type].to_i
-      { channel: :whatsapp, label: type.humanize, path: library_uploads_path(type:), ask: WhatsappOnboarding::MEDIA_REQUESTS.key(type), ask_again: true,
+      { channel: :whatsapp, label: names[type] || type, path: library_uploads_path(type:), ask: WhatsappOnboarding::MEDIA_REQUESTS.key(type), ask_again: true,
         texts: WhatsappOnboarding::MEDIA_REQUESTS.select { _2 == type }.keys, done: count.positive?, value: pluralize(count, "file"),
-        previews: user.library_media.where(media_type: type).with_attached_file.order(created_at: :desc).limit(6) }
+        previews: user.library_media.joins(:media_type).where(media_type: { slug: type }).with_attached_file.order(created_at: :desc).limit(6) }
     end
   else [
     { channel: :whatsapp, label: "WhatsApp linked", path: sign_up_path,
       done: user.whatsapp_phone.present?, value: user.whatsapp_phone&.then { "+#{_1}" }, reset: "whatsapp" },
-    { channel: :whatsapp, label: "Business card", path: library_uploads_path(type: "business_card"), ask: "business_card",
-      done: media_counts["business_card"].to_i.positive?, value: user.business_name },
+    { channel: :whatsapp, label: "Business card", path: library_uploads_path(type: "business-card"), ask: "business_card",
+      done: media_counts["business-card"].to_i.positive?, value: user.business_name },
     { channel: :whatsapp, label: "Logo", path: business_path, ask: "logo",
       done: user.logo.attached? },
     { channel: :instagram, label: "Instagram authorized", path: instagram_profile_path, ask: "instagram", texts: %w[instagram instagram_connected],

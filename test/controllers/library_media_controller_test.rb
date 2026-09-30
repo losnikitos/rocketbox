@@ -48,14 +48,14 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sets and clears media type" do
-    patch library_media_url(@media), params: { library_media: { media_type: "logo" } }
+    patch library_media_url(@media), params: { library_media: { media_type_id: media_types(:logo).id } }
     assert_redirected_to library_upload_url(@media, account: @admin.id)
-    assert_equal "logo", @media.reload.media_type
+    assert_equal media_types(:logo), @media.reload.media_type
 
-    patch library_media_url(@media), params: { library_media: { media_type: "" } }
+    patch library_media_url(@media), params: { library_media: { media_type_id: "" } }
     assert_nil @media.reload.media_type
 
-    patch library_media_url(@media), params: { library_media: { media_type: "bogus" } }
+    patch library_media_url(@media), params: { library_media: { media_type_id: 0 } }
     assert_nil @media.reload.media_type
     assert flash[:alert].present?
   end
@@ -64,23 +64,24 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     other = LibraryMedia.create!(kind: "photo", user: @admin)
     foreign = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
 
-    patch bulk_update_library_media_index_url, params: { media_type: "interior", ids: [ @media.id, other.id, foreign.id ] }
+    interior = media_types(:interior)
+    patch bulk_update_library_media_index_url, params: { media_type_id: interior.id, ids: [ @media.id, other.id, foreign.id ] }
     assert_redirected_to library_uploads_url(account: @admin.id)
     assert_equal "Media type saved for 2 files.", flash[:notice]
-    assert_equal %w[interior interior], [ @media.reload.media_type, other.reload.media_type ]
+    assert_equal [ interior, interior ], [ @media.reload.media_type, other.reload.media_type ]
     assert_nil foreign.reload.media_type
 
-    patch bulk_update_library_media_index_url, params: { media_type: "", ids: [ @media.id ] }
+    patch bulk_update_library_media_index_url, params: { media_type_id: "", ids: [ @media.id ] }
     assert_nil @media.reload.media_type
 
-    patch bulk_update_library_media_index_url, params: { media_type: "bogus", ids: [ other.id ] }
-    assert_equal "interior", other.reload.media_type
+    patch bulk_update_library_media_index_url, params: { media_type_id: 0, ids: [ other.id ] }
+    assert_equal interior, other.reload.media_type
     assert_equal "Unknown media type.", flash[:alert]
   end
 
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
-    @media.update!(media_type: "business_card", extracted_info: {
+    @media.update!(media_type: media_types(:business_card), extracted_info: {
       "status" => "done",
       "has_logo" => true,
       "fields" => { "business_name" => " Fade Co ", "phone" => "+1 555 0100", "website" => "https://fade.co", "address" => nil, "person_name" => "" }
@@ -106,7 +107,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_upload_url(@media, account: @admin.id)
     assert_nil @media.reload.extracted_info
 
-    @media.update!(media_type: "business_card")
+    @media.update!(media_type: media_types(:business_card))
     assert_enqueued_with(job: ExtractBusinessCardJob, args: [ @media.id ]) do
       post extract_library_media_url(@media)
     end

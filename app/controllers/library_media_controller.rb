@@ -15,7 +15,7 @@ class LibraryMediaController < ApplicationController
 
   def update
     media = Current.account.library_media.find(params[:id])
-    if media.update(params.expect(library_media: [ :media_type ]))
+    if media.update(params.expect(library_media: [ :media_type_id ]))
       redirect_to helpers.library_item_path(media), notice: "Media type saved."
     else
       redirect_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
@@ -23,12 +23,12 @@ class LibraryMediaController < ApplicationController
   end
 
   def bulk_update
-    media_type = params[:media_type].presence
-    unless media_type.nil? || LibraryMedia.media_types.key?(media_type)
+    media_type_id = params[:media_type_id].presence
+    unless media_type_id.nil? || MediaType.exists?(media_type_id)
       return redirect_back_or_to library_uploads_path, alert: "Unknown media type."
     end
 
-    count = Current.account.library_media.where(id: params[:ids]).update_all(media_type:, updated_at: Time.current)
+    count = Current.account.library_media.where(id: params[:ids]).update_all(media_type_id:, updated_at: Time.current)
     redirect_back_or_to library_uploads_path, notice: "Media type saved for #{helpers.pluralize(count, "file")}."
   end
 

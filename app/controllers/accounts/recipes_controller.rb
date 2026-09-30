@@ -9,7 +9,7 @@ module Accounts
 
     def index
       @recipes = Recipe.with_attached_examples.ordered
-      @recipes = @recipes.where(media_type: params[:media_type]) if params[:media_type].present?
+      @recipes = @recipes.joins(:media_type).where(media_type: { slug: params[:media_type] }) if params[:media_type].present?
     end
 
     def new
@@ -50,7 +50,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :media_type, :kind, :prompt, examples: [] ])
+        params.expect(recipe: [ :name, :media_type_id, :kind, :prompt, examples: [] ])
       end
   end
 end
