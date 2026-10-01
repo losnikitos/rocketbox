@@ -15,9 +15,18 @@ class Generation < ApplicationRecord
       "quality" => %w[low medium] # grok-imagine-image-2.0 only
     },
     "openai" => {
-      "size" => %w[1008x1792 1088x1360 1088x1088 1792x1008], # gpt-image-2+ only; 1.x models accept 3 fixed sizes
+      "aspect_ratio" => %w[9:16 4:5 1:1 16:9],
+      "resolution" => %w[1k 2k 4k],
       "quality" => %w[low medium high]
     }
+  }.freeze
+  # OpenAI takes an exact size (gpt-image-2+ only: edges multiple of 16, 655,360..8,294,400 px, max 3840x2160;
+  # above 2560x1440 is experimental). 1k ≈ 1 MP, 2k = 2560x1440 px, 4k = 3840x2160 px.
+  OPENAI_SIZES = {
+    "9:16" => { "1k" => "768x1360", "2k" => "1440x2560", "4k" => "2160x3840" },
+    "4:5" => { "1k" => "912x1136", "2k" => "1712x2144", "4k" => "2576x3216" },
+    "1:1" => { "1k" => "1024x1024", "2k" => "1920x1920", "4k" => "2880x2880" },
+    "16:9" => { "1k" => "1360x768", "2k" => "2560x1440", "4k" => "3840x2160" }
   }.freeze
   VIDEO_OPTIONS = {
     "xai" => {
@@ -35,7 +44,7 @@ class Generation < ApplicationRecord
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
-  # Keeps whatever the chosen model still offers (e.g. size and quality across a model switch); blank means Auto.
+  # Keeps whatever the chosen model still offers (e.g. aspect ratio and quality across a model switch); blank means Auto.
   after_initialize if: -> { new_record? && recipe } do
     kept = options.to_h.select { |key, value| option_choices.key?(key) && (value.blank? || value.in?(option_choices[key])) }
     self.options = default_options.merge(kept)
@@ -59,7 +68,9 @@ class Generation < ApplicationRecord
   def option_choices = { "model" => models.map(&:model_id) }.merge(option_sets[provider])
 
   def ai_options
-    options.symbolize_keys.tap { it[:duration] = it[:duration].to_i if it[:duration] }.merge(provider: provider.to_sym)
+    opts = options.symbolize_keys.tap { it[:duration] = it[:duration].to_i if it[:duration] }
+    opts[:size] = OPENAI_SIZES.dig(opts.delete(:aspect_ratio), opts.delete(:resolution)) if provider == "openai"
+    opts.compact.merge(provider: provider.to_sym)
   end
 
   # Raises ActiveRecord::RecordInvalid on bad options, before the photobank media is created.
@@ -101,10 +112,8 @@ class Generation < ApplicationRecord
 
     def default_options
       model = options["model"].presence || models.first&.model_id
-      return { "model" => model, "size" => "1008x1792" } if provider == "openai"
+      return { "model" => model, "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "8" } if video?
 
-      defaults = { "model" => model, "aspect_ratio" => "9:16" }
-      defaults.merge!("resolution" => "720p", "duration" => "8") if video?
-      defaults
+      { "model" => model, "aspect_ratio" => "9:16", "resolution" => "2k" }
     end
 end
