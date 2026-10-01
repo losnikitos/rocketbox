@@ -63,6 +63,8 @@ module AppHelper
         :separator,
         *MediaType.ordered.map { |t| [ prompts_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
       ] ]
+    when "accounts/recipes", "accounts/recipe_posts"
+      [ :recipes, "Recipes", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

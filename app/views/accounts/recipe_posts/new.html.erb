@@ -1,0 +1,49 @@
+<% content_for(:title, "#{@recipe.name} — Recipes — Rocketbox") %>
+
+<div class="max-w-4xl space-y-6">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page"><%= @recipe.name %></span>
+  </nav>
+
+  <section class="space-y-1 rounded-2xl border border-ink-900/10 bg-white p-6">
+    <div class="flex items-center gap-2">
+      <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
+      <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= @recipe.format %></span>
+    </div>
+    <p class="text-sm text-ink-600"><%= @recipe.body %></p>
+  </section>
+
+  <%= form_with url: recipe_posts_path(@recipe), class: "space-y-6" do |f| %>
+    <% if @error %>
+      <p class="<%= tw_alert_error_classes %>" role="alert"><%= @error %></p>
+    <% end %>
+
+    <% @slots.each_with_index do |(type, photos), index| %>
+      <fieldset>
+        <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= type&.name || "Unknown media type" %></legend>
+        <% if photos.any? %>
+          <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            <% photos.each do |media| %>
+              <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                <%= radio_button_tag "media_ids[#{index}]", media.id, params.dig(:media_ids, index.to_s) == media.id.to_s, required: true, class: "sr-only" %>
+                <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover" %>
+              </label>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
+            No <%= type&.name&.downcase || "matching" %> photos in the photobank.
+            <%= link_to "Add some", library_photobank_path(type: type&.slug), class: "underline hover:text-ink-900" %>
+          </p>
+        <% end %>
+      </fieldset>
+    <% end %>
+
+    <%= f.button class: "rb-btn-primary gap-1.5 px-3.5 py-2 text-sm" do %>
+      <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Generate
+    <% end %>
+  <% end %>
+</div>
