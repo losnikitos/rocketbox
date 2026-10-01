@@ -92,7 +92,6 @@ Rails.application.routes.draw do
       member do
         post :extract
         patch :apply_extraction
-        post :rerun
       end
       resources :generations, only: %i[new create], module: :accounts
     end

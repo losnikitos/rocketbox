@@ -50,16 +50,6 @@ class LibraryMediaController < ApplicationController
     redirect_to helpers.library_item_path(media), notice: "Business updated from card."
   end
 
-  # Runs a generation again, replacing its file.
-  def rerun
-    media = Current.account.library_media.find(params[:id])
-    generation = media.origin or return head(:not_found)
-    return head(:unprocessable_entity) if generation.running?
-
-    generation.retry!
-    redirect_to helpers.library_item_path(media), notice: "Running again."
-  end
-
   def destroy
     media = Current.account.library_media.find(params[:id]).destroy!
     redirect_to helpers.library_collection_path(media.collection), notice: "Media deleted."

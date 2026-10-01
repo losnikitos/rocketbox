@@ -62,7 +62,6 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     failed = source.generations.new(recipe: recipes(:cinematic)).start!
     get library_photobank_media_url(failed.generated_media)
     assert_select "#generation-heading + span", text: "running"
-    assert_select "form[action=?]", rerun_library_media_path(failed.generated_media), count: 0
     failed.update!(status: "failed", error: "content policy")
 
     get library_upload_url(source)
@@ -78,6 +77,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=hero-media] img"
 
     get library_photobank_media_url(generated)
+    assert_select "#generation-heading + span", count: 0
     assert_select "label #compare-original"
     assert_select "button[popovertarget=hero-media][title='View full size']"
     assert_select "nav[aria-label=Versions] a[href=?]", library_upload_path(source), text: /Original/
@@ -85,9 +85,9 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "aside a[href=?]", library_upload_path(source), count: 0
 
     get library_photobank_media_url(failed.generated_media)
-    assert_select "#generation-heading", text: "Cinematic shop reel"
     assert_select "section p", text: "content policy"
-    assert_select "form[action=?] button", rerun_library_media_path(failed.generated_media), text: "Retry"
+    assert_select "section h3", text: "Cinematic shop reel"
+    assert_select "section tr", text: /Model\s*\S+/
 
     get library_photobank_url
     assert_select "a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
