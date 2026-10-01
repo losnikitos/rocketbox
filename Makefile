@@ -11,7 +11,8 @@ restart:
 
 # HTTPS to local Rails via kamal accessory (dev.rocketbox.plus → :3003)
 tunnel:
-	ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 172.18.0.1:13003:127.0.0.1:3003 $(PROD_HOST)
+	AUTOSSH_GATETIME=0 autossh -M 0 -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=2 -o ConnectTimeout=10 \
+		-R 172.18.0.1:13003:127.0.0.1:3003 $(PROD_HOST)
 
 dev:
 	bin/dev
