@@ -68,12 +68,21 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     get library_upload_url(source)
     assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, recipe_id: recipes(:cinematic).id)
     assert_select "a[href*=?]", "recipe_id=#{recipes(:before_after).id}", count: 0
-    assert_select "#generated-heading + ul a[href=?]", library_photobank_media_path(generated)
-    assert_select "#generated-heading + ul a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
+    assert_select "nav[aria-label=Versions] a", 3 do |links|
+      assert_equal [ library_upload_path(source), library_photobank_media_path(generated), library_photobank_media_path(failed.generated_media) ],
+        links.map { it["href"] }
+      assert_equal "page", links.first["aria-current"]
+    end
+    assert_select "nav[aria-label=Versions] a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
+    assert_select "aside a[href=?]", library_photobank_media_path(generated), count: 0
+    assert_select "button[popovertarget=hero-media] img"
 
     get library_photobank_media_url(generated)
-    assert_select "section a[href=?]", library_upload_path(source), text: /Cinematic shop reel/
-    assert_select "#generated-heading", count: 0
+    assert_select "label #compare-original"
+    assert_select "button[popovertarget=hero-media][title='View full size']"
+    assert_select "nav[aria-label=Versions] a[href=?]", library_upload_path(source), text: /Original/
+    assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_photobank_media_path(generated)
+    assert_select "aside a[href=?]", library_upload_path(source), count: 0
 
     get library_photobank_media_url(failed.generated_media)
     assert_select "#generation-heading", text: "Cinematic shop reel"
