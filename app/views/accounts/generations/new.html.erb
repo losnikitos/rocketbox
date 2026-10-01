@@ -1,6 +1,6 @@
 <% media = @generation.source_media %>
-<% recipe = @generation.recipe %>
-<% content_for(:title, "#{recipe.name} — Generate — Rocketbox") %>
+<% prompt = @generation.prompt %>
+<% content_for(:title, "#{prompt.name} — Generate — Rocketbox") %>
 
 <div class="flex flex-col gap-6 md:flex-row">
   <% unless turbo_frame_request? %>
@@ -23,16 +23,16 @@
       <% end %>
       Generate
     </h2>
-    <%= render "accounts/recipes/card", recipe: %>
+    <%= render "accounts/prompts/card", prompt: %>
 
     <%= form_with model: @generation, url: library_media_generations_path(media), class: "space-y-4" do |f| %>
-      <%= hidden_field_tag :recipe_id, recipe.id %>
+      <%= hidden_field_tag :prompt_id, prompt.id %>
       <% if @generation.errors.any? %>
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= @generation.errors.full_messages.to_sentence %></p>
       <% end %>
       <div>
-        <%= f.label :prompt, "Extra prompt", class: tw_label_classes %>
-        <%= f.text_area :prompt, rows: 3, placeholder: "Added to default prompt", class: tw_input_classes %>
+        <%= f.label :extra_prompt, "Extra prompt", class: tw_label_classes %>
+        <%= f.text_area :extra_prompt, rows: 3, placeholder: "Added to default prompt", class: tw_input_classes %>
       </div>
       <% @generation.option_choices.each do |key, choices| %>
         <% if key == "model" %>

@@ -90,7 +90,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     get link_url(link)
 
     assert_response :success
-    assert_select "textarea[name='crawl[data_instruction]']", text: prompts(:crawl_business).body
+    assert_select "textarea[name='crawl[data_instruction]']", text: Crawl::DEFAULT_DATA_INSTRUCTION
 
     get link_url(@link)
     assert_response :success

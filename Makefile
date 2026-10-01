@@ -1,4 +1,4 @@
-.PHONY: deploy restart tunnel dev restore-prod-to-local prompts-push prompts-pull
+.PHONY: deploy restart tunnel dev restore-prod-to-local
 
 PROD_HOST := root@monitoring.tadaaa.uk.com
 PROD_DB := /var/lib/docker/volumes/rocketbox_storage/_data/production.sqlite3
@@ -27,13 +27,4 @@ restore-prod-to-local:
 	rm -f storage/development.sqlite3-wal storage/development.sqlite3-shm; \
 	cp $$LOCAL_PATH storage/development.sqlite3; \
 	bin/rails db:environment:set RAILS_ENV=development; \
-	bin/rails db:migrate; \
-	bin/rails prompts:pull
-
-# prompts/*.md → local DB (prod pushes on boot, see bin/docker-entrypoint)
-prompts-push:
-	bin/rails prompts:push
-
-# local DB → prompts/*.md
-prompts-pull:
-	bin/rails prompts:pull
+	bin/rails db:migrate

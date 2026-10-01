@@ -68,7 +68,7 @@
     <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
   </div>
 
-  <%# Only the recipe thumbnails target this frame; everything else inside navigates the whole page. %>
+  <%# Only the prompt thumbnails target this frame; everything else inside navigates the whole page. %>
   <turbo-frame id="side_panel" target="_top" class="contents">
   <aside id="details" class="w-full shrink-0 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108">
     <div class="flex items-center justify-between gap-2">
@@ -97,12 +97,12 @@
         <% if generation.error.present? %>
           <p class="text-sm text-signal-red"><%= generation.error %></p>
         <% end %>
-        <%= render "accounts/recipes/card", recipe: generation.recipe %>
+        <%= render "accounts/prompts/card", prompt: generation.prompt %>
         <% options = generation.options.to_h %>
         <table class="w-full text-sm">
           <tbody class="divide-y divide-ink-900/10">
             <% [
-                 [ "Extra prompt", generation.prompt ],
+                 [ "Extra prompt", generation.extra_prompt ],
                  [ "Model", options["model"] ],
                  [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
                  [ "Size", options["resolution"]&.upcase ],
@@ -121,27 +121,27 @@
     <% end %>
 
     <% if @media.story_image? %>
-      <section id="apply_recipe" class="mt-6" aria-labelledby="apply-recipe-heading">
-        <h3 id="apply-recipe-heading" class="text-sm text-ink-500"><a href="#apply_recipe" class="hover:underline">Apply recipe</a></h3>
+      <section id="apply_prompt" class="mt-6" aria-labelledby="apply-prompt-heading">
+        <h3 id="apply-prompt-heading" class="text-sm text-ink-500"><a href="#apply_prompt" class="hover:underline">Apply prompt</a></h3>
         <% if @media.media_type.nil? %>
-          <p class="mt-1 text-sm text-ink-600">Set a media type to see recipes.</p>
-        <% elsif (recipes = @media.recipes).empty? %>
-          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.name.downcase %> recipes yet.</p>
+          <p class="mt-1 text-sm text-ink-600">Set a media type to see prompts.</p>
+        <% elsif (prompts = @media.prompts).empty? %>
+          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.name.downcase %> prompts yet.</p>
         <% else %>
           <ul class="mt-2 flex snap-x gap-2 overflow-x-auto pb-1">
-            <% recipes.each do |recipe| %>
-              <% covered = recipe.examples.any? %>
+            <% prompts.each do |prompt| %>
+              <% covered = prompt.examples.any? %>
               <li class="relative aspect-2/3 w-28 shrink-0 snap-start overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
                   data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-                <% recipe.examples.each_with_index do |example, index| %>
+                <% prompt.examples.each_with_index do |example, index| %>
                   <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-                    <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
+                    <%= render "accounts/prompts/example", example:, css: "size-full object-cover" %>
                   </div>
                 <% end %>
-                <%= link_to new_library_media_generation_path(@media, recipe_id: recipe.id), data: { turbo_frame: "side_panel" },
+                <%= link_to new_library_media_generation_path(@media, prompt_id: prompt.id), data: { turbo_frame: "side_panel" },
                       class: "absolute inset-0 flex items-start focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-rocket" do %>
                   <span class="w-full p-1.5 text-xs font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-5 text-white" : "text-ink-900" %>">
-                    <%= recipe.name %>
+                    <%= prompt.name %>
                   </span>
                 <% end %>
               </li>

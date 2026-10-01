@@ -9,7 +9,7 @@ ActiveAdmin.register MediaType do
     column :name
     column :slug
     column("Library media") { it.library_media.count }
-    column("Recipes") { it.recipes.count }
+    column("Prompts") { it.prompts.count }
     actions
   end
 

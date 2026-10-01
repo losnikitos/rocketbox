@@ -1,22 +1,15 @@
 # frozen_string_literal: true
 
-# LLM prompt bodies, looked up by key. Mirrored as prompts/<key>.md; see docs/PROMPTS.md.
+# How a library media is turned into new content: a body for one AI call, example media, and whether it makes an image or a video.
 class Prompt < ApplicationRecord
-  DIR = Rails.root.join("prompts")
+  # The library media this prompt suits.
+  belongs_to :media_type
+  has_many :generations, dependent: :restrict_with_exception
+  has_many_attached :examples
 
-  validates :key, presence: true, uniqueness: true, format: { with: /\A[a-z0-9_]+\z/ }
-  validates :body, presence: true
+  enum :kind, %w[image video].index_by(&:itself), validate: true
 
-  def self.body_for!(key)
-    find_by!(key: key.to_s).body
-  end
+  validates :name, :body, presence: true
 
-  def self.push
-    DIR.glob("*.md").each { |path| find_or_initialize_by(key: path.basename(".md").to_s).update!(body: path.read.strip) }
-  end
-
-  def self.pull
-    DIR.mkpath
-    find_each { |prompt| DIR.join("#{prompt.key}.md").write("#{prompt.body}\n") }
-  end
+  scope :ordered, -> { order(:name) }
 end

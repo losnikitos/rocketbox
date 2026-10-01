@@ -2,6 +2,7 @@
 
 class ImproveLibraryMedia
   Error = Class.new(StandardError)
+  PROMPT = "Make this look like professional content for social media advertising."
 
   def self.call(media:)
     new(media:).call
@@ -15,7 +16,7 @@ class ImproveLibraryMedia
     raise Error, "Only images can be improved with AI." unless @media.story_image?
     raise Error, "Media file is missing." unless @media.file.attached?
 
-    store!(RubyLLM.paint(Prompt.body_for!(:improve_library_media), provider: :xai, with: @media.file.blob).to_blob)
+    store!(RubyLLM.paint(PROMPT, provider: :xai, with: @media.file.blob).to_blob)
   end
 
   private

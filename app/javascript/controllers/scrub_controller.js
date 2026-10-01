@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Hover scrubs through stacked slides by mouse X (e.g. recipe example covers).
+// Hover scrubs through stacked slides by mouse X (e.g. prompt example covers).
 export default class extends Controller {
   static targets = ["slide"]
 

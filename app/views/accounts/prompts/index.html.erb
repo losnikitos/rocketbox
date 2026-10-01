@@ -1,35 +1,35 @@
-<% content_for(:title, "Recipes — Rocketbox") %>
+<% content_for(:title, "Prompts — Rocketbox") %>
 <% content_for :header_actions do %>
-  <%= link_to new_recipe_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+  <%= link_to new_prompt_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
     <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-    Add recipe
+    Add prompt
   <% end %>
 <% end %>
 
-<% if @recipes.any? %>
+<% if @prompts.any? %>
   <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-    <% @recipes.each do |recipe| %>
-      <% covered = recipe.examples.any? %>
-      <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+    <% @prompts.each do |prompt| %>
+      <% covered = prompt.examples.any? %>
+      <li id="<%= dom_id(prompt) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
           data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-        <% recipe.examples.each_with_index do |example, index| %>
+        <% prompt.examples.each_with_index do |example, index| %>
           <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
             <%= render "example", example:, css: "size-full object-cover" %>
           </div>
         <% end %>
-        <%= link_to edit_recipe_path(recipe), class: "absolute inset-0 flex items-start" do %>
+        <%= link_to edit_prompt_path(prompt), class: "absolute inset-0 flex items-start" do %>
           <span class="w-full py-4 pr-12 pl-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
-            <%= recipe.name %>
+            <%= prompt.name %>
           </span>
         <% end %>
         <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
-          <%= render "shared/admin_links/recipe", recipe: %>
+          <%= render "shared/admin_links/prompt", prompt: %>
         </div>
       </li>
     <% end %>
   </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-    Add a recipe — a prompt and examples that describe how new content is made.
+    Add a prompt — instructions and examples that describe how new content is made.
   </div>
 <% end %>

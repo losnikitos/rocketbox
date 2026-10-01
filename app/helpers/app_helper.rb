@@ -55,13 +55,13 @@ module AppHelper
       ] ]
     when "accounts/admin"
       [ :admin, "Admin", [] ]
-    when "accounts/recipes"
+    when "accounts/prompts"
       index = action_name == "index"
-      counts = Recipe.group(:media_type_id).count
-      [ :recipes, "Recipes", [
-        [ recipes_path, "All", index && params[:media_type].blank?, counts.values.sum ],
+      counts = Prompt.group(:media_type_id).count
+      [ :prompts, "Prompts", [
+        [ prompts_path, "All", index && params[:media_type].blank?, counts.values.sum ],
         :separator,
-        *MediaType.ordered.map { |t| [ recipes_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
+        *MediaType.ordered.map { |t| [ prompts_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
       ] ]
     else
       [ nil, "Rocketbox", [] ]

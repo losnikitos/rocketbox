@@ -1,5 +1,11 @@
-<% Rails.root.glob("prompts/*.md").each do |path| %>
-<%= path.basename(".md") %>:
-  key: <%= path.basename(".md") %>
-  body: <%= path.read.strip.to_json %>
-<% end %>
+cinematic:
+  name: Cinematic shop reel
+  kind: video
+  media_type: interior
+  body: Slow cinematic push-in on the shop.
+
+before_after:
+  name: Before → after energy
+  kind: video
+  media_type: misc
+  body: Energetic before and after reveal.
