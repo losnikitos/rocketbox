@@ -15,7 +15,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select "img[src*=?]", "a.jpg"
-    assert_select "h2", text: "Cinematic shop reel"
+    assert_select "h3", text: "Cinematic shop reel"
     assert_select "input[name='generation[options][model]'][value='grok-imagine-video-1.5'][checked]"
     assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("input[name='generation[options][model]']").map { it["value"] }
     assert_select "a[href='/admin/models']", text: "Manage models"
@@ -33,7 +33,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#side_panel a[data-turbo-frame=side_panel][aria-label='Back to media']"
   end
 
-  test "generate saves the options and enqueues the job; retry runs it again" do
+  test "generate saves the options and enqueues the job" do
     assert_difference -> { Generation.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
       assert_enqueued_with(job: GenerateJob) do
         post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
@@ -47,14 +47,6 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, generation.options)
     assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5, provider: :xai }, generation.ai_options)
     assert_equal "running", generation.status
-
-    post rerun_library_media_url(generation.generated_media)
-    assert_response :unprocessable_entity
-
-    generation.update!(status: "failed", error: "boom")
-    assert_enqueued_with(job: GenerateJob, args: [ generation.id ]) { post rerun_library_media_url(generation.generated_media) }
-    assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
-    assert_equal [ "running", nil ], [ generation.reload.status, generation.error ]
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do

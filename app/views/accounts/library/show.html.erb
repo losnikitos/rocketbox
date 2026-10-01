@@ -66,22 +66,6 @@
     <% end %>
 
     <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
-
-    <% if (generation = @media.origin) %>
-      <section class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="generation-heading">
-        <div class="flex items-center gap-2">
-          <h3 id="generation-heading" class="text-sm font-semibold text-ink-900"><%= generation.recipe.name %></h3>
-          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= generation.status %></span>
-          <% unless generation.running? %>
-            <%= button_to "Retry", rerun_library_media_path(@media), class: "rb-btn-ghost-on-light px-3 py-1 text-xs" %>
-          <% end %>
-          <div class="ml-auto"><%= render "shared/admin_links/generation", generation: %></div>
-        </div>
-        <% if generation.error.present? %>
-          <p class="text-sm text-signal-red"><%= generation.error %></p>
-        <% end %>
-      </section>
-    <% end %>
   </div>
 
   <%# Only the recipe thumbnails target this frame; everything else inside navigates the whole page. %>
@@ -99,6 +83,41 @@
             { include_blank: "Not set" },
             class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
             onchange: "this.form.requestSubmit()" %>
+    <% end %>
+
+    <% if (generation = @media.origin) %>
+      <section class="mt-6 space-y-2" aria-labelledby="generation-heading">
+        <div class="flex items-center gap-2">
+          <h3 id="generation-heading" class="text-sm text-ink-500">Generation</h3>
+          <% unless generation.complete? %>
+            <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= generation.status %></span>
+          <% end %>
+          <div class="ml-auto"><%= render "shared/admin_links/generation", generation: %></div>
+        </div>
+        <% if generation.error.present? %>
+          <p class="text-sm text-signal-red"><%= generation.error %></p>
+        <% end %>
+        <%= render "accounts/recipes/card", recipe: generation.recipe %>
+        <% options = generation.options.to_h %>
+        <table class="w-full text-sm">
+          <tbody class="divide-y divide-ink-900/10">
+            <% [
+                 [ "Extra prompt", generation.prompt ],
+                 [ "Model", options["model"] ],
+                 [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
+                 [ "Size", options["resolution"]&.upcase ],
+                 [ "Duration", options["duration"]&.then { "#{it} s" } ],
+                 [ "Quality", (options["quality"]&.capitalize || "Auto" unless generation.video?) ]
+               ].each do |label, value| %>
+              <% next if value.blank? %>
+              <tr>
+                <th scope="row" class="w-28 py-1.5 pr-3 text-left align-top font-normal text-ink-500"><%= label %></th>
+                <td class="py-1.5 text-ink-900"><span class="line-clamp-3" title="<%= value %>"><%= value %></span></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
     <% end %>
 
     <% if @media.story_image? %>

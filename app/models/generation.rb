@@ -82,12 +82,7 @@ class Generation < ApplicationRecord
     self
   end
 
-  def retry!
-    update!(status: "running", error: nil)
-    GenerateJob.perform_later(id)
-  end
-
-  # One AI call on the source image; a retry replaces the previous file.
+  # One AI call on the source image.
   def run!
     opts = ai_options
     prompt_text = [ recipe.prompt, prompt ].compact_blank.join("\n\n")
