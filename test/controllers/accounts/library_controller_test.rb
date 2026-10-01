@@ -121,6 +121,24 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "aside dd", text: "cut.jpg"
   end
 
+  test "show strips other media of the same type and collection" do
+    room, hall, card = [ :interior, :interior, :business_card ].map do |type|
+      LibraryMedia.create!(kind: "photo", media_type: media_types(type), user: @user)
+    end
+    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
+
+    get library_upload_url(room)
+    assert_select "nav[aria-label='Interior media']" do
+      assert_select "a[href=?][aria-current=page]", library_upload_path(room)
+      assert_select "a[href=?]:not([aria-current])", library_upload_path(hall)
+      assert_select "a[href=?]", library_upload_path(card), count: 0
+      assert_select "a[href=?]", library_photobank_media_path(curated), count: 0
+    end
+
+    get library_upload_url(card)
+    assert_select "nav[aria-label='Business card media']", count: 0
+  end
+
   test "photobank lists only curated media, apart from the inbox" do
     inbox = LibraryMedia.create!(kind: "photo", user: @user)
     inbox.file.attach(io: StringIO.new("img"), filename: "inbox.jpg", content_type: "image/jpeg")

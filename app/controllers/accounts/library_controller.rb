@@ -23,6 +23,9 @@ module Accounts
         generations: [ :recipe, { generated_media: { file_attachment: :blob } } ],
         origin: [ :recipe, { source_media: { file_attachment: :blob } } ]
       ).find(params[:id])
+      # ponytail: loads every sibling; add a window around @media if libraries get big
+      @siblings = Current.account.library_media.where(collection: @collection, media_type_id: @media.media_type_id)
+        .with_attached_file.includes(:origin).order(created_at: :desc)
     end
   end
 end
