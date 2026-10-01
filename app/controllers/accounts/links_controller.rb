@@ -24,7 +24,7 @@ module Accounts
       @crawl = @link.crawls.last
       @new_crawl = Crawl.new(
         provider: @crawl&.provider || Crawl::PROVIDERS.keys.first,
-        data_instruction: @crawl&.data_instruction || Prompt.body_for!(:crawl_business)
+        data_instruction: @crawl&.data_instruction || Crawl::DEFAULT_DATA_INSTRUCTION
       )
       @suggestions = @crawl ? @crawl.suggestions.to_a : []
       applied_urls = @suggestions.select { |s| s.media? && s.applied? }.map(&:value)

@@ -1,12 +1,12 @@
 ActiveAdmin.register Generation do
   actions :index, :show
 
-  includes :recipe, :source_media, :generated_media
+  includes :prompt, :source_media, :generated_media
 
   index do
     id_column
     column :source_media
-    column :recipe
+    column :prompt
     column :generated_media
     column :status
     column :created_at
@@ -17,7 +17,7 @@ ActiveAdmin.register Generation do
     attributes_table do
       row :id
       row :source_media
-      row :recipe
+      row :prompt
       row :generated_media
       row :status
       row :error

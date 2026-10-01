@@ -3,9 +3,15 @@
 <% if Current.user&.admin? && prompt.present? %>
   <%= render layout: "shared/admin_links/menu", locals: { popover_id: "prompt-admin-links-#{prompt.id}", align: local_assigns.fetch(:align, :right) } do %>
     <%= render "shared/admin_links/item",
-        path: edit_admin_prompt_path(prompt),
-        label: "Edit prompt",
-        icon: "pencil-square",
+        path: admin_prompt_path(prompt),
+        label: "Admin",
+        icon: "cog",
         chip: "bg-signal-green" %>
+    <%= render "shared/admin_links/item",
+        path: prompt_path(prompt),
+        label: "Remove",
+        icon: "trash",
+        chip: "bg-signal-red",
+        data: { turbo_method: :delete, turbo_confirm: "Remove this prompt?" } %>
   <% end %>
 <% end %>

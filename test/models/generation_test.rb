@@ -7,8 +7,8 @@ class GenerationTest < ActiveSupport::TestCase
     user = users(:lazaro_nixon)
     source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user:,
       file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Polish", media_type: media_types(:interior), prompt: "Polish the shot.")
-    @generation = source.generations.new(recipe:, prompt: "Warmer.")
+    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.")
+    @generation = source.generations.new(prompt:, extra_prompt: "Warmer.")
     @generation.start!
     @original_paint = RubyLLM.method(:paint)
   end
@@ -17,7 +17,7 @@ class GenerationTest < ActiveSupport::TestCase
     RubyLLM.define_singleton_method(:paint, @original_paint)
   end
 
-  test "run! paints the source with the recipe and extra prompt and attaches the result" do
+  test "run! paints the source with the prompt and extra prompt and attaches the result" do
     calls = []
     RubyLLM.define_singleton_method(:paint) { |prompt, with:, **| calls << [ prompt, with.filename.to_s ]; RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes")) }
 

@@ -52,7 +52,7 @@ Authentication and session login.
 How the app is deployed and operated in production.
 
 ### [PROMPTS.md](./docs/PROMPTS.md)
-LLM prompts: `Prompt` rows by key, mirrored in `prompts/*.md`, `make prompts-push` / `prompts-pull`.
+LLM prompts: content `Prompt` rows at `/app/prompts`; service prompts are constants in code.
 
 ### [ICONS.md](./docs/ICONS.md)
 Heroicons: `heroicon "name"` — no variant or size unless needed.

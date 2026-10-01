@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# A recipe applied to one library media. The result is a photobank media, created up front so a running or
+# A prompt applied to one library media. The result is a photobank media, created up front so a running or
 # failed generation already has a page; GenerateJob attaches its file when the AI call finishes.
 # `options` are the provider request options (IMAGE_OPTIONS or VIDEO_OPTIONS); the chosen
-# model (one of `models`, enabled in Active Admin) picks the provider. `prompt` is appended to the recipe's prompt.
+# model (one of `models`, enabled in Active Admin) picks the provider. `extra_prompt` is appended to the prompt body.
 class Generation < ApplicationRecord
   STATUSES = %w[running complete failed].freeze
 
@@ -37,7 +37,7 @@ class Generation < ApplicationRecord
   }.freeze
 
   belongs_to :source_media, class_name: "LibraryMedia", inverse_of: :generations
-  belongs_to :recipe
+  belongs_to :prompt
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :origin
 
   validates :status, inclusion: { in: STATUSES }
@@ -45,7 +45,7 @@ class Generation < ApplicationRecord
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
   # Keeps whatever the chosen model still offers (e.g. aspect ratio and quality across a model switch); blank means Auto.
-  after_initialize if: -> { new_record? && recipe } do
+  after_initialize if: -> { new_record? && prompt } do
     kept = options.to_h.select { |key, value| option_choices.key?(key) && (value.blank? || value.in?(option_choices[key])) }
     self.options = default_options.merge(kept)
   end
@@ -54,7 +54,7 @@ class Generation < ApplicationRecord
     options.each { |key, value| errors.add(:options, "#{key.humanize} #{value} isn't available") unless value.in?(option_choices[key]) }
   end
 
-  def video? = recipe&.video?
+  def video? = prompt&.video?
 
   def option_sets = video? ? VIDEO_OPTIONS : IMAGE_OPTIONS
 
@@ -85,7 +85,7 @@ class Generation < ApplicationRecord
   # One AI call on the source image.
   def run!
     opts = ai_options
-    prompt_text = [ recipe.prompt, prompt ].compact_blank.join("\n\n")
+    prompt_text = [ prompt.body, extra_prompt ].compact_blank.join("\n\n")
     provider_options = opts.except(:provider, :model)
     source = source_media.file.blob
     if video?

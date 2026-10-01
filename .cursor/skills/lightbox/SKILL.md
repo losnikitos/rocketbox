@@ -27,5 +27,5 @@ Images only — videos keep their own controls inline; a full-screen click-to-cl
 ```
 
 ## Examples in codebase
-- `app/views/accounts/recipes/_form.html.erb` (recipe examples grid)
+- `app/views/accounts/prompts/_form.html.erb` (prompt examples grid)
 - `app/views/accounts/library/show.html.erb` (hero media)

@@ -53,20 +53,20 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(type: "logo"), text: "Logo 0"
   end
 
-  test "source shows recipes and generated media; generated links back to its source" do
+  test "source shows prompts and generated media; generated links back to its source" do
     source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: @user)
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    source.generations.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete")
-    failed = source.generations.new(recipe: recipes(:cinematic)).start!
+    source.generations.create!(prompt: prompts(:cinematic), generated_media: generated, status: "complete")
+    failed = source.generations.new(prompt: prompts(:cinematic)).start!
     get library_photobank_media_url(failed.generated_media)
     assert_select "#generation-heading + span", text: "running"
     failed.update!(status: "failed", error: "content policy")
 
     get library_upload_url(source)
-    assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, recipe_id: recipes(:cinematic).id)
-    assert_select "a[href*=?]", "recipe_id=#{recipes(:before_after).id}", count: 0
+    assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, prompt_id: prompts(:cinematic).id)
+    assert_select "a[href*=?]", "prompt_id=#{prompts(:before_after).id}", count: 0
     assert_select "nav[aria-label=Versions] a", 3 do |links|
       assert_equal [ library_upload_path(source), library_photobank_media_path(generated), library_photobank_media_path(failed.generated_media) ],
         links.map { it["href"] }

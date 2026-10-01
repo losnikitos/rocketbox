@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_170000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -88,15 +88,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
   create_table "generations", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "error"
+    t.text "extra_prompt"
     t.integer "generated_media_id", null: false
     t.json "options", default: {}, null: false
-    t.text "prompt"
-    t.integer "recipe_id", null: false
+    t.integer "prompt_id", null: false
     t.integer "source_media_id", null: false
     t.string "status", default: "running", null: false
     t.datetime "updated_at", null: false
     t.index ["generated_media_id"], name: "index_generations_on_generated_media_id", unique: true
-    t.index ["recipe_id"], name: "index_generations_on_recipe_id"
+    t.index ["prompt_id"], name: "index_generations_on_prompt_id"
     t.index ["source_media_id"], name: "index_generations_on_source_media_id"
   end
 
@@ -192,19 +192,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
   create_table "prompts", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.string "key", null: false
-    t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_prompts_on_key", unique: true
-  end
-
-  create_table "recipes", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "kind", default: "image", null: false
     t.integer "media_type_id", null: false
     t.string "name", null: false
-    t.text "prompt", null: false
     t.datetime "updated_at", null: false
-    t.index ["media_type_id"], name: "index_recipes_on_media_type_id"
+    t.index ["media_type_id"], name: "index_prompts_on_media_type_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -421,14 +413,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
   add_foreign_key "crawls", "links"
   add_foreign_key "generations", "library_media", column: "generated_media_id"
   add_foreign_key "generations", "library_media", column: "source_media_id"
-  add_foreign_key "generations", "recipes"
+  add_foreign_key "generations", "prompts"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "media_types", on_delete: :nullify
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
-  add_foreign_key "recipes", "media_types"
+  add_foreign_key "prompts", "media_types"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"

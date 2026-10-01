@@ -1,18 +1,18 @@
-<%# locals: (recipe:) %>
-<%# Examples sit outside the form for layout; fields join it via form="recipe_form". %>
+<%# locals: (prompt:) %>
+<%# Examples sit outside the form for layout; fields join it via form="prompt_form". %>
 <div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
-    <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <%= link_to "Prompts", prompts_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
-    <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
+    <span aria-current="page"><%= prompt.new_record? ? "New prompt" : prompt.name_was %></span>
   </nav>
 
   <div class="grid items-start gap-8 @3xl:grid-cols-2">
-    <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
-      <% if recipe.errors.any? %>
+    <%= form_with model: prompt, id: "prompt_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
+      <% if prompt.errors.any? %>
         <div class="<%= tw_alert_error_classes %>" role="alert">
           <ul class="list-inside list-disc">
-            <% recipe.errors.full_messages.each do |message| %>
+            <% prompt.errors.full_messages.each do |message| %>
               <li><%= message %></li>
             <% end %>
           </ul>
@@ -21,7 +21,7 @@
 
       <div class="max-w-md">
         <%= f.label :name, class: tw_label_classes %>
-        <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
+        <%= f.text_field :name, required: true, autofocus: prompt.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
       </div>
 
       <div class="max-w-md">
@@ -43,8 +43,8 @@
       </fieldset>
 
       <div>
-        <%= f.label :prompt, class: tw_label_classes %>
-        <%= f.text_area :prompt, required: true, rows: 6, class: tw_input_classes %>
+        <%= f.label :body, "Prompt", class: tw_label_classes %>
+        <%= f.text_area :body, required: true, rows: 6, class: tw_input_classes %>
       </div>
     <% end %>
 
@@ -57,9 +57,9 @@
                       class: "absolute bottom-2 right-2 rounded-lg bg-white/90 p-1.5 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-white hover:text-signal-red focus-visible:opacity-100" } %>
         <template data-file-preview-target="remove"><%= tag.button trash, **remove %></template>
         <%# Keeps the key present so removing every example clears them on save. %>
-        <%= hidden_field_tag "recipe[examples][]", "", id: nil, form: "recipe_form" %>
+        <%= hidden_field_tag "prompt[examples][]", "", id: nil, form: "prompt_form" %>
         <ul class="grid grid-cols-3 gap-3" data-file-preview-target="list">
-          <% recipe.examples.select(&:persisted?).each do |example| %>
+          <% prompt.examples.select(&:persisted?).each do |example| %>
             <li class="group relative">
               <% if example.video? %>
                 <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
@@ -73,7 +73,7 @@
                   </button>
                 </div>
               <% end %>
-              <%= hidden_field_tag "recipe[examples][]", example.signed_id, id: nil, form: "recipe_form" %>
+              <%= hidden_field_tag "prompt[examples][]", example.signed_id, id: nil, form: "prompt_form" %>
               <%= tag.button trash, **remove, "aria-label": "Remove #{example.filename}" %>
             </li>
           <% end %>
@@ -81,7 +81,7 @@
             <label class="flex aspect-2/3 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 px-2 text-center text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
               <%= heroicon "plus", options: { class: "size-6", "aria-hidden": true } %>
               <span class="text-xs">Drop images or videos</span>
-              <%= file_field_tag "recipe[examples][]", multiple: true, accept: "image/*,video/*", form: "recipe_form", "aria-label": "Add examples",
+              <%= file_field_tag "prompt[examples][]", multiple: true, accept: "image/*,video/*", form: "prompt_form", "aria-label": "Add examples",
                     data: { file_preview_target: "input", action: "change->file-preview#show" }, class: "sr-only" %>
             </label>
           </li>
@@ -91,7 +91,7 @@
   </div>
 
   <div class="flex items-center justify-end gap-2">
-    <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
-    <button type="submit" form="recipe_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
+    <%= link_to "Cancel", prompts_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+    <button type="submit" form="prompt_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
   </div>
 </div>

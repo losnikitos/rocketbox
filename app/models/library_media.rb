@@ -39,11 +39,11 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("image/") || kind.in?(%w[photo sticker])
   end
 
-  # Recipes that suit this media.
-  def recipes
+  # Prompts that suit this media.
+  def prompts
     return [] unless story_image? && media_type
 
-    Recipe.where(media_type:).with_attached_examples.ordered
+    Prompt.where(media_type:).with_attached_examples.ordered
   end
 
   def extraction_status

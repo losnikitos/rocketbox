@@ -9,9 +9,9 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     @media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
   end
 
-  test "draft screen shows the source, recipe and video options without saving" do
+  test "draft screen shows the source, prompt and video options without saving" do
     assert_no_difference -> { Generation.count } do
-      get new_library_media_generation_url(@media, recipe_id: recipes(:cinematic).id, account: @admin.id)
+      get new_library_media_generation_url(@media, prompt_id: prompts(:cinematic).id, account: @admin.id)
     end
     assert_response :success
     assert_select "img[src*=?]", "a.jpg"
@@ -26,7 +26,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "in the side panel frame, only the panel renders and Back reloads just the panel" do
-    get new_library_media_generation_url(@media, recipe_id: recipes(:cinematic).id, account: @admin.id), headers: { "Turbo-Frame" => "side_panel" }
+    get new_library_media_generation_url(@media, prompt_id: prompts(:cinematic).id, account: @admin.id), headers: { "Turbo-Frame" => "side_panel" }
     assert_response :success
     assert_select "turbo-frame#side_panel input[name='generation[options][model]']"
     assert_select "a", text: /Source media/, count: 0
@@ -36,25 +36,25 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   test "generate saves the options and enqueues the job" do
     assert_difference -> { Generation.count } => 1, -> { LibraryMedia.photobank.count } => 1, -> { SmmPost.count } => 0 do
       assert_enqueued_with(job: GenerateJob) do
-        post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
-          generation: { prompt: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
+        post library_media_generations_url(@media, prompt_id: prompts(:cinematic).id), params: {
+          generation: { extra_prompt: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } }
         }
       end
     end
     generation = @media.generations.sole
     assert_redirected_to %r{/library/photobank/#{generation.generated_media.id}\b}
-    assert_equal "Make it snow.", generation.prompt
+    assert_equal "Make it snow.", generation.extra_prompt
     assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, generation.options)
     assert_equal({ model: "grok-imagine-video", resolution: "480p", duration: 5, provider: :xai }, generation.ai_options)
     assert_equal "running", generation.status
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-    recipe = Recipe.create!(name: "Polish", media_type: media_types(:interior), prompt: "Polish the shot.")
+    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.")
 
-    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { prompt: "Warmer.", options: { model: "gpt-image-2" } })
+    get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id, generation: { extra_prompt: "Warmer.", options: { model: "gpt-image-2" } })
     assert_response :success
-    assert_select "textarea[name='generation[prompt]']", text: "Warmer."
+    assert_select "textarea[name='generation[extra_prompt]']", text: "Warmer."
     assert_select "input[name='generation[options][model]'][value='gpt-image-2'][checked]"
     assert_select "input[type=radio][name='generation[options][aspect_ratio]'][value='9:16'][checked]"
     assert_select "input[type=radio][name='generation[options][resolution]'][value='2k'][checked]"
@@ -62,18 +62,18 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=radio][name='generation[options][quality]'][value=''][checked]"
     assert_select "select[name='generation[options][aspect_ratio]']", count: 0
 
-    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high" } })
+    get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id, generation: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high" } })
     assert_select "input[name='generation[options][aspect_ratio]'][value='1:1'][checked]"
     assert_select "input[name='generation[options][resolution]'][value='4k'][checked]"
     assert_select "input[name='generation[options][quality]'][value='high'][checked]"
 
-    get new_library_media_generation_url(@media, recipe_id: recipe.id, account: @admin.id, generation: { options: { model: "grok-imagine-image-2.0", aspect_ratio: "4:5", resolution: "4k", quality: "high" } })
+    get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id, generation: { options: { model: "grok-imagine-image-2.0", aspect_ratio: "4:5", resolution: "4k", quality: "high" } })
     assert_select "input[name='generation[options][aspect_ratio]']", count: 0
     assert_select "input[name='generation[options][resolution]'][value='2k'][checked]"
     assert_select "input[name='generation[options][resolution]'][value='4k']", count: 0
     assert_select "input[name='generation[options][quality]'][value=''][checked]"
 
-    post library_media_generations_url(@media, recipe_id: recipe.id), params: {
+    post library_media_generations_url(@media, prompt_id: prompt.id), params: {
       generation: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high", duration: "5" } }
     }
     generation = @media.generations.sole
@@ -82,7 +82,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
 
   test "rejects options xAI doesn't offer" do
     assert_difference -> { Generation.count } => 0, -> { LibraryMedia.count } => 0 do
-      post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: {
+      post library_media_generations_url(@media, prompt_id: prompts(:cinematic).id), params: {
         generation: { options: { model: "grok-imagine-video-1.5", resolution: "8k" } }
       }
     end
@@ -90,15 +90,15 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=alert]", text: /Resolution 8k isn't available/
   end
 
-  test "a recipe that doesn't fit the media is refused" do
+  test "a prompt that doesn't fit the media is refused" do
     @media.update!(media_type: media_types(:exterior))
 
-    get new_library_media_generation_url(@media, recipe_id: recipes(:cinematic).id, account: @admin.id)
+    get new_library_media_generation_url(@media, prompt_id: prompts(:cinematic).id, account: @admin.id)
     assert_redirected_to %r{/library/uploads/#{@media.id}\b}
-    assert_equal "That recipe doesn't fit this media.", flash[:alert]
+    assert_equal "That prompt doesn't fit this media.", flash[:alert]
 
     assert_no_difference -> { Generation.count } do
-      post library_media_generations_url(@media, recipe_id: recipes(:cinematic).id), params: { generation: { options: { model: "grok-imagine-video-1.5" } } }
+      post library_media_generations_url(@media, prompt_id: prompts(:cinematic).id), params: { generation: { options: { model: "grok-imagine-video-1.5" } } }
     end
   end
 end

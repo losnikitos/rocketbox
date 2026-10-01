@@ -31,9 +31,8 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Admin, Remove |
 | SMM post | [`_smm_post`](/app/views/shared/admin_links/_smm_post.html.erb) | Admin, Remove |
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
-| Recipe | [`_recipe`](/app/views/shared/admin_links/_recipe.html.erb) | Admin, Remove |
+| Prompt | [`_prompt`](/app/views/shared/admin_links/_prompt.html.erb) | Admin, Remove |
 | Generation | [`_generation`](/app/views/shared/admin_links/_generation.html.erb) | Admin |
-| Prompt | [`_prompt`](/app/views/shared/admin_links/_prompt.html.erb) | Edit prompt |
 | Media types (library tabs) | [`_media_types`](/app/views/shared/admin_links/_media_types.html.erb) | Media types |
 
 ## Usage
