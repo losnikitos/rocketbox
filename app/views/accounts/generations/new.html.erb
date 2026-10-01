@@ -17,6 +17,12 @@
 
   <turbo-frame id="side_panel" target="_top" class="contents">
   <aside class="w-full shrink-0 space-y-6 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108">
+    <h2 class="flex items-center gap-2 text-lg font-semibold text-ink-900">
+      <%= link_to library_item_path(media), data: { turbo_frame: ("side_panel" if turbo_frame_request?) }, class: "text-ink-600 hover:text-ink-900", "aria-label": "Back to media" do %>
+        <%= heroicon "arrow-left", options: { class: "size-5", "aria-hidden": true } %>
+      <% end %>
+      Generate
+    </h2>
     <section class="flex gap-4 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="recipe-heading">
       <% if (example = recipe.examples.first) %>
         <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-20 shrink-0 rounded-md object-cover" %>
@@ -33,13 +39,12 @@
 
     <%= form_with model: @generation, url: library_media_generations_path(media), class: "space-y-4" do |f| %>
       <%= hidden_field_tag :recipe_id, recipe.id %>
-      <h2 class="text-sm font-medium text-ink-900">Generation options</h2>
       <% if @generation.errors.any? %>
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= @generation.errors.full_messages.to_sentence %></p>
       <% end %>
       <div>
         <%= f.label :prompt, "Extra prompt", class: tw_label_classes %>
-        <%= f.text_area :prompt, rows: 3, placeholder: "Added to the recipe's prompt for this generation only", class: tw_input_classes %>
+        <%= f.text_area :prompt, rows: 3, placeholder: "Added to default prompt", class: tw_input_classes %>
       </div>
       <% @generation.option_choices.each do |key, choices| %>
         <% if key == "model" %>
@@ -62,33 +67,33 @@
           </div>
           <% next %>
         <% end %>
-        <% if key == "size" %>
+        <% if key == "aspect_ratio" && @generation.provider == "openai" %>
           <fieldset>
-            <legend class="<%= tw_label_classes %>">Size</legend>
+            <legend class="<%= tw_label_classes %>">Aspect ratio</legend>
             <div class="grid grid-cols-4 gap-2">
-              <% shapes = { "1008x1792" => [ "Story", "9:16", "h-6 aspect-9/16" ], "1088x1360" => [ "Portrait", "4:5", "h-6 aspect-4/5" ],
-                            "1088x1088" => [ "Square", "1:1", "h-5 aspect-square" ], "1792x1008" => [ "Landscape", "16:9", "w-7 aspect-video" ] } %>
+              <% shapes = { "9:16" => [ "Story", "h-6 aspect-9/16" ], "4:5" => [ "Portrait", "h-6 aspect-4/5" ],
+                            "1:1" => [ "Square", "h-5 aspect-square" ], "16:9" => [ "Landscape", "w-7 aspect-video" ] } %>
               <% choices.each do |value| %>
-                <% name, ratio, shape = shapes.fetch(value) %>
+                <% name, shape = shapes.fetch(value) %>
                 <label class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-ink-900/15 bg-white p-2 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                  <%= radio_button_tag "generation[options][size]", value, @generation.options["size"] == value, class: "sr-only" %>
+                  <%= radio_button_tag "generation[options][aspect_ratio]", value, @generation.options["aspect_ratio"] == value, class: "sr-only" %>
                   <span class="flex h-6 items-center"><span class="<%= shape %> rounded-sm border-2 border-current text-ink-700" aria-hidden="true"></span></span>
                   <span class="text-sm font-medium text-ink-900"><%= name %></span>
-                  <span class="text-xs text-ink-500"><%= ratio %></span>
+                  <span class="text-xs text-ink-500"><%= value %></span>
                 </label>
               <% end %>
             </div>
           </fieldset>
           <% next %>
         <% end %>
-        <% if key == "quality" %>
+        <% if key == "quality" || (key == "resolution" && !@generation.video?) %>
           <fieldset>
-            <legend class="<%= tw_label_classes %>">Quality</legend>
+            <legend class="<%= tw_label_classes %>"><%= key == "quality" ? "Quality" : "Size" %></legend>
             <div class="flex gap-1 rounded-full bg-ink-900/5 p-1">
-              <% [ "", *choices ].each do |value| %>
+              <% [ ("" if key == "quality"), *choices ].compact.each do |value| %>
                 <label class="flex-1 cursor-pointer rounded-full px-3 py-1 text-center text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                  <%= radio_button_tag "generation[options][quality]", value, @generation.options["quality"].to_s == value, class: "sr-only" %>
-                  <%= value.presence&.capitalize || "Auto" %>
+                  <%= radio_button_tag "generation[options][#{key}]", value, @generation.options[key].to_s == value, class: "sr-only" %>
+                  <%= value.blank? ? "Auto" : key == "quality" ? value.capitalize : value.upcase %>
                 </label>
               <% end %>
             </div>
@@ -102,13 +107,10 @@
                 id: "generation_options_#{key}", include_blank: "Auto", class: tw_input_classes %>
         </div>
       <% end %>
-      <div class="flex gap-2">
-        <%= link_to "Cancel", library_item_path(media), data: { turbo_frame: ("side_panel" if turbo_frame_request?) }, class: "rb-btn-ghost-on-light" %>
-        <%= f.button class: "rb-btn-primary flex-1 gap-1.5" do %>
-          <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-          Generate
-        <% end %>
-      </div>
+      <%= f.button class: "rb-btn-primary w-full gap-1.5" do %>
+        <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Generate
+      <% end %>
       <%= tag.button name: "refresh", formaction: new_library_media_generation_path(media), formmethod: "get", hidden: true,
             data: { turbo_frame: ("side_panel" if turbo_frame_request?) } %>
     <% end %>
