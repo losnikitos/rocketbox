@@ -137,6 +137,8 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     curated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
 
     get library_upload_url(room)
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "interior")
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", library_uploads_path
     assert_select "nav[aria-label='Interior media']" do
       assert_select "a[href=?][aria-current=page]", library_upload_path(room)
       assert_select "a[href=?]:not([aria-current])", library_upload_path(hall)

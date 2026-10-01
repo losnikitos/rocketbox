@@ -6,10 +6,11 @@ module AppHelper
     case controller_path
     when "accounts/library"
       counts = Current.account.library_media.where(collection: @collection).group(:media_type_id).count
+      type = @media ? @media.media_type&.slug : params[:type]
       tabs = [
-        [ library_collection_path(@collection), "All", params[:type].blank?, counts.values.sum ],
+        [ library_collection_path(@collection), "All", type.blank?, counts.values.sum ],
         :separator,
-        *MediaType.ordered.map { |t| [ library_collection_path(@collection, type: t.slug), t.name, params[:type] == t.slug, counts[t.id].to_i ] }
+        *MediaType.ordered.map { |t| [ library_collection_path(@collection, type: t.slug), t.name, type == t.slug, counts[t.id].to_i ] }
       ]
       return [ :photobank, "Photobank", tabs ] if @collection == "photobank"
 
