@@ -34,13 +34,18 @@
         <div class="flex gap-1 rounded-full bg-ink-900/5 p-1">
           <% { "image" => "photo", "video" => "film" }.each do |kind, icon| %>
             <label class="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-              <%= f.radio_button :kind, kind, class: "sr-only" %>
+              <%= f.radio_button :kind, kind, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
               <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
               <%= kind.humanize %>
             </label>
           <% end %>
         </div>
       </fieldset>
+
+      <div class="max-w-md">
+        <%= render "shared/generation_options", record: prompt, scope: "prompt",
+              refresh_url: prompt.persisted? ? edit_prompt_path(prompt) : new_prompt_path %>
+      </div>
 
       <div>
         <%= f.label :body, "Prompt", class: tw_label_classes %>

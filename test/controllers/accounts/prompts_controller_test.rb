@@ -52,6 +52,32 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     assert_empty prompt.reload.examples
   end
 
+  test "admin sets default options; the kind refresh swaps image options for video ones" do
+    @admin = sign_in_as(users(:admin_user))
+
+    get new_prompt_url(account: @admin.id)
+    assert_select "turbo-frame#generation_options input[name='prompt[options][model]'][value='grok-imagine-image-2.0'][checked]"
+    assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_prompt_path(account: @admin.id)
+
+    get new_prompt_url(account: @admin.id, prompt: { kind: "video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
+    assert_select "input[name='prompt[options][model]'][value='grok-imagine-video-1.5'][checked]"
+    assert_select "select[name='prompt[options][aspect_ratio]'] option[selected]", text: "9:16"
+    assert_select "select[name='prompt[options][duration]'] option[selected]", text: "8 s"
+
+    post prompts_url, params: { prompt: { name: "Square", body: "p", media_type_id: media_types(:interior).id,
+      options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "" } } }
+    prompt = Prompt.find_by!(name: "Square")
+    assert_equal({ "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k" }, prompt.options)
+
+    get edit_prompt_url(prompt, account: @admin.id)
+    assert_select "input[name='prompt[options][aspect_ratio]'][value='1:1'][checked]"
+    assert_select "button[name=refresh][formaction=?]", edit_prompt_path(prompt, account: @admin.id)
+
+    patch prompt_url(prompt), params: { prompt: { options: { model: "gpt-image-2", aspect_ratio: "2:1" } } }
+    assert_response :unprocessable_entity
+    assert_select "li", text: /Aspect ratio 2:1 isn't available/
+  end
+
   test "prompts with generations can't be removed" do
     @admin = sign_in_as(users(:admin_user))
     prompt = prompts(:cinematic)

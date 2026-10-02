@@ -12,7 +12,7 @@ module Accounts
     end
 
     def new
-      @recipe = Recipe.new
+      @recipe = Recipe.new(draft_params)
     end
 
     def create
@@ -25,6 +25,8 @@ module Accounts
     end
 
     def edit
+      @recipe.assign_attributes(draft_params)
+      @recipe.fill_options
     end
 
     def update
@@ -47,7 +49,10 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :format, :body, media_type_ids: [] ])
+        params.expect(recipe: [ :name, :format, :body, media_type_ids: [], options: {} ])
       end
+
+      # The options refresh resubmits the form as a GET.
+      def draft_params = params[:recipe] ? recipe_params : {}
   end
 end

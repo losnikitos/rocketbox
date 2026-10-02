@@ -24,17 +24,18 @@ class RecipeTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media: [ @interior ]) }
   end
 
-  test "generate! paints every slot photo in order and attaches one slide" do
+  test "generate! paints every slot photo in order with the recipe's options, overridden per post, and attaches one slide" do
     calls = []
-    RubyLLM.define_singleton_method(:paint) do |prompt, with:, provider_options:, **|
-      calls << [ prompt, with.map { it.filename.to_s }, provider_options ]
+    RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|
+      calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
     end
-    post = @recipe.create_post!(user: @user, media: [ @interior, @customer ])
+    @recipe.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
+    post = @recipe.create_post!(user: @user, media: [ @interior, @customer ], options: { "quality" => "low" })
 
     post.generate!
 
-    assert_equal [ [ "Compose a collage.", %w[interior.jpg customer.jpg], { aspect_ratio: "1:1", resolution: "2k" } ] ], calls
+    assert_equal [ [ "Compose a collage.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
     assert_equal [ "ready", "post" ], [ post.reload.status, post.format ]
     assert_equal [ "jpeg-bytes" ], post.smm_slides.map { it.media.download }
   end

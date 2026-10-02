@@ -41,6 +41,10 @@
       </fieldset>
     <% end %>
 
+    <div class="max-w-md">
+      <%= render "shared/generation_options", record: @post, scope: "smm_post", refresh_url: new_recipe_post_path(@recipe) %>
+    </div>
+
     <%= f.button class: "rb-btn-primary gap-1.5 px-3.5 py-2 text-sm" do %>
       <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       Generate
