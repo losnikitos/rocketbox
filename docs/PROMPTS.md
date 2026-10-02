@@ -6,6 +6,8 @@ Recipes are the next step: `Recipe` rows ([recipe.rb](/app/models/recipe.rb)), e
 
 Prompts and recipes both carry default AI options — model, aspect ratio, size, quality (duration for video) — in an `options` column ([generation_options.rb](/app/models/concerns/generation_options.rb)). A generation or recipe post starts from them, and the user can override any of them on the generate screen; options the picked model doesn't offer fall back to the defaults.
 
+Styles are `Style` rows ([style.rb](/app/models/style.rb)), edited at `/app/styles`: a name, a `body` with visual cues (lighting, camera, colour, mood) and example images. A style is one more option (`options["style"]`, a style id), so a prompt or recipe picks a default style and a generation or recipe post can override it or choose "No style". Its body is appended after the prompt or recipe body (before the `extra_prompt`) and is never sent to the provider as an option. The initial set was imported from tadaaa's shooting styles: `db/styles.yml` holds names, bodies and public photo URLs, and `bin/rails styles:import` ([styles.rake](/lib/tasks/styles.rake)) upserts them by name.
+
 Service prompts are constants in the code that uses them:
 
 | Constant | Used for |

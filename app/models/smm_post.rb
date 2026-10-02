@@ -63,7 +63,7 @@ class SmmPost < ApplicationRecord
   # One AI call composing the recipe's photos into the post's single slide.
   def generate!
     opts = ai_options
-    result = RubyLLM.paint(recipe.body, model: opts[:model], provider: opts[:provider],
+    result = RubyLLM.paint([ recipe.body, style&.body ].compact_blank.join("\n\n"), model: opts[:model], provider: opts[:provider],
       with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
     smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
     update!(status: "ready", error_message: nil)

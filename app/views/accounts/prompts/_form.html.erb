@@ -1,5 +1,4 @@
 <%# locals: (prompt:) %>
-<%# Examples sit outside the form for layout; fields join it via form="prompt_form". %>
 <div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Prompts", prompts_path, class: "underline underline-offset-2 hover:text-ink-900" %>
@@ -53,46 +52,7 @@
       </div>
     <% end %>
 
-    <div class="min-w-0">
-      <h2 id="examples" class="<%= tw_label_classes %> scroll-m-24"><a href="#examples" class="hover:underline">Examples</a></h2>
-      <div class="rounded-2xl border border-ink-900/10 bg-stone-50 p-6 transition data-dragging:ring-2 data-dragging:ring-rocket/40" data-controller="file-preview"
-           data-action="dragover->file-preview#over dragleave->file-preview#leave drop->file-preview#drop">
-        <% trash = heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-        <% remove = { type: "button", data: { action: "file-preview#remove" },
-                      class: "absolute bottom-2 right-2 rounded-lg bg-white/90 p-1.5 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-white hover:text-signal-red focus-visible:opacity-100" } %>
-        <template data-file-preview-target="remove"><%= tag.button trash, **remove %></template>
-        <%# Keeps the key present so removing every example clears them on save. %>
-        <%= hidden_field_tag "prompt[examples][]", "", id: nil, form: "prompt_form" %>
-        <ul class="grid grid-cols-3 gap-3" data-file-preview-target="list">
-          <% prompt.examples.select(&:persisted?).each do |example| %>
-            <li class="group relative">
-              <% if example.video? %>
-                <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-              <% else %>
-                <button type="button" popovertarget="example-<%= example.id %>" aria-label="View <%= example.filename %>" class="block w-full cursor-zoom-in">
-                  <%= render "example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-                </button>
-                <div id="example-<%= example.id %>" popover class="size-full bg-black/90 p-4">
-                  <button type="button" popovertarget="example-<%= example.id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
-                    <%= image_tag url_for(example), alt: example.filename.to_s, class: "max-h-full max-w-full" %>
-                  </button>
-                </div>
-              <% end %>
-              <%= hidden_field_tag "prompt[examples][]", example.signed_id, id: nil, form: "prompt_form" %>
-              <%= tag.button trash, **remove, "aria-label": "Remove #{example.filename}" %>
-            </li>
-          <% end %>
-          <li data-file-preview-target="add">
-            <label class="flex aspect-2/3 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ink-900/15 px-2 text-center text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
-              <%= heroicon "plus", options: { class: "size-6", "aria-hidden": true } %>
-              <span class="text-xs">Drop images or videos</span>
-              <%= file_field_tag "prompt[examples][]", multiple: true, accept: "image/*,video/*", form: "prompt_form", "aria-label": "Add examples",
-                    data: { file_preview_target: "input", action: "change->file-preview#show" }, class: "sr-only" %>
-            </label>
-          </li>
-        </ul>
-      </div>
-    </div>
+    <%= render "shared/examples", record: prompt, form_id: "prompt_form" %>
   </div>
 
   <div class="flex items-center justify-end gap-2">

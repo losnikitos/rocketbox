@@ -2,7 +2,7 @@
 
 # A prompt applied to one library media. The result is a photobank media, created up front so a running or
 # failed generation already has a page; GenerateJob attaches its file when the AI call finishes.
-# `options` start from the prompt's (see GenerationOptions). `extra_prompt` is appended to the prompt body.
+# `options` start from the prompt's (see GenerationOptions). The style's body, then `extra_prompt`, are appended to the prompt body.
 class Generation < ApplicationRecord
   include GenerationOptions
 
@@ -32,7 +32,7 @@ class Generation < ApplicationRecord
   # One AI call on the source image.
   def run!
     opts = ai_options
-    prompt_text = [ prompt.body, extra_prompt ].compact_blank.join("\n\n")
+    prompt_text = [ prompt.body, style&.body, extra_prompt ].compact_blank.join("\n\n")
     provider_options = opts.except(:provider, :model)
     source = source_media.file.blob
     if video?

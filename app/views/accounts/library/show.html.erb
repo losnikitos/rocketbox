@@ -103,6 +103,7 @@
           <tbody class="divide-y divide-ink-900/10">
             <% [
                  [ "Extra prompt", generation.extra_prompt ],
+                 [ "Style", generation.style&.name ],
                  [ "Model", options["model"] ],
                  [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
                  [ "Size", options["resolution"]&.upcase ],

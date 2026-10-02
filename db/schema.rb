@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -367,6 +367,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_090000) do
     t.integer "smm_post_id", null: false
     t.datetime "updated_at", null: false
     t.index ["smm_post_id"], name: "index_smm_slides_on_smm_post_id"
+  end
+
+  create_table "styles", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "subscriptions", force: :cascade do |t|

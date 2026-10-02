@@ -55,6 +55,7 @@ Rails.application.routes.draw do
       resources :recipes, except: :show do
         resources :posts, only: %i[new create], controller: "recipe_posts"
       end
+      resources :styles, except: :show
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
           patch :apply, on: :member
