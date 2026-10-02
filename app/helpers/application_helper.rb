@@ -9,6 +9,16 @@ module ApplicationHelper
     "mt-1 block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-ink-900 shadow-none placeholder:text-ink-400 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 sm:text-sm"
   end
 
+  # Segmented radio group: wrap labels (each holding an sr-only radio) in tw_segments_classes.
+  def tw_segments_classes
+    "flex rounded-xl border border-ink-900/15 bg-white"
+  end
+
+  # Pair with a before:inset-y-* for the divider height.
+  def tw_segment_classes
+    "relative flex-1 cursor-pointer rounded-xl border-2 border-transparent transition before:absolute before:-left-0.5 before:w-px before:bg-ink-900/15 first:before:hidden not-has-checked:hover:bg-stone-50 has-checked:border-rocket has-checked:bg-rocket/10 has-checked:before:hidden [:has(:checked)+&]:before:hidden has-focus-visible:outline-2 has-focus-visible:outline-rocket/30"
+  end
+
   def tw_input_autosave_classes
     "#{tw_input_classes} pr-10"
   end
