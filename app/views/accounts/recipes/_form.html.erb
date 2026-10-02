@@ -1,70 +1,74 @@
 <%# locals: (recipe:) %>
 <% slot_count = [ recipe.media_type_ids.size, 5 ].max %>
-<div class="max-w-2xl space-y-4">
+<div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
     <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
   </nav>
 
-  <%= form_with model: recipe, class: "space-y-4" do |f| %>
-    <% if recipe.errors.any? %>
-      <div class="<%= tw_alert_error_classes %>" role="alert">
-        <ul class="list-inside list-disc">
-          <% recipe.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
+  <div class="grid items-start gap-8 @3xl:grid-cols-2">
+    <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
+      <% if recipe.errors.any? %>
+        <div class="<%= tw_alert_error_classes %>" role="alert">
+          <ul class="list-inside list-disc">
+            <% recipe.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="max-w-md">
+        <%= f.label :name, class: tw_label_classes %>
+        <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
       </div>
+
+      <div>
+        <%= f.label :body, "Prompt", class: tw_label_classes %>
+        <%= f.text_area :body, required: true, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
+      </div>
+
+      <fieldset class="max-w-md">
+        <legend class="<%= tw_label_classes %>">Makes</legend>
+        <div class="<%= tw_segments_classes %>">
+          <% Recipe.formats.each_key do |format| %>
+            <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
+              <%= f.radio_button :format, format, class: "sr-only" %>
+              <%= format.humanize %>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+
+      <div class="max-w-md">
+        <%= render "shared/generation_options", record: recipe, scope: "recipe",
+              refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
+      </div>
+
+      <fieldset class="max-w-md">
+        <legend class="<%= tw_label_classes %>">Photos</legend>
+        <div class="space-y-2">
+          <% slot_count.times do |index| %>
+            <%= select_tag "recipe[media_type_ids][]",
+                  options_for_select(MediaType.ordered.pluck(:name, :id), recipe.media_type_ids[index]),
+                  id: "recipe_media_type_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
+          <% end %>
+        </div>
+      </fieldset>
     <% end %>
 
-    <div class="max-w-md">
-      <%= f.label :name, class: tw_label_classes %>
-      <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
+    <%= render "shared/examples", record: recipe, form_id: "recipe_form" %>
+  </div>
+
+  <div class="flex items-center justify-between gap-2">
+    <% if recipe.persisted? %>
+      <%= link_to "Remove", recipe_path(recipe), data: { turbo_method: :delete, turbo_confirm: "Remove this recipe?" },
+            class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    <% end %>
+    <div class="ml-auto flex items-center gap-2">
+      <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <button type="submit" form="recipe_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
     </div>
-
-    <div>
-      <%= f.label :body, "Prompt", class: tw_label_classes %>
-      <%= f.text_area :body, required: true, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
-    </div>
-
-    <fieldset class="max-w-md">
-      <legend class="<%= tw_label_classes %>">Makes</legend>
-      <div class="<%= tw_segments_classes %>">
-        <% Recipe.formats.each_key do |format| %>
-          <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
-            <%= f.radio_button :format, format, class: "sr-only" %>
-            <%= format.humanize %>
-          </label>
-        <% end %>
-      </div>
-    </fieldset>
-
-    <div class="max-w-md">
-      <%= render "shared/generation_options", record: recipe, scope: "recipe",
-            refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
-    </div>
-
-    <fieldset class="max-w-md">
-      <legend class="<%= tw_label_classes %>">Photos</legend>
-      <div class="space-y-2">
-        <% slot_count.times do |index| %>
-          <%= select_tag "recipe[media_type_ids][]",
-                options_for_select(MediaType.ordered.pluck(:name, :id), recipe.media_type_ids[index]),
-                id: "recipe_media_type_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
-        <% end %>
-      </div>
-    </fieldset>
-
-    <div class="flex items-center justify-between gap-2">
-      <% if recipe.persisted? %>
-        <%= link_to "Remove", recipe_path(recipe), data: { turbo_method: :delete, turbo_confirm: "Remove this recipe?" },
-              class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
-      <% end %>
-      <div class="ml-auto flex items-center gap-2">
-        <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
-        <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
-      </div>
-    </div>
-  <% end %>
+  </div>
 </div>
