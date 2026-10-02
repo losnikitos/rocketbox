@@ -1,9 +1,15 @@
 RubyLLM.configure do |config|
   config.xai_api_key = Rails.application.credentials.dig(:xai, :api_key)
   config.openai_api_key = Rails.application.credentials.dig(:openai, :api_key)
+  config.gemini_api_key = Rails.application.credentials.dig(:gemini, :api_key)
   config.default_model = "grok-4.6"
   config.default_image_model = "grok-imagine-image-2.0"
   config.logger = Rails.logger
+end
+
+# ponytail: ruby_llm 2.0.0 sends Veo's reference image as `inlineData`, which the Gemini API rejects; drop on a gem fix.
+RubyLLM::Protocols::Gemini::Videos.module_eval do
+  private def render_video_image(image) = { bytesBase64Encoded: image.encoded, mimeType: image.mime_type }
 end
 
 # RubyLLM's AR classes inherit from ::ActiveRecord::Base, so they miss the

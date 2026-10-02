@@ -59,10 +59,10 @@ class SmmPost < ApplicationRecord
 
     ratio = ASPECT_RATIOS.fetch(format)
     ratio = "1:1" unless ratio.in?(Generation::IMAGE_OPTIONS.dig(model.provider, "aspect_ratio"))
-    provider_options = if model.provider == "openai"
-      { size: Generation::OPENAI_SIZES.dig(ratio, "2k"), output_format: "jpeg" }
-    else
-      { aspect_ratio: ratio, resolution: "2k" }
+    provider_options = case model.provider
+    when "openai" then { size: Generation::OPENAI_SIZES.dig(ratio, "2k"), output_format: "jpeg" }
+    when "gemini" then { generationConfig: { imageConfig: { aspectRatio: ratio, imageSize: "2K" } } }
+    else { aspect_ratio: ratio, resolution: "2k" }
     end
     result = RubyLLM.paint(recipe.body, model: model.model_id, provider: model.provider.to_sym,
       with: smm_post_media_items.map { it.library_media.file.blob }, provider_options:)
