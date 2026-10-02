@@ -12,7 +12,7 @@
       <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
       <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= @recipe.format %></span>
     </div>
-    <p class="text-sm text-ink-600"><%= @recipe.body %></p>
+    <p class="line-clamp-10 text-sm text-ink-600"><%= @recipe.body %></p>
   </section>
 
   <%= form_with url: recipe_posts_path(@recipe), class: "space-y-6" do |f| %>
@@ -26,7 +26,7 @@
         <% if photos.any? %>
           <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <% photos.each do |media| %>
-              <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+              <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
                 <%= radio_button_tag "media_ids[#{index}]", media.id, params.dig(:media_ids, index.to_s) == media.id.to_s, required: true, class: "sr-only" %>
                 <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover" %>
               </label>
