@@ -28,44 +28,53 @@
 <nav aria-label="Primary" class="mt-6 min-h-0 flex-1 overflow-y-auto px-2">
   <ul class="flex flex-col gap-0.5">
     <li>
-      <span class="inline-flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-ink-700">
-        <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Library
-      </span>
+      <span class="block px-3 py-2 text-sm font-semibold text-ink-900">Library</span>
       <ul class="flex flex-col gap-0.5">
         <li>
-          <%= link_to "Inbox", library_uploads_path,
-                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                aria: { selected: section == :library } %>
+          <%= link_to library_uploads_path,
+                class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :library } do %>
+            <%= heroicon "inbox", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+            Inbox
+          <% end %>
         </li>
         <li>
-          <%= link_to "Photobank", library_photobank_path,
-                class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                aria: { selected: section == :photobank } %>
+          <%= link_to library_photobank_path,
+                class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :photobank } do %>
+            <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+            Photobank
+          <% end %>
         </li>
       </ul>
     </li>
     <% if Current.user&.admin? %>
-      <li>
-        <span class="inline-flex w-full items-center gap-2 px-3 py-2 text-sm font-medium text-ink-700">
-          <%= heroicon "sparkles", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-          Generation
-        </span>
+      <li class="mt-2">
+        <span class="block px-3 py-2 text-sm font-semibold text-ink-900">Generation</span>
         <ul class="flex flex-col gap-0.5">
           <li>
-            <%= link_to "Prompts", prompts_path,
-                  class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                  aria: { selected: section == :prompts } %>
+            <%= link_to prompts_path,
+                  class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                  aria: { selected: section == :prompts } do %>
+              <%= heroicon "chat-bubble-bottom-center-text", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+              Prompts
+            <% end %>
           </li>
           <li>
-            <%= link_to "Recipes", recipes_path,
-                  class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                  aria: { selected: section == :recipes } %>
+            <%= link_to recipes_path,
+                  class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                  aria: { selected: section == :recipes } do %>
+              <%= heroicon "beaker", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+              Recipes
+            <% end %>
           </li>
           <li>
-            <%= link_to "Styles", styles_path,
-                  class: "block w-full rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                  aria: { selected: section == :styles } %>
+            <%= link_to styles_path,
+                  class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                  aria: { selected: section == :styles } do %>
+              <%= heroicon "swatch", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+              Styles
+            <% end %>
           </li>
         </ul>
       </li>
