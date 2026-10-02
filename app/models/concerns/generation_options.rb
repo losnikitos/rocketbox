@@ -14,7 +14,7 @@ module GenerationOptions
       "quality" => %w[low medium] # grok-imagine-image-2.0 only
     },
     "openai" => {
-      "aspect_ratio" => %w[9:16 4:5 1:1 16:9],
+      "aspect_ratio" => %w[9:16 4:5 1:1 4:3 16:9],
       "resolution" => %w[1k 2k 4k],
       "quality" => %w[low medium high]
     },
@@ -29,6 +29,7 @@ module GenerationOptions
     "9:16" => { "1k" => "768x1360", "2k" => "1440x2560", "4k" => "2160x3840" },
     "4:5" => { "1k" => "912x1136", "2k" => "1712x2144", "4k" => "2576x3216" },
     "1:1" => { "1k" => "1024x1024", "2k" => "1920x1920", "4k" => "2880x2880" },
+    "4:3" => { "1k" => "1152x864", "2k" => "2240x1680", "4k" => "3264x2448" },
     "16:9" => { "1k" => "1360x768", "2k" => "2560x1440", "4k" => "3840x2160" }
   }.freeze
   VIDEO_OPTIONS = {
