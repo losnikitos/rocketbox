@@ -1,0 +1,46 @@
+<%# locals: (style:) %>
+<div class="@container space-y-4">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Styles", styles_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page"><%= style.new_record? ? "New style" : style.name_was %></span>
+  </nav>
+
+  <div class="grid items-start gap-8 @3xl:grid-cols-2">
+    <%= form_with model: style, id: "style_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
+      <% if style.errors.any? %>
+        <div class="<%= tw_alert_error_classes %>" role="alert">
+          <ul class="list-inside list-disc">
+            <% style.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="max-w-md">
+        <%= f.label :name, class: tw_label_classes %>
+        <%= f.text_field :name, required: true, autofocus: style.new_record?, placeholder: "Warm film editorial", class: tw_input_classes %>
+      </div>
+
+      <div>
+        <%= f.label :body, "Prompt", class: tw_label_classes %>
+        <%= f.text_area :body, required: true, rows: 6, placeholder: "Soft window light, 35mm film grain, warm muted palette…", class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">Added after the prompt or recipe text.</p>
+      </div>
+    <% end %>
+
+    <%= render "shared/examples", record: style, form_id: "style_form" %>
+  </div>
+
+  <div class="flex items-center justify-between gap-2">
+    <% if style.persisted? %>
+      <%= link_to "Remove", style_path(style), data: { turbo_method: :delete, turbo_confirm: "Remove this style?" },
+            class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    <% end %>
+    <div class="ml-auto flex items-center gap-2">
+      <%= link_to "Cancel", styles_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <button type="submit" form="style_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
+    </div>
+  </div>
+</div>

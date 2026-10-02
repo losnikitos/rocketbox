@@ -65,6 +65,8 @@ module AppHelper
       ] ]
     when "accounts/recipes", "accounts/recipe_posts"
       [ :recipes, "Recipes", [] ]
+    when "accounts/styles"
+      [ :styles, "Styles", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end
