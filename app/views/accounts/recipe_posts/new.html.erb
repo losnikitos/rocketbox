@@ -21,16 +21,37 @@
     <% end %>
 
     <% @slots.each_with_index do |(type, photos), index| %>
-      <fieldset>
+      <fieldset data-controller="media-pick">
         <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= type&.name || "Unknown media type" %></legend>
         <% if photos.any? %>
-          <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            <% photos.each do |media| %>
-              <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                <%= radio_button_tag "media_ids[#{index}]", media.id, params.dig(:media_ids, index.to_s) == media.id.to_s, required: true, class: "sr-only" %>
-                <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover" %>
-              </label>
-            <% end %>
+          <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
+          <% popover_id = "media-pick-#{index}" %>
+          <div class="flex items-center gap-2">
+            <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
+                    aria-label="Choose <%= type&.name&.downcase || "media" %>"
+                    class="flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-ink-900/10 bg-white p-3 text-left text-sm text-ink-600 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+              <span data-media-pick-target="preview" class="block size-24 shrink-0 overflow-hidden rounded-lg">
+                <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover" %>
+              </span>
+              <span class="flex-1"><%= pluralize(photos.size, "photo") %></span>
+              <%= heroicon "chevron-right", options: { class: "size-5 text-ink-400", "aria-hidden": true } %>
+            </button>
+            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light gap-1.5 px-3 py-1.5">
+              <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              Random
+            </button>
+          </div>
+          <div id="<%= popover_id %>" popover data-media-pick-target="popover"
+               style="position-anchor: --<%= popover_id %>"
+               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg">
+            <div class="grid grid-cols-4 gap-2">
+              <% photos.each do |media| %>
+                <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                  <%= radio_button_tag "media_ids[#{index}]", media.id, media == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
+                  <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover" %>
+                </label>
+              <% end %>
+            </div>
           </div>
         <% else %>
           <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
