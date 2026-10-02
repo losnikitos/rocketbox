@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A template for a post: a prompt that composes one image from several photobank photos, one per slot.
+# A template for a post: a prompt that composes one image from several photobank photos, one per slot, plus example media.
 # `media_type_ids` lists the slots in order and may repeat a type (two staff photos).
 # `options` are the defaults for its posts (see GenerationOptions).
 # ponytail: slots are a JSON array, so deleting a media type leaves a recipe slot pointing at nothing
@@ -10,6 +10,7 @@ class Recipe < ApplicationRecord
 
   # Posts outlive their recipe.
   has_many :smm_posts, dependent: :nullify
+  has_many_attached :examples
 
   enum :format, %w[post story reel].index_by(&:itself), validate: true
 

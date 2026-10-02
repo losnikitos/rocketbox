@@ -25,9 +25,9 @@
       <%= form_with model: @new_crawl, url: link_crawls_path(@link), class: "mt-4 space-y-4" do |f| %>
         <fieldset>
           <legend class="<%= tw_label_classes %>">Crawler</legend>
-          <div class="mt-1 inline-flex gap-1 rounded-full bg-ink-900/5 p-1">
+          <div class="<%= tw_segments_classes %> max-w-md">
             <% Crawl::PROVIDERS.each do |key, label| %>
-              <label class="cursor-pointer rounded-full px-3.5 py-1 text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+              <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
                 <%= f.radio_button :provider, key, class: "sr-only" %>
                 <%= label %>
               </label>

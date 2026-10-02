@@ -7,26 +7,33 @@
 <% end %>
 
 <% if @recipes.any? %>
-  <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     <% @recipes.each do |recipe| %>
-      <li id="<%= dom_id(recipe) %>" class="flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-white p-6">
-        <div class="flex items-center justify-between gap-2">
-          <h2 class="text-sm font-semibold text-ink-900"><%= recipe.name %></h2>
-          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.format %></span>
+      <% covered = recipe.examples.any? %>
+      <li id="<%= dom_id(recipe) %>" class="flex flex-col gap-3">
+        <div class="relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+             data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+          <% recipe.examples.each_with_index do |example, index| %>
+            <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+              <%= render "accounts/prompts/example", example:, css: "size-full object-cover" %>
+            </div>
+          <% end %>
+          <%= link_to edit_recipe_path(recipe), class: "absolute inset-0 flex items-start" do %>
+            <span class="w-full p-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+              <%= recipe.name %>
+            </span>
+          <% end %>
         </div>
-        <ul class="flex flex-wrap gap-1.5" aria-label="Photos">
+        <ul class="flex flex-wrap gap-1.5" aria-label="Tags">
+          <li class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.format %></li>
           <% recipe.media_types.each do |type| %>
             <li class="rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600"><%= type&.name || "Unknown" %></li>
           <% end %>
         </ul>
-        <p class="line-clamp-3 flex-1 text-sm text-ink-600"><%= recipe.body %></p>
-        <div class="flex items-center justify-between gap-2">
-          <%= link_to "Edit", edit_recipe_path(recipe), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
-          <%= link_to new_recipe_post_path(recipe), class: "rb-btn-primary gap-1.5 px-3.5 py-1.5 text-sm" do %>
-            <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-            Use recipe
-          <% end %>
-        </div>
+        <%= link_to new_recipe_post_path(recipe), class: "rb-btn-primary mt-auto gap-1.5 px-3.5 py-1.5 text-sm" do %>
+          <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          Use recipe
+        <% end %>
       </li>
     <% end %>
   </ul>

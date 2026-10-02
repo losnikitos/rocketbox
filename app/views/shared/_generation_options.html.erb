@@ -1,7 +1,6 @@
 <%# locals: (record:, scope:, refresh_url:) %>
 <%# A model switch reloads just this frame through the hidden refresh button, so other fields and picked files stay. %>
 <turbo-frame id="generation_options" class="block space-y-4">
-  <% segment_css = "relative flex-1 cursor-pointer rounded-xl border-2 border-transparent transition before:absolute before:-left-0.5 before:w-px before:bg-ink-900/15 first:before:hidden not-has-checked:hover:bg-stone-50 has-checked:border-rocket has-checked:bg-rocket/10 has-checked:before:hidden [:has(:checked)+&]:before:hidden has-focus-visible:outline-2 has-focus-visible:outline-rocket/30" %>
   <% record.option_choices.each do |key, choices| %>
     <% if key == "model" %>
       <div>
@@ -56,13 +55,13 @@
     <% if key == "aspect_ratio" && record.provider == "openai" %>
       <fieldset>
         <legend class="<%= tw_label_classes %>">Aspect ratio</legend>
-        <div class="flex rounded-xl border border-ink-900/15 bg-white">
+        <div class="<%= tw_segments_classes %>">
           <% shapes = { "9:16" => [ "Story", "h-6 aspect-9/16" ], "4:5" => [ "Portrait", "h-6 aspect-4/5" ],
                         "1:1" => [ "Square", "h-5 aspect-square" ], "4:3" => [ "Classic", "w-6 aspect-4/3" ],
                         "16:9" => [ "Landscape", "w-7 aspect-video" ] } %>
           <% choices.each do |value| %>
             <% name, shape = shapes.fetch(value) %>
-            <label class="<%= segment_css %> flex flex-col items-center gap-1 p-2 before:inset-y-4">
+            <label class="<%= tw_segment_classes %> flex flex-col items-center gap-1 p-2 before:inset-y-4">
               <%= radio_button_tag "#{scope}[options][aspect_ratio]", value, record.options["aspect_ratio"] == value, class: "sr-only" %>
               <span class="flex h-6 items-center"><span class="<%= shape %> rounded-sm border-2 border-current text-ink-700" aria-hidden="true"></span></span>
               <span class="text-sm font-medium text-ink-900"><%= name %></span>
@@ -76,9 +75,9 @@
     <% if key == "quality" || (key == "resolution" && !record.video?) %>
       <fieldset>
         <legend class="<%= tw_label_classes %>"><%= key == "quality" ? "Quality" : "Size" %></legend>
-        <div class="flex rounded-xl border border-ink-900/15 bg-white">
+        <div class="<%= tw_segments_classes %>">
           <% [ ("" if key == "quality"), *choices ].compact.each do |value| %>
-            <label class="<%= segment_css %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
+            <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
               <%= radio_button_tag "#{scope}[options][#{key}]", value, record.options[key].to_s == value, class: "sr-only" %>
               <%= value.blank? ? "Auto" : key == "quality" ? value.capitalize : value.upcase %>
             </label>

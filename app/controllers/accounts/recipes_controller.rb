@@ -8,7 +8,7 @@ module Accounts
     before_action :set_recipe, only: %i[edit update destroy]
 
     def index
-      @recipes = Recipe.ordered
+      @recipes = Recipe.with_attached_examples.ordered
     end
 
     def new
@@ -49,10 +49,10 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :format, :body, media_type_ids: [], options: {} ])
+        params.expect(recipe: [ :name, :format, :body, media_type_ids: [], examples: [], options: {} ])
       end
 
-      # The options refresh resubmits the form as a GET.
-      def draft_params = params[:recipe] ? recipe_params : {}
+      # The options refresh resubmits the form as a GET; examples wait for the save.
+      def draft_params = params[:recipe] ? recipe_params.except(:examples) : {}
   end
 end
