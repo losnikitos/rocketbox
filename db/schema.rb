@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_090000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -195,6 +195,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_180000) do
     t.string "kind", default: "image", null: false
     t.integer "media_type_id", null: false
     t.string "name", null: false
+    t.json "options", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["media_type_id"], name: "index_prompts_on_media_type_id"
   end
@@ -205,6 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_180000) do
     t.string "format", default: "post", null: false
     t.json "media_type_ids", default: [], null: false
     t.string "name", null: false
+    t.json "options", default: {}, null: false
     t.datetime "updated_at", null: false
   end
 
@@ -345,6 +347,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_180000) do
     t.datetime "created_at", null: false
     t.text "error_message"
     t.string "format", default: "reel", null: false
+    t.json "options", default: {}, null: false
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"

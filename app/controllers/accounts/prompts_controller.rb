@@ -13,7 +13,7 @@ module Accounts
     end
 
     def new
-      @prompt = Prompt.new
+      @prompt = Prompt.new(draft_params)
     end
 
     def create
@@ -26,6 +26,8 @@ module Accounts
     end
 
     def edit
+      @prompt.assign_attributes(draft_params)
+      @prompt.fill_options
     end
 
     def update
@@ -50,7 +52,10 @@ module Accounts
       end
 
       def prompt_params
-        params.expect(prompt: [ :name, :media_type_id, :kind, :body, examples: [] ])
+        params.expect(prompt: [ :name, :media_type_id, :kind, :body, examples: [], options: {} ])
       end
+
+      # The options refresh resubmits the form as a GET; examples wait for the save.
+      def draft_params = params[:prompt] ? prompt_params.except(:examples) : {}
   end
 end

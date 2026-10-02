@@ -34,73 +34,11 @@
         <%= f.label :extra_prompt, "Extra prompt", class: tw_label_classes %>
         <%= f.text_area :extra_prompt, rows: 3, placeholder: "Added to default prompt", class: tw_input_classes %>
       </div>
-      <% @generation.option_choices.each do |key, choices| %>
-        <% if key == "model" %>
-          <div>
-            <div class="flex items-baseline justify-between gap-2">
-              <span id="generation_options_model" class="<%= tw_label_classes %>">Model</span>
-              <% if Current.user&.admin? %>
-                <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
-              <% end %>
-            </div>
-            <div role="radiogroup" aria-labelledby="generation_options_model" class="divide-y divide-ink-900/10 overflow-hidden rounded-lg border border-ink-900/15 bg-white">
-              <% @generation.models.each do |model| %>
-                <label class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-ink-900 transition hover:bg-stone-50">
-                  <%= model.model_id %>
-                  <%= radio_button_tag "generation[options][model]", model.model_id, @generation.options["model"] == model.model_id, class: "size-4 shrink-0 accent-rocket",
-                        onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
-                </label>
-              <% end %>
-            </div>
-          </div>
-          <% next %>
-        <% end %>
-        <% if key == "aspect_ratio" && @generation.provider == "openai" %>
-          <fieldset>
-            <legend class="<%= tw_label_classes %>">Aspect ratio</legend>
-            <div class="grid grid-cols-4 gap-2">
-              <% shapes = { "9:16" => [ "Story", "h-6 aspect-9/16" ], "4:5" => [ "Portrait", "h-6 aspect-4/5" ],
-                            "1:1" => [ "Square", "h-5 aspect-square" ], "16:9" => [ "Landscape", "w-7 aspect-video" ] } %>
-              <% choices.each do |value| %>
-                <% name, shape = shapes.fetch(value) %>
-                <label class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-ink-900/15 bg-white p-2 transition hover:border-ink-900/30 has-checked:border-rocket has-checked:ring-2 has-checked:ring-rocket/30 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                  <%= radio_button_tag "generation[options][aspect_ratio]", value, @generation.options["aspect_ratio"] == value, class: "sr-only" %>
-                  <span class="flex h-6 items-center"><span class="<%= shape %> rounded-sm border-2 border-current text-ink-700" aria-hidden="true"></span></span>
-                  <span class="text-sm font-medium text-ink-900"><%= name %></span>
-                  <span class="text-xs text-ink-500"><%= value %></span>
-                </label>
-              <% end %>
-            </div>
-          </fieldset>
-          <% next %>
-        <% end %>
-        <% if key == "quality" || (key == "resolution" && !@generation.video?) %>
-          <fieldset>
-            <legend class="<%= tw_label_classes %>"><%= key == "quality" ? "Quality" : "Size" %></legend>
-            <div class="flex gap-1 rounded-full bg-ink-900/5 p-1">
-              <% [ ("" if key == "quality"), *choices ].compact.each do |value| %>
-                <label class="flex-1 cursor-pointer rounded-full px-3 py-1 text-center text-sm font-medium text-ink-600 transition hover:text-ink-900 has-checked:bg-white has-checked:text-ink-900 has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                  <%= radio_button_tag "generation[options][#{key}]", value, @generation.options[key].to_s == value, class: "sr-only" %>
-                  <%= value.blank? ? "Auto" : key == "quality" ? value.capitalize : value.upcase %>
-                </label>
-              <% end %>
-            </div>
-          </fieldset>
-          <% next %>
-        <% end %>
-        <div>
-          <%= label_tag "generation_options_#{key}", key.humanize, class: tw_label_classes %>
-          <%= select_tag "generation[options][#{key}]",
-                options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, @generation.options[key]),
-                id: "generation_options_#{key}", include_blank: "Auto", class: tw_input_classes %>
-        </div>
-      <% end %>
+      <%= render "shared/generation_options", record: @generation, scope: "generation", refresh_url: new_library_media_generation_path(media) %>
       <%= f.button class: "rb-btn-primary w-full gap-1.5" do %>
         <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
         Generate
       <% end %>
-      <%= tag.button name: "refresh", formaction: new_library_media_generation_path(media), formmethod: "get", hidden: true,
-            data: { turbo_frame: ("side_panel" if turbo_frame_request?) } %>
     <% end %>
   </aside>
   </turbo-frame>

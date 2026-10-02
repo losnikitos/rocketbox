@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+# A recipe post's `options` start from the recipe's (see GenerationOptions).
 class SmmPost < ApplicationRecord
+  include GenerationOptions
+
   STATUSES = %w[draft generating ready published failed].freeze
   REACTIONS = %w[up down].freeze
-  # Instagram feed takes 4:5 at most; providers without it get a square.
-  ASPECT_RATIOS = { "story" => "9:16", "reel" => "9:16", "post" => "4:5" }.freeze
   belongs_to :user
   belongs_to :recipe, optional: true
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
@@ -52,20 +53,18 @@ class SmmPost < ApplicationRecord
     update!(status: "published", published_at: Time.current, error_message: nil)
   end
 
+  def video? = false
+
+  def inherited_options = recipe&.options
+
+  # Only recipe posts are generated.
+  def fill_options = (super if recipe)
+
   # One AI call composing the recipe's photos into the post's single slide.
   def generate!
-    model = RubyLLM::ActiveRecord::Model.enabled.where(provider: Generation::IMAGE_OPTIONS.keys).find { it.type == :image }
-    raise "No image model is enabled." unless model
-
-    ratio = ASPECT_RATIOS.fetch(format)
-    ratio = "1:1" unless ratio.in?(Generation::IMAGE_OPTIONS.dig(model.provider, "aspect_ratio"))
-    provider_options = case model.provider
-    when "openai" then { size: Generation::OPENAI_SIZES.dig(ratio, "2k"), output_format: "jpeg" }
-    when "gemini" then { generationConfig: { imageConfig: { aspectRatio: ratio, imageSize: "2K" } } }
-    else { aspect_ratio: ratio, resolution: "2k" }
-    end
-    result = RubyLLM.paint(recipe.body, model: model.model_id, provider: model.provider.to_sym,
-      with: smm_post_media_items.map { it.library_media.file.blob }, provider_options:)
+    opts = ai_options
+    result = RubyLLM.paint(recipe.body, model: opts[:model], provider: opts[:provider],
+      with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
     smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
     update!(status: "ready", error_message: nil)
   rescue StandardError => e

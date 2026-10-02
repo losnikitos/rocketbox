@@ -35,6 +35,11 @@
       </div>
     </fieldset>
 
+    <div class="max-w-md">
+      <%= render "shared/generation_options", record: recipe, scope: "recipe",
+            refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
+    </div>
+
     <fieldset class="max-w-md">
       <legend class="<%= tw_label_classes %>">Photos</legend>
       <div class="space-y-2">

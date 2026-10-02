@@ -77,7 +77,23 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
       generation: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high", duration: "5" } }
     }
     generation = @media.generations.sole
-    assert_equal({ model: "gpt-image-2", size: "2880x2880", quality: "high", provider: :openai }, generation.ai_options)
+    assert_equal({ model: "gpt-image-2", size: "2880x2880", quality: "high", output_format: "jpeg", provider: :openai }, generation.ai_options)
+  end
+
+  test "starts from the prompt's options; picks override them and drop what the new model lacks" do
+    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.",
+      options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k", "quality" => "high" })
+
+    get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id)
+    assert_select "input[name='generation[options][model]'][value='gpt-image-2'][checked]"
+    assert_select "input[name='generation[options][aspect_ratio]'][value='1:1'][checked]"
+    assert_select "input[name='generation[options][resolution]'][value='4k'][checked]"
+    assert_select "input[name='generation[options][quality]'][value='high'][checked]"
+
+    get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id, generation: { options: { model: "grok-imagine-image-2.0", quality: "high" } })
+    assert_select "select[name='generation[options][aspect_ratio]'] option[selected]", text: "1:1"
+    assert_select "input[name='generation[options][resolution]'][value='2k'][checked]"
+    assert_select "input[name='generation[options][quality]'][value=''][checked]"
   end
 
   test "rejects options xAI doesn't offer" do
