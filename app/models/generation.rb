@@ -18,6 +18,10 @@ class Generation < ApplicationRecord
       "aspect_ratio" => %w[9:16 4:5 1:1 16:9],
       "resolution" => %w[1k 2k 4k],
       "quality" => %w[low medium high]
+    },
+    "gemini" => {
+      "aspect_ratio" => %w[1:1 2:3 3:2 3:4 4:3 4:5 5:4 9:16 16:9 21:9],
+      "resolution" => %w[1k 2k 4k]
     }
   }.freeze
   # OpenAI takes an exact size (gpt-image-2+ only: edges multiple of 16, 655,360..8,294,400 px, max 3840x2160;
@@ -33,6 +37,11 @@ class Generation < ApplicationRecord
       "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3],
       "resolution" => %w[480p 720p 1080p], # 1080p on grok-imagine-video-1.5 only
       "duration" => (1..15).map(&:to_s)
+    },
+    "gemini" => {
+      "aspect_ratio" => %w[9:16 16:9],
+      "resolution" => %w[720p 1080p], # 1080p needs 8s
+      "duration" => %w[4 6 8]
     }
   }.freeze
 
@@ -70,6 +79,7 @@ class Generation < ApplicationRecord
   def ai_options
     opts = options.symbolize_keys.tap { it[:duration] = it[:duration].to_i if it[:duration] }
     opts[:size] = OPENAI_SIZES.dig(opts.delete(:aspect_ratio), opts.delete(:resolution)) if provider == "openai"
+    opts = gemini_options(opts) if provider == "gemini"
     opts.compact.merge(provider: provider.to_sym)
   end
 
@@ -110,5 +120,14 @@ class Generation < ApplicationRecord
       return { "model" => model, "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "8" } if video?
 
       { "model" => model, "aspect_ratio" => "9:16", "resolution" => "2k" }
+    end
+
+    # Gemini takes raw request-body fields: Nano Banana's imageConfig, Veo's predict parameters.
+    def gemini_options(opts)
+      if video?
+        { model: opts[:model], parameters: { aspectRatio: opts[:aspect_ratio], resolution: opts[:resolution], durationSeconds: opts[:duration] }.compact }
+      else
+        { model: opts[:model], generationConfig: { imageConfig: { aspectRatio: opts[:aspect_ratio], imageSize: opts[:resolution]&.upcase }.compact } }
+      end
     end
 end
