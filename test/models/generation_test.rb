@@ -19,12 +19,12 @@ class GenerationTest < ActiveSupport::TestCase
 
   test "run! paints the source with the prompt and extra prompt and attaches the result" do
     calls = []
-    RubyLLM.define_singleton_method(:paint) { |prompt, with:, **| calls << [ prompt, with.filename.to_s ]; RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes")) }
+    RubyLLM.define_singleton_method(:paint) { |prompt, with:, **| calls << [ prompt, with.filename.to_s ]; RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 }) }
 
     @generation.run!
 
     assert_equal [ [ "Polish the shot.\n\nWarmer.", "a.jpg" ] ], calls
-    assert_equal "complete", @generation.reload.status
+    assert_equal [ "complete", 0.04 ], [ @generation.reload.status, @generation.cost ]
     assert_equal "jpeg-bytes", @generation.generated_media.file.download
     assert_equal "photo", @generation.generated_media.kind
   end
