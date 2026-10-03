@@ -52,6 +52,7 @@ Rails.application.routes.draw do
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
       resources :prompts, except: :show
+      resources :shots, except: :show
       resources :recipes, except: :show do
         resources :posts, only: %i[new create], controller: "recipe_posts"
       end

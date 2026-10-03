@@ -49,7 +49,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :format, :body, media_type_ids: [], examples: [], options: {} ])
+        params.expect(recipe: [ :name, :format, :body, :shot_group, media_type_ids: [], examples: [], options: {} ])
       end
 
       # The options refresh resubmits the form as a GET; examples wait for the save.

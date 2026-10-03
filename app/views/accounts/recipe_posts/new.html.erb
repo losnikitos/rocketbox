@@ -62,6 +62,42 @@
       </fieldset>
     <% end %>
 
+    <% if @shots %>
+      <fieldset data-controller="media-pick">
+        <legend class="<%= tw_label_classes %>">Shot</legend>
+        <% if @shots.any? %>
+          <% selected = @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample %>
+          <div class="flex items-center gap-2">
+            <button type="button" popovertarget="shot-pick" style="anchor-name: --shot-pick" aria-label="Choose shot"
+                    class="flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-ink-900/10 bg-white p-3 text-left transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+              <span data-media-pick-target="preview" class="min-w-0 flex-1">
+                <%= render "shot_option", shot: selected %>
+              </span>
+              <%= heroicon "chevron-right", options: { class: "size-5 shrink-0 text-ink-400", "aria-hidden": true } %>
+            </button>
+            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light gap-1.5 px-3 py-1.5">
+              <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              Random
+            </button>
+          </div>
+          <div id="shot-pick" popover data-media-pick-target="popover" style="position-anchor: --shot-pick"
+               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+            <% @shots.each do |shot| %>
+              <label class="block cursor-pointer rounded-lg px-3 py-2 transition hover:bg-ink-900/5 has-checked:bg-rocket/10 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                <%= radio_button_tag :shot_id, shot.id, shot == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
+                <%= render "shot_option", shot: %>
+              </label>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
+            No <%= @recipe.shot_group %> shots yet.
+            <%= link_to "Add some", shots_path(group: @recipe.shot_group), class: "underline hover:text-ink-900" %>
+          </p>
+        <% end %>
+      </fieldset>
+    <% end %>
+
     <div class="max-w-md">
       <%= render "shared/generation_options", record: @post, scope: "smm_post", refresh_url: new_recipe_post_path(@recipe) %>
     </div>

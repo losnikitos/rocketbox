@@ -14,7 +14,7 @@ module Accounts
     end
 
     def show
-      @post = Current.account.smm_posts.includes(:library_media, smm_slides: { media_attachment: :blob }).find(params[:id])
+      @post = Current.account.smm_posts.includes(:recipe, :shot, { library_media: [ :media_type, { file_attachment: :blob } ] }, smm_slides: { media_attachment: :blob }).find(params[:id])
     end
 
     def publish

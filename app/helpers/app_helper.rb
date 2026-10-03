@@ -63,6 +63,14 @@ module AppHelper
         :separator,
         *MediaType.ordered.map { |t| [ prompts_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
       ] ]
+    when "accounts/shots"
+      index = action_name == "index"
+      counts = Shot.group(:group).count
+      [ :shots, "Shots", [
+        [ shots_path, "All", index && params[:group].blank?, counts.values.sum ],
+        :separator,
+        *counts.sort.map { |group, count| [ shots_path(group:), group, index && params[:group] == group, count ] }
+      ] ]
     when "accounts/recipes", "accounts/recipe_posts"
       [ :recipes, "Recipes", [] ]
     when "accounts/styles"

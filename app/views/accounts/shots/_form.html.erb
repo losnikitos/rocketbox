@@ -1,0 +1,56 @@
+<%# locals: (shot:) %>
+<div class="@container space-y-4">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Shots", shots_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page"><%= shot.new_record? ? "New shot" : shot.name_was %></span>
+  </nav>
+
+  <div class="grid items-start gap-8 @3xl:grid-cols-2">
+    <%= form_with model: shot, id: "shot_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
+      <% if shot.errors.any? %>
+        <div class="<%= tw_alert_error_classes %>" role="alert">
+          <ul class="list-inside list-disc">
+            <% shot.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="max-w-md">
+        <%= f.label :name, class: tw_label_classes %>
+        <%= f.text_field :name, required: true, autofocus: shot.new_record?, placeholder: "Empty Chair", class: tw_input_classes %>
+      </div>
+
+      <div class="max-w-md">
+        <%= f.label :group, class: tw_label_classes %>
+        <%= f.text_field :group, required: true, list: "shot_groups", placeholder: "Daily", class: tw_input_classes %>
+        <datalist id="shot_groups">
+          <% Shot.groups.each do |group| %>
+            <option value="<%= group %>"></option>
+          <% end %>
+        </datalist>
+      </div>
+
+      <div>
+        <%= f.label :body, "Prompt", class: tw_label_classes %>
+        <%= f.text_area :body, required: true, rows: 6, placeholder: "The empty barber chair waiting for the next client…", class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">Added after the recipe text.</p>
+      </div>
+    <% end %>
+
+    <%= render "shared/examples", record: shot, form_id: "shot_form" %>
+  </div>
+
+  <div class="flex items-center justify-between gap-2">
+    <% if shot.persisted? %>
+      <%= link_to "Remove", shot_path(shot), data: { turbo_method: :delete, turbo_confirm: "Remove this shot?" },
+            class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    <% end %>
+    <div class="ml-auto flex items-center gap-2">
+      <%= link_to "Cancel", shots_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <button type="submit" form="shot_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
+    </div>
+  </div>
+</div>
