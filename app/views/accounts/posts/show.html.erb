@@ -2,6 +2,8 @@
 
 <% status_pill_class = smm_post_status_pill_class(@post.status) %>
 
+<%= turbo_stream_from @post if @post.generating? %>
+
 <div class="flex items-start justify-between gap-4">
   <div class="min-w-0">
     <p class="text-sm text-ink-500">

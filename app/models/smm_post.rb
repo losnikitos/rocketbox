@@ -23,6 +23,8 @@ class SmmPost < ApplicationRecord
 
   scope :recent, -> { order(created_at: :desc) }
 
+  after_update_commit :broadcast_refresh, if: :saved_change_to_status?
+
   def draft?
     status == "draft"
   end
