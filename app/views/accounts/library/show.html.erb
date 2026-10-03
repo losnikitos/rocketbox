@@ -98,26 +98,7 @@
           <p class="text-sm text-signal-red"><%= generation.error %></p>
         <% end %>
         <%= render "accounts/prompts/card", prompt: generation.prompt %>
-        <% options = generation.options.to_h %>
-        <table class="w-full text-sm">
-          <tbody class="divide-y divide-ink-900/10">
-            <% [
-                 [ "Extra prompt", generation.extra_prompt ],
-                 [ "Style", generation.style&.name ],
-                 [ "Model", options["model"] ],
-                 [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
-                 [ "Size", options["resolution"]&.upcase ],
-                 [ "Duration", options["duration"]&.then { "#{it} s" } ],
-                 [ "Quality", (options["quality"]&.capitalize || "Auto" unless generation.video?) ]
-               ].each do |label, value| %>
-              <% next if value.blank? %>
-              <tr>
-                <th scope="row" class="w-28 py-1.5 pr-3 text-left align-top font-normal text-ink-500"><%= label %></th>
-                <td class="py-1.5 text-ink-900"><span class="line-clamp-3" title="<%= value %>"><%= value %></span></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+        <%= render "accounts/generations/options", record: generation, rows: [ [ "Extra prompt", generation.extra_prompt ] ] %>
       </section>
     <% end %>
 

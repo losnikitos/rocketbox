@@ -1,0 +1,21 @@
+<%# locals: (record:, rows: []) %>
+<% options = record.options.to_h %>
+<table class="w-full text-sm">
+  <tbody class="divide-y divide-ink-900/10">
+    <% [
+         *rows,
+         [ "Style", record.style&.name ],
+         [ "Model", options["model"] ],
+         [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
+         [ "Size", options["resolution"]&.upcase ],
+         [ "Duration", options["duration"]&.then { "#{it} s" } ],
+         [ "Quality", (options["quality"]&.capitalize || "Auto" unless record.video?) ]
+       ].each do |label, value| %>
+      <% next if value.blank? %>
+      <tr>
+        <th scope="row" class="w-28 py-1.5 pr-3 text-left align-top font-normal text-ink-500"><%= label %></th>
+        <td class="py-1.5 text-ink-900"><span class="line-clamp-3" title="<%= strip_tags(value.to_s) %>"><%= value %></span></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

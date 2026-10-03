@@ -8,6 +8,7 @@ class SmmPost < ApplicationRecord
   REACTIONS = %w[up down].freeze
   belongs_to :user
   belongs_to :recipe, optional: true
+  belongs_to :shot, optional: true
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
   has_many :smm_slides, -> { order(:position) }, dependent: :destroy
@@ -16,6 +17,7 @@ class SmmPost < ApplicationRecord
   enum :format, %w[post story reel].index_by(&:itself), validate: true
 
   validates :status, presence: true, inclusion: { in: STATUSES }
+  normalizes :reaction, :reaction_comment, with: ->(value) { value.strip.presence }
   validates :reaction, inclusion: { in: REACTIONS }, allow_nil: true
   validate :media_fit_recipe, on: :create, if: :recipe
 
@@ -61,9 +63,11 @@ class SmmPost < ApplicationRecord
   def fill_options = (super if recipe)
 
   # One AI call composing the recipe's photos into the post's single slide.
+  # `prompt` keeps the text as sent; the recipe, shot and style may change later.
   def generate!
     opts = ai_options
-    result = RubyLLM.paint([ recipe.body, style&.body ].compact_blank.join("\n\n"), model: opts[:model], provider: opts[:provider],
+    self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n")
+    result = RubyLLM.paint(prompt, model: opts[:model], provider: opts[:provider],
       with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
     smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
     update!(status: "ready", error_message: nil)
@@ -79,5 +83,6 @@ class SmmPost < ApplicationRecord
       fits = media.size == recipe.media_type_ids.size && media.uniq.size == media.size &&
         media.zip(recipe.media_type_ids).all? { |item, type_id| item.photobank? && item.user_id == user_id && item.media_type_id == type_id && item.story_image? }
       errors.add(:base, "Pick a different photobank photo for every slot.") unless fits
+      errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
     end
 end

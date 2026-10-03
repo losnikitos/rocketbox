@@ -15,6 +15,8 @@ class Recipe < ApplicationRecord
   enum :format, %w[post story reel].index_by(&:itself), validate: true
 
   before_validation { self.media_type_ids = Array(media_type_ids).compact_blank.map(&:to_i) }
+  # The shot group its posts pick a shot from; nil takes no shot.
+  normalizes :shot_group, with: ->(value) { value.strip.presence }
 
   validates :name, :body, :media_type_ids, presence: true
   validate do
@@ -27,10 +29,10 @@ class Recipe < ApplicationRecord
 
   def media_types = MediaType.where(id: media_type_ids).index_by(&:id).values_at(*media_type_ids)
 
-  # `media` are library media in slot order; `options` override the recipe's. Raises ActiveRecord::RecordInvalid
-  # when the media don't fit the slots or an option isn't available.
-  def create_post!(user:, media:, options: {})
-    post = smm_posts.new(user:, format:, status: "generating", options:)
+  # `media` are library media in slot order; `shot` is from the recipe's shot group; `options` override the recipe's.
+  # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit or an option isn't available.
+  def create_post!(user:, media:, shot: nil, options: {})
+    post = smm_posts.new(user:, format:, shot:, status: "generating", options:)
     media.each_with_index { |item, position| post.smm_post_media_items.build(library_media: item, position:) }
     post.save!
     GenerateSmmPostJob.perform_later(post.id)

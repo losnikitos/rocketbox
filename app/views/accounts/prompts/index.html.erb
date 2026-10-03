@@ -7,7 +7,7 @@
 <% end %>
 
 <% if @prompts.any? %>
-  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
     <% @prompts.each do |prompt| %>
       <% covered = prompt.examples.any? %>
       <li id="<%= dom_id(prompt) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"

@@ -56,6 +56,12 @@
           <% end %>
         </div>
       </fieldset>
+
+      <div class="max-w-md">
+        <%= f.label :shot_group, "Shot", class: tw_label_classes %>
+        <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">A shot from this group is picked for each post and added after the prompt.</p>
+      </div>
     <% end %>
 
     <%= render "shared/examples", record: recipe, form_id: "recipe_form" %>

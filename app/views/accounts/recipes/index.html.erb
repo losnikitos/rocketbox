@@ -29,6 +29,9 @@
           <% recipe.media_types.each do |type| %>
             <li class="rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600"><%= type&.name || "Unknown" %></li>
           <% end %>
+          <% if recipe.shot_group %>
+            <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600"><%= recipe.shot_group %> shot</li>
+          <% end %>
         </ul>
         <%= link_to new_recipe_post_path(recipe), class: "rb-btn-primary mt-auto gap-1.5 px-3.5 py-1.5 text-sm" do %>
           <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_210000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -207,6 +207,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.json "media_type_ids", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
+    t.string "shot_group"
     t.datetime "updated_at", null: false
   end
 
@@ -330,6 +331,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "shots", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "group", default: "Daily", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "smm_post_media_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "library_media_id", null: false
@@ -348,14 +357,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.text "error_message"
     t.string "format", default: "reel", null: false
     t.json "options", default: {}, null: false
+    t.text "prompt"
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
     t.integer "recipe_id"
+    t.integer "shot_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["recipe_id"], name: "index_smm_posts_on_recipe_id"
+    t.index ["shot_id"], name: "index_smm_posts_on_shot_id"
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_smm_posts_on_user_id"
@@ -448,6 +460,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
   add_foreign_key "smm_posts", "recipes"
+  add_foreign_key "smm_posts", "shots"
   add_foreign_key "smm_posts", "users"
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
