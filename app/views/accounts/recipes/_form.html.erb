@@ -48,13 +48,20 @@
 
       <fieldset class="max-w-md">
         <legend class="<%= tw_label_classes %>">Photos</legend>
-        <div class="space-y-2">
+        <div id="recipe_media_type_slots" class="space-y-2">
           <% slot_count.times do |index| %>
             <%= select_tag "recipe[media_type_ids][]",
                   options_for_select(MediaType.ordered.pluck(:name, :id), recipe.media_type_ids[index]),
                   id: "recipe_media_type_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
           <% end %>
         </div>
+        <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
+                onclick="const slots = document.getElementById('recipe_media_type_slots'), slot = slots.lastElementChild.cloneNode(true);
+                         slot.value = ''; slot.id = `recipe_media_type_ids_${slots.children.length}`; slot.ariaLabel = `Photo ${slots.children.length + 1}`;
+                         slots.append(slot); slot.focus()">
+          <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+          Add photo
+        </button>
       </fieldset>
 
       <div class="max-w-md">
