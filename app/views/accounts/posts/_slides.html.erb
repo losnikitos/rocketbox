@@ -26,7 +26,15 @@
           </button>
         </div>
       <% elsif slide.media.attached? %>
-        <%= image_tag url_for(slide.media), alt: "Slide #{index + 1}", class: "#{aspect} w-full rounded-lg bg-ink-900/5 object-cover" %>
+        <% lightbox_id = "slide-#{slide.id}" %>
+        <button type="button" popovertarget="<%= lightbox_id %>" aria-label="View slide <%= index + 1 %>" class="block w-full cursor-zoom-in">
+          <%= image_tag url_for(slide.media), alt: "Slide #{index + 1}", class: "#{aspect} w-full rounded-lg bg-ink-900/5 object-cover" %>
+        </button>
+        <div id="<%= lightbox_id %>" popover class="size-full bg-black/90 p-4">
+          <button type="button" popovertarget="<%= lightbox_id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
+            <%= image_tag url_for(slide.media), alt: "Slide #{index + 1}", class: "max-h-full max-w-full" %>
+          </button>
+        </div>
       <% end %>
     </li>
   <% end %>

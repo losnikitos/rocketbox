@@ -61,7 +61,9 @@ module GenerationOptions
   def option_sets = video? ? VIDEO_OPTIONS : IMAGE_OPTIONS
 
   def models
-    (@models ||= {})[video?] ||= RubyLLM::ActiveRecord::Model.enabled.where(provider: option_sets.keys).select { it.type == (video? ? :video : :image) }
+    (@models ||= {})[video?] ||= RubyLLM::ActiveRecord::Model.enabled.where(provider: option_sets.keys)
+      .select { it.type == (video? ? :video : :image) }
+      .sort_by.with_index { |model, i| [ model.price_band || 4, i ] } # cheapest first, unbanded last
   end
 
   def provider = (models.find { it.model_id == options["model"] } || models.first)&.provider || option_sets.keys.first

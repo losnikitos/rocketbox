@@ -13,7 +13,14 @@
         <div role="radiogroup" aria-labelledby="<%= scope %>_options_model" class="divide-y divide-ink-900/10 overflow-hidden rounded-xl border border-ink-900/15 bg-white">
           <% record.models.each do |model| %>
             <label class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-ink-900 transition hover:bg-stone-50">
-              <%= model.model_id %>
+              <span class="flex-1"><%= model.model_id %></span>
+              <% if (band = model.price_band) %>
+                <span role="img" aria-label="Price <%= "£" * band %>" title="<%= "£" * band %>" class="inline-flex">
+                  <% 3.times do |i| %>
+                    <%= heroicon "currency-pound", variant: :micro, options: { class: "size-4 #{i < band ? "text-ink-700" : "text-ink-900/15"}" } %>
+                  <% end %>
+                </span>
+              <% end %>
               <%= radio_button_tag "#{scope}[options][model]", model.model_id, record.options["model"] == model.model_id, class: "size-4 shrink-0 accent-rocket",
                     onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
             </label>

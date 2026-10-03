@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_220000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -254,6 +254,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_210000) do
     t.string "model_id", null: false
     t.string "name", null: false
     t.integer "position"
+    t.integer "price_band"
     t.json "pricing", default: {}
     t.string "provider", null: false
     t.datetime "unlisted_at"
