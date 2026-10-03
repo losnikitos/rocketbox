@@ -56,7 +56,9 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     @admin = sign_in_as(users(:admin_user))
 
     get new_prompt_url(account: @admin.id)
-    assert_select "turbo-frame#generation_options input[name='prompt[options][model]'][value='grok-imagine-image-2.0'][checked]"
+    assert_select "turbo-frame#generation_options input[name='prompt[options][model]'][value='gpt-image-2.5-flare'][checked]"
+    assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("input[name='prompt[options][model]']").map { it["value"] }
+    assert_select "[role=img][aria-label='Price £££']", 1
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_prompt_path(account: @admin.id)
 
     get new_prompt_url(account: @admin.id, prompt: { kind: "video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })

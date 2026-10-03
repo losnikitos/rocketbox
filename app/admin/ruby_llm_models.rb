@@ -1,6 +1,7 @@
 ActiveAdmin.register RubyLLM::ActiveRecord::Model, as: "Model" do
   menu parent: "RubyLLM"
-  actions :index, :show
+  actions :index, :show, :edit, :update
+  permit_params :price_band
   config.sort_order = "position_asc"
   order_by(:position) { |clause| "#{clause.to_sql} NULLS LAST" }
 
@@ -52,9 +53,17 @@ ActiveAdmin.register RubyLLM::ActiveRecord::Model, as: "Model" do
     column :name
     column :enabled
     column :position
+    column(:price_band) { |model| "£" * model.price_band.to_i }
     column :context_window
     column :max_output_tokens
     column :unlisted_at
     actions
+  end
+
+  form do |f|
+    f.inputs do
+      f.input :price_band, as: :select, collection: { "£" => 1, "££" => 2, "£££" => 3 }, hint: "Cost of a 2K image; sorts the model picker, cheapest first"
+    end
+    f.actions
   end
 end
