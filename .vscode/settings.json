@@ -1,4 +1,5 @@
 {
+  "task.autoDetect": "off",
   "workbench.colorCustomizations": {
     "activityBar.background": "#102877",
     "titleBar.activeBackground": "#1C3DB0",
