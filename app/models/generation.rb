@@ -40,6 +40,7 @@ class Generation < ApplicationRecord
       file = { io: StringIO.new(result.to_blob), filename: "ai-video.mp4", content_type: "video/mp4" }
     else
       result = RubyLLM.paint(prompt_text, model: opts[:model], provider: opts[:provider], with: source, provider_options:)
+      self.cost = result.cost.total
       file = { io: StringIO.new(result.to_blob), filename: "ai-image.jpg", content_type: "image/jpeg" }
     end
     generated_media.update!(kind: video? ? "video" : "photo", file:)

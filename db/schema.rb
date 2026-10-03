@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_230000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -86,6 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_220000) do
   end
 
   create_table "generations", force: :cascade do |t|
+    t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error"
     t.text "extra_prompt"
@@ -354,6 +355,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_220000) do
 
   create_table "smm_posts", force: :cascade do |t|
     t.text "caption"
+    t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error_message"
     t.string "format", default: "reel", null: false

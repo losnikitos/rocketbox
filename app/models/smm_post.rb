@@ -70,7 +70,7 @@ class SmmPost < ApplicationRecord
     result = RubyLLM.paint(prompt, model: opts[:model], provider: opts[:provider],
       with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
     smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
-    update!(status: "ready", error_message: nil)
+    update!(status: "ready", error_message: nil, cost: result.cost.total)
   rescue StandardError => e
     Rails.logger.error("[SmmPost#generate!] id=#{id} #{e.class}: #{e.message}")
     update!(status: "failed", error_message: e.message.to_s.truncate(1000))

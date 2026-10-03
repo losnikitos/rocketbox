@@ -28,7 +28,7 @@ class RecipeTest < ActiveSupport::TestCase
     calls = []
     RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|
       calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
-      RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
+      RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 })
     end
     @recipe.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
     post = @recipe.create_post!(user: @user, media: [ @interior, @customer ], options: { "quality" => "low" })
@@ -36,7 +36,7 @@ class RecipeTest < ActiveSupport::TestCase
     post.generate!
 
     assert_equal [ [ "Compose a collage.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
-    assert_equal [ "ready", "post" ], [ post.reload.status, post.format ]
+    assert_equal [ "ready", "post", 0.04 ], [ post.reload.status, post.format, post.cost ]
     assert_equal [ "jpeg-bytes" ], post.smm_slides.map { it.media.download }
   end
 

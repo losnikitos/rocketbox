@@ -9,7 +9,8 @@
          [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
          [ "Size", options["resolution"]&.upcase ],
          [ "Duration", options["duration"]&.then { "#{it} s" } ],
-         [ "Quality", (options["quality"]&.capitalize || "Auto" unless record.video?) ]
+         [ "Quality", (options["quality"]&.capitalize || "Auto" unless record.video?) ],
+         [ "Cost", record.cost && number_to_currency(record.cost, precision: 3) ]
        ].each do |label, value| %>
       <% next if value.blank? %>
       <tr>
