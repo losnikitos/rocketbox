@@ -62,6 +62,20 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "624 followers"
   end
 
+  test "admin's instagram redirect_uri skips the account param and matches on exchange" do
+    admin = sign_in_as(users(:admin_user))
+    query = exchanged = nil
+    stub_instagram_oauth do
+      InstagramOauth.define_singleton_method(:exchange) { |code:, redirect_uri:| exchanged = redirect_uri; "t" }
+      get profile_instagram_authorize_url(account: admin.id)
+      query = Rack::Utils.parse_query(URI.parse(response.location).query)
+      get profile_instagram_callback_url(account: admin.id), params: { code: "abc", state: query["state"] }
+    end
+
+    assert_equal "http://www.example.com/app/profile/instagram/callback", query["redirect_uri"]
+    assert_equal query["redirect_uri"], exchanged
+  end
+
   test "instagram oauth callback rejects bad state" do
     stub_instagram_oauth do
       get profile_instagram_authorize_url
