@@ -9,8 +9,8 @@ module WhatsappCloud
 
   API_VERSION = "v21.0"
   GRAPH_BASE = "https://graph.facebook.com/#{API_VERSION}"
-  PHONES = { "Test" => "15551712639", "Prod" => "447451273884" }.freeze
-  PHONE_NUMBER_IDS = { "Test" => "1238456642695224", "Prod" => "1237261782813765" }.freeze
+  PHONES = { "Test" => "15551540920", "Prod" => "447451273884" }.freeze
+  PHONE_NUMBER_IDS = { "Test" => "1369590492903246", "Prod" => "1344349375436017" }.freeze
 
   module_function
 

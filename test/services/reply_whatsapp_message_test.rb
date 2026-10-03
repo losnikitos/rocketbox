@@ -14,7 +14,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "START"))
     ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " start "))
 
-    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", body: WhatsappOnboarding::MESSAGES["business_card"] } ] * 2, sent
+    assert_equal [ { phone_number_id: "1369590492903246", to: "15551234567", body: WhatsappOnboarding::MESSAGES["business_card"] } ] * 2, sent
     assert_equal "business_card", user.reload.whatsapp_pending_question
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original)
@@ -64,7 +64,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     2.times { ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "check https://trustpilot.com/review/x.")) }
 
     assert_equal [ [ "https://trustpilot.com/review/x", "whatsapp" ] ], user.links.pluck(:url, :source)
-    assert_equal [ { phone_number_id: "1238456642695224", to: "15551234567", message_id: "wamid.text" } ] * 2, reactions
+    assert_equal [ { phone_number_id: "1369590492903246", to: "15551234567", message_id: "wamid.text" } ] * 2, reactions
     assert_empty sent
   ensure
     WhatsappCloud.define_singleton_method(:react, original_react)
@@ -88,7 +88,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
           "changes" => [ {
             "field" => "messages",
             "value" => {
-              "metadata" => { "phone_number_id" => "1238456642695224" },
+              "metadata" => { "phone_number_id" => "1369590492903246" },
               "messages" => [ message ]
             }
           } ]

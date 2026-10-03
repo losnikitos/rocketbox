@@ -82,7 +82,7 @@ class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
           "changes" => [ {
             "field" => "messages",
             "value" => {
-              "metadata" => { "phone_number_id" => "1238456642695224" },
+              "metadata" => { "phone_number_id" => "1369590492903246" },
               "messages" => [ { "from" => "15551234567", "id" => "wamid.text", "type" => "text", "text" => { "body" => body } } ]
             }
           } ]
