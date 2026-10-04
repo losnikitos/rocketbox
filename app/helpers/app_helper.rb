@@ -75,6 +75,8 @@ module AppHelper
       [ :layers, "Layers", [] ]
     when "accounts/recipes", "accounts/recipe_posts"
       [ :recipes, "Recipes", [] ]
+    when "accounts/features"
+      [ :features, "Features", [] ]
     when "accounts/styles"
       [ :styles, "Styles", [] ]
     else

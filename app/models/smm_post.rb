@@ -64,15 +64,22 @@ class SmmPost < ApplicationRecord
   # Only recipe posts are generated.
   def fill_options = (super if recipe)
 
-  # One AI call composing the recipe's photos into the post's single slide.
-  # `prompt` keeps the text as sent; the recipe, shot and style may change later.
+  def feature = (Feature.find(feature_slug) if feature_slug)
+
+  # A feature post renders its layer over its photo. A recipe post is one AI call composing the recipe's photos into the post's single slide;
+  # `prompt` keeps the text as sent, as the recipe, shot and style may change later.
   def generate!
-    opts = ai_options
-    self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n")
-    result = RubyLLM.paint(prompt, model: opts[:model], provider: opts[:provider],
-      with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
-    smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
-    update!(status: "ready", error_message: nil, cost: result.cost.total)
+    if feature
+      smm_slides.create!(media: { io: StringIO.new(feature.render(self)), filename: "#{feature_slug}.png", content_type: "image/png" })
+      update!(status: "ready", error_message: nil)
+    else
+      opts = ai_options
+      self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n")
+      result = RubyLLM.paint(prompt, model: opts[:model], provider: opts[:provider],
+        with: smm_post_media_items.map { it.library_media.file.blob }, provider_options: opts.except(:provider, :model))
+      smm_slides.create!(media: { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" })
+      update!(status: "ready", error_message: nil, cost: result.cost.total)
+    end
   rescue StandardError => e
     Rails.logger.error("[SmmPost#generate!] id=#{id} #{e.class}: #{e.message}")
     update!(status: "failed", error_message: e.message.to_s.truncate(1000))

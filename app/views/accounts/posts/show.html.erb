@@ -93,14 +93,18 @@
     <% end %>
   </div>
 
-  <% if Current.user.admin? && (@post.recipe || @post.prompt) %>
+  <% if Current.user.admin? && (@post.recipe || @post.prompt || @post.feature) %>
     <aside id="generation" class="w-full shrink-0 space-y-6 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108" aria-labelledby="generation-heading">
       <h2 id="generation-heading" class="text-sm font-medium text-ink-900">Generation</h2>
 
-      <%= render "accounts/generations/options", record: @post, rows: [
-            [ "Recipe", @post.recipe ? link_to(@post.recipe.name, edit_recipe_path(@post.recipe), class: "underline hover:text-ink-600") : "Deleted" ],
-            [ "Shot", @post.shot && link_to(@post.shot.name, edit_shot_path(@post.shot), class: "underline hover:text-ink-600") ]
-          ] %>
+      <% if @post.feature %>
+        <p class="text-sm text-ink-500">Feature <%= link_to @post.feature.name, features_path, class: "ml-2 text-ink-900 underline hover:text-ink-600" %></p>
+      <% else %>
+        <%= render "accounts/generations/options", record: @post, rows: [
+              [ "Recipe", @post.recipe ? link_to(@post.recipe.name, edit_recipe_path(@post.recipe), class: "underline hover:text-ink-600") : "Deleted" ],
+              [ "Shot", @post.shot && link_to(@post.shot.name, edit_shot_path(@post.shot), class: "underline hover:text-ink-600") ]
+            ] %>
+      <% end %>
 
       <% if @post.library_media.any? %>
         <section aria-labelledby="generation-photos-heading">

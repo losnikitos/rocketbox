@@ -21,6 +21,10 @@ class Layer
     new(slug: "fully-booked", name: "Fully booked", size: [ 1080, 1920 ], fields: [
       Field.new(:headline, "Text", :text, "Fully Booked"),
       Field.new(:date, "Date", :date, -> { Date.current })
+    ]),
+    new(slug: "daily", name: "Daily", size: [ 1080, 1920 ], fields: [
+      Field.new(:time, "Time", :text, "09:45"),
+      Field.new(:caption, "Caption", :text, "first clients")
     ])
   ].freeze
 
