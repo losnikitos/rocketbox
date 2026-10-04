@@ -59,6 +59,8 @@ class SmmPost < ApplicationRecord
 
   def video? = false
 
+  def styled? = true
+
   def inherited_options = recipe&.options
 
   # Only recipe posts are generated.

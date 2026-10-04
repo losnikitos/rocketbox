@@ -27,6 +27,8 @@ class Recipe < ApplicationRecord
 
   def video? = false
 
+  def styled? = true
+
   def media_types = MediaType.where(id: media_type_ids).index_by(&:id).values_at(*media_type_ids)
 
   # `media` are library media in slot order; `shot` is from the recipe's shot group; `options` override the recipe's.

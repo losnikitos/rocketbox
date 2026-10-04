@@ -29,21 +29,13 @@ class GenerationTest < ActiveSupport::TestCase
     assert_equal "photo", @generation.generated_media.kind
   end
 
-  test "the prompt's style is appended before the extra prompt, and a generation can drop it" do
+  test "prompts and generations take no style" do
     style = Style.create!(name: "Film", body: "35mm grain.")
     prompt = Prompt.find(@generation.prompt_id)
     prompt.update!(options: prompt.options.merge("style" => style.id.to_s))
-    source = @generation.source_media
-    calls = []
-    RubyLLM.define_singleton_method(:paint) { |text, **| calls << text; RubyLLM::Image.new(data: Base64.strict_encode64("jpeg")) }
 
-    styled = source.generations.new(prompt:, extra_prompt: "Warmer.").start!
-    assert_equal style, styled.style
-    assert_not_includes styled.ai_options.keys, :style
-    styled.run!
-    source.generations.new(prompt:, options: { "style" => "" }).start!.run!
-
-    assert_equal [ "Polish the shot.\n\n35mm grain.\n\nWarmer.", "Polish the shot." ], calls
+    assert_not prompt.options.key?("style")
+    assert_nil @generation.source_media.generations.new(prompt:, options: { "style" => style.id.to_s }).style
   end
 
   test "run! records a failure" do
