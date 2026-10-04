@@ -8,6 +8,7 @@ class Layer
       raw = raw.is_a?(String) ? raw.presence : nil
       raw = (Date.iso8601(raw) rescue nil) if raw && type == :date
       raw = raw[/\A#\h{6}\z/] if raw && type == :color
+      raw = raw[%r{\A(https://|data:image/)\S+\z}] if raw && type == :url
       raw || (default.respond_to?(:call) ? default.call : default)
     end
   end
@@ -33,6 +34,11 @@ class Layer
     new(slug: "daily", name: "Daily", size: [ 1080, 1920 ], fields: [
       Field.new(:time, "Time", :text, "09:45"),
       Field.new(:caption, "Caption", :text, "first clients")
+    ]),
+    new(slug: "review", name: "Review", size: [ 1080, 1920 ], fields: [
+      Field.new(:text, "Review", :text, "Friendly, fast, and exactly what I asked for. Already booked my next visit."),
+      Field.new(:name, "Customer", :text, "Alex M."),
+      Field.new(:photo, "Photo URL", :url, nil)
     ])
   ].freeze
 

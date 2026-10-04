@@ -11,21 +11,27 @@ module Accounts
       @features = Feature::ALL.map { [ it, it.setting_for(Current.account) ] }
     end
 
+    def show
+      @recipe = @feature.recipe(Current.account)
+      @photos = @feature.ready_photos(Current.account).with_attached_file.order(created_at: :desc).select(&:story_image?)
+      @reviews = @feature.five_star_reviews(Current.account).order(created_at: :desc) if @feature.reviews?
+    end
+
     def update
       if @setting.update(setting_params)
-        redirect_to features_path, notice: "#{@feature.name} saved."
+        redirect_to feature_path(@feature), notice: "#{@feature.name} saved."
       else
-        redirect_to features_path, alert: @setting.errors.full_messages.to_sentence
+        redirect_to feature_path(@feature), alert: @setting.errors.full_messages.to_sentence
       end
     end
 
     def generate
-      return redirect_to(features_path, alert: "Turn #{@feature.name} on first.") unless @setting.enabled?
-
-      post = @feature.create_post!(Current.account)
-      redirect_to instagram_post_path(post), notice: "Generating #{@feature.name}…"
+      photo = @feature.ready_photos(Current.account).find(params[:photo_id]) if params[:photo_id].present?
+      review = @feature.five_star_reviews(Current.account).find(params[:review_id]) if @feature.reviews? && params[:review_id].present?
+      post = @feature.create_post!(Current.account, photo:, review:)
+      redirect_to instagram_post_path(post), notice: "Composing #{@feature.name}…"
     rescue ActiveRecord::RecordNotFound => e
-      redirect_to features_path, alert: e.message
+      redirect_to feature_path(@feature), alert: e.message
     end
 
     private

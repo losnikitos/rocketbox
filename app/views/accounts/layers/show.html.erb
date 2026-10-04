@@ -32,6 +32,8 @@
           <%= label_tag field.name, field.label, class: tw_label_classes %>
           <% if field.type == :date %>
             <%= date_field_tag field.name, @values[field.name], class: tw_input_classes %>
+          <% elsif field.type == :url %>
+            <%= url_field_tag field.name, @values[field.name], placeholder: "https://…", class: tw_input_classes %>
           <% elsif field.type == :color %>
             <%= color_field_tag field.name, @values[field.name], class: "block h-10 w-16 cursor-pointer rounded-lg border border-ink-900/15 bg-white p-1" %>
           <% else %>

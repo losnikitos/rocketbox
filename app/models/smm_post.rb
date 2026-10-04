@@ -4,6 +4,8 @@ class SmmPost < ApplicationRecord
   STATUSES = %w[draft generating ready published failed].freeze
   REACTIONS = %w[up down].freeze
   belongs_to :user
+  # The review a Reviews feature post shows.
+  belongs_to :review, optional: true
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
   has_many :smm_slides, -> { order(:position) }, dependent: :destroy

@@ -72,7 +72,7 @@
       </div>
     <% elsif @post.generating? || @post.draft? %>
       <div class="flex aspect-9/16 w-64 items-center justify-center rounded-lg bg-stone-50 px-3 text-center text-sm text-ink-600">
-        Generating with AI…
+        <%= @post.feature_slug ? "Composing…" : "Generating with AI…" %>
       </div>
     <% end %>
 
@@ -97,7 +97,7 @@
     <aside id="generation" class="w-full shrink-0 space-y-6 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108" aria-labelledby="generation-heading">
       <h2 id="generation-heading" class="text-sm font-medium text-ink-900">Generation</h2>
 
-      <p class="text-sm text-ink-500">Feature <%= link_to @post.feature.name, features_path, class: "ml-2 text-ink-900 underline hover:text-ink-600" %></p>
+      <p class="text-sm text-ink-500">Feature <%= link_to @post.feature.name, feature_path(@post.feature), class: "ml-2 text-ink-900 underline hover:text-ink-600" %></p>
 
       <% if @post.library_media.any? %>
         <section aria-labelledby="generation-photos-heading">

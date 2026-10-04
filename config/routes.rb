@@ -62,7 +62,7 @@ Rails.application.routes.draw do
       resources :recipes, except: :show do
         resources :runs, only: %i[new create], controller: "recipe_runs"
       end
-      resources :features, only: %i[index update] do
+      resources :features, only: %i[index show update] do
         post :generate, on: :member
       end
       resources :styles, except: :show

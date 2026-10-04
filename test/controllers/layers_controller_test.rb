@@ -30,6 +30,15 @@ class LayersControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=color][name=accent][value=?]", "#ebcb9f"
   end
 
+  test "review photo accepts only https urls" do
+    get canvas_layer_url("review", account: @admin.id, name: "Sam K.", photo: "https://example.com/sam.jpg")
+    assert_select "img[src=?]", "https://example.com/sam.jpg"
+    assert_includes response.body, "Sam K."
+
+    get canvas_layer_url("review", account: @admin.id, photo: "javascript:alert(1)")
+    assert_select "img", 0
+  end
+
   test "png is a transparent screenshot of the canvas" do
     Ferrum::Browser.new.quit rescue skip("Chrome not available")
 

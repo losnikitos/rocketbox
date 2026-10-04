@@ -1,4 +1,4 @@
-<%# locals: (values:, logo:) %>
+<%# locals: (values:) %>
 <%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&display=swap">
 <% first, rest = values[:headline].split(" ", 2) %>
@@ -16,7 +16,4 @@
     <span class="mt-[4vw] block h-[0.6vw] w-[12vw] bg-(--accent)"></span>
     <p class="mt-[3vw] max-w-[45vw] text-[3.8vw] leading-snug font-semibold tracking-[0.2em] uppercase"><%= values[:caption] %></p>
   </div>
-  <% if logo %>
-    <img src="<%= logo %>" alt="" class="absolute right-[6vw] bottom-[6vw] h-[14vw] max-w-[30vw] object-contain">
-  <% end %>
 </div>

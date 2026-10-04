@@ -1,6 +1,5 @@
-<%# Standalone document: inlined CSS and logo so headless Chrome needs no asset server or session. %>
+<%# Standalone document: inlined CSS so headless Chrome needs no asset server or session. %>
 <%# `background` (a data URL) fills the canvas behind the layer; without it the canvas is transparent. %>
-<% logo = Current.account.logo %>
 <% background = local_assigns[:background] %>
 <!DOCTYPE html>
 <html>
@@ -10,7 +9,6 @@
     <style><%= raw Rails.application.assets.load_path.find("tailwind.css").content(encoding: "UTF-8") %></style>
   </head>
   <body class="overflow-hidden bg-transparent bg-cover bg-center" <%= tag.attributes(style: ("background-image: url(#{background})" if background)) %>>
-    <%= render @layer.template, values: @values,
-          logo: ("data:#{logo.content_type};base64,#{Base64.strict_encode64(logo.download)}" if logo.attached?) %>
+    <%= render @layer.template, values: @values %>
   </body>
 </html>
