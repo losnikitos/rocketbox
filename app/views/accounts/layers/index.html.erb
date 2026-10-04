@@ -1,0 +1,13 @@
+<% content_for(:title, "Layers — Rocketbox") %>
+
+<ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+  <% @layers.each do |layer| %>
+    <li class="relative overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
+        style="aspect-ratio: <%= layer.size.join(" / ") %>">
+      <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+      <%= link_to layer_path(layer), class: "absolute inset-0 flex flex-col items-start" do %>
+        <span class="w-full bg-linear-to-b from-black/60 to-transparent p-4 pb-10 text-sm font-semibold text-white"><%= layer.name %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

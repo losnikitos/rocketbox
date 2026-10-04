@@ -69,6 +69,14 @@
             <% end %>
           </li>
           <li>
+            <%= link_to layers_path,
+                  class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                  aria: { selected: section == :layers } do %>
+              <%= heroicon "square-3-stack-3d", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+              Layers
+            <% end %>
+          </li>
+          <li>
             <%= link_to recipes_path,
                   class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                   aria: { selected: section == :recipes } do %>

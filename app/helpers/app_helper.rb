@@ -71,6 +71,8 @@ module AppHelper
         :separator,
         *counts.sort.map { |group, count| [ shots_path(group:), group, index && params[:group] == group, count ] }
       ] ]
+    when "accounts/layers"
+      [ :layers, "Layers", [] ]
     when "accounts/recipes", "accounts/recipe_posts"
       [ :recipes, "Recipes", [] ]
     when "accounts/styles"

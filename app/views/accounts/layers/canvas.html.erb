@@ -1,0 +1,14 @@
+<%# Standalone document: inlined CSS and logo so headless Chrome needs no asset server or session. %>
+<% logo = Current.account.logo %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style><%= raw Rails.application.assets.load_path.find("tailwind.css").content(encoding: "UTF-8") %></style>
+  </head>
+  <body class="overflow-hidden bg-transparent">
+    <%= render @layer.template, values: @values,
+          logo: ("data:#{logo.content_type};base64,#{Base64.strict_encode64(logo.download)}" if logo.attached?) %>
+  </body>
+</html>
