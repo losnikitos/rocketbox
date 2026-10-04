@@ -640,7 +640,7 @@ DEPENDENCIES
   dartsass-rails (~> 0.5)
   debug
   faraday (~> 2.14)
-  ferrum
+  ferrum (~> 0.18)
   friendly_id (~> 5.7)
   heroicons (~> 2.0)
   hotwire-spark
