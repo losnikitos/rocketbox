@@ -10,6 +10,7 @@ class LibraryMedia < ApplicationRecord
   has_many :generated_media, through: :generations
   has_one :origin, class_name: "Generation", foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
   has_one :source_media, through: :origin
+  has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
   has_one_attached :file
   has_one_attached :extracted_logo
 
@@ -24,7 +25,8 @@ class LibraryMedia < ApplicationRecord
   }.freeze
 
   # Inbox: everything the owner sends or uploads. Photobank: curated media, manual upload only.
-  enum :collection, %w[inbox photobank].index_by(&:itself), default: "inbox", validate: true
+  # Ready: recipe output.
+  enum :collection, %w[inbox photobank ready].index_by(&:itself), default: "inbox", validate: true
 
   validates :kind, presence: true
   validates :media_type, presence: true, if: :media_type_id
@@ -32,6 +34,9 @@ class LibraryMedia < ApplicationRecord
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
   def business_card? = media_type&.slug == "business-card"
+
+  # The Generation or RecipeRun that made this media; both have a status and an error.
+  def maker = origin || recipe_run
 
   def story_image?
     return false unless file.attached?

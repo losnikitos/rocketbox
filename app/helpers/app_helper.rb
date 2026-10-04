@@ -7,6 +7,17 @@ module AppHelper
     when "accounts/overview"
       [ :overview, "Overview", [] ]
     when "accounts/library"
+      if @collection == "ready"
+        ready = Current.account.library_media.ready
+        counts = ready.joins(:recipe_run).group("recipe_runs.recipe_id").count
+        recipe_id = @media ? @media.recipe_run&.recipe_id : params[:recipe]&.to_i
+        return [ :ready, "Ready", [
+          [ library_ready_path, "All", recipe_id.blank?, ready.count ],
+          :separator,
+          *Recipe.ordered.map { |r| [ library_ready_path(recipe: r.id), r.name, recipe_id == r.id, counts[r.id].to_i ] }
+        ] ]
+      end
+
       counts = Current.account.library_media.where(collection: @collection).group(:media_type_id).count
       type = @media ? @media.media_type&.slug : params[:type]
       tabs = [
@@ -75,7 +86,7 @@ module AppHelper
       ] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
-    when "accounts/recipes", "accounts/recipe_posts"
+    when "accounts/recipes", "accounts/recipe_runs"
       [ :recipes, "Recipes", [] ]
     when "accounts/features"
       [ :features, "Features", [] ]
@@ -87,11 +98,19 @@ module AppHelper
   end
 
   def library_collection_path(collection, **params)
-    collection == "photobank" ? library_photobank_path(**params) : library_uploads_path(**params)
+    case collection
+    when "photobank" then library_photobank_path(**params)
+    when "ready" then library_ready_path(**params)
+    else library_uploads_path(**params)
+    end
   end
 
   def library_item_path(media, **params)
-    media.photobank? ? library_photobank_media_path(media, **params) : library_upload_path(media, **params)
+    case media.collection
+    when "photobank" then library_photobank_media_path(media, **params)
+    when "ready" then library_ready_media_path(media, **params)
+    else library_upload_path(media, **params)
+    end
   end
 
   def posts_tabs

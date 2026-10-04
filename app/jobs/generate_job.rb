@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
+# Runs a Generation or a RecipeRun.
 class GenerateJob < ApplicationJob
   queue_as :default
 
-  limits_concurrency to: 1, key: ->(generation_id) { generation_id }, duration: 15.minutes
-  discard_on ActiveRecord::RecordNotFound
+  limits_concurrency to: 1, key: ->(record) { record }, duration: 15.minutes
+  discard_on ActiveJob::DeserializationError
 
-  def perform(generation_id)
-    Generation.find(generation_id).run!
+  def perform(record)
+    record.run!
   end
 end

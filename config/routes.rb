@@ -33,8 +33,10 @@ Rails.application.routes.draw do
       get "/", to: redirect(path: "/app/library/uploads")
       get "uploads", to: "library#uploads", as: :library_uploads, defaults: { collection: "inbox" }
       get "photobank", to: "library#uploads", as: :library_photobank, defaults: { collection: "photobank" }
+      get "ready", to: "library#uploads", as: :library_ready, defaults: { collection: "ready" }
       get "uploads/:id", to: "library#show", as: :library_upload, defaults: { collection: "inbox" }
       get "photobank/:id", to: "library#show", as: :library_photobank_media, defaults: { collection: "photobank" }
+      get "ready/:id", to: "library#show", as: :library_ready_media, defaults: { collection: "ready" }
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do
@@ -58,7 +60,7 @@ Rails.application.routes.draw do
         get :canvas, on: :member
       end
       resources :recipes, except: :show do
-        resources :posts, only: %i[new create], controller: "recipe_posts"
+        resources :runs, only: %i[new create], controller: "recipe_runs"
       end
       resources :features, only: %i[index update] do
         post :generate, on: :member

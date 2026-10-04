@@ -29,18 +29,6 @@
         <%= f.text_area :body, required: true, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
       </div>
 
-      <fieldset class="max-w-md">
-        <legend class="<%= tw_label_classes %>">Makes</legend>
-        <div class="<%= tw_segments_classes %>">
-          <% Recipe.formats.each_key do |format| %>
-            <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
-              <%= f.radio_button :format, format, class: "sr-only" %>
-              <%= format.humanize %>
-            </label>
-          <% end %>
-        </div>
-      </fieldset>
-
       <div class="max-w-md">
         <%= render "shared/generation_options", record: recipe, scope: "recipe",
               refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>

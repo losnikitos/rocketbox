@@ -25,7 +25,7 @@ class Generation < ApplicationRecord
     build_generated_media(user: source_media.user, kind: video? ? "video" : "photo", collection: "photobank",
       media_type: source_media.media_type)
     save!
-    GenerateJob.perform_later(id)
+    GenerateJob.perform_later(self)
     self
   end
 
