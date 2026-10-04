@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -83,6 +83,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_230000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
+  end
+
+  create_table "feature_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "feature_slug", null: false
+    t.string "layer_slug"
+    t.integer "media_type_id"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["media_type_id"], name: "index_feature_settings_on_media_type_id"
+    t.index ["user_id", "feature_slug"], name: "index_feature_settings_on_user_id_and_feature_slug", unique: true
+    t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
 
   create_table "generations", force: :cascade do |t|
@@ -358,6 +371,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_230000) do
     t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.string "feature_slug"
     t.string "format", default: "reel", null: false
     t.json "options", default: {}, null: false
     t.text "prompt"
@@ -447,6 +461,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_230000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "crawls", "links"
+  add_foreign_key "feature_settings", "media_types", on_delete: :nullify
+  add_foreign_key "feature_settings", "users"
   add_foreign_key "generations", "library_media", column: "generated_media_id"
   add_foreign_key "generations", "library_media", column: "source_media_id"
   add_foreign_key "generations", "prompts"

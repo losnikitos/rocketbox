@@ -1,0 +1,6 @@
+<%# locals: (values:, logo:) %>
+<%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
+<div class="flex h-screen w-screen flex-col items-center justify-center px-[6vw] text-center text-white drop-shadow-[0_0.3vw_1.5vw_rgb(0_0_0/0.5)]">
+  <p class="text-[17vw] leading-none font-medium tracking-tight tabular-nums"><%= values[:time] %></p>
+  <p class="mt-[2vw] text-[4vw] leading-tight"><%= values[:caption] %></p>
+</div>
