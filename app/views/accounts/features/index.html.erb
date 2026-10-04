@@ -17,8 +17,8 @@
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <%= f.label :media_type_id, "Background photo", class: tw_label_classes %>
-            <%= f.select :media_type_id, MediaType.ordered.pluck(:name, :id), { include_blank: setting.media_type_id ? false : "—" }, class: tw_input_classes %>
+            <%= f.label :recipe_id, "Background photo", class: tw_label_classes %>
+            <%= f.select :recipe_id, Recipe.ordered.pluck(:name, :id), { include_blank: setting.recipe_id ? false : "—" }, class: tw_input_classes %>
           </div>
           <div>
             <%= f.label :layer_slug, "Layer", class: tw_label_classes %>

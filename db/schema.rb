@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -90,10 +90,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
     t.boolean "enabled", default: false, null: false
     t.string "feature_slug", null: false
     t.string "layer_slug"
-    t.integer "media_type_id"
+    t.integer "recipe_id"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["media_type_id"], name: "index_feature_settings_on_media_type_id"
+    t.index ["recipe_id"], name: "index_feature_settings_on_recipe_id"
     t.index ["user_id", "feature_slug"], name: "index_feature_settings_on_user_id_and_feature_slug", unique: true
     t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
@@ -470,7 +470,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_130000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "crawls", "links"
-  add_foreign_key "feature_settings", "media_types", on_delete: :nullify
+  add_foreign_key "feature_settings", "recipes", on_delete: :nullify
   add_foreign_key "feature_settings", "users"
   add_foreign_key "generations", "library_media", column: "generated_media_id"
   add_foreign_key "generations", "library_media", column: "source_media_id"
