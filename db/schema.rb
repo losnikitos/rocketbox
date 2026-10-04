@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_150000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -391,9 +391,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_140000) do
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
+    t.integer "review_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["review_id"], name: "index_smm_posts_on_review_id"
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_smm_posts_on_user_id"
@@ -490,6 +492,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_140000) do
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
+  add_foreign_key "smm_posts", "reviews", on_delete: :nullify
   add_foreign_key "smm_posts", "users"
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"

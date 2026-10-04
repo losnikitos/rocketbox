@@ -68,16 +68,34 @@ class FeatureTest < ActiveSupport::TestCase
     assert_includes html, %(src="data:image/jpeg;base64,)
   end
 
-  test "reviews fails the post when there is no 5-star review" do
+  test "reviews needs an unused 5-star review" do
     feature = Feature.find("reviews")
     poster = recipe("Poster")
     feature.setting_for(@user).update!(recipe: poster)
     ready_photo(poster)
+    ready_photo(poster)
+    review = @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.")
+
+    assert_equal review, feature.create_post!(@user).review
+    assert_empty feature.review_backlog(@user)
+    assert_equal 1, feature.photo_backlog(@user).count
+    error = assert_raises(ActiveRecord::RecordNotFound) { feature.create_post!(@user) }
+    assert_equal "No 5-star review with text to post.", error.message
+  end
+
+  test "daily uses recipe 8 and the Daily layer whatever the setting" do
+    feature = Feature.find("daily")
+    feature.setting_for(@user).update!(recipe: recipe("Poster"), layer_slug: "review")
+    ready_photo(recipe("Poster"))
+    photo = ready_photo(Recipe.create!(id: 8, name: "Будни", body: "Compose.", media_type_ids: [ media_types(:working).id ]))
+    rendered = []
+    Layer.define_singleton_method(:screenshot) { |html, size:| rendered << html and "png-bytes" }
 
     post = feature.create_post!(@user)
     post.generate!
 
-    assert_equal [ "failed", "No 5-star review with text to post." ], [ post.reload.status, post.error_message ]
+    assert_equal [ "ready", [ photo ] ], [ post.reload.status, post.library_media.to_a ]
+    assert_includes rendered.sole, "first clients"
   end
 
   private
