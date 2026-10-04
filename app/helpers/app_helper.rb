@@ -38,6 +38,8 @@ module AppHelper
       [ :posts, "Posts", posts_tabs ]
     when "accounts/business"
       [ :business, "Business", [] ]
+    when "accounts/calendar"
+      [ :calendar, "Calendar", [] ]
     when "accounts/services"
       [ :services, "Services", [] ]
     when "accounts/links"

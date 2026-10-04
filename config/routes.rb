@@ -52,6 +52,7 @@ Rails.application.routes.draw do
 
     scope module: :accounts do
       get "overview", to: "overview#show", as: :overview
+      get "calendar", to: "calendar#show", as: :calendar
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
       resources :prompts, except: :show
