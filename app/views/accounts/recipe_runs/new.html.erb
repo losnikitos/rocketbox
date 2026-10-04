@@ -1,46 +1,36 @@
 <% content_for(:title, "#{@recipe.name} — Recipes — Rocketbox") %>
 
-<div class="max-w-4xl space-y-6">
-  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
-    <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
-    <span class="mx-1">/</span>
-    <span aria-current="page"><%= @recipe.name %></span>
-  </nav>
+<%= render "accounts/recipes/header", recipe: @recipe %>
 
-  <section class="space-y-1 rounded-2xl border border-ink-900/10 bg-white p-6">
-    <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
-    <p class="line-clamp-10 text-sm text-ink-600"><%= @recipe.body %></p>
-  </section>
+<%= form_with url: recipe_runs_path(@recipe), class: "mt-6 max-w-4xl space-y-6" do |f| %>
+  <% if @error %>
+    <p class="<%= tw_alert_error_classes %>" role="alert"><%= @error %></p>
+  <% end %>
 
-  <%= form_with url: recipe_runs_path(@recipe), class: "space-y-6" do |f| %>
-    <% if @error %>
-      <p class="<%= tw_alert_error_classes %>" role="alert"><%= @error %></p>
-    <% end %>
-
+  <div class="flex flex-wrap items-start gap-6">
     <% @slots.each_with_index do |(type, photos), index| %>
-      <fieldset data-controller="media-pick">
+      <fieldset data-controller="media-pick" class="group w-36">
         <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= type&.name || "Unknown media type" %></legend>
         <% if photos.any? %>
           <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
           <% popover_id = "media-pick-#{index}" %>
-          <div class="flex items-center gap-2">
+          <div class="space-y-2">
             <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
                     aria-label="Choose <%= type&.name&.downcase || "media" %>"
-                    class="flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-ink-900/10 bg-white p-3 text-left text-sm text-ink-600 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+                    class="flex w-full cursor-pointer items-center justify-between gap-1 rounded-xl border border-ink-900/10 bg-white p-1.5 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
               <span data-media-pick-target="preview" class="block size-24 shrink-0 overflow-hidden rounded-lg">
                 <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover" %>
               </span>
-              <span class="flex-1"><%= pluralize(photos.size, "photo") %></span>
-              <%= heroicon "chevron-right", options: { class: "size-5 text-ink-400", "aria-hidden": true } %>
+              <%= heroicon "chevron-down", options: { class: "size-5 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
             </button>
-            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light gap-1.5 px-3 py-1.5">
+            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light w-full justify-center gap-1.5 px-3 py-1.5">
               <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
               Random
             </button>
           </div>
           <div id="<%= popover_id %>" popover data-media-pick-target="popover"
                style="position-anchor: --<%= popover_id %>"
-               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg">
+               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-96 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg">
             <div class="grid grid-cols-4 gap-2">
               <% photos.each do |media| %>
                 <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
@@ -60,25 +50,25 @@
     <% end %>
 
     <% if @shots %>
-      <fieldset data-controller="media-pick">
+      <fieldset data-controller="media-pick" class="group w-64">
         <legend class="<%= tw_label_classes %>">Shot</legend>
         <% if @shots.any? %>
           <% selected = @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample %>
-          <div class="flex items-center gap-2">
+          <div class="space-y-2">
             <button type="button" popovertarget="shot-pick" style="anchor-name: --shot-pick" aria-label="Choose shot"
-                    class="flex w-full max-w-md cursor-pointer items-center gap-4 rounded-2xl border border-ink-900/10 bg-white p-3 text-left transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+                    class="flex w-full cursor-pointer items-center gap-1 rounded-xl border border-ink-900/10 bg-white px-2.5 py-1.5 text-left transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
               <span data-media-pick-target="preview" class="min-w-0 flex-1">
                 <%= render "shot_option", shot: selected %>
               </span>
-              <%= heroicon "chevron-right", options: { class: "size-5 shrink-0 text-ink-400", "aria-hidden": true } %>
+              <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
             </button>
-            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light gap-1.5 px-3 py-1.5">
+            <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light w-full justify-center gap-1.5 px-3 py-1.5">
               <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
               Random
             </button>
           </div>
           <div id="shot-pick" popover data-media-pick-target="popover" style="position-anchor: --shot-pick"
-               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+               class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-80 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
             <% @shots.each do |shot| %>
               <label class="block cursor-pointer rounded-lg px-3 py-2 transition hover:bg-ink-900/5 has-checked:bg-rocket/10 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
                 <%= radio_button_tag :shot_id, shot.id, shot == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
@@ -94,14 +84,31 @@
         <% end %>
       </fieldset>
     <% end %>
+  </div>
 
-    <div class="max-w-md">
+  <details class="group">
+    <summary class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-ink-700 hover:text-ink-900">
+      <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
+      Prompt
+    </summary>
+    <div class="mt-1 space-y-1 rounded-2xl border border-ink-900/10 bg-white p-6">
+      <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
+      <p class="text-sm whitespace-pre-line text-ink-600"><%= @recipe.body %></p>
+    </div>
+  </details>
+
+  <details class="group">
+    <summary class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-ink-700 hover:text-ink-900">
+      <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
+      Options
+    </summary>
+    <div class="mt-3">
       <%= render "shared/generation_options", record: @run, scope: "recipe_run", refresh_url: new_recipe_run_path(@recipe) %>
     </div>
+  </details>
 
-    <%= f.button class: "rb-btn-primary gap-1.5 px-3.5 py-2 text-sm" do %>
-      <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      Generate
-    <% end %>
+  <%= f.button class: "rb-btn-primary gap-1.5 px-3.5 py-2 text-sm" do %>
+    <%= heroicon "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Generate
   <% end %>
-</div>
+<% end %>

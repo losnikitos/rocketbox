@@ -1,11 +1,7 @@
 <%# locals: (recipe:) %>
 <% slot_count = [ recipe.media_type_ids.size, 5 ].max %>
 <div class="@container space-y-4">
-  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
-    <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
-    <span class="mx-1">/</span>
-    <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
-  </nav>
+  <%= render "accounts/recipes/header", recipe: %>
 
   <div class="grid items-start gap-8 @3xl:grid-cols-2">
     <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
