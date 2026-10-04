@@ -18,6 +18,11 @@
     <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
   <% end %>
   <div class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-ink-900/10" aria-hidden="true"></div>
+  <% if media.video? %>
+    <div class="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+      <%= heroicon "play", variant: :solid, options: { class: "size-10 text-white drop-shadow-md" } %>
+    </div>
+  <% end %>
   <% if media.media_type %>
     <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><%= media.media_type.name %></span>
   <% end %>

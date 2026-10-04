@@ -1,9 +1,8 @@
 <%# locals: (media:, css:, controls: false) %>
 <% if media.file.attached? %>
-  <% content_type = media.file.content_type.to_s %>
-  <% if content_type.start_with?("image/") || media.kind == "photo" || media.kind == "sticker" %>
+  <% if media.story_image? %>
     <%= image_tag url_for(media.file), alt: media.kind, class: css %>
-  <% elsif content_type.start_with?("video/") || %w[video video_note animation].include?(media.kind) %>
+  <% elsif media.video? %>
     <%= video_tag url_for(media.file), controls:, muted: !controls, playsinline: true, preload: "metadata", class: "bg-ink-900/5 #{css}" %>
   <% else %>
     <div class="flex flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center <%= css %>">

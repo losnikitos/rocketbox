@@ -44,6 +44,12 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("image/") || kind.in?(%w[photo sticker])
   end
 
+  def video?
+    return false if !file.attached? || story_image?
+
+    file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
+  end
+
   # Prompts that suit this media.
   def prompts
     return [] unless story_image? && media_type
