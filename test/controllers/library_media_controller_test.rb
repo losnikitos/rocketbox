@@ -144,6 +144,28 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert user.library_media.order(:id).last.inbox?
   end
 
+  test "upload dropped onto a group attaches to its source" do
+    user = sign_in_as(users(:lazaro_nixon))
+    source = user.library_media.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior))
+
+    post library_media_index_url, params: { collection: "photobank", source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
+
+    media = user.library_media.order(:id).last
+    assert_equal source, media.source_media
+    assert media.origin.complete?
+    assert_nil media.origin.prompt
+    assert_equal media_types(:interior), media.media_type
+    assert_redirected_to library_photobank_url
+
+    get library_photobank_media_url(media)
+    assert_response :success
+
+    assert_no_difference -> { LibraryMedia.count } do
+      post library_media_index_url, params: { source_id: @media.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
+    end
+    assert_response :not_found
+  end
+
   test "rejects empty upload" do
     sign_in_as(users(:lazaro_nixon))
 

@@ -4,7 +4,8 @@ class LibraryMediaController < ApplicationController
   def create
     collection = LibraryMedia.collections.key?(params[:collection]) ? params[:collection] : "inbox"
     files = Array(params[:files]).select { |f| f.respond_to?(:content_type) }
-    uploaded = files.filter_map { |file| store_upload!(file, collection) }
+    source = Current.account.library_media.find(params[:source_id]) if params[:source_id].present?
+    uploaded = files.filter_map { |file| store_upload!(file, collection, source) }
 
     if uploaded.empty?
       redirect_to helpers.library_collection_path(collection), alert: "Drop a photo or video to upload."
@@ -59,12 +60,13 @@ class LibraryMediaController < ApplicationController
 
   private
 
-    def store_upload!(file, collection)
+    def store_upload!(file, collection, source)
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind:, collection:)
+      media = Current.account.library_media.create!(kind:, collection:, media_type: source&.media_type)
       media.file.attach(file)
+      Generation.create!(source_media: source, generated_media: media, status: "complete") if source
       media
     end
 end
