@@ -7,6 +7,7 @@ class Layer
     def value(raw)
       raw = raw.is_a?(String) ? raw.presence : nil
       raw = (Date.iso8601(raw) rescue nil) if raw && type == :date
+      raw = raw[/\A#\h{6}\z/] if raw && type == :color
       raw || (default.respond_to?(:call) ? default.call : default)
     end
   end
@@ -21,6 +22,13 @@ class Layer
     new(slug: "fully-booked", name: "Fully booked", size: [ 1080, 1920 ], fields: [
       Field.new(:headline, "Text", :text, "Fully Booked"),
       Field.new(:date, "Date", :date, -> { Date.current })
+    ]),
+    new(slug: "fully-booked-color", name: "Fully booked (color)", size: [ 1080, 1920 ], fields: [
+      Field.new(:headline, "Text", :text, "Fully Booked"),
+      Field.new(:caption, "Caption", :text, "Thanks for keeping us busy"),
+      Field.new(:date, "Date", :date, -> { Date.current }),
+      Field.new(:accent, "Accent", :color, "#ebcb9f"),
+      Field.new(:panel, "Panel", :color, "#18181b")
     ]),
     new(slug: "daily", name: "Daily", size: [ 1080, 1920 ], fields: [
       Field.new(:time, "Time", :text, "09:45"),

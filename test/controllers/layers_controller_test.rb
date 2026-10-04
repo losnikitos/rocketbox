@@ -22,6 +22,14 @@ class LayersControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, Date.current.strftime("%a, %b %-d")
   end
 
+  test "color fields accept only hex colors" do
+    get canvas_layer_url("fully-booked-color", account: @admin.id, accent: "#ff0000", panel: "red;background:url(x)")
+    assert_includes response.body, "--accent: #ff0000; --panel: #18181b"
+
+    get layer_url("fully-booked-color", account: @admin.id)
+    assert_select "input[type=color][name=accent][value=?]", "#ebcb9f"
+  end
+
   test "png is a transparent screenshot of the canvas" do
     Ferrum::Browser.new.quit rescue skip("Chrome not available")
 
