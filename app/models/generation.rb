@@ -9,7 +9,8 @@ class Generation < ApplicationRecord
   STATUSES = %w[running complete failed].freeze
 
   belongs_to :source_media, class_name: "LibraryMedia", inverse_of: :generations
-  belongs_to :prompt
+  # No prompt when the owner dropped the file onto the source themselves.
+  belongs_to :prompt, optional: true
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :origin
 
   validates :status, inclusion: { in: STATUSES }

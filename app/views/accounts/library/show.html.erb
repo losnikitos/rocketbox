@@ -97,8 +97,10 @@
         <% if generation.error.present? %>
           <p class="text-sm text-signal-red"><%= generation.error %></p>
         <% end %>
-        <%= render "accounts/prompts/card", prompt: generation.prompt %>
-        <%= render "accounts/generations/options", record: generation, rows: [ [ "Extra prompt", generation.extra_prompt ] ] %>
+        <% if generation.prompt %>
+          <%= render "accounts/prompts/card", prompt: generation.prompt %>
+          <%= render "accounts/generations/options", record: generation, rows: [ [ "Extra prompt", generation.extra_prompt ] ] %>
+        <% end %>
       </section>
     <% end %>
 
