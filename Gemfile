@@ -100,3 +100,6 @@ gem "ruby_llm", "= 2.0.0"
 gem "mission_control-jobs", "~> 1.3"
 
 gem "rqrcode", "~> 3.2"
+
+# Headless Chrome for rendering layer templates to PNG
+gem "ferrum", "~> 0.18"

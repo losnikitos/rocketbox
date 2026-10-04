@@ -53,6 +53,9 @@ Rails.application.routes.draw do
       resources :services, except: :show
       resources :prompts, except: :show
       resources :shots, except: :show
+      resources :layers, only: %i[index show] do
+        get :canvas, on: :member
+      end
       resources :recipes, except: :show do
         resources :posts, only: %i[new create], controller: "recipe_posts"
       end

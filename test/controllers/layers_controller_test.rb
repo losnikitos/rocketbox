@@ -1,0 +1,33 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class LayersControllerTest < ActionDispatch::IntegrationTest
+  setup { @admin = sign_in_as(users(:admin_user)) }
+
+  test "index, preview and canvas render the template with inputs" do
+    get layers_url(account: @admin.id)
+    assert_select "a[href=?]", layer_path("fully-booked", account: @admin.id)
+
+    get layer_url("fully-booked", account: @admin.id)
+    assert_select "iframe[name=layer_preview]"
+    assert_select "input[name=headline][value=?]", "Fully Booked"
+
+    get canvas_layer_url("fully-booked", account: @admin.id, headline: "Closed today", date: "2026-10-04")
+    assert_response :success
+    assert_includes response.body, "Closed today"
+    assert_includes response.body, "Sun, Oct 4"
+
+    get canvas_layer_url("fully-booked", account: @admin.id, date: "nope")
+    assert_includes response.body, Date.current.strftime("%a, %b %-d")
+  end
+
+  test "png is a transparent screenshot of the canvas" do
+    Ferrum::Browser.new.quit rescue skip("Chrome not available")
+
+    get layer_url("fully-booked", format: :png, account: @admin.id)
+    assert_response :success
+    assert_equal "image/png", response.media_type
+    assert response.body.start_with?("\x89PNG".b)
+  end
+end
