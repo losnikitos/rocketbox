@@ -4,6 +4,8 @@ module AppHelper
   # Returns [section, title, tabs] where tabs are [path, label, selected, count = nil]
   def app_nav
     case controller_path
+    when "accounts/overview"
+      [ :overview, "Overview", [] ]
     when "accounts/library"
       counts = Current.account.library_media.where(collection: @collection).group(:media_type_id).count
       type = @media ? @media.media_type&.slug : params[:type]

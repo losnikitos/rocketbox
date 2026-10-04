@@ -1,0 +1,62 @@
+<% content_for(:title, "Overview — Rocketbox") %>
+
+<%# Fixed geometry: row h-90 (360px), spine nodes at mt-30 (120px), spine at 158px (node top + 38px icon centre). %>
+<% line = tag.span(class: "mt-39.25 h-0.5 w-6 shrink-0 bg-ink-900/25") %>
+<% admin_only = ->(path) { path if Current.user.admin? } %>
+<% node = ->(label, icon, path) do
+  content_tag(path ? :a : :span, href: path, class: "flex h-19 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-ink-900/10 bg-white text-xs font-semibold text-ink-900 #{"hover:border-ink-900/20 hover:bg-stone-50" if path}") do
+    safe_join([ heroicon(icon, options: { class: "size-5", "aria-hidden": true }), label ])
+  end
+end %>
+<% data = capture do %>
+  <div class="flex flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-ink-900/25 p-2">
+    <span class="text-xs font-medium text-ink-500">Data</span>
+    <div class="flex gap-2">
+      <%= node.("Services", "tag", services_path) %>
+      <%= node.("Reviews", "star", reviews_path) %>
+    </div>
+  </div>
+<% end %>
+<div class="overflow-x-auto px-3 py-3">
+  <div class="flex h-90 items-start">
+    <% [
+      [ "Inbox", "inbox", library_uploads_path, "Prompts", "chat-bubble-bottom-center-text", prompts_path, [] ],
+      [ "Photobank", "photo", library_photobank_path, "Recipes", "beaker", recipes_path, [
+        node.("Styles", "swatch", admin_only.(styles_path)),
+        node.("Shots", "camera", admin_only.(shots_path))
+      ] ],
+      [ "Ready", "check-circle", nil, "Features", "bolt", features_path, [
+        node.("Layers", "square-3-stack-3d", admin_only.(layers_path)),
+        data
+      ] ]
+    ].each do |label, icon, path, step, step_icon, step_path, (top, bottom)| %>
+      <%= content_tag(path ? :a : :span, href: path, class: "#{"group" if path} mt-30 flex shrink-0 flex-col items-center gap-1.5 text-sm font-semibold text-ink-900") do %>
+        <span class="relative block w-24">
+          <svg viewBox="0 0 96 76" class="w-24 stroke-sky-300 group-hover:stroke-sky-400" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 10a6 6 0 0 1 6-6h22l8 8h50a6 6 0 0 1 6 6v50a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6z" class="fill-sky-100 group-hover:fill-sky-200" />
+            <rect x="2" y="20" width="92" height="54" rx="6" class="fill-sky-50 group-hover:fill-sky-100" />
+          </svg>
+          <span class="absolute inset-x-0 top-5 bottom-0 flex items-center justify-center text-sky-600">
+            <%= heroicon icon, options: { class: "size-7", "aria-hidden": true } %>
+          </span>
+        </span>
+        <span><%= label %></span>
+      <% end %>
+      <% if top %>
+        <%# Bones: inputs hang over the previous column and slant right into the spine at the step's left edge %>
+        <div class="relative h-full w-24 shrink-0">
+          <svg viewBox="0 0 96 360" class="absolute inset-0 size-full overflow-visible stroke-ink-900/25" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M0 158H96M0 76L96 158M0 240L96 158" />
+          </svg>
+          <div class="absolute top-0 left-0 -translate-x-1/2"><%= top %></div>
+          <div class="absolute top-60 left-0 -translate-x-1/2"><%= bottom %></div>
+        </div>
+      <% else %>
+        <%= line %>
+      <% end %>
+      <div class="mt-30 shrink-0"><%= node.(step, step_icon, admin_only.(step_path)) %></div>
+      <%= line %>
+    <% end %>
+    <div class="mt-30 shrink-0"><%= node.("Posts", "squares-2x2", instagram_posts_path) %></div>
+  </div>
+</div>

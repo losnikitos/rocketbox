@@ -18,6 +18,21 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 
+**SMM media pipeline:** The user's mental model for how SMM media gets produced, drawn as a fishbone at `/app/overview` ([view](/app/views/accounts/overview/show.html.erb)). Folders hold media; blocks transform it; side inputs feed a step. Keep the chart and this diagram in sync.
+
+```mermaid
+flowchart LR
+  Inbox[/Inbox/] --> Prompts --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features --> Posts
+  Styles --> Recipes
+  Shots --> Recipes
+  Layers --> Features
+  subgraph Data
+    Services
+    Reviews
+  end
+  Data --> Features
+```
+
 ## Production
 - URL: https://rocketbox.plus
 - Runner: `bin/kamal app exec --reuse "bin/rails runner '...'"` (aliases: `bin/kamal console`, `shell`, `logs`; see [DEPLOY.md](./docs/DEPLOY.md)).
