@@ -1,0 +1,55 @@
+<% content_for(:title, "Calendar — Rocketbox") %>
+<% content_for :header_actions do %>
+  <%= button_to calendar_path, method: :get, params: { fetch: 1 },
+        class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5",
+        data: { turbo_submits_with: "Fetching…" } do %>
+    <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    <%= @calendar ? "Refresh" : "Fetch availability" %>
+  <% end %>
+<% end %>
+
+<% if @calendar %>
+  <% days = @calendar[:days] %>
+  <% slots = days.map { FreshaAvailability.half_hours(it) } %>
+  <% times = slots.flat_map(&:keys).uniq.sort %>
+
+  <div class="space-y-6">
+    <div>
+      <h2 class="font-manrope text-lg font-bold tracking-tight text-ink-900"><%= @calendar[:venue] %></h2>
+      <p class="text-sm text-ink-500"><%= @calendar[:service] %> · updated <%= time_ago_in_words(Time.zone.parse(@calendar[:fetched_at])) %> ago</p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <div class="grid min-w-2xl gap-x-1 gap-y-0.5" style="grid-template-columns: repeat(<%= days.size %>, minmax(0, 1fr))">
+        <% days.each do |day| %>
+          <% date = Date.parse(day[:date]) %>
+          <div class="mb-2 text-center <%= date == Date.current ? "text-rocket" : "text-ink-500" %>">
+            <div class="text-xs font-medium uppercase tracking-wide"><%= date.strftime("%a") %></div>
+            <div class="font-manrope text-xl font-bold <%= "text-ink-900" unless date == Date.current %>"><%= date.day %></div>
+            <% unless day[:open] %><div class="text-xs text-ink-400">Closed</div><% end %>
+          </div>
+        <% end %>
+
+        <% times.each do |time| %>
+          <% slots.each do |slot| %>
+            <% if slot[time] == :taken %>
+              <div class="flex h-6 items-center justify-center rounded bg-ink-900 text-xs tabular-nums text-white/40" title="Booked"><%= time %></div>
+            <% elsif slot[time] == :free %>
+              <div class="flex h-6 items-center justify-center rounded bg-white text-xs tabular-nums text-ink-300 ring-1 ring-inset ring-ink-900/15" title="Free"><%= time %></div>
+            <% else %>
+              <div></div>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="mx-auto flex max-w-sm flex-col items-center py-16 text-center">
+    <span class="flex size-14 items-center justify-center rounded-2xl bg-rocket/10 text-rocket">
+      <%= heroicon "calendar-days", options: { class: "size-7", "aria-hidden": true } %>
+    </span>
+    <h2 class="mt-4 font-manrope text-lg font-bold tracking-tight text-ink-900">See your week at a glance</h2>
+    <p class="mt-1 text-sm text-ink-500">Pull live free and booked slots for the next 7 days from Fresha.</p>
+  </div>
+<% end %>

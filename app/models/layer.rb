@@ -39,6 +39,11 @@ class Layer
       Field.new(:text, "Review", :text, "Friendly, fast, and exactly what I asked for. Already booked my next visit."),
       Field.new(:name, "Customer", :text, "Alex M."),
       Field.new(:photo, "Photo URL", :url, nil)
+    ]),
+    new(slug: "calendar", name: "Calendar", size: [ 1080, 1920 ], fields: [
+      Field.new(:headline, "Text", :text, "Book your slot"),
+      Field.new(:date, "Start date", :date, -> { Date.current }),
+      Field.new(:accent, "Accent", :color, "#ebcb9f")
     ])
   ].freeze
 

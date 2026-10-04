@@ -39,6 +39,9 @@ class User < ApplicationRecord
   normalizes :email, with: -> { _1.strip.downcase.presence }
   normalizes :whatsapp_phone, with: ->(phone) { phone.to_s.gsub(/\D/, "").presence }
 
+  # Last FreshaAvailability.fetch result, kept until the next fetch.
+  def fresha_calendar = super&.deep_symbolize_keys
+
   def admin?
     role == "admin"
   end

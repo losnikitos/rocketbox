@@ -1,0 +1,37 @@
+<%# locals: (values:) %>
+<%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&display=swap">
+<% dates = (values[:date]...values[:date] + 3).map(&:iso8601) %>
+<% days = Current.account.fresha_calendar&.dig(:days)&.select { dates.include?(it[:date]) }.presence || FreshaAvailability.sample(from: values[:date]) %>
+<% slots = days.map { FreshaAvailability.half_hours(it) } %>
+<% times = slots.flat_map(&:keys).uniq.sort %>
+<div class="flex h-screen w-screen flex-col gap-[5vw] p-[6vw] font-manrope text-white" style="--accent: <%= values[:accent] %>">
+  <div class="drop-shadow-[0_0.3vw_1.5vw_rgb(0_0_0/0.5)]">
+    <p class="font-['Archivo'] text-[13vw] leading-[0.9] font-black tracking-tight uppercase [font-stretch:75%]"><%= values[:headline] %></p>
+    <span class="mt-[3vw] block h-[0.6vw] w-[12vw] bg-(--accent)"></span>
+  </div>
+
+  <div class="grid flex-1 gap-x-[2.5vw] gap-y-[1.2vw] rounded-[3vw] bg-black/55 p-[3.5vw]"
+       style="grid-template-columns: repeat(<%= days.size %>, minmax(0, 1fr)); grid-template-rows: auto repeat(<%= times.size %>, minmax(0, 1fr))">
+    <% days.each do |day| %>
+      <% date = Date.parse(day[:date]) %>
+      <p class="pb-[1.5vw] text-center font-['Archivo'] text-[5vw] leading-none font-extrabold uppercase [font-stretch:80%]">
+        <%= { Date.current => "Today", Date.tomorrow => "Tomorrow" }.fetch(date) { date.strftime("%a %-d") } %>
+      </p>
+    <% end %>
+
+    <% times.each do |time| %>
+      <% days.zip(slots).each do |day, slot| %>
+        <% if !day[:open] %>
+          <span class="flex items-center justify-center text-[3vw] text-white/30"><%= "Closed" if time == times.first %></span>
+        <% elsif slot[time] == :free %>
+          <span class="flex items-center justify-center rounded-full text-[3.4vw] font-bold tabular-nums ring-[0.4vw] ring-(--accent) ring-inset"><%= time %></span>
+        <% elsif slot[time] == :taken %>
+          <span class="flex items-center justify-center rounded-full bg-white/8 text-[3.4vw] text-white/30 tabular-nums line-through"><%= time %></span>
+        <% else %>
+          <span></span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
