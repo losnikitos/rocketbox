@@ -19,20 +19,21 @@
       <% @library_media.group_by { |m| m.created_at.to_date }.each do |day, items| %>
         <section>
           <h3 class="mb-3 text-sm font-medium text-ink-900"><%= upload_day_label(day) %></h3>
-          <ul class="grid grid-flow-dense grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+          <ul class="@container flex flex-wrap items-start gap-3 [--cols:3] sm:[--cols:4] lg:[--cols:5] xl:[--cols:6] 2xl:[--cols:8]">
             <% items.group_by { it.origin&.source_media || it }.each do |source, group| %>
-              <% if group.first.origin %>
-                <li class="min-w-0 rounded-xl bg-ink-900/5 p-2 <%= "col-span-2" if group.size > 1 %>" aria-label="Generated from one source">
+              <% generated = group.first.origin %>
+              <%= tag.li class: "min-w-0 max-w-full rounded-xl border-2 border-stone-200 bg-white p-2", aria: { label: ("Generated from one source" if generated) } do %>
+                <% if generated %>
                   <%= link_to library_item_path(source), class: "mb-2 flex items-center gap-2 text-xs font-medium text-ink-600 hover:text-ink-900" do %>
                     <%= render "accounts/library/file", media: source, css: "size-6 rounded object-cover" %>
                     Source
                   <% end %>
-                  <ul class="grid gap-2 <%= "grid-cols-2" if group.size > 1 %>">
-                    <%= render partial: "accounts/library/tile", collection: group, as: :media %>
-                  </ul>
-                </li>
-              <% else %>
-                <%= render "accounts/library/tile", media: source %>
+                <% else %>
+                  <div class="mb-2 h-6" aria-hidden="true"></div>
+                <% end %>
+                <ul class="flex flex-wrap gap-2 *:w-[calc((100cqw_-_(var(--cols)_-_1)_*_0.75rem)_/_var(--cols)_-_1.25rem)]">
+                  <%= render partial: "accounts/library/tile", collection: generated ? group : [source], as: :media %>
+                </ul>
               <% end %>
             <% end %>
           </ul>

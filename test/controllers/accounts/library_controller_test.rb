@@ -91,7 +91,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_photobank_url
     assert_select "a[href=?]", library_photobank_media_path(failed.generated_media), text: /Generation failed/
-    assert_select "li.col-span-2[aria-label='Generated from one source']", count: 1 do
+    assert_select "li[aria-label='Generated from one source']", count: 1 do
       assert_select "a[href=?]", library_upload_path(source), text: /Source/
       assert_select "a[href=?]", library_photobank_media_path(generated)
       assert_select "a[href=?]", library_photobank_media_path(failed.generated_media)
