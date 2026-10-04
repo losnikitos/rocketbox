@@ -112,3 +112,21 @@
     Generate
   <% end %>
 <% end %>
+
+<% if @ready.any? %>
+  <section class="mt-10 max-w-4xl">
+    <div class="mb-3 flex items-baseline justify-between gap-3">
+      <h2 class="text-sm font-semibold text-ink-900">Ready from <%= @recipe.name %></h2>
+      <%= link_to "View all", library_ready_path(recipe: @recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+    </div>
+    <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+      <% @ready.limit(24).each do |media| %>
+        <li class="min-w-0">
+          <%= link_to library_item_path(media), aria: { label: "Open ready #{media.kind}" }, class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+            <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover" %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

@@ -11,21 +11,24 @@ module Accounts
       @features = Feature::ALL.map { [ it, it.setting_for(Current.account) ] }
     end
 
+    def show
+    end
+
     def update
       if @setting.update(setting_params)
-        redirect_to features_path, notice: "#{@feature.name} saved."
+        redirect_to feature_path(@feature), notice: "#{@feature.name} saved."
       else
-        redirect_to features_path, alert: @setting.errors.full_messages.to_sentence
+        redirect_to feature_path(@feature), alert: @setting.errors.full_messages.to_sentence
       end
     end
 
     def generate
-      return redirect_to(features_path, alert: "Turn #{@feature.name} on first.") unless @setting.enabled?
+      return redirect_to(feature_path(@feature), alert: "Turn #{@feature.name} on first.") unless @setting.enabled?
 
       post = @feature.create_post!(Current.account)
-      redirect_to instagram_post_path(post), notice: "Generating #{@feature.name}…"
+      redirect_to instagram_post_path(post), notice: "Composing #{@feature.name}…"
     rescue ActiveRecord::RecordNotFound => e
-      redirect_to features_path, alert: e.message
+      redirect_to feature_path(@feature), alert: e.message
     end
 
     private

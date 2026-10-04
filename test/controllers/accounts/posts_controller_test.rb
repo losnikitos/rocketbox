@@ -112,7 +112,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:admin_user))
     post_record.update_columns(user_id: @user.id)
     get instagram_post_url(post_record, account: @user.id)
-    assert_select "#generation a[href=?]", features_path(account: @user.id), text: "Fully booked"
+    assert_select "#generation a[href=?]", feature_path("fully-booked", account: @user.id), text: "Fully booked"
   end
 
   test "react saves thumbs up instantly" do

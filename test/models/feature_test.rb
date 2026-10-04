@@ -47,6 +47,39 @@ class FeatureTest < ActiveSupport::TestCase
     assert_equal [ "png-bytes" ], post.smm_slides.map { it.media.download }
   end
 
+  test "reviews renders a 5-star review on the Review layer whatever the setting's layer" do
+    feature = Feature.find("reviews")
+    poster = recipe("Poster")
+    feature.setting_for(@user).update!(recipe: poster, layer_slug: "daily")
+    ready_photo(poster)
+    @user.reviews.create!(source: "google", customer_name: "Meh", rating: 4, body: "Fine.")
+    @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.",
+      avatar: { io: file_fixture("logo.png").open, filename: "dana.png", content_type: "image/png" })
+    rendered = []
+    Layer.define_singleton_method(:screenshot) { |html, size:| rendered << html and "png-bytes" }
+
+    post = feature.create_post!(@user)
+    post.generate!
+
+    html = rendered.sole
+    assert_equal "ready", post.reload.status
+    assert_includes html, "Best fade in town."
+    assert_includes html, "Dana K."
+    assert_includes html, %(src="data:image/jpeg;base64,)
+  end
+
+  test "reviews fails the post when there is no 5-star review" do
+    feature = Feature.find("reviews")
+    poster = recipe("Poster")
+    feature.setting_for(@user).update!(recipe: poster)
+    ready_photo(poster)
+
+    post = feature.create_post!(@user)
+    post.generate!
+
+    assert_equal [ "failed", "No 5-star review with text to post." ], [ post.reload.status, post.error_message ]
+  end
+
   private
 
     def recipe(name) = Recipe.create!(name:, body: "Compose.", media_type_ids: [ media_types(:working).id ])

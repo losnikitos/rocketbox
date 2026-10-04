@@ -8,7 +8,7 @@ class Layer
       raw = raw.is_a?(String) ? raw.presence : nil
       raw = (Date.iso8601(raw) rescue nil) if raw && type == :date
       raw = raw[/\A#\h{6}\z/] if raw && type == :color
-      raw = raw[%r{\Ahttps://\S+\z}] if raw && type == :url
+      raw = raw[%r{\A(https://|data:image/)\S+\z}] if raw && type == :url
       raw || (default.respond_to?(:call) ? default.call : default)
     end
   end

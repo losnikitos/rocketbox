@@ -29,6 +29,8 @@ module Accounts
         photobank = Current.account.library_media.photobank.with_attached_file.order(created_at: :desc)
         @slots = @recipe.media_types.map { [ it, it ? photobank.where(media_type: it).select(&:story_image?) : [] ] }
         @shots = Shot.where(group: @recipe.shot_group).ordered if @recipe.shot_group
+        @ready = Current.account.library_media.ready.includes(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id })
+          .with_attached_file.order(created_at: :desc)
       end
 
       def options_params = params.dig(:recipe_run, :options)&.permit!.to_h || {}

@@ -3,20 +3,33 @@
 # An SMM post factory defined in code: makes one draft post at a time for an account.
 # Each account's switch and choices (recipe, layer) live in a FeatureSetting.
 class Feature
-  attr_reader :slug, :name, :description, :format, :layer, :layer_values
+  attr_reader :slug, :name, :description, :format, :layer, :layer_values, :fixed_layer
 
-  def initialize(slug:, name:, description:, format:, layer:, layer_values:)
+  def initialize(slug:, name:, description:, format:, layer:, layer_values:, fixed_layer: false)
     @slug, @name, @description, @format = slug, name, description, format
-    @layer, @layer_values = layer, layer_values
+    @layer, @layer_values, @fixed_layer = layer, layer_values, fixed_layer
   end
 
   ALL = [
     new(slug: "fully-booked", name: "Fully booked", format: "story",
       description: "A Story with a Ready photo and the Fully booked layer for tomorrow.",
-      layer: "fully-booked", layer_values: -> { { date: Date.tomorrow.iso8601 } })
+      layer: "fully-booked", layer_values: ->(_user) { { date: Date.tomorrow.iso8601 } }),
+    new(slug: "reviews", name: "Reviews", format: "story",
+      description: "A Story with a Ready photo and a random 5-star review on the Review layer.",
+      layer: "review", fixed_layer: true, layer_values: ->(user) { review_values(user) })
   ].freeze
 
   def self.find(slug) = ALL.find { it.slug == slug } || raise(ActiveRecord::RecordNotFound)
+
+  # ponytail: random pick can repeat a review; track posted reviews if that starts to show.
+  def self.review_values(user)
+    review = user.reviews.active.where(rating: 5).where.not(body: [ nil, "" ]).order(Arel.sql("RANDOM()")).first
+    raise ActiveRecord::RecordNotFound, "No 5-star review with text to post." unless review
+
+    avatar = review.avatar.variant(resize_to_fill: [ 256, 256 ], format: :jpeg).processed if review.avatar.attached?
+    { text: review.body.truncate(240, separator: " "), name: review.customer_name,
+      photo: ("data:image/jpeg;base64,#{Base64.strict_encode64(avatar.download)}" if avatar) }
+  end
 
   def to_param = slug
 
@@ -38,13 +51,13 @@ class Feature
     post
   end
 
-  # PNG bytes: the setting's layer over the post's photo, cropped to the layer's size.
+  # PNG bytes: the layer over the post's photo, cropped to the layer's size.
   def render(post)
-    layer = setting_for(post.user).layer
+    layer = Layer.find(fixed_layer ? self.layer : setting_for(post.user).layer_slug)
     photo = post.library_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
     html = Current.set(account: post.user) do
       ApplicationController.render("accounts/layers/canvas", layout: false,
-        assigns: { layer:, values: layer.values(layer_values.call) },
+        assigns: { layer:, values: layer.values(layer_values.call(post.user)) },
         locals: { background: "data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}" })
     end
     Layer.screenshot(html, size: layer.size)
