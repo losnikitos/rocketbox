@@ -28,6 +28,14 @@
 <nav aria-label="Primary" class="mt-6 min-h-0 flex-1 overflow-y-auto px-2">
   <ul class="flex flex-col gap-0.5">
     <li>
+      <%= link_to overview_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :overview } do %>
+        <%= heroicon "home", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        Overview
+      <% end %>
+    </li>
+    <li class="mt-2">
       <span class="block px-3 py-2 text-sm font-semibold text-ink-900">Library</span>
       <ul class="flex flex-col gap-0.5">
         <li>

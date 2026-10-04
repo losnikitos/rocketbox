@@ -224,9 +224,4 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[title='Admin actions']", count: 0
   end
-
-  test "app root redirects to library uploads" do
-    get "/app"
-    assert_redirected_to "/app/library/uploads"
-  end
 end
