@@ -1,0 +1,22 @@
+<%# locals: (values:, logo:) %>
+<%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&display=swap">
+<% first, rest = values[:headline].split(" ", 2) %>
+<div class="relative h-screen w-screen font-manrope text-white" style="--accent: <%= values[:accent] %>; --panel: <%= values[:panel] %>">
+  <div class="absolute top-[8vw] left-[6vw] flex flex-col items-start font-['Archivo'] leading-none font-extrabold uppercase [font-stretch:80%]">
+    <p class="bg-(--accent) px-[2.5vw] py-[1.2vw] text-[6vw] text-(--panel)"><%= values[:date].strftime("%A") %></p>
+    <p class="bg-(--panel) px-[2.5vw] py-[1.5vw] text-[11vw] tracking-tight"><%= values[:date].strftime("%-d %B") %></p>
+    <span class="mt-[2.5vw] h-[0.6vw] w-[12vw] bg-(--accent)"></span>
+  </div>
+  <div class="absolute inset-x-[6vw] bottom-[24%] drop-shadow-[0_0.3vw_1.5vw_rgb(0_0_0/0.5)]">
+    <p class="font-['Archivo'] text-[24vw] leading-[0.88] font-black tracking-tight uppercase [font-stretch:75%]">
+      <span class="block"><%= first %></span>
+      <span class="block text-(--accent)"><%= rest %></span>
+    </p>
+    <span class="mt-[4vw] block h-[0.6vw] w-[12vw] bg-(--accent)"></span>
+    <p class="mt-[3vw] max-w-[45vw] text-[3.8vw] leading-snug font-semibold tracking-[0.2em] uppercase"><%= values[:caption] %></p>
+  </div>
+  <% if logo %>
+    <img src="<%= logo %>" alt="" class="absolute right-[6vw] bottom-[6vw] h-[14vw] max-w-[30vw] object-contain">
+  <% end %>
+</div>
