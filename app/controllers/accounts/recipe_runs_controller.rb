@@ -1,23 +1,23 @@
 # frozen_string_literal: true
 
 module Accounts
-  # Picking one photobank photo per recipe slot (and a shot, if the recipe takes one), then generating the post.
-  class RecipePostsController < ApplicationController
+  # Picking one photobank photo per recipe slot (and a shot, if the recipe takes one), then generating the Ready media.
+  class RecipeRunsController < ApplicationController
     layout "app"
 
     before_action :set_recipe
 
     def new
-      @post = @recipe.smm_posts.new(options: options_params)
+      @run = @recipe.runs.new(options: options_params)
     end
 
     def create
       photobank = Current.account.library_media.photobank
       media = @recipe.media_type_ids.each_index.map { photobank.find_by(id: params.dig(:media_ids, it.to_s)) }.compact
-      post = @recipe.create_post!(user: Current.account, media:, shot: @shots&.find_by(id: params[:shot_id]), options: options_params)
-      redirect_to instagram_post_path(post), notice: "Generating #{@recipe.name}…"
+      run = @recipe.run!(user: Current.account, media:, shot: @shots&.find_by(id: params[:shot_id]), options: options_params)
+      redirect_to helpers.library_item_path(run.generated_media), notice: "Generating #{@recipe.name}…"
     rescue ActiveRecord::RecordInvalid => e
-      @post = e.record
+      @run = e.record
       @error = e.record.errors.full_messages.to_sentence
       render :new, status: :unprocessable_entity
     end
@@ -31,6 +31,6 @@ module Accounts
         @shots = Shot.where(group: @recipe.shot_group).ordered if @recipe.shot_group
       end
 
-      def options_params = params.dig(:smm_post, :options)&.permit!.to_h || {}
+      def options_params = params.dig(:recipe_run, :options)&.permit!.to_h || {}
   end
 end

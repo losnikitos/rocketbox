@@ -181,6 +181,34 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "ready lists recipe output; its page shows the recipe run" do
+    source = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user,
+      file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
+    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", media_type_ids: [ media_types(:interior).id ])
+    run = recipe.run!(user: @user, media: [ source ])
+
+    get library_ready_url
+    assert_response :success
+    assert_select "h1", "Ready"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_ready_path, text: "Ready"
+    assert_select "a[href=?]", library_ready_media_path(run.generated_media), text: /Generating/
+    assert_select "a[href=?]", library_photobank_media_path(source), count: 0
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_ready_path(recipe: recipe.id), text: "Collage 1"
+    assert_select "nav[aria-label='Secondary'] a", text: /Interior/, count: 0
+
+    other = Recipe.create!(name: "Poster", body: "Make a poster.", media_type_ids: [ media_types(:interior).id ])
+    get library_ready_url(recipe: other.id)
+    assert_select "a[href=?]", library_ready_media_path(run.generated_media), count: 0
+    assert_select "p", text: "No media from Poster yet."
+
+    run.update!(status: "failed", error: "content policy")
+    get library_ready_media_url(run.generated_media)
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_ready_path(recipe: recipe.id)
+    assert_select "#recipe-run-heading + span", text: "failed"
+    assert_select "section p", text: "content policy"
+    assert_select "section a[href=?]", library_photobank_media_path(source)
+  end
+
   test "cannot view another account's media" do
     media = LibraryMedia.create!(kind: "photo", user: users(:admin_user))
 

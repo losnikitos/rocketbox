@@ -102,10 +102,9 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Post removed.", flash[:notice]
   end
 
-  test "only admins see how a recipe post was generated" do
+  test "only admins see which feature made a post" do
     post_record = create_ready_post!
-    recipe = Recipe.create!(name: "Daily", body: "A day at work.", format: "story", media_type_ids: [ MediaType.create!(name: "Interior").id ])
-    post_record.update_columns(recipe_id: recipe.id, prompt: "A day at work.", options: { "model" => "gpt-image-2", "aspect_ratio" => "9:16" })
+    post_record.update_columns(feature_slug: "fully-booked")
 
     get instagram_post_url(post_record)
     assert_select "#generation", count: 0
@@ -113,10 +112,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:admin_user))
     post_record.update_columns(user_id: @user.id)
     get instagram_post_url(post_record, account: @user.id)
-    assert_select "#generation a[href=?]", edit_recipe_path(recipe, account: @user.id), text: "Daily"
-    assert_select "#generation td", text: "gpt-image-2"
-    assert_select "#generation td", text: "9:16"
-    assert_select "#generation textarea[readonly]", text: "A day at work."
+    assert_select "#generation a[href=?]", features_path(account: @user.id), text: "Fully booked"
   end
 
   test "react saves thumbs up instantly" do

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # AI request options in an `options` JSON column: the model (one of `models`, enabled in Active Admin) picks the
-# provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS, plus an optional `style` (a Style id). New records start from `inherited_options`
-# (a generation from its prompt, a recipe post from its recipe), then the defaults below. Includers define `video?`.
+# provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS, plus an optional `style` (a Style id) when `styled?`. New records start from `inherited_options`
+# (a generation from its prompt, a recipe run from its recipe), then the defaults below. Includers define `video?`.
 module GenerationOptions
   extend ActiveSupport::Concern
 
@@ -68,13 +68,20 @@ module GenerationOptions
 
   def provider = (models.find { it.model_id == options["model"] } || models.first)&.provider || option_sets.keys.first
 
+  # Includers that take a style override this.
+  def styled? = false
+
   def styles = @styles ||= Style.ordered.with_attached_examples.to_a
 
   # Its body is appended to the prompt; never sent to the provider.
-  def style = styles.find { it.id.to_s == options["style"] }
+  def style = (styles.find { it.id.to_s == options["style"] } if styled?)
 
   # Every provider's models are offered; the other choices come from the chosen model's provider.
-  def option_choices = { "model" => models.map(&:model_id), "style" => styles.map { it.id.to_s } }.merge(option_sets[provider])
+  def option_choices
+    choices = { "model" => models.map(&:model_id) }
+    choices["style"] = styles.map { it.id.to_s } if styled?
+    choices.merge(option_sets[provider])
+  end
 
   # Drops what the chosen model doesn't offer (e.g. after a model or kind switch), then fills the gaps
   # from the inherited options and the defaults; blank means Auto.

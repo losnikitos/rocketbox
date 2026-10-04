@@ -67,6 +67,8 @@
     </div>
   <% elsif (media_type = MediaType.find_by(slug: params[:type])) %>
     <p class="text-sm text-ink-600">No <%= media_type.name.pluralize.downcase %> yet.</p>
+  <% elsif (recipe = params[:recipe].presence && Recipe.find_by(id: params[:recipe])) %>
+    <p class="text-sm text-ink-600">No media from <%= recipe.name %> yet.</p>
   <% else %>
     <p class="text-sm text-ink-600">
       No media yet. Drop photos or videos anywhere here<% if @collection == "inbox" && (Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present?) %>, or send a photo to the bot<% end %>.

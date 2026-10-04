@@ -5,7 +5,7 @@ require "test_helper"
 class RecipeTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", format: "post",
+    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.",
       media_type_ids: [ media_types(:interior).id, "", media_types(:customer).id ])
     @interior = photo("interior.jpg", :interior)
     @customer = photo("customer.jpg", :customer)
@@ -16,28 +16,36 @@ class RecipeTest < ActiveSupport::TestCase
     RubyLLM.define_singleton_method(:paint, @original_paint)
   end
 
-  test "create_post! rejects inbox photos and photos of the wrong type" do
+  test "run! rejects inbox photos, photos of the wrong type and another account's photos" do
     inbox = photo("inbox.jpg", :customer, collection: "inbox")
+    stranger = photo("stranger.jpg", :customer, user: users(:admin_user))
 
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media: [ @interior, inbox ]) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media: [ @customer, @interior ]) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media: [ @interior ]) }
+    assert_no_difference -> { LibraryMedia.count } do
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media: [ @interior, inbox ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media: [ @customer, @interior ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media: [ @interior ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media: [ @interior, stranger ]) }
+    end
   end
 
-  test "generate! paints every slot photo in order with the recipe's options, overridden per post, and attaches one slide" do
+  test "run! paints every slot photo in order with the recipe's options, overridden per run, into a Ready media" do
     calls = []
     RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|
       calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 })
     end
     @recipe.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
-    post = @recipe.create_post!(user: @user, media: [ @interior, @customer ], options: { "quality" => "low" })
+    run = @recipe.run!(user: @user, media: [ @interior, @customer ], options: { "quality" => "low" })
+    media = run.generated_media
 
-    post.generate!
+    assert_equal [ "ready", @user, "running" ], [ media.collection, media.user, run.status ]
+    assert_not media.file.attached?
+
+    run.run!
 
     assert_equal [ [ "Compose a collage.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
-    assert_equal [ "ready", "post", 0.04 ], [ post.reload.status, post.format, post.cost ]
-    assert_equal [ "jpeg-bytes" ], post.smm_slides.map { it.media.download }
+    assert_equal [ "complete", 0.04, "Compose a collage." ], [ run.reload.status, run.cost, run.prompt ]
+    assert_equal "jpeg-bytes", media.reload.file.download
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot after the recipe body" do
@@ -51,29 +59,29 @@ class RecipeTest < ActiveSupport::TestCase
     other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media:) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.create_post!(user: @user, media:, shot: other) }
-    post = @recipe.create_post!(user: @user, media:, shot:)
-    post.generate!
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media:) }
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(user: @user, media:, shot: other) }
+    run = @recipe.run!(user: @user, media:, shot:)
+    run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair." ], prompts
-    assert_equal prompts.first, post.reload.prompt
+    assert_equal prompts.first, run.reload.prompt
   end
 
-  test "generate! records a failure" do
+  test "run! records a failure" do
     RubyLLM.define_singleton_method(:paint) { |*, **| raise RubyLLM::Error, "content policy" }
-    post = @recipe.create_post!(user: @user, media: [ @interior, @customer ])
+    run = @recipe.run!(user: @user, media: [ @interior, @customer ])
 
-    post.generate!
+    run.run!
 
-    assert_equal [ "failed", "content policy" ], [ post.reload.status, post.error_message ]
-    assert_empty post.smm_slides
+    assert_equal [ "failed", "content policy" ], [ run.reload.status, run.error ]
+    assert_not run.generated_media.reload.file.attached?
   end
 
   private
 
-    def photo(filename, type, collection: "photobank")
-      LibraryMedia.create!(kind: "photo", media_type: media_types(type), user: @user, collection:,
+    def photo(filename, type, collection: "photobank", user: @user)
+      LibraryMedia.create!(kind: "photo", media_type: media_types(type), user:, collection:,
         file: { io: StringIO.new("img"), filename:, content_type: "image/jpeg" })
     end
 end

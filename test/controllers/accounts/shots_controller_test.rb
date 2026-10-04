@@ -17,7 +17,7 @@ class Accounts::ShotsControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Red Carpet/, count: 0
 
     recipe = Recipe.create!(name: "Chair", body: "p", media_type_ids: [ media_types(:interior).id ], shot_group: "Daily")
-    get new_recipe_post_url(recipe, account: @admin.id)
+    get new_recipe_run_url(recipe, account: @admin.id)
     assert_select "label:has(input[type=radio][name=shot_id])", text: /Empty Chair\s+The empty chair/
   end
 end

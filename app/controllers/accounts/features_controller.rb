@@ -35,6 +35,6 @@ module Accounts
         @setting = @feature.setting_for(Current.account)
       end
 
-      def setting_params = params.expect(feature_setting: %i[enabled media_type_id layer_slug])
+      def setting_params = params.expect(feature_setting: %i[enabled recipe_id layer_slug])
   end
 end

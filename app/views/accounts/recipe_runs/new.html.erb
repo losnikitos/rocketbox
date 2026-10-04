@@ -8,14 +8,11 @@
   </nav>
 
   <section class="space-y-1 rounded-2xl border border-ink-900/10 bg-white p-6">
-    <div class="flex items-center gap-2">
-      <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
-      <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= @recipe.format %></span>
-    </div>
+    <h2 class="text-sm font-semibold text-ink-900"><%= @recipe.name %></h2>
     <p class="line-clamp-10 text-sm text-ink-600"><%= @recipe.body %></p>
   </section>
 
-  <%= form_with url: recipe_posts_path(@recipe), class: "space-y-6" do |f| %>
+  <%= form_with url: recipe_runs_path(@recipe), class: "space-y-6" do |f| %>
     <% if @error %>
       <p class="<%= tw_alert_error_classes %>" role="alert"><%= @error %></p>
     <% end %>
@@ -99,7 +96,7 @@
     <% end %>
 
     <div class="max-w-md">
-      <%= render "shared/generation_options", record: @post, scope: "smm_post", refresh_url: new_recipe_post_path(@recipe) %>
+      <%= render "shared/generation_options", record: @run, scope: "recipe_run", refresh_url: new_recipe_run_path(@recipe) %>
     </div>
 
     <%= f.button class: "rb-btn-primary gap-1.5 px-3.5 py-2 text-sm" do %>

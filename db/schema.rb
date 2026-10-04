@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -90,10 +90,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.boolean "enabled", default: false, null: false
     t.string "feature_slug", null: false
     t.string "layer_slug"
-    t.integer "media_type_id"
+    t.integer "recipe_id"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["media_type_id"], name: "index_feature_settings_on_media_type_id"
+    t.index ["recipe_id"], name: "index_feature_settings_on_recipe_id"
     t.index ["user_id", "feature_slug"], name: "index_feature_settings_on_user_id_and_feature_slug", unique: true
     t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
@@ -214,10 +214,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.index ["media_type_id"], name: "index_prompts_on_media_type_id"
   end
 
+  create_table "recipe_runs", force: :cascade do |t|
+    t.decimal "cost", precision: 10, scale: 6
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.integer "generated_media_id", null: false
+    t.json "options", default: {}, null: false
+    t.text "prompt"
+    t.integer "recipe_id"
+    t.integer "shot_id"
+    t.json "source_media_ids", default: [], null: false
+    t.string "status", default: "running", null: false
+    t.datetime "updated_at", null: false
+    t.index ["generated_media_id"], name: "index_recipe_runs_on_generated_media_id", unique: true
+    t.index ["recipe_id"], name: "index_recipe_runs_on_recipe_id"
+    t.index ["shot_id"], name: "index_recipe_runs_on_shot_id"
+  end
+
   create_table "recipes", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.string "format", default: "post", null: false
     t.json "media_type_ids", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
@@ -368,23 +384,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
 
   create_table "smm_posts", force: :cascade do |t|
     t.text "caption"
-    t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error_message"
     t.string "feature_slug"
     t.string "format", default: "reel", null: false
-    t.json "options", default: {}, null: false
-    t.text "prompt"
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
-    t.integer "recipe_id"
-    t.integer "shot_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["recipe_id"], name: "index_smm_posts_on_recipe_id"
-    t.index ["shot_id"], name: "index_smm_posts_on_shot_id"
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_smm_posts_on_user_id"
@@ -461,7 +470,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "crawls", "links"
-  add_foreign_key "feature_settings", "media_types", on_delete: :nullify
+  add_foreign_key "feature_settings", "recipes", on_delete: :nullify
   add_foreign_key "feature_settings", "users"
   add_foreign_key "generations", "library_media", column: "generated_media_id"
   add_foreign_key "generations", "library_media", column: "source_media_id"
@@ -473,13 +482,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
   add_foreign_key "prompts", "media_types"
+  add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
+  add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
+  add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
-  add_foreign_key "smm_posts", "recipes"
-  add_foreign_key "smm_posts", "shots"
   add_foreign_key "smm_posts", "users"
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"

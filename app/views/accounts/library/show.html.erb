@@ -54,7 +54,7 @@
     </div>
 
     <% if @siblings.size > 1 %>
-      <nav aria-label="<%= @media.media_type&.name || "Untyped" %> media"
+      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.media_type&.name || "Untyped" %> media"
            class="relative flex gap-2 overflow-x-auto p-1" data-controller="center-current">
         <% @siblings.each do |media| %>
           <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
@@ -99,6 +99,43 @@
         <% end %>
         <%= render "accounts/prompts/card", prompt: generation.prompt %>
         <%= render "accounts/generations/options", record: generation, rows: [ [ "Extra prompt", generation.extra_prompt ] ] %>
+      </section>
+    <% end %>
+
+    <% if (run = @media.recipe_run) %>
+      <section class="mt-6 space-y-4" aria-labelledby="recipe-run-heading">
+        <div class="flex items-center gap-2">
+          <h3 id="recipe-run-heading" class="text-sm text-ink-500">Recipe</h3>
+          <% unless run.complete? %>
+            <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
+          <% end %>
+        </div>
+        <% if run.error.present? %>
+          <p class="text-sm text-signal-red"><%= run.error %></p>
+        <% end %>
+        <%= render "accounts/generations/options", record: run, rows: [
+              [ "Recipe", run.recipe ? link_to(run.recipe.name, edit_recipe_path(run.recipe), class: "underline hover:text-ink-600") : "Deleted" ],
+              [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]
+            ] %>
+        <% if (sources = run.source_media).any? %>
+          <ul class="flex flex-wrap gap-2" aria-label="Photos">
+            <% sources.each do |media| %>
+              <li>
+                <%= link_to library_item_path(media), title: media.media_type&.name,
+                      class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                  <%= render "accounts/library/file", media:, css: "aspect-2/3 w-16 rounded-md object-cover" %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if run.prompt.present? %>
+          <div>
+            <label for="recipe-run-prompt" class="text-sm text-ink-500">Prompt</label>
+            <textarea id="recipe-run-prompt" readonly rows="6"
+                      class="mt-1 block w-full resize-y rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-700"><%= run.prompt %></textarea>
+          </div>
+        <% end %>
       </section>
     <% end %>
 
@@ -156,7 +193,7 @@
       <dl class="mt-3 space-y-3 text-sm">
         <% [
              [ "Type", @media.kind.humanize ],
-             [ "Source", @media.origin ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
+             [ "Source", @media.maker ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
              [ "Uploaded", l(@media.created_at, format: :long) ],
              [ "File name", blob&.filename ],
              [ "Format", blob&.content_type ],

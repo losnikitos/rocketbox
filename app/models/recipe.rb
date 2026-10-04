@@ -1,21 +1,19 @@
 # frozen_string_literal: true
 
-# A template for a post: a prompt that composes one image from several photobank photos, one per slot, plus example media.
+# A template for a Ready image: a prompt that composes one image from several photobank photos, one per slot, plus example media.
 # `media_type_ids` lists the slots in order and may repeat a type (two staff photos).
-# `options` are the defaults for its posts (see GenerationOptions).
+# `options` are the defaults for its runs (see GenerationOptions).
 # ponytail: slots are a JSON array, so deleting a media type leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
   include GenerationOptions
 
-  # Posts outlive their recipe.
-  has_many :smm_posts, dependent: :nullify
+  # Runs outlive their recipe.
+  has_many :runs, class_name: "RecipeRun", dependent: :nullify
   has_many_attached :examples
 
-  enum :format, %w[post story reel].index_by(&:itself), validate: true
-
   before_validation { self.media_type_ids = Array(media_type_ids).compact_blank.map(&:to_i) }
-  # The shot group its posts pick a shot from; nil takes no shot.
+  # The shot group its runs pick a shot from; nil takes no shot.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
 
   validates :name, :body, :media_type_ids, presence: true
@@ -27,15 +25,14 @@ class Recipe < ApplicationRecord
 
   def video? = false
 
+  def styled? = true
+
   def media_types = MediaType.where(id: media_type_ids).index_by(&:id).values_at(*media_type_ids)
 
-  # `media` are library media in slot order; `shot` is from the recipe's shot group; `options` override the recipe's.
+  # `media` are photobank media in slot order; `shot` is from the recipe's shot group; `options` override the recipe's.
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit or an option isn't available.
-  def create_post!(user:, media:, shot: nil, options: {})
-    post = smm_posts.new(user:, format:, shot:, status: "generating", options:)
-    media.each_with_index { |item, position| post.smm_post_media_items.build(library_media: item, position:) }
-    post.save!
-    GenerateSmmPostJob.perform_later(post.id)
-    post
+  def run!(user:, media:, shot: nil, options: {})
+    runs.new(shot:, options:, source_media_ids: media.map(&:id),
+      generated_media: user.library_media.new(kind: "photo", collection: "ready")).start!
   end
 end
