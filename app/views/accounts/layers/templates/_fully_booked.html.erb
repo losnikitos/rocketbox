@@ -1,4 +1,4 @@
-<%# locals: (values:, logo:) %>
+<%# locals: (values:) %>
 <%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
 <div class="relative h-screen w-screen font-manrope text-white drop-shadow-[0_0.3vw_1.5vw_rgb(0_0_0/0.5)]">
   <p class="absolute top-[6vw] left-[6vw] text-[5vw] font-semibold">
@@ -7,7 +7,4 @@
   <p class="absolute inset-0 flex items-center justify-center px-[6vw] text-center text-[15vw] leading-none font-extrabold tracking-tight uppercase">
     <%= values[:headline] %>
   </p>
-  <% if logo %>
-    <img src="<%= logo %>" alt="" class="absolute right-[6vw] bottom-[6vw] h-[14vw] max-w-[30vw] object-contain">
-  <% end %>
 </div>

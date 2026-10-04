@@ -1,0 +1,18 @@
+<%# locals: (values:) %>
+<%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
+<div class="flex h-screen w-screen items-center justify-center px-[8vw] font-manrope text-white">
+  <figure class="w-full rounded-[4vw] bg-black/55 p-[7vw]">
+    <div class="flex gap-[1.5vw]">
+      <% 5.times do %>
+        <%= heroicon "star", variant: :solid, options: { class: "size-[7vw]", "aria-hidden": true } %>
+      <% end %>
+    </div>
+    <blockquote class="mt-[5vw] text-[6vw] leading-snug font-semibold">“<%= values[:text] %>”</blockquote>
+    <figcaption class="mt-[6vw] flex items-center gap-[3vw] text-[4.5vw] font-semibold">
+      <% if values[:photo] %>
+        <img src="<%= values[:photo] %>" alt="" class="size-[12vw] rounded-full object-cover">
+      <% end %>
+      <%= values[:name] %>
+    </figcaption>
+  </figure>
+</div>
