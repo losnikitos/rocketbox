@@ -16,9 +16,14 @@
 <% else %>
 <div data-controller="library-select">
   <% if @library_media.present? %>
+    <% if @collection != "photobank" %>
+    <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+      <%= render partial: "accounts/library/tile", collection: @library_media, as: :media %>
+    </ul>
+    <% else %>
     <ul class="@container flex flex-wrap items-start gap-3 [--cols:3] sm:[--cols:4] lg:[--cols:5] xl:[--cols:6] 2xl:[--cols:8]">
       <% @library_media.group_by { it.origin&.source_media || it }.each do |source, group| %>
-        <% generated = group.first.origin %>
+        <% generated = group.any?(&:origin) %>
         <%= tag.li class: "min-w-0 max-w-full rounded-xl border-2 border-stone-200 bg-white p-2 data-drop-over:border-rocket", aria: { label: ("Generated from one source" if generated) }, data: { source_id: source.id } do %>
           <% if generated %>
             <%= link_to library_item_path(source), class: "mb-2 flex items-center gap-2 text-xs font-medium text-ink-600 hover:text-ink-900" do %>
@@ -29,11 +34,12 @@
             <div class="mb-2 h-6" aria-hidden="true"></div>
           <% end %>
           <ul class="flex flex-wrap gap-2 *:w-[calc((100cqw_-_(var(--cols)_-_1)_*_0.75rem)_/_var(--cols)_-_1.25rem)]">
-            <%= render partial: "accounts/library/tile", collection: generated ? group : [source], as: :media %>
+            <%= render partial: "accounts/library/tile", collection: group, as: :media %>
           </ul>
         <% end %>
       <% end %>
     </ul>
+    <% end %>
 
     <div
       class="sticky bottom-4 z-20 mt-6 hidden flex-col gap-3 rounded-xl border border-ink-900/10 bg-white/95 p-3 shadow-lg backdrop-blur data-[open]:flex sm:data-[open]:flex-row sm:data-[open]:items-center sm:data-[open]:justify-between"
