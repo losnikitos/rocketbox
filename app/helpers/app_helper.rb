@@ -84,10 +84,11 @@ module AppHelper
       index = controller_path == "accounts/recipes" && action_name == "index"
       recipes = Recipe.all.to_a
       [ :recipes, "Recipes", [
-        [ recipes_path, "All", index && params[:folder].blank?, recipes.size ],
+        [ recipes_path, "All", index && params[:source].blank?, recipes.size ],
         :separator,
-        *LibraryMedia.collections.keys.map do |folder|
-          [ recipes_path(folder:), folder.humanize, index && params[:folder] == folder, recipes.count { it.reads?(folder) } ]
+        *Recipe.by_source(recipes).flat_map do |group|
+          source = group.first.source
+          [ (:separator if source == "multiple"), [ recipes_path(source:), group.first.source_label, index && params[:source] == source, group.size ] ].compact
         end
       ] ]
     when "accounts/features"

@@ -5,7 +5,7 @@ require "test_helper"
 class RecipeTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.",
+    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", output_tag: tags(:working),
       inputs: [ input(:interior), { "collection" => "photobank", "tag_id" => "" }, input(:customer) ])
     @interior = photo("interior.jpg", :interior)
     @customer = photo("customer.jpg", :customer)
@@ -20,6 +20,7 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "inputs drop blank tags and need a known folder and tag; a video takes one input" do
     assert_equal [ input(:interior), input(:customer) ], @recipe.inputs
+    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "collection" => "attic", "tag_id" => tags(:interior).id } ]).valid?
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "collection" => "inbox", "tag_id" => 0 } ]).valid?
@@ -52,7 +53,7 @@ class RecipeTest < ActiveSupport::TestCase
     run = @recipe.run!(media: [ @interior, @customer ], extra_prompt: "Warmer.", options: { "quality" => "low" })
     media = run.generated_media
 
-    assert_equal [ "ready", @user, tags(:interior), "running" ], [ media.collection, media.user, media.tag, run.status ]
+    assert_equal [ "ready", @user, tags(:working), "running" ], [ media.collection, media.user, media.tag, run.status ]
     assert_equal [ @interior, @customer ], run.reload.source_media
     assert_not media.file.attached?
 
@@ -81,7 +82,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a stitch recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
-    recipe = Recipe.create!(name: "Reel", kind: "stitch", shot_group: "Daily", inputs: [ input(:interior), input(:customer) ])
+    recipe = Recipe.create!(name: "Reel", kind: "stitch", shot_group: "Daily", output_tag: tags(:interior), inputs: [ input(:interior), input(:customer) ])
     assert_nil recipe.shot_group
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     run = recipe.run!(media:)

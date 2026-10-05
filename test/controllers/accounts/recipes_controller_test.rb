@@ -16,7 +16,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select "li", text: "Kind is not included in the list"
 
-    post recipes_url, params: { recipe: { name: "Team collage", body: "p", output_collection: "ready",
+    post recipes_url, params: { recipe: { name: "Team collage", body: "p", output_collection: "ready", output_tag_id: tags(:interior).id,
       inputs: [ input(:interior), input(:customer, collection: "inbox"), { collection: "inbox", tag_id: "" } ], examples: [ image("a.jpg") ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Team collage")
@@ -28,7 +28,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(recipe)}" do
       assert_select "img[alt='a.jpg']"
       assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: "Team collage"
-      assert_select "ul[aria-label=Inputs] li", text: tags(:interior).name
+      assert_select "ul[aria-label=Inputs] li", text: /Photobank\s+#{tags(:interior).name}/
+      assert_select "[aria-label=Output]", text: /Ready\s+#{tags(:interior).name}/
       assert_select "[popover] a[href=?]", edit_recipe_path(recipe, account: @admin.id)
       assert_select "[popover] a[href^='/app/recipes/#{recipe.id}?'][data-turbo-method=delete]"
     end
@@ -40,10 +41,10 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='recipe[output_collection]'] option[selected][value=ready]"
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", recipe.examples.first.signed_id
 
-    patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_collection: "photobank", inputs: [ input(:exterior, collection: "inbox") ], examples: [ "" ] } }
+    patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_collection: "photobank", output_tag_id: tags(:interior).id, inputs: [ input(:exterior, collection: "inbox") ], examples: [ "" ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     assert recipe.reload.video?
-    assert_equal [ "photobank", [ tags(:exterior).id ] ], [ recipe.output_collection, recipe.tag_ids ]
+    assert_equal [ "photobank", [ tags(:exterior).id ], tags(:interior) ], [ recipe.output_collection, recipe.tag_ids, recipe.output_tag ]
     assert_empty recipe.examples
 
     assert_difference -> { Recipe.count }, -1 do
@@ -68,7 +69,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='recipe[options][aspect_ratio]'] option[selected]", text: "9:16"
     assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
 
-    post recipes_url, params: { recipe: { name: "Square", body: "p", inputs: [ input(:interior) ],
+    post recipes_url, params: { recipe: { name: "Square", body: "p", output_tag_id: tags(:interior).id, inputs: [ input(:interior) ],
       options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "" } } }
     recipe = Recipe.find_by!(name: "Square")
     assert_equal({ "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k" }, recipe.options)
@@ -82,20 +83,29 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Aspect ratio 2:1 isn't available/
   end
 
-  test "index tabs filter by input folder" do
+  test "index tabs filter by input folder and tag; recipes reading several go under multiple inputs" do
     @admin = sign_in_as(users(:admin_user))
-    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ input(:interior) ])
+    reel = Recipe.create!(name: "Reel", kind: "stitch", output_tag: tags(:interior), inputs: [ input(:interior), input(:interior) ])
+    collage = Recipe.create!(name: "Collage", body: "p", output_tag: tags(:interior), inputs: [ input(:interior), input(:customer) ])
 
-    get recipes_url(account: @admin.id, folder: "inbox")
-    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Inbox\s+2/
-    assert_select "nav[aria-label='Secondary'] a", text: /Photobank\s+1/
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(folder: "inbox", account: @admin.id)
+    get recipes_url(account: @admin.id)
+    headers = css_select("section h2").map(&:text)
+    assert_includes headers, "Photobank · #{tags(:interior).name}"
+    assert_equal "Multiple inputs", headers.last
+    assert_select "section", text: /Multiple inputs.*Collage/m
+
+    get recipes_url(account: @admin.id, source: "inbox/#{tags(:interior).id}")
+    assert_select "section h2", count: 0
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Inbox · #{tags(:interior).name}\s+1/
+    assert_select "nav[aria-label='Secondary'] a[href=?]", recipes_path(source: "photobank/#{tags(:interior).id}", account: @admin.id), text: /Photobank · #{tags(:interior).name}\s+1/
+    assert_select "nav[aria-label='Secondary'] a", text: /Multiple inputs\s+1/
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(account: @admin.id)
     assert_select "##{dom_id(recipes(:cinematic))}"
-    assert_select "##{dom_id(collage)}", count: 0
+    assert_select "##{dom_id(reel)}", count: 0
 
-    get recipes_url(account: @admin.id, folder: "photobank")
+    get recipes_url(account: @admin.id, source: "multiple")
     assert_select "##{dom_id(collage)}"
-    assert_select "##{dom_id(recipes(:cinematic))}", count: 0
+    assert_select "##{dom_id(reel)}", count: 0
   end
 
   private

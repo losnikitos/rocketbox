@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -215,9 +215,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
     t.string "name", null: false
     t.json "options", default: {}, null: false
     t.string "output_collection", default: "ready", null: false
+    t.integer "output_tag_id"
     t.string "shot_group"
     t.boolean "takes_style", default: false, null: false
     t.datetime "updated_at", null: false
+    t.index ["output_tag_id"], name: "index_recipes_on_output_tag_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -474,6 +476,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "recipe_runs", "styles", on_delete: :nullify
+  add_foreign_key "recipes", "tags", column: "output_tag_id", on_delete: :nullify
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"

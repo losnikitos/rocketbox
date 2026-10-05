@@ -3,6 +3,7 @@ cinematic:
   kind: generate_video
   body: Slow cinematic push-in on the shop.
   output_collection: photobank
+  output_tag: interior
   inputs:
     - collection: inbox
       tag_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
@@ -12,6 +13,7 @@ before_after:
   kind: generate_video
   body: Energetic before and after reveal.
   output_collection: photobank
+  output_tag: misc
   inputs:
     - collection: inbox
       tag_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>

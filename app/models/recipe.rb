@@ -3,9 +3,9 @@
 # How media is made from library media, one per input slot, plus example media.
 # `inputs` lists the slots in order as { "collection", "tag_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
-# a video, 1 second each. Results land in `output_collection` with the first input's tag.
+# a video, 1 second each. Results land in `output_collection` tagged `output_tag`.
 # `options` are the defaults for its AI runs (see GenerationOptions). Each run also picks a shot and a style if the recipe takes them.
-# ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing
+# ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing, and nulls the output tag
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
   include GenerationOptions
@@ -17,6 +17,7 @@ class Recipe < ApplicationRecord
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
   has_many_attached :examples
+  belongs_to :output_tag, class_name: "Tag"
 
   enum :kind, KINDS.keys.index_by(&:itself), validate: true
   # A stitch has no prompt.
@@ -55,7 +56,17 @@ class Recipe < ApplicationRecord
   # The index of the first slot the media fits, or nil.
   def slot_for(media) = inputs.index { it["collection"] == media.collection && it["tag_id"] == media.tag_id }
 
-  def reads?(collection) = inputs.any? { it["collection"] == collection }
+  # The index tab it's listed under: "collection/tag_id" when every slot reads the same folder and tag, else "multiple".
+  def source = inputs.uniq.one? ? inputs.first.values_at("collection", "tag_id").join("/") : "multiple"
+
+  def source_label
+    return "Multiple inputs" if source == "multiple"
+    collection, tag = slots.first
+    "#{collection.humanize} · #{tag&.name || "Unknown"}"
+  end
+
+  # Groups of recipes sharing a source, by label with multiple inputs last.
+  def self.by_source(recipes) = recipes.group_by(&:source).values.sort_by { [ it.first.source == "multiple" ? 1 : 0, it.first.source_label ] }
 
   # `media` fill the slots in order; `shot` is from the recipe's shot group; `style` if it takes one; `options` override the recipe's.
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.

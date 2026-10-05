@@ -185,7 +185,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "ready lists recipe output; its page shows the recipe run" do
     source = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user,
       file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
+    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", output_tag: tags(:interior), inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
     run = recipe.run!(media: [ source ])
 
     get library_ready_url
@@ -198,7 +198,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_ready_path(recipe: recipe.id), text: "Collage 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Interior/, count: 0
 
-    other = Recipe.create!(name: "Poster", body: "Make a poster.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
+    other = Recipe.create!(name: "Poster", body: "Make a poster.", output_tag: tags(:interior), inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
     get library_ready_url(recipe: other.id)
     assert_select "a[href=?]", library_ready_media_path(run.generated_media), count: 0
     assert_select "p", text: "No media from Poster yet."
