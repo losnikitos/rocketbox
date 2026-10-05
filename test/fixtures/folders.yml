@@ -1,0 +1,15 @@
+<% %w[inbox photobank ready].each do |root| %>
+<%= root %>:
+  name: <%= root.humanize %>
+  slug: <%= root %>
+<% end %>
+<% %w[business_card interior exterior logo customer misc working].each do |key| %>
+<%= key %>:
+  name: <%= key.humanize %>
+  slug: <%= key.dasherize %>
+  parent: inbox
+photobank_<%= key %>:
+  name: <%= key.humanize %>
+  slug: <%= key.dasherize %>
+  parent: photobank
+<% end %>

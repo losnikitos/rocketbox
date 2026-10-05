@@ -1,5 +1,5 @@
-ActiveAdmin.register Tag do
-  permit_params :name
+ActiveAdmin.register Folder do
+  permit_params :name, :parent_id
 
   config.sort_order = "name_asc"
 
@@ -8,6 +8,7 @@ ActiveAdmin.register Tag do
     id_column
     column :name
     column :slug
+    column :parent
     column("Library media") { it.library_media.count }
     actions
   end
@@ -15,6 +16,7 @@ ActiveAdmin.register Tag do
   form do |f|
     f.inputs do
       f.input :name
+      f.input :parent, collection: Folder.roots.ordered
     end
     f.actions
   end

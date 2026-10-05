@@ -168,7 +168,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
 
     get link_url(@link)
     assert_select "button", text: "Everything applied"
-    assert_select "a[href=?]", library_upload_path(@user.library_media.first), text: /In library/
+    assert_select "a[href=?]", library_item_path(@user.library_media.first), text: /In library/
   end
 
   test "add all to library applies only photos and videos" do

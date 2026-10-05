@@ -7,8 +7,8 @@ class AdminAccountParamTest < ActionDispatch::IntegrationTest
     admin = sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
 
-    get library_uploads_url
-    assert_redirected_to library_uploads_url(account: admin.id)
+    get library_folders_url("inbox")
+    assert_redirected_to library_folders_url("inbox", account: admin.id)
 
     get app_url(account: customer.id)
     assert_redirected_to overview_url(account: customer.id)
@@ -37,7 +37,7 @@ class AdminAccountParamTest < ActionDispatch::IntegrationTest
   test "non-admin ignores the account param and sees no selector" do
     sign_in_as(users(:lazaro_nixon))
 
-    get library_uploads_url(account: users(:admin_user).id)
+    get library_folders_url("inbox", account: users(:admin_user).id)
     assert_response :success
     assert_select "select#account_user_id", count: 0
     assert_select "nav[aria-label='Primary'] a[href=?]", reviews_path

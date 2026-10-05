@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_170000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -98,6 +98,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
 
+  create_table "folders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "parent_id"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id", "slug"], name: "index_folders_on_parent_id_and_slug", unique: true
+    t.index ["parent_id"], name: "index_folders_on_parent_id"
+  end
+
   create_table "incoming_messages", force: :cascade do |t|
     t.text "body"
     t.string "channel", null: false
@@ -116,20 +126,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
 
   create_table "library_media", force: :cascade do |t|
     t.integer "chat_id"
-    t.string "collection", default: "inbox", null: false
     t.datetime "created_at", null: false
     t.json "extracted_info"
+    t.integer "folder_id", null: false
     t.integer "from_id"
     t.string "kind", null: false
     t.string "source_url"
-    t.integer "tag_id"
     t.string "telegram_file_id"
     t.string "telegram_file_unique_id"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.string "whatsapp_from"
     t.string "whatsapp_media_id"
-    t.index ["tag_id"], name: "index_library_media_on_tag_id"
+    t.index ["folder_id"], name: "index_library_media_on_folder_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
     t.index ["user_id", "source_url"], name: "index_library_media_on_user_id_and_source_url"
     t.index ["user_id"], name: "index_library_media_on_user_id"
@@ -214,12 +223,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.string "kind", default: "generate_image", null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
-    t.string "output_collection", default: "ready", null: false
-    t.integer "output_tag_id"
+    t.integer "output_folder_id", null: false
     t.string "shot_group"
     t.boolean "takes_style", default: false, null: false
     t.datetime "updated_at", null: false
-    t.index ["output_tag_id"], name: "index_recipes_on_output_tag_id"
+    t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -421,14 +429,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.index ["crawl_id"], name: "index_suggestions_on_crawl_id"
   end
 
-  create_table "tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.string "slug", null: false
-    t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_tags_on_slug", unique: true
-  end
-
   create_table "users", force: :cascade do |t|
     t.string "address"
     t.string "brand_voice"
@@ -464,8 +464,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   add_foreign_key "crawls", "links"
   add_foreign_key "feature_settings", "recipes", on_delete: :nullify
   add_foreign_key "feature_settings", "users"
+  add_foreign_key "folders", "folders", column: "parent_id"
   add_foreign_key "incoming_messages", "users"
-  add_foreign_key "library_media", "tags", on_delete: :nullify
+  add_foreign_key "library_media", "folders"
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
@@ -476,7 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "recipe_runs", "styles", on_delete: :nullify
-  add_foreign_key "recipes", "tags", column: "output_tag_id", on_delete: :nullify
+  add_foreign_key "recipes", "folders", column: "output_folder_id"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"

@@ -2,12 +2,11 @@
 
 class LibraryMediaController < ApplicationController
   def create
-    collection = LibraryMedia.collections.key?(params[:collection]) ? params[:collection] : "inbox"
     files = Array(params[:files]).select { |f| f.respond_to?(:content_type) }
     source = Current.account.library_media.find(params[:source_id]) if params[:source_id].present?
-    tag = source&.tag || (Tag.find_by(slug: params[:tag]) if params[:tag].present?)
-    uploaded = files.filter_map { |file| store_upload!(file, collection, source, tag) }
-    back = helpers.library_collection_path(collection, tag: params[:tag].presence)
+    folder = source&.folder || Folder.find_by(id: params[:folder_id]) || Folder.inbox
+    uploaded = files.filter_map { |file| store_upload!(file, folder, source) }
+    back = helpers.folder_path(folder)
 
     if uploaded.empty?
       redirect_to back, alert: "Drop a photo or video to upload."
@@ -18,8 +17,8 @@ class LibraryMediaController < ApplicationController
 
   def update
     media = Current.account.library_media.find(params[:id])
-    if media.update(params.expect(library_media: [ :tag_id ]))
-      redirect_back_or_to helpers.library_item_path(media), notice: "Tag saved."
+    if media.update(params.expect(library_media: [ :folder_id ]))
+      redirect_back_or_to helpers.library_item_path(media), notice: "Moved to #{media.folder.path}."
     else
       redirect_back_or_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
@@ -45,21 +44,21 @@ class LibraryMediaController < ApplicationController
 
   def destroy
     media = Current.account.library_media.find(params[:id]).destroy!
-    redirect_to helpers.library_collection_path(media.collection), notice: "Media deleted."
+    redirect_to helpers.folder_path(media.folder), notice: "Media deleted."
   rescue ActiveRecord::RecordNotFound
-    redirect_to library_uploads_path, alert: "Media not found."
+    redirect_to helpers.folder_path(Folder.inbox), alert: "Media not found."
   end
 
   private
 
-    def store_upload!(file, collection, source, tag)
+    def store_upload!(file, folder, source)
       file = heic_as_jpeg(file) if file.original_filename.to_s.match?(/\.hei[cf]\z/i)
       return unless file
 
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind:, collection:, tag:)
+      media = Current.account.library_media.create!(kind:, folder:)
       media.file.attach(file)
       RecipeRun.create!(generated_media: media, status: "complete", inputs: [ RecipeRunInput.new(library_media: source) ]) if source
       media

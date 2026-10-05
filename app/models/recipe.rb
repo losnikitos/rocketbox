@@ -1,30 +1,31 @@
 # frozen_string_literal: true
 
 # How media is made from library media, one per input slot, plus example media.
-# `inputs` lists the slots in order as { "collection", "tag_id" } and may repeat one (two staff photos).
+# `inputs` lists the slots in order as { "folder_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
-# a video, 1 second each. Results land in `output_collection` tagged `output_tag`.
+# a video, 1 second each. Results land in `output_folder`.
 # `options` are the defaults for its AI runs (see GenerationOptions). Each run also picks a shot and a style if the recipe takes them.
-# ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing, and nulls the output tag
+# ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
   include GenerationOptions
 
-  OUTPUT_COLLECTIONS = %w[photobank ready].freeze
+  OUTPUT_ROOTS = %w[ready photobank].freeze
   # Label and icon per kind.
   KINDS = { "generate_image" => [ "Gen image", "photo" ], "generate_video" => [ "Gen video", "film" ], "stitch" => [ "Stitch", "scissors" ] }.freeze
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
   has_many_attached :examples
-  belongs_to :output_tag, class_name: "Tag"
+  belongs_to :output_folder, class_name: "Folder"
+  before_validation(on: :create) { self.output_folder ||= Folder.ready }
 
   enum :kind, KINDS.keys.index_by(&:itself), validate: true
   # A stitch has no prompt.
   attribute :body, default: ""
 
   normalizes :inputs, with: ->(inputs) do
-    Array(inputs).filter_map { { "collection" => it["collection"].to_s, "tag_id" => it["tag_id"].to_i } if it["tag_id"].present? }
+    Array(inputs).filter_map { { "folder_id" => it["folder_id"].to_i } if it["folder_id"].present? }
   end
   # The shot group its runs pick a shot from; nil takes no shot. `takes_style`: its runs pick a style.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
@@ -32,10 +33,9 @@ class Recipe < ApplicationRecord
   before_validation(if: :stitch?) { self.shot_group, self.takes_style = nil, false }
   validates :name, :inputs, presence: true
   validates :body, presence: true, unless: :stitch?
-  validates :output_collection, inclusion: { in: OUTPUT_COLLECTIONS }
   validate do
-    errors.add(:inputs, "include an unknown folder") unless inputs.all? { it["collection"].in?(LibraryMedia.collections.keys) }
-    errors.add(:inputs, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.uniq.size
+    errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
+    errors.add(:output_folder, "must be in #{OUTPUT_ROOTS.map(&:humanize).to_sentence(two_words_connector: " or ")}") unless output_folder&.root&.slug.in?(OUTPUT_ROOTS)
     errors.add(:inputs, "must be a single photo to make a video") if video? && inputs.size > 1
   end
 
@@ -45,24 +45,23 @@ class Recipe < ApplicationRecord
 
   def takes?(media) = media.story_image? || (stitch? && media.video?)
 
-  def tag_ids = inputs.map { it["tag_id"] }
+  def folder_ids = inputs.map { it["folder_id"] }
 
-  # [collection, tag] per slot; the tag is nil once deleted.
+  # The folder per slot; nil once deleted.
   def slots
-    tags = Tag.where(id: tag_ids).index_by(&:id)
-    inputs.map { [ it["collection"], tags[it["tag_id"]] ] }
+    folders = Folder.includes(:parent).where(id: folder_ids).index_by(&:id)
+    folder_ids.map { folders[it] }
   end
 
   # The index of the first slot the media fits, or nil.
-  def slot_for(media) = inputs.index { it["collection"] == media.collection && it["tag_id"] == media.tag_id }
+  def slot_for(media) = folder_ids.index(media.folder_id)
 
-  # The index tab it's listed under: "collection/tag_id" when every slot reads the same folder and tag, else "multiple".
-  def source = inputs.uniq.one? ? inputs.first.values_at("collection", "tag_id").join("/") : "multiple"
+  # The index tab it's listed under: the folder id when every slot reads the same folder, else "multiple".
+  def source = folder_ids.uniq.one? ? folder_ids.first.to_s : "multiple"
 
   def source_label
     return "Multiple inputs" if source == "multiple"
-    collection, tag = slots.first
-    "#{collection.humanize} · #{tag&.name || "Unknown"}"
+    slots.first&.path || "Unknown"
   end
 
   # Groups of recipes sharing a source, by label with multiple inputs last.

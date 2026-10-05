@@ -24,13 +24,13 @@ class FeaturesControllerTest < ActionDispatch::IntegrationTest
 
     get feature_url("daily", account: @admin.id)
     assert_select "select[name=?]", "feature_setting[recipe_id]", 0
-    assert_select "a[href=?]", library_ready_path(recipe: 8, account: @admin.id)
+    assert_select "a[href=?]", library_folders_path("ready", recipe: 8, account: @admin.id)
   end
 
   test "test run composes a draft from the picked photo while the feature is off" do
-    recipe = Recipe.create!(name: "Poster", body: "Compose.", output_tag: tags(:working), inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ])
+    recipe = Recipe.create!(name: "Poster", body: "Compose.", inputs: [ { "folder_id" => folders(:photobank_working).id } ])
     Feature.find("fully-booked").setting_for(@admin).update!(recipe:)
-    source = LibraryMedia.create!(kind: "photo", tag: tags(:working), user: @admin, collection: "photobank",
+    source = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_working), user: @admin,
       file: { io: file_fixture("logo.png").open, filename: "working.png", content_type: "image/png" })
     photos = 2.times.map do
       recipe.run!(media: [ source ]).generated_media.tap do

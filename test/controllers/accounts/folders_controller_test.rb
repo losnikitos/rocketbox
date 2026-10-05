@@ -7,57 +7,111 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "root shows the three folders" do
+  test "root shows the three top-level folders with their whole tree's count" do
+    photo(folders(:interior))
+    photo(folders(:inbox))
+
     get library_folders_url
     assert_response :success
     assert_select "h1", "Folders"
-    %w[inbox photobank ready].each { assert_select "a[href=?]", library_folders_path(it) }
+    assert_select "a[href=?]", library_folders_path("inbox"), text: /Inbox\s+2 items/
+    %w[photobank ready].each { assert_select "a[href=?]", library_folders_path(it) }
   end
 
-  test "folder shows only its own media" do
-    photo = LibraryMedia.create!(kind: "photo", collection: "photobank", user: @user)
-    photo.file.attach(io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg")
-    inbox = LibraryMedia.create!(kind: "photo", user: @user)
-    inbox.file.attach(io: StringIO.new("img"), filename: "raw.jpg", content_type: "image/jpeg")
-
-    get library_folders_url("photobank")
-    assert_response :success
-    assert_select "#folder-media-#{photo.id}"
-    assert_select "#folder-media-#{inbox.id}", count: 0
-    assert_select "#tag-menu-#{photo.id} form[action=?]", library_media_path(photo)
-  end
-
-  test "folder filters by tag" do
-    logo = LibraryMedia.create!(kind: "photo", collection: "photobank", user: @user, tag: tags(:logo))
-    logo.file.attach(io: StringIO.new("img"), filename: "logo.jpg", content_type: "image/jpeg")
-    other = LibraryMedia.create!(kind: "photo", collection: "photobank", user: @user, tag: tags(:interior))
-    other.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
-
-    get library_folders_url("photobank", tag: "logo")
-    assert_response :success
-    assert_select "main a[aria-selected=true][href=?]", library_folders_path("photobank", tag: "logo")
-    assert_select "#folder-media-#{logo.id}"
-    assert_select "#folder-media-#{other.id}", count: 0
-  end
-
-  test "recipes panel lists recipes reading from the folder and tag" do
-    cinematic, before_after = new_recipe_run_path(recipes(:cinematic)), new_recipe_run_path(recipes(:before_after))
+  test "a top-level folder shows its subfolders and only its own media" do
+    loose = photo(folders(:inbox))
+    filed = photo(folders(:interior))
+    curated = photo(folders(:photobank_interior))
 
     get library_folders_url("inbox")
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", cinematic
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", before_after
+    assert_response :success
+    assert_select "h1", "Inbox"
+    assert_select "ul[aria-label=Folders] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior\s+1 item/
+    assert_select "#folder-media-#{loose.id}"
+    assert_select "#folder-media-#{filed.id}", count: 0
+    assert_select "#folder-media-#{curated.id}", count: 0
+    assert_select "form[data-controller=drop-upload] input[name=folder_id][value=?]", folders(:inbox).id.to_s
+    assert_select "label[for=library-upload-input]", text: /Upload/
+    assert_select "button[popovertarget=new-folder]", count: 0
+  end
 
-    get library_folders_url("inbox", tag: "interior")
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", cinematic
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", before_after, count: 0
+  test "a subfolder shows its media, a move menu and the recipes reading it" do
+    filed = photo(folders(:interior))
+    loose = photo(folders(:inbox))
 
-    get library_folders_url("photobank")
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a", count: 0
-    assert_select "aside[aria-labelledby=folder-recipes-heading]", /No recipes use this folder/
+    get library_folders_url("inbox", "interior")
+    assert_response :success
+    assert_select "nav[aria-label=Breadcrumb] a[href=?]", library_folders_path("inbox"), text: "Inbox"
+    assert_select "nav[aria-label=Breadcrumb] [aria-current=page]", text: "Interior"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("inbox"), text: "Inbox"
+    assert_select "#folder-media-#{filed.id}"
+    assert_select "#folder-media-#{loose.id}", count: 0
+    assert_select "#move-menu-#{filed.id} form[action=?] button[disabled]", library_media_path(filed), text: "Inbox / Interior"
+    assert_select "#move-menu-#{filed.id} form[action=?]", library_media_path(filed), text: "Photobank / Logo"
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:cinematic))
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
+    assert_select "button[popovertarget=rename-folder]", count: 0
+  end
+
+  test "ready filters by recipe" do
+    source = photo(folders(:photobank_interior))
+    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+    poster = Recipe.create!(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+
+    get library_folders_url("ready", recipe: collage.recipe_id)
+    assert_select "a[href=?]", library_item_path(collage.generated_media)
+    assert_select "a[href=?]", library_item_path(poster.generated_media), count: 0
+  end
+
+  test "admin creates, renames and deletes a subfolder; deleting moves its media up" do
+    admin = sign_in_as(users(:admin_user))
+    get library_folders_url("photobank", account: admin.id)
+    assert_select "form#new-folder[action=?]", library_folders_path("photobank", account: admin.id)
+
+    post library_folders_url("photobank"), params: { folder: { name: "Team" } }
+    folder = folders(:photobank).children.find_by!(slug: "team")
+    assert_redirected_to library_folders_url("photobank", "team", account: admin.id)
+    media = photo(folder, user: admin)
+
+    get library_folders_url("photobank", "team", account: admin.id)
+    assert_select "form#rename-folder input[name='folder[name]'][value=Team]"
+
+    patch library_folders_url("photobank", "team"), params: { folder: { name: "Crew" } }
+    assert_equal [ "Crew", "team" ], folder.reload.values_at(:name, :slug)
+
+    delete library_folders_url("photobank", "team")
+    assert_redirected_to library_folders_url("photobank", account: admin.id)
+    assert_not Folder.exists?(folder.id)
+    assert_equal folders(:photobank), media.reload.folder
+  end
+
+  test "a folder that's a recipe output can't be deleted" do
+    admin = sign_in_as(users(:admin_user))
+
+    delete library_folders_url("photobank", "interior")
+    assert_redirected_to library_folders_url("photobank", "interior", account: admin.id)
+    assert Folder.exists?(folders(:photobank_interior).id)
+  end
+
+  test "non-admins can't change folders" do
+    assert_no_difference -> { Folder.count } do
+      post library_folders_url("inbox"), params: { folder: { name: "Mine" } }
+      delete library_folders_url("inbox", "interior")
+    end
+    patch library_folders_url("inbox", "interior"), params: { folder: { name: "Room" } }
+    assert_equal "Interior", folders(:interior).reload.name
   end
 
   test "unknown folder is not found" do
     get "/app/library/folders/nope"
     assert_response :not_found
+    get "/app/library/folders/inbox/nope"
+    assert_response :not_found
   end
+
+  private
+
+    def photo(folder, user: @user)
+      LibraryMedia.create!(kind: "photo", folder:, user:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    end
 end

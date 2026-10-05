@@ -6,6 +6,6 @@
   <%= render "accounts/posts/grid", posts: @posts %>
 <% else %>
   <p class="mt-6 text-sm text-ink-600">
-    Nothing yet. <%= link_to "Select images in uploads", library_uploads_path, class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
+    Nothing yet. <%= link_to "Select images in the inbox", library_folders_path("inbox"), class: "font-medium text-ink-900 underline underline-offset-2" %> to create a draft.
   </p>
 <% end %>

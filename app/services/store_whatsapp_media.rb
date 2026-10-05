@@ -63,14 +63,14 @@ class StoreWhatsappMedia
       filename = filename_for(media_payload, media_id, mime_type)
 
       user = User.find_by(whatsapp_phone: from.presence)
-      # ponytail: only the first media after a request is tagged, so later photos of an album stay untagged.
+      # ponytail: only the first media after a request is filed, so later photos of an album land in the inbox root.
       # Upgrade = keep the request open for a short time window.
       step = user&.whatsapp_pending_question.presence_in(WhatsappOnboarding::MEDIA_REQUESTS.keys)
       media = LibraryMedia.create!(
         whatsapp_media_id: media_id,
         whatsapp_from: from.presence,
         kind: kind,
-        tag: step && Tag.find_by(slug: WhatsappOnboarding::MEDIA_REQUESTS[step]),
+        folder: (step && Folder.inbox.children.find_by(slug: WhatsappOnboarding::MEDIA_REQUESTS[step])) || Folder.inbox,
         user:
       )
       user.update!(whatsapp_pending_question: nil) if step

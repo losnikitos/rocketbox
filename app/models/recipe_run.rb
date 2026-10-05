@@ -31,7 +31,7 @@ class RecipeRun < ApplicationRecord
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
   def start!
     first = source_media.first
-    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", collection: recipe.output_collection, tag: recipe.output_tag)
+    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", folder: recipe.output_folder)
     save!
     GenerateJob.perform_later(self)
     self
@@ -88,7 +88,7 @@ class RecipeRun < ApplicationRecord
     def media_fit_recipe
       media = source_media
       fits = media.size == recipe.inputs.size && media.all? && media.uniq.size == media.size && media.map(&:user_id).uniq.size == 1 &&
-        media.zip(recipe.inputs).all? { |item, slot| item.collection == slot["collection"] && item.tag_id == slot["tag_id"] && recipe.takes?(item) }
+        media.zip(recipe.inputs).all? { |item, slot| item.folder_id == slot["folder_id"] && recipe.takes?(item) }
       errors.add(:base, "Pick a different matching photo for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
       errors.add(:base, "Pick a style.") unless style.present? == recipe.takes_style?

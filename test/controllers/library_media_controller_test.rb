@@ -24,7 +24,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
       delete library_media_url(media)
     end
 
-    assert_redirected_to library_uploads_url
+    assert_redirected_to library_folders_url("inbox")
     assert_equal "Media deleted.", flash[:notice]
     assert_empty post.reload.library_media
     post.update!(status: "ready")
@@ -43,26 +43,29 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
   test "shows alert when media not found" do
     delete library_media_url(id: 0)
 
-    assert_redirected_to library_uploads_url(account: @admin.id)
+    assert_redirected_to library_folders_url("inbox", account: @admin.id)
     assert_equal "Media not found.", flash[:alert]
   end
 
-  test "sets and clears tag" do
-    patch library_media_url(@media), params: { library_media: { tag_id: tags(:logo).id } }
-    assert_redirected_to library_upload_url(@media, account: @admin.id)
-    assert_equal tags(:logo), @media.reload.tag
+  test "moves media into any folder, across roots" do
+    assert_equal folders(:inbox), @media.folder
 
-    patch library_media_url(@media), params: { library_media: { tag_id: "" } }
-    assert_nil @media.reload.tag
+    patch library_media_url(@media), params: { library_media: { folder_id: folders(:photobank_logo).id } }
+    assert_redirected_to library_item_url(@media, account: @admin.id)
+    assert_equal "Moved to Photobank / Logo.", flash[:notice]
+    assert_equal folders(:photobank_logo), @media.reload.folder
 
-    patch library_media_url(@media), params: { library_media: { tag_id: 0 } }
-    assert_nil @media.reload.tag
+    patch library_media_url(@media), params: { library_media: { folder_id: folders(:inbox).id } }
+    assert_equal folders(:inbox), @media.reload.folder
+
+    patch library_media_url(@media), params: { library_media: { folder_id: 0 } }
+    assert_equal folders(:inbox), @media.reload.folder
     assert flash[:alert].present?
   end
 
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
-    @media.update!(tag: tags(:business_card), extracted_info: {
+    @media.update!(folder: folders(:business_card), extracted_info: {
       "status" => "done",
       "has_logo" => true,
       "fields" => { "business_name" => " Fade Co ", "phone" => "+1 555 0100", "website" => "https://fade.co", "address" => nil, "person_name" => "" }
@@ -71,7 +74,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
     patch apply_extraction_library_media_url(@media)
 
-    assert_redirected_to library_upload_url(@media, account: @admin.id)
+    assert_redirected_to library_item_url(@media, account: @admin.id)
     @admin.reload
     assert_equal "Fade Co", @admin.business_name
     assert_equal "+1 555 0100", @admin.phone
@@ -85,17 +88,17 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
   test "extract enqueues the job for business cards only" do
     post extract_library_media_url(@media)
-    assert_redirected_to library_upload_url(@media, account: @admin.id)
+    assert_redirected_to library_item_url(@media, account: @admin.id)
     assert_nil @media.reload.extracted_info
 
-    @media.update!(tag: tags(:business_card))
+    @media.update!(folder: folders(:business_card))
     assert_enqueued_with(job: ExtractBusinessCardJob, args: [ @media.id ]) do
       post extract_library_media_url(@media)
     end
     assert_equal "pending", @media.reload.extraction_status
   end
 
-  test "uploads photo files into the library" do
+  test "uploads photo files into the inbox by default" do
     user = sign_in_as(users(:lazaro_nixon))
     file = fixture_file_upload("logo.png", "image/png")
 
@@ -105,18 +108,21 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
     media = user.library_media.order(:id).last
     assert media.file.attached?
-    assert_equal "photo", media.kind
-    assert_redirected_to library_uploads_url
+    assert_equal [ "photo", folders(:inbox) ], [ media.kind, media.folder ]
+    assert_redirected_to library_folders_url("inbox")
     assert_equal "Uploaded 1 file.", flash[:notice]
   end
 
-  test "upload into a tag-filtered view gets that tag" do
+  test "uploads into the folder it was dropped on and deletes back to it" do
     user = sign_in_as(users(:lazaro_nixon))
 
-    post library_media_index_url, params: { tag: tags(:interior).slug, files: [ fixture_file_upload("logo.png", "image/png") ] }
+    post library_media_index_url, params: { folder_id: folders(:photobank_interior).id, files: [ fixture_file_upload("logo.png", "image/png") ] }
+    media = user.library_media.order(:id).last
+    assert_equal folders(:photobank_interior), media.folder
+    assert_redirected_to library_folders_url("photobank", "interior")
 
-    assert_equal tags(:interior), user.library_media.order(:id).last.tag
-    assert_redirected_to library_uploads_url(tag: tags(:interior).slug)
+    delete library_media_url(media)
+    assert_redirected_to library_folders_url("photobank", "interior")
   end
 
   test "converts HEIC uploads to JPEG" do
@@ -130,35 +136,20 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "photo.jpg", media.file.filename.to_s
   end
 
-  test "uploads into the photobank and deletes back to it" do
-    user = sign_in_as(users(:lazaro_nixon))
-
-    post library_media_index_url, params: { collection: "photobank", files: [ fixture_file_upload("logo.png", "image/png") ] }
-    media = user.library_media.order(:id).last
-    assert media.photobank?
-    assert_redirected_to library_photobank_url
-
-    delete library_media_url(media)
-    assert_redirected_to library_photobank_url
-
-    post library_media_index_url, params: { collection: "bogus", files: [ fixture_file_upload("logo.png", "image/png") ] }
-    assert user.library_media.order(:id).last.inbox?
-  end
-
   test "upload dropped onto a group attaches to its source" do
     user = sign_in_as(users(:lazaro_nixon))
-    source = user.library_media.create!(kind: "photo", collection: "photobank", tag: tags(:interior))
+    source = user.library_media.create!(kind: "photo", folder: folders(:photobank_interior))
 
-    post library_media_index_url, params: { collection: "photobank", source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
+    post library_media_index_url, params: { folder_id: folders(:photobank_interior).id, source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
 
     media = user.library_media.order(:id).last
     assert_equal source, media.original
     assert media.recipe_run.complete?
     assert_nil media.recipe_run.recipe
-    assert_equal tags(:interior), media.tag
-    assert_redirected_to library_photobank_url
+    assert_equal folders(:photobank_interior), media.folder
+    assert_redirected_to library_folders_url("photobank", "interior")
 
-    get library_photobank_media_url(media)
+    get library_item_url(media)
     assert_response :success
 
     assert_no_difference -> { LibraryMedia.count } do
@@ -174,7 +165,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
       post library_media_index_url, params: { files: [] }
     end
 
-    assert_redirected_to library_uploads_url
+    assert_redirected_to library_folders_url("inbox")
     assert_equal "Drop a photo or video to upload.", flash[:alert]
   end
 end

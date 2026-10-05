@@ -2,7 +2,8 @@
 
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
-  belongs_to :tag, optional: true
+  belongs_to :folder
+  before_validation(on: :create) { self.folder ||= Folder.inbox }
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the input rows go.
@@ -24,16 +25,15 @@ class LibraryMedia < ApplicationRecord
     "business_description" => :business_description
   }.freeze
 
-  # Inbox: everything the owner sends or uploads. Photobank: curated media, manual upload only.
-  # Ready: final recipe output.
-  enum :collection, %w[inbox photobank ready].index_by(&:itself), default: "inbox", validate: true
-
   validates :kind, presence: true
-  validates :tag, presence: true, if: :tag_id
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
-  def business_card? = tag&.slug == "business-card"
+  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media, ready final recipe output.
+  scope :in_tree, ->(folder) { where(folder: folder.tree) }
+
+  def business_card? = folder.slug == "business-card"
+  def ready? = folder.root.slug == "ready"
 
   # The media this one is a version of.
   def original = recipe_run&.source_media&.first || self
@@ -52,7 +52,7 @@ class LibraryMedia < ApplicationRecord
 
   # Recipes with an input slot this media fits.
   def recipes
-    return [] unless story_image? && tag
+    return [] unless story_image?
 
     Recipe.with_attached_examples.ordered.select { it.slot_for(self) }
   end

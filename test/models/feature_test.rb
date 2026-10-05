@@ -7,7 +7,7 @@ class FeatureTest < ActiveSupport::TestCase
     @user = users(:lazaro_nixon)
     @feature = Feature.find("fully-booked")
     @original_screenshot = Layer.method(:screenshot)
-    @source = LibraryMedia.create!(kind: "photo", tag: tags(:working), user: @user, collection: "photobank",
+    @source = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_working), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "working.png", content_type: "image/png" })
   end
 
@@ -87,7 +87,7 @@ class FeatureTest < ActiveSupport::TestCase
     feature = Feature.find("daily")
     feature.setting_for(@user).update!(recipe: recipe("Poster"), layer_slug: "review")
     ready_photo(recipe("Poster"))
-    photo = ready_photo(Recipe.create!(id: 8, name: "Будни", body: "Compose.", output_tag: tags(:working), inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ]))
+    photo = ready_photo(Recipe.create!(id: 8, name: "Будни", body: "Compose.", inputs: [ { "folder_id" => folders(:photobank_working).id } ]))
     rendered = []
     Layer.define_singleton_method(:screenshot) { |html, size:| rendered << html and "png-bytes" }
 
@@ -100,7 +100,7 @@ class FeatureTest < ActiveSupport::TestCase
 
   private
 
-    def recipe(name) = Recipe.create!(name:, body: "Compose.", output_tag: tags(:working), inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ])
+    def recipe(name) = Recipe.create!(name:, body: "Compose.", inputs: [ { "folder_id" => folders(:photobank_working).id } ])
 
     def ready_photo(recipe)
       recipe.run!(media: [ @source ]).generated_media.tap do

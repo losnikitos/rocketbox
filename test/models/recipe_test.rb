@@ -5,10 +5,10 @@ require "test_helper"
 class RecipeTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", output_tag: tags(:working),
-      inputs: [ input(:interior), { "collection" => "photobank", "tag_id" => "" }, input(:customer) ])
-    @interior = photo("interior.jpg", :interior)
-    @customer = photo("customer.jpg", :customer)
+    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.",
+      inputs: [ input(:photobank_interior), { "folder_id" => "" }, input(:photobank_customer) ])
+    @interior = photo("interior.jpg", :photobank_interior)
+    @customer = photo("customer.jpg", :photobank_customer)
     @original_paint = RubyLLM.method(:paint)
     @original_animate = RubyLLM.method(:animate)
   end
@@ -18,22 +18,23 @@ class RecipeTest < ActiveSupport::TestCase
     RubyLLM.define_singleton_method(:animate, @original_animate)
   end
 
-  test "inputs drop blank tags and need a known folder and tag; a video takes one input" do
-    assert_equal [ input(:interior), input(:customer) ], @recipe.inputs
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
+  test "inputs drop blank folders and need a known folder; output goes to ready or photobank; a video takes one input" do
+    assert_equal [ input(:photobank_interior), input(:photobank_customer) ], @recipe.inputs
+    assert Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ { "collection" => "attic", "tag_id" => tags(:interior).id } ]).valid?
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ { "collection" => "inbox", "tag_id" => 0 } ]).valid?
+    assert_not Recipe.new(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
     assert_not Recipe.new(name: "x", body: "x", inputs: []).valid?
-    assert_not Recipe.new(name: "x", body: "x", output_collection: "inbox", inputs: [ input(:interior) ]).valid?
+    assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
+    assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
+    assert Recipe.new(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
     video = Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
     assert_not video.valid?
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
   end
 
-  test "run! rejects photos from another folder, of the wrong tag or order, and another account's photos" do
-    inbox = photo("inbox.jpg", :customer, collection: "inbox")
-    stranger = photo("stranger.jpg", :customer, user: users(:admin_user))
+  test "run! rejects photos from another folder or order, and another account's photos" do
+    inbox = photo("inbox.jpg", :customer)
+    stranger = photo("stranger.jpg", :photobank_customer, user: users(:admin_user))
 
     assert_no_difference -> { LibraryMedia.count } do
       assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, inbox ]) }
@@ -53,7 +54,7 @@ class RecipeTest < ActiveSupport::TestCase
     run = @recipe.run!(media: [ @interior, @customer ], extra_prompt: "Warmer.", options: { "quality" => "low" })
     media = run.generated_media
 
-    assert_equal [ "ready", @user, tags(:working), "running" ], [ media.collection, media.user, media.tag, run.status ]
+    assert_equal [ folders(:ready), @user, "running" ], [ media.folder, media.user, run.status ]
     assert_equal [ @interior, @customer ], run.reload.source_media
     assert_not media.file.attached?
 
@@ -70,10 +71,10 @@ class RecipeTest < ActiveSupport::TestCase
       calls << [ prompt, with.filename.to_s ]
       Struct.new(:to_blob).new("mp4-bytes")
     end
-    source = photo("room.jpg", :interior, collection: "inbox")
+    source = photo("room.jpg", :interior)
     run = recipes(:cinematic).run!(media: [ source ])
 
-    assert_equal [ "photobank", "video", tags(:interior) ], [ run.generated_media.collection, run.generated_media.kind, run.generated_media.tag ]
+    assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
     run.run!
 
     assert_equal [ [ "Slow cinematic push-in on the shop.", "room.jpg" ] ], calls
@@ -82,7 +83,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a stitch recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
-    recipe = Recipe.create!(name: "Reel", kind: "stitch", shot_group: "Daily", output_tag: tags(:interior), inputs: [ input(:interior), input(:customer) ])
+    recipe = Recipe.create!(name: "Reel", kind: "stitch", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
     assert_nil recipe.shot_group
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     run = recipe.run!(media:)
@@ -146,10 +147,10 @@ class RecipeTest < ActiveSupport::TestCase
 
   private
 
-    def input(tag, collection: "photobank") = { "collection" => collection, "tag_id" => tags(tag).id }
+    def input(folder) = { "folder_id" => folders(folder).id }
 
-    def photo(filename, tag, collection: "photobank", user: @user)
-      LibraryMedia.create!(kind: "photo", tag: tags(tag), user:, collection:,
+    def photo(filename, folder, user: @user)
+      LibraryMedia.create!(kind: "photo", folder: folders(folder), user:,
         file: { io: StringIO.new("img"), filename:, content_type: "image/jpeg" })
     end
 end

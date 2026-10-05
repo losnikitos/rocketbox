@@ -6,34 +6,10 @@ module AppHelper
     case controller_path
     when "accounts/overview"
       [ :overview, "Overview", [] ]
-    when "accounts/folders"
-      [ :folders, "Folders", [] ]
-    when "accounts/library"
-      if @collection == "ready"
-        ready = Current.account.library_media.ready
-        counts = ready.joins(:recipe_run).group("recipe_runs.recipe_id").count
-        recipe_id = @media ? @media.recipe_run&.recipe_id : params[:recipe]&.to_i
-        return [ :ready, "Ready", [
-          [ library_ready_path, "All", recipe_id.blank?, ready.count ],
-          :separator,
-          *Recipe.ordered.map { |r| [ library_ready_path(recipe: r.id), r.name, recipe_id == r.id, counts[r.id].to_i ] }
-        ] ]
-      end
-
-      counts = Current.account.library_media.where(collection: @collection).group(:tag_id).count
-      slug = @media ? @media.tag&.slug : params[:tag]
-      tabs = [
-        [ library_collection_path(@collection), "All", slug.blank? && params[:type].blank?, counts.values.sum ],
-        :separator,
-        *Tag.ordered.map { |t| [ library_collection_path(@collection, tag: t.slug), t.name, slug == t.slug, counts[t.id].to_i ] }
-      ]
-      return [ :photobank, "Photobank", tabs ] if @collection == "photobank"
-
-      [ :library, "Inbox", [
-        *tabs,
-        :separator,
-        [ library_uploads_path(type: "reviews"), "Reviews", params[:type] == "reviews", Current.account.reviews.active.media_attachments.count ]
-      ] ]
+    when "accounts/folders", "accounts/library"
+      folder = @folder || @media&.folder
+      root = folder&.root&.slug
+      [ root&.to_sym || :folders, folder&.name || "Folders", [] ]
     when "accounts/posts"
       [ :posts, "Posts", posts_tabs ]
     when "accounts/business"
@@ -100,20 +76,8 @@ module AppHelper
     end
   end
 
-  def library_collection_path(collection, **params)
-    case collection
-    when "photobank" then library_photobank_path(**params)
-    when "ready" then library_ready_path(**params)
-    else library_uploads_path(**params)
-    end
-  end
-
-  def library_item_path(media, **params)
-    case media.collection
-    when "photobank" then library_photobank_media_path(media, **params)
-    when "ready" then library_ready_media_path(media, **params)
-    else library_upload_path(media, **params)
-    end
+  def folder_path(folder, **params)
+    library_folders_path(*[ folder.root.slug, (folder.slug unless folder.root?) ].compact, **params)
   end
 
   def posts_tabs

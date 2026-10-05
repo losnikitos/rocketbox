@@ -8,6 +8,6 @@
   <span class="min-w-0 space-y-1">
     <span class="block truncate text-sm font-semibold text-ink-900"><%= recipe.name %></span>
     <span class="block text-xs text-ink-500"><%= Recipe::KINDS[recipe.kind].first %></span>
-    <%= render "accounts/recipes/slot", collection: recipe.output_collection, tag: recipe.output_tag %>
+    <%= render "accounts/recipes/slot", folder: recipe.output_folder %>
   </span>
 <% end %>
