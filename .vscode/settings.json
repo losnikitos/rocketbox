@@ -1,5 +1,6 @@
 {
   "task.autoDetect": "off",
+  "python.venvPath": "${workspaceFolder}/reels",
   "workbench.colorCustomizations": {
     "activityBar.background": "#102877",
     "titleBar.activeBackground": "#1C3DB0",
