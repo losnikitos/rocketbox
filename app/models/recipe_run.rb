@@ -70,7 +70,9 @@ class RecipeRun < ApplicationRecord
       Dir.mktmpdir do |dir|
         inputs = media.each_with_index.flat_map do |item, i|
           path = File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) }
-          [ *(%w[-loop 1] if item.story_image?), "-t", "1", "-i", path ]
+          # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
+          # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
+          [ *(%w[-f image2 -loop 1] if item.story_image?), "-t", "1", "-i", path ]
         end
         fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
         filter = media.each_index.map { "[#{it}:v]#{fit}[v#{it}];" }.join + media.each_index.map { "[v#{it}]" }.join + "concat=n=#{media.size}:v=1:a=0[out]"
