@@ -13,7 +13,19 @@
     </div>
   <% end %>
 
-  <%= render layout: "accounts/recipes/header", locals: { recipe: } do %>
+  <% example = capture do %>
+    <label class="shrink-0">
+      <span class="sr-only">Example</span>
+      <span class="relative flex aspect-2/3 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-ink-900/15 text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
+        <%= heroicon "photo", options: { class: "size-6", "aria-hidden": true } %>
+        <% saved = recipe.example.persisted? %>
+        <%= tag.img src: (url_for(recipe.example) if saved), hidden: !saved, alt: "", class: "absolute inset-0 size-full object-cover" %>
+        <%= f.file_field :example, accept: "image/*", class: "sr-only",
+              onchange: "const img = this.previousElementSibling; if (this.files[0]) { img.src = URL.createObjectURL(this.files[0]); img.hidden = false }" %>
+      </span>
+    </label>
+  <% end %>
+  <%= render layout: "accounts/recipes/header", locals: { recipe:, example: } do %>
     <div class="w-full max-w-xs">
       <%= f.label :name, class: tw_label_classes %>
       <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
@@ -27,16 +39,6 @@
         <% end %>
       </datalist>
     </div>
-    <label>
-      <span class="<%= tw_label_classes %>">Example</span>
-      <span class="relative flex aspect-2/3 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-ink-900/15 text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
-        <%= heroicon "photo", options: { class: "size-6", "aria-hidden": true } %>
-        <% saved = recipe.example.persisted? %>
-        <%= tag.img src: (url_for(recipe.example) if saved), hidden: !saved, alt: "", class: "absolute inset-0 size-full object-cover" %>
-        <%= f.file_field :example, accept: "image/*", class: "sr-only",
-              onchange: "const img = this.previousElementSibling; if (this.files[0]) { img.src = URL.createObjectURL(this.files[0]); img.hidden = false }" %>
-      </span>
-    </label>
   <% end %>
 
   <div class="grid items-start gap-6 @4xl:grid-cols-3">
