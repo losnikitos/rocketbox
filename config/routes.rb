@@ -30,12 +30,13 @@ Rails.application.routes.draw do
     get "/", to: redirect(path: "/app/overview"), as: :app
 
     scope path: "library", module: :accounts do
-      get "/", to: redirect(path: "/app/library/folders/inbox")
       get "media/:id", to: "library#show", as: :library_item
-      get "folders(/:root(/:child))", to: "folders#show", as: :library_folders, constraints: { root: /inbox|photobank/ }
-      post "folders/:root", to: "folders#create", constraints: { root: /inbox|photobank/ }
-      patch "folders/:root/:child", to: "folders#update"
-      delete "folders/:root/:child", to: "folders#destroy"
+      constraints root: /inbox|photobank/ do
+        get "(:root(/:child))", to: "folders#show", as: :library_folders
+        post ":root", to: "folders#create"
+        patch ":root/:child", to: "folders#update"
+        delete ":root/:child", to: "folders#destroy"
+      end
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do

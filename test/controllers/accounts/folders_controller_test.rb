@@ -117,9 +117,9 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "unknown folder is not found" do
-    get "/app/library/folders/nope"
+    get "/app/library/nope"
     assert_response :not_found
-    get "/app/library/folders/inbox/nope"
+    get "/app/library/inbox/nope"
     assert_response :not_found
   end
 
