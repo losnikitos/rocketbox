@@ -56,7 +56,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :kind, :body, :shot_group, :takes_style, :output_folder_id, inputs: [ %i[folder_id] ], examples: [], options: {} ])
+        params.expect(recipe: [ :name, :kind, :effect, :body, :shot_group, :takes_style, :output_folder_id, inputs: [ %i[folder_id] ], examples: [], options: {} ])
       end
 
       # The options refresh resubmits the form as a GET; examples wait for the save.

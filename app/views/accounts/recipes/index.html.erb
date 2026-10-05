@@ -20,7 +20,7 @@
           <% group.each do |recipe| %>
             <% slots = recipe.slots %>
             <% kind_label, kind_icon = Recipe::KINDS[recipe.kind] %>
-            <% settings = recipe.stitch? ? [ "1 s each" ] :
+            <% settings = recipe.stitch? ? [ recipe.effect == "doppler" ? "Doppler" : "1 s each" ] :
                  [ *recipe.options.values_at("model", "aspect_ratio", "resolution"), recipe.options["duration"]&.then { "#{it} s" } ].compact_blank %>
             <li id="<%= dom_id(recipe) %>" class="group relative rounded-2xl border border-ink-900/10 bg-stone-50">
               <div class="py-3 pr-12 pl-4">
