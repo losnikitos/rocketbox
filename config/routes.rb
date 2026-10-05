@@ -29,14 +29,19 @@ Rails.application.routes.draw do
   scope :app do
     get "/", to: redirect(path: "/app/overview"), as: :app
 
+    resources :library_media, only: %i[create update destroy], path: "library/media" do
+      member do
+        post :extract
+        patch :apply_extraction
+      end
+    end
+
     scope path: "library", module: :accounts do
       get "media/:id", to: "library#show", as: :library_item
-      constraints root: /inbox|photobank/ do
-        get "(:root(/:child))", to: "folders#show", as: :library_folders
-        post ":root", to: "folders#create"
-        patch ":root/:child", to: "folders#update"
-        delete ":root/:child", to: "folders#destroy"
-      end
+      get "(:root(/:child))", to: "folders#show", as: :library_folders
+      post "(:root)", to: "folders#create"
+      patch ":root(/:child)", to: "folders#update"
+      delete ":root(/:child)", to: "folders#destroy"
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do
@@ -99,13 +104,6 @@ Rails.application.routes.draw do
       get "instagram/authorize", to: "instagram_authorizations#new", as: :instagram_authorize
       get "instagram/callback", to: "instagram_authorizations#callback", as: :instagram_callback
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh
-    end
-
-    resources :library_media, only: %i[create update destroy], path: "library/media" do
-      member do
-        post :extract
-        patch :apply_extraction
-      end
     end
   end
 

@@ -13,12 +13,12 @@
       Upload
     </label>
   <% end %>
-  <% if admin && @folder&.root? %>
+  <% if admin && !@folder&.parent_id %>
     <button type="button" popovertarget="new-folder" style="anchor-name: --new-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
       <%= heroicon "folder-plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       New folder
     </button>
-    <%= form_with url: library_folders_path(@folder.slug), id: "new-folder", html: { popover: "", style: "position-anchor: --new-folder" },
+    <%= form_with url: (@folder ? folder_path(@folder) : library_folders_path), id: "new-folder", html: { popover: "", style: "position-anchor: --new-folder" },
           class: "#{menu_css} right-[calc(anchor(right))] p-2" do |f| %>
       <div class="flex gap-2">
         <%= f.text_field "folder[name]", required: true, placeholder: "Exterior", "aria-label": "Folder name", class: tw_input_classes %>
@@ -26,20 +26,20 @@
       </div>
     <% end %>
   <% end %>
-  <% if admin && @folder && !@folder.root? %>
+  <% if admin && @folder %>
     <button type="button" popovertarget="rename-folder" style="anchor-name: --rename-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
       <%= heroicon "pencil", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       Rename
     </button>
-    <%= form_with url: library_folders_path(@folder.root.slug, @folder.slug), method: :patch, id: "rename-folder", html: { popover: "", style: "position-anchor: --rename-folder" },
+    <%= form_with url: folder_path(@folder), method: :patch, id: "rename-folder", html: { popover: "", style: "position-anchor: --rename-folder" },
           class: "#{menu_css} right-[calc(anchor(right))] p-2" do |f| %>
       <div class="flex gap-2">
         <%= f.text_field "folder[name]", value: @folder.name, required: true, "aria-label": "Folder name", class: tw_input_classes %>
         <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
       </div>
     <% end %>
-    <%= button_to library_folders_path(@folder.root.slug, @folder.slug), method: :delete,
-          form: { data: { turbo_confirm: "Delete #{@folder.name}? Its media moves to #{@folder.parent.name}." } },
+    <%= button_to folder_path(@folder), method: :delete,
+          form: { data: { turbo_confirm: delete_folder_confirm(@folder) } },
           class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
       <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       Delete
@@ -57,7 +57,7 @@
   <% end %>
 <% end %>
 
-<% roots = Folder.roots.includes(:children).sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
+<% roots = Folder.roots.ordered.includes(:children) %>
 <% folders = @folder ? @folder.children.to_a : roots %>
 <% media_groups = @library_media.to_a.group_by(&:original) %>
 <% move_targets = Folder.grouped_options if admin && media_groups.any? %>
@@ -96,7 +96,7 @@
       <% end %>
     </ul>
   </nav>
-  <div class="min-w-0 flex-1 lg:p-8">
+  <div class="@container min-w-0 flex-1 lg:p-8">
     <nav aria-label="Breadcrumb" class="mb-4 flex items-center gap-1 text-sm font-medium">
       <% crumbs = [ [ "All files", library_folders_path ], *[ @folder&.parent, @folder ].compact.map { [ it.name, folder_path(it) ] } ] %>
       <% crumbs.each_with_index do |(label, path), index| %>
@@ -110,7 +110,7 @@
     </nav>
 
     <% if folders.any? || media_groups.any? %>
-      <ul aria-label="Folders and files" class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+      <ul aria-label="Folders and files" class="grid grid-cols-2 gap-3 @lg:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6">
         <% folders.each do |folder| %>
           <% previews = @folder_media[folder.id].to_a.first(12) %>
           <li class="<%= tile_css %>">

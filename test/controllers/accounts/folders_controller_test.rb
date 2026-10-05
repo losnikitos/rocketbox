@@ -99,6 +99,27 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_equal folders(:photobank), media.reload.folder
   end
 
+  test "admin creates, renames and deletes a top-level folder" do
+    admin = sign_in_as(users(:admin_user))
+    get library_folders_url(account: admin.id)
+    assert_select "form#new-folder[action=?]", library_folders_path(account: admin.id)
+
+    post library_folders_url, params: { folder: { name: "Clients" } }
+    folder = Folder.roots.find_by!(slug: "clients")
+    assert_redirected_to library_folders_url("clients", account: admin.id)
+
+    get library_folders_url("clients", account: admin.id)
+    assert_select "form#new-folder[action=?]", library_folders_path("clients", account: admin.id)
+    assert_select "form#rename-folder[action=?]", library_folders_path("clients", account: admin.id)
+
+    patch library_folders_url("clients"), params: { folder: { name: "Customers" } }
+    assert_equal [ "Customers", "clients" ], folder.reload.values_at(:name, :slug)
+
+    delete library_folders_url("clients")
+    assert_redirected_to library_folders_url(account: admin.id)
+    assert_not Folder.exists?(folder.id)
+  end
+
   test "a folder that's a recipe output can't be deleted" do
     admin = sign_in_as(users(:admin_user))
 

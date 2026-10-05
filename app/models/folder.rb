@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 # Where library media lives; recipe inputs and outputs point at folders. Global, shared by every account.
-# The roots (inbox, photobank) are fixed; subfolders sit one level below a root.
+# Top-level folders (inbox and photobank are seeded) hold subfolders one level below.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
-# ponytail: code looks up inbox/business-card, inbox/logo and inbox/interior by slug (card extraction, WhatsApp onboarding)
-# and photobank/ready (recipe output, features), so deleting those rows breaks them. Upgrade = a locked flag on those rows.
+# ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
+# (card extraction, WhatsApp onboarding) and photobank/ready (recipe output, features) by slug, so deleting those rows breaks them.
+# Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
-
-  ROOTS = %w[inbox photobank].freeze
 
   friendly_id :name, use: %i[slugged scoped], scope: :parent
 
@@ -19,13 +18,12 @@ class Folder < ApplicationRecord
 
   validates :name, presence: true
   validate { errors.add(:parent, "must be a top-level folder") if parent&.parent_id }
-  validate(on: :update) { errors.add(:base, "Top-level folders can't be changed.") if root? && changed? }
-  before_destroy { throw :abort if root? }
 
   scope :ordered, -> { order(:name) }
   scope :roots, -> { where(parent_id: nil) }
 
-  ROOTS.each { |slug| define_singleton_method(slug) { roots.find_by!(slug:) } }
+  def self.inbox = roots.find_by!(slug: "inbox")
+  def self.photobank = roots.find_by!(slug: "photobank")
   # Final recipe output.
   def self.ready = photobank.children.find_by!(slug: "ready")
 
@@ -34,8 +32,8 @@ class Folder < ApplicationRecord
   def path = [ parent&.name, name ].compact.join(" / ")
 
   # Every folder media can be moved into, as [[root name, [[path, id], ...]], ...] for grouped selects.
-  def self.grouped_options(roots: ROOTS)
-    where(slug: roots, parent_id: nil).includes(:children).sort_by { roots.index(it.slug) }
+  def self.grouped_options(roots: self.roots)
+    roots.ordered.includes(:children)
       .map { |root| [ root.name, [ [ root.name, root.id ], *root.children.map { [ it.path, it.id ] } ] ] }
   end
 

@@ -10,9 +10,15 @@ class FolderTest < ActiveSupport::TestCase
     assert_not_equal "team", folders(:inbox).children.create!(name: "Team").slug
   end
 
-  test "roots can't be renamed or deleted" do
-    assert_not folders(:inbox).update(name: "Mail")
-    assert_not folders(:photobank).destroy
+  test "top-level folders rename keeping their slug and delete only when empty" do
+    assert folders(:inbox).update(name: "Mail")
+    assert_equal folders(:inbox), Folder.inbox
+    assert_not folders(:photobank).destroy_into_parent
     assert Folder.exists?(folders(:photobank).id)
+    assert Folder.create!(name: "Clients").destroy_into_parent
+  end
+
+  test "media is a reserved slug" do
+    assert_not Folder.new(name: "Media").valid?
   end
 end

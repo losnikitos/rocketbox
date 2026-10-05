@@ -78,6 +78,10 @@ module AppHelper
     library_folders_path(*[ folder.root.slug, (folder.slug unless folder.root?) ].compact, **params)
   end
 
+  def delete_folder_confirm(folder)
+    "Delete #{folder.name}? " + (folder.parent ? "Its media moves to #{folder.parent.name}." : "Only empty folders can be deleted.")
+  end
+
   def folder_color(folder)
     folder&.root&.slug == "inbox" ? "text-emerald-500" : "text-sky-400"
   end

@@ -25,12 +25,12 @@ module Accounts
     end
 
     def create
-      parent = Folder.roots.find_by!(slug: params[:root])
-      folder = parent.children.new(name: params.dig(:folder, :name))
+      parent = Folder.roots.find_by!(slug: params[:root]) if params[:root]
+      folder = Folder.new(parent:, name: params.dig(:folder, :name))
       if folder.save
         redirect_to helpers.folder_path(folder), notice: "Folder created."
       else
-        redirect_to helpers.folder_path(parent), alert: folder.errors.full_messages.to_sentence
+        redirect_to parent_path(parent), alert: folder.errors.full_messages.to_sentence
       end
     end
 
@@ -45,13 +45,15 @@ module Accounts
     def destroy
       parent = @folder.parent
       if @folder.destroy_into_parent
-        redirect_to helpers.folder_path(parent), notice: "Folder deleted. Its media moved to #{parent.name}."
+        redirect_to parent_path(parent), notice: [ "Folder deleted.", ("Its media moved to #{parent.name}." if parent) ].compact.join(" ")
       else
         redirect_to helpers.folder_path(@folder), alert: @folder.errors.full_messages.to_sentence.presence || "Folder can't be deleted."
       end
     end
 
     private
+
+      def parent_path(parent) = parent ? helpers.folder_path(parent) : library_folders_path
 
       def set_folder
         return unless params[:root]

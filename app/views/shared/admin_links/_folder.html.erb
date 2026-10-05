@@ -7,13 +7,11 @@
         label: "Admin",
         icon: "cog",
         chip: "bg-signal-green" %>
-    <% unless folder.root? %>
-      <%= render "shared/admin_links/item",
-          path: library_folders_path(folder.root.slug, folder.slug),
-          label: "Delete",
-          icon: "trash",
-          chip: "bg-signal-red",
-          data: { turbo_method: :delete, turbo_confirm: "Delete #{folder.name}? Its media moves to #{folder.parent.name}." } %>
-    <% end %>
+    <%= render "shared/admin_links/item",
+        path: folder_path(folder),
+        label: "Delete",
+        icon: "trash",
+        chip: "bg-signal-red",
+        data: { turbo_method: :delete, turbo_confirm: delete_folder_confirm(folder) } %>
   <% end %>
 <% end %>
