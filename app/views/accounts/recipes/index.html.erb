@@ -24,10 +24,11 @@
               <%= recipe.name %>
             </span>
           <% end %>
-          <% if recipe.video? %>
+          <% unless recipe.generate_image? %>
+            <% label, icon = Recipe::KINDS[recipe.kind] %>
             <span class="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm">
-              <%= heroicon "film", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-              Video
+              <%= heroicon icon, variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              <%= label %>
             </span>
           <% end %>
           <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">

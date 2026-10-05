@@ -25,7 +25,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "collection" => "inbox", "tag_id" => 0 } ]).valid?
     assert_not Recipe.new(name: "x", body: "x", inputs: []).valid?
     assert_not Recipe.new(name: "x", body: "x", output_collection: "inbox", inputs: [ input(:interior) ]).valid?
-    video = Recipe.new(name: "x", body: "x", kind: "video", inputs: [ input(:interior), input(:customer) ])
+    video = Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
     assert_not video.valid?
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
   end
@@ -78,6 +78,21 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ [ "Slow cinematic push-in on the shop.", "room.jpg" ] ], calls
     assert_equal "complete", run.reload.status
     assert_equal "mp4-bytes", run.generated_media.file.download
+  end
+
+  test "a stitch recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
+    recipe = Recipe.create!(name: "Reel", kind: "stitch", shot_group: "Daily", inputs: [ input(:interior), input(:customer) ])
+    assert_nil recipe.shot_group
+    media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
+    run = recipe.run!(media:)
+
+    run.run!
+
+    assert_equal [ "complete", nil ], [ run.reload.status, run.prompt ]
+    file = run.generated_media.reload.file
+    assert_equal [ "video", "video/mp4" ], [ run.generated_media.kind, file.content_type ]
+    duration = file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", it.path).first.to_f }
+    assert_in_delta 2.0, duration, 0.1
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot and style after the recipe body" do

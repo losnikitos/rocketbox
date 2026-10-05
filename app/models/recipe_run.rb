@@ -30,14 +30,18 @@ class RecipeRun < ApplicationRecord
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit or an option isn't available.
   def start!
     first = source_media.first
-    build_generated_media(user: first&.user, kind: video? ? "video" : "photo", collection: recipe.output_collection, tag: first&.tag)
+    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", collection: recipe.output_collection, tag: first&.tag)
     save!
     GenerateJob.perform_later(self)
     self
   end
 
-  # One AI call on the source media.
+  # One AI call on the source media, or a stitch of them.
   def run!
+    if recipe.stitch?
+      generated_media.update!(file: { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" })
+      return update!(status: "complete", error: nil)
+    end
     opts = ai_options
     self.prompt = [ recipe.body, shot&.body, style&.body, extra_prompt ].compact_blank.join("\n\n")
     images = source_media.map { it.file.blob }
@@ -59,10 +63,29 @@ class RecipeRun < ApplicationRecord
 
   private
 
+    # The source media as one MP4, 1 second each (a video's first second).
+    # ponytail: fixed 9:16 1080x1920 at 30fps, no audio. Upgrade = aspect ratio and duration from the recipe options.
+    def stitch
+      media = source_media
+      Dir.mktmpdir do |dir|
+        inputs = media.each_with_index.flat_map do |item, i|
+          path = File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) }
+          [ *(%w[-loop 1] if item.story_image?), "-t", "1", "-i", path ]
+        end
+        fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
+        filter = media.each_index.map { "[#{it}:v]#{fit}[v#{it}];" }.join + media.each_index.map { "[v#{it}]" }.join + "concat=n=#{media.size}:v=1:a=0[out]"
+        out = File.join(dir, "out.mp4")
+        log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", filter,
+          "-map", "[out]", "-c:v", "libx264", "-movflags", "+faststart", out)
+        raise "ffmpeg failed: #{log.lines.last(3).join.strip}" unless status.success?
+        File.binread(out)
+      end
+    end
+
     def media_fit_recipe
       media = source_media
       fits = media.size == recipe.inputs.size && media.all? && media.uniq.size == media.size && media.map(&:user_id).uniq.size == 1 &&
-        media.zip(recipe.inputs).all? { |item, slot| item.collection == slot["collection"] && item.tag_id == slot["tag_id"] && item.story_image? }
+        media.zip(recipe.inputs).all? { |item, slot| item.collection == slot["collection"] && item.tag_id == slot["tag_id"] && recipe.takes?(item) }
       errors.add(:base, "Pick a different matching photo for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
     end
