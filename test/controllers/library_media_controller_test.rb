@@ -110,6 +110,26 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Uploaded 1 file.", flash[:notice]
   end
 
+  test "upload into a tag-filtered view gets that tag" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    post library_media_index_url, params: { tag: tags(:interior).slug, files: [ fixture_file_upload("logo.png", "image/png") ] }
+
+    assert_equal tags(:interior), user.library_media.order(:id).last.tag
+    assert_redirected_to library_uploads_url(tag: tags(:interior).slug)
+  end
+
+  test "converts HEIC uploads to JPEG" do
+    user = sign_in_as(users(:lazaro_nixon))
+
+    post library_media_index_url, params: { files: [ fixture_file_upload("photo.heic", "application/octet-stream") ] }
+
+    media = user.library_media.order(:id).last
+    assert_equal "photo", media.kind
+    assert_equal "image/jpeg", media.file.content_type
+    assert_equal "photo.jpg", media.file.filename.to_s
+  end
+
   test "uploads into the photobank and deletes back to it" do
     user = sign_in_as(users(:lazaro_nixon))
 

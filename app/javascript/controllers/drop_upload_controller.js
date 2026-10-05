@@ -58,7 +58,7 @@ export default class extends Controller {
   assignFiles(fileList) {
     const dt = new DataTransfer()
     Array.from(fileList).forEach((file) => {
-      if (file.type.startsWith("image/") || file.type.startsWith("video/")) dt.items.add(file)
+      if (/^(image|video)\//.test(file.type) || /\.hei[cf]$/i.test(file.name)) dt.items.add(file)
     })
     if (!dt.files.length) return
 

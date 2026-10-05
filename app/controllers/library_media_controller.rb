@@ -5,12 +5,14 @@ class LibraryMediaController < ApplicationController
     collection = LibraryMedia.collections.key?(params[:collection]) ? params[:collection] : "inbox"
     files = Array(params[:files]).select { |f| f.respond_to?(:content_type) }
     source = Current.account.library_media.find(params[:source_id]) if params[:source_id].present?
-    uploaded = files.filter_map { |file| store_upload!(file, collection, source) }
+    tag = source&.tag || (Tag.find_by(slug: params[:tag]) if params[:tag].present?)
+    uploaded = files.filter_map { |file| store_upload!(file, collection, source, tag) }
+    back = helpers.library_collection_path(collection, tag: params[:tag].presence)
 
     if uploaded.empty?
-      redirect_to helpers.library_collection_path(collection), alert: "Drop a photo or video to upload."
+      redirect_to back, alert: "Drop a photo or video to upload."
     else
-      redirect_to helpers.library_collection_path(collection), notice: (uploaded.one? ? "Uploaded 1 file." : "Uploaded #{uploaded.size} files.")
+      redirect_to back, notice: (uploaded.one? ? "Uploaded 1 file." : "Uploaded #{uploaded.size} files.")
     end
   end
 
@@ -50,13 +52,27 @@ class LibraryMediaController < ApplicationController
 
   private
 
-    def store_upload!(file, collection, source)
+    def store_upload!(file, collection, source, tag)
+      file = heic_as_jpeg(file) if file.original_filename.to_s.match?(/\.hei[cf]\z/i)
+      return unless file
+
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind:, collection:, tag: source&.tag)
+      media = Current.account.library_media.create!(kind:, collection:, tag:)
       media.file.attach(file)
       Generation.create!(source_media: source, generated_media: media, status: "complete") if source
       media
+    end
+
+    # Only Safari renders HEIC, and other browsers upload it without a MIME type.
+    def heic_as_jpeg(file)
+      ActionDispatch::Http::UploadedFile.new(
+        tempfile: ImageProcessing::Vips.source(file.tempfile).convert("jpg").call,
+        filename: "#{File.basename(file.original_filename, ".*")}.jpg",
+        type: "image/jpeg"
+      )
+    rescue Vips::Error
+      nil
     end
 end
