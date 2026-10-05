@@ -14,7 +14,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     get library_item_url(media)
     assert_response :success
     assert_select "h1", "Interior"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("inbox"), text: "Inbox"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
     assert_select "main a[href=?]", library_folders_path("inbox", "interior"), text: %r{Inbox / Interior}
     assert_select "select[name='library_media[folder_id]'] option[selected][value=?]", folders(:interior).id.to_s
     assert_select "select[name='library_media[folder_id]'] optgroup[label=Photobank] option", text: "Photobank / Logo"
@@ -87,7 +87,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("photobank"), text: "Photobank"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
     assert_select "#recipe-run-heading + span", text: "failed"
     assert_select "section p", text: "content policy"
     assert_select "section a[href=?]", library_item_path(source)

@@ -7,9 +7,7 @@ module AppHelper
     when "accounts/overview"
       [ :overview, "Overview", [] ]
     when "accounts/folders", "accounts/library"
-      folder = @folder || @media&.folder
-      root = folder&.root&.slug
-      [ root&.to_sym || :folders, folder&.name || "Folders", [] ]
+      [ :folders, (@folder || @media&.folder)&.name || "Media", [] ]
     when "accounts/posts"
       [ :posts, "Posts", posts_tabs ]
     when "accounts/business"

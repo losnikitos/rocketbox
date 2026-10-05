@@ -39,24 +39,22 @@
       <%= link_to library_folders_path,
             class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
             aria: { selected: section == :folders } do %>
-        <%= heroicon "folder", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Folders
+        <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        Media
       <% end %>
     </li>
     <li class="mt-2">
       <ol>
         <% [
-          [ "Inbox", library_folders_path("inbox"), :inbox, "inbox" ],
-          [ "Photobank", library_folders_path("photobank"), :photobank, "photo" ],
-          [ "Recipes", recipes_path, :recipes ],
+          [ "Recipes", recipes_path, :recipes, "sparkles", true ],
           [ "Shots", shots_path, :shots ],
           [ "Styles", styles_path, :styles ],
           [ "Layers", layers_path, :layers ],
           [ "Features", features_path, :features ],
           [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
-        ].each do |label, path, key, icon| %>
+        ].each do |label, path, key, icon, admin_only| %>
           <li>
-            <% if icon %>
+            <% if icon && (Current.user&.admin? || !admin_only) %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>

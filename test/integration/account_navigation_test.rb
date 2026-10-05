@@ -29,8 +29,8 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Inbox"
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("inbox"), text: "Inbox"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='false']", library_folders_path("photobank"), text: "Photobank"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
+    assert_select "nav[aria-label='Primary'] a[href=?]", library_folders_path("inbox"), count: 0
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", instagram_posts_path, text: "Posts"
