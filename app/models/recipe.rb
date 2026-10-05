@@ -61,17 +61,6 @@ class Recipe < ApplicationRecord
   # The index of the first slot the media fits, or nil.
   def slot_for(media) = folder_ids.index(media.folder_id)
 
-  # The index tab it's listed under: the folder id when every slot reads the same folder, else "multiple".
-  def source = folder_ids.uniq.one? ? folder_ids.first.to_s : "multiple"
-
-  def source_label
-    return "Multiple inputs" if source == "multiple"
-    slots.first&.path || "Unknown"
-  end
-
-  # Groups of recipes sharing a source, by label with multiple inputs last.
-  def self.by_source(recipes) = recipes.group_by(&:source).values.sort_by { [ it.first.source == "multiple" ? 1 : 0, it.first.source_label ] }
-
   # `media` fill the slots in order; `shot` is from the recipe's shot group; `style` if it takes one; `options` override the recipe's.
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
   def run!(media:, shot: nil, style: nil, extra_prompt: nil, options: {})
