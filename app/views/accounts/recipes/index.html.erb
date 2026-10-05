@@ -7,48 +7,68 @@
 <% end %>
 
 <% if @recipes.any? %>
-  <% folder_icons = { "inbox" => "inbox", "photobank" => "photo", "ready" => "check-circle" } %>
-  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
+  <% chip = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs" %>
+  <% arrow = capture { heroicon "arrow-right", variant: :mini, options: { class: "hidden size-5 shrink-0 text-ink-300 md:block", "aria-hidden": true } } %>
+  <ul class="space-y-3">
     <% @recipes.each do |recipe| %>
-      <% covered = recipe.examples.any? %>
-      <li id="<%= dom_id(recipe) %>" class="flex flex-col gap-3">
-        <div class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
-             data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-          <% recipe.examples.each_with_index do |example, index| %>
-            <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-              <%= render "example", example:, css: "size-full object-cover" %>
-            </div>
-          <% end %>
-          <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex items-start" do %>
-            <span class="w-full py-4 pr-12 pl-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
-              <%= recipe.name %>
-            </span>
-          <% end %>
-          <% unless recipe.generate_image? %>
-            <% label, icon = Recipe::KINDS[recipe.kind] %>
-            <span class="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm">
-              <%= heroicon icon, variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-              <%= label %>
-            </span>
-          <% end %>
-          <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
-            <%= render "shared/admin_links/recipe", recipe: %>
-          </div>
-        </div>
-        <ul class="flex flex-wrap gap-1.5" aria-label="Inputs">
-          <% recipe.slots.each do |collection, tag| %>
-            <li class="inline-flex items-center gap-1 rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600" title="<%= collection.humanize %>">
-              <%= heroicon folder_icons[collection], variant: :micro, options: { class: "size-3.5 text-sky-600", "aria-label": collection.humanize } %>
-              <%= tag&.name || "Unknown" %>
-            </li>
+      <% slots = recipe.slots %>
+      <% kind_label, kind_icon = Recipe::KINDS[recipe.kind] %>
+      <% settings = recipe.stitch? ? [ "1 s each" ] :
+           [ *recipe.options.values_at("model", "aspect_ratio", "resolution"), recipe.options["duration"]&.then { "#{it} s" } ].compact_blank %>
+      <li id="<%= dom_id(recipe) %>" class="group relative flex flex-col gap-4 rounded-2xl border border-ink-900/10 bg-white p-4 md:flex-row md:items-center md:pr-12">
+        <ul class="flex flex-col items-start gap-1.5 md:w-72 md:shrink-0" aria-label="Inputs">
+          <% slots.each do |collection, tag| %>
+            <li><%= render "slot", collection:, tag: %></li>
           <% end %>
           <% if recipe.takes_style? %>
-            <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600">Style</li>
+            <li class="<%= chip %> border-violet-200 bg-violet-50 text-violet-700">
+              <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              Style
+            </li>
           <% end %>
           <% if recipe.shot_group %>
-            <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600"><%= recipe.shot_group %> shot</li>
+            <li class="<%= chip %> border-amber-200 bg-amber-50 text-amber-700">
+              <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              <%= recipe.shot_group %> shot
+            </li>
           <% end %>
         </ul>
+
+        <%= arrow %>
+
+        <div class="flex min-w-0 flex-1 items-center gap-4">
+          <%= link_to new_recipe_run_path(recipe), tabindex: -1, "aria-hidden": true,
+                class: "relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30",
+                data: { controller: "scrub", action: "mousemove->scrub#scrub mouseleave->scrub#reset" } do %>
+            <% recipe.examples.each_with_index do |example, index| %>
+              <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+                <%= render "example", example:, css: "size-full object-cover" %>
+              </div>
+            <% end %>
+          <% end %>
+          <div class="min-w-0 space-y-2">
+            <%= link_to recipe.name, new_recipe_run_path(recipe), class: "block text-sm font-semibold text-ink-900 hover:underline" %>
+            <ul class="flex flex-wrap gap-1.5" aria-label="Settings">
+              <li class="<%= chip %> border-transparent bg-ink-900/5 font-medium text-ink-900">
+                <%= heroicon kind_icon, variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                <%= kind_label %>
+              </li>
+              <% settings.each do |setting| %>
+                <li class="<%= chip %> border-ink-900/10 text-ink-600"><%= setting %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+
+        <%= arrow %>
+
+        <div class="md:w-56 md:shrink-0" role="group" aria-label="Output">
+          <%= render "slot", collection: recipe.output_collection, tag: slots.first&.last %>
+        </div>
+
+        <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
+          <%= render "shared/admin_links/recipe", recipe: %>
+        </div>
       </li>
     <% end %>
   </ul>
