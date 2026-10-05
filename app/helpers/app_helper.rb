@@ -6,6 +6,8 @@ module AppHelper
     case controller_path
     when "accounts/overview"
       [ :overview, "Overview", [] ]
+    when "accounts/folders"
+      [ :folders, "Folders", [] ]
     when "accounts/library"
       if @collection == "ready"
         ready = Current.account.library_media.ready

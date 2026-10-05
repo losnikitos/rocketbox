@@ -137,7 +137,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Your profile"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", instagram_profile_path, text: "Profile"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", instagram_profile_path, text: "Instagram"
     assert_select "aside form[action=?]", session_path(user.sessions.last) do
       assert_select "button", "Log out"
     end

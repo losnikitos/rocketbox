@@ -35,6 +35,14 @@
         Overview
       <% end %>
     </li>
+    <li>
+      <%= link_to library_folders_path,
+            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+            aria: { selected: section == :folders } do %>
+        <%= heroicon "folder", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+        Folders
+      <% end %>
+    </li>
     <li class="mt-2">
       <%# Metro map: folders are stations, the steps between them sit on the line %>
       <ol>
