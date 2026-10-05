@@ -45,7 +45,7 @@
 </nav>
 
 <% folders = @folder ? @folder.children.to_a : Folder.roots.sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
-<% new_folder = admin && @folder&.slug.in?(%w[inbox photobank]) && @folder.root? %>
+<% new_folder = admin && @folder&.root? %>
 <% if folders.any? || new_folder %>
   <ul aria-label="Folders" class="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
     <% folders.each do |folder| %>

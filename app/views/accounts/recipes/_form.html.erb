@@ -102,7 +102,7 @@
       <div class="<%= island %>">
         <div>
           <%= f.label :output_folder_id, "Folder", class: tw_label_classes %>
-          <%= f.select :output_folder_id, grouped_options_for_select(Folder.grouped_options(roots: Recipe::OUTPUT_ROOTS), recipe.output_folder_id), {}, class: tw_input_classes %>
+          <%= f.select :output_folder_id, grouped_options_for_select(Folder.grouped_options(roots: %w[photobank]), recipe.output_folder_id), {}, class: tw_input_classes %>
         </div>
       </div>
     </section>

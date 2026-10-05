@@ -24,7 +24,7 @@
         <div>
           <% if @feature.fixed_recipe_id %>
             <p class="<%= tw_label_classes %>">Background photo</p>
-            <%= link_to @recipe&.name || "Recipe ##{@feature.fixed_recipe_id} missing", library_folders_path("ready", recipe: @feature.fixed_recipe_id), class: "text-sm text-ink-900 underline hover:text-ink-600" %>
+            <%= link_to @recipe&.name || "Recipe ##{@feature.fixed_recipe_id} missing", library_folders_path("photobank", "ready", recipe: @feature.fixed_recipe_id), class: "text-sm text-ink-900 underline hover:text-ink-600" %>
           <% else %>
             <%= f.label :recipe_id, "Background photo", class: tw_label_classes %>
             <%= f.select :recipe_id, Recipe.ordered.pluck(:name, :id), { include_blank: @setting.recipe_id ? false : "—" }, class: tw_input_classes %>

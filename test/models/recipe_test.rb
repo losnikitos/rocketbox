@@ -18,7 +18,7 @@ class RecipeTest < ActiveSupport::TestCase
     RubyLLM.define_singleton_method(:animate, @original_animate)
   end
 
-  test "inputs drop blank folders and need a known folder; output goes to ready or photobank; a video takes one input" do
+  test "inputs drop blank folders and need a known folder; output goes to photobank; a video takes one input" do
     assert_equal [ input(:photobank_interior), input(:photobank_customer) ], @recipe.inputs
     assert Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 

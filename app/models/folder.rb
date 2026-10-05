@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 # Where library media lives; recipe inputs and outputs point at folders. Global, shared by every account.
-# The roots (inbox, photobank, ready) are fixed; subfolders sit one level below a root.
+# The roots (inbox, photobank) are fixed; subfolders sit one level below a root.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
-# ponytail: code looks up inbox/business-card, inbox/logo and inbox/interior by slug (card extraction, WhatsApp onboarding),
-# so deleting those rows breaks onboarding. Upgrade = a locked flag on those rows.
+# ponytail: code looks up inbox/business-card, inbox/logo and inbox/interior by slug (card extraction, WhatsApp onboarding)
+# and photobank/ready (recipe output, features), so deleting those rows breaks them. Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
 
-  ROOTS = %w[inbox photobank ready].freeze
+  ROOTS = %w[inbox photobank].freeze
 
   friendly_id :name, use: %i[slugged scoped], scope: :parent
 
@@ -26,15 +26,15 @@ class Folder < ApplicationRecord
   scope :roots, -> { where(parent_id: nil) }
 
   ROOTS.each { |slug| define_singleton_method(slug) { roots.find_by!(slug:) } }
+  # Final recipe output.
+  def self.ready = photobank.children.find_by!(slug: "ready")
 
   def root? = parent_id.nil?
   def root = parent || self
-  # This folder and its subfolders, as a relation.
-  def tree = Folder.where(id: id).or(Folder.where(parent_id: id))
   def path = [ parent&.name, name ].compact.join(" / ")
 
   # Every folder media can be moved into, as [[root name, [[path, id], ...]], ...] for grouped selects.
-  def self.grouped_options(roots: %w[inbox photobank])
+  def self.grouped_options(roots: ROOTS)
     where(slug: roots, parent_id: nil).includes(:children).sort_by { roots.index(it.slug) }
       .map { |root| [ root.name, [ [ root.name, root.id ], *root.children.map { [ it.path, it.id ] } ] ] }
   end

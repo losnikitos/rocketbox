@@ -10,7 +10,6 @@
 class Recipe < ApplicationRecord
   include GenerationOptions
 
-  OUTPUT_ROOTS = %w[ready photobank].freeze
   # Label and icon per kind.
   KINDS = { "generate_image" => [ "Gen image", "photo" ], "generate_video" => [ "Gen video", "film" ], "stitch" => [ "Stitch", "scissors" ] }.freeze
 
@@ -35,7 +34,7 @@ class Recipe < ApplicationRecord
   validates :body, presence: true, unless: :stitch?
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
-    errors.add(:output_folder, "must be in #{OUTPUT_ROOTS.map(&:humanize).to_sentence(two_words_connector: " or ")}") unless output_folder&.root&.slug.in?(OUTPUT_ROOTS)
+    errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, "must be a single photo to make a video") if video? && inputs.size > 1
   end
 

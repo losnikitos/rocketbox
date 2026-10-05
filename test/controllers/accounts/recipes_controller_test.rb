@@ -29,7 +29,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "img[alt='a.jpg']"
       assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: "Team collage"
       assert_select "ul[aria-label=Inputs] li a[href=?]", library_folders_path("photobank", "interior", account: @admin.id), text: "Photobank / Interior"
-      assert_select "[aria-label=Output] a[href=?]", library_folders_path("ready", account: @admin.id), text: "Ready"
+      assert_select "[aria-label=Output] a[href=?]", library_folders_path("photobank", "ready", account: @admin.id), text: "Photobank / Ready"
       assert_select "[popover] a[href=?]", edit_recipe_path(recipe, account: @admin.id)
       assert_select "[popover] a[href^='/app/recipes/#{recipe.id}?'][data-turbo-method=delete]"
     end
