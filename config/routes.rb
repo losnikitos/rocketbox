@@ -37,6 +37,7 @@ Rails.application.routes.draw do
       get "uploads/:id", to: "library#show", as: :library_upload, defaults: { collection: "inbox" }
       get "photobank/:id", to: "library#show", as: :library_photobank_media, defaults: { collection: "photobank" }
       get "ready/:id", to: "library#show", as: :library_ready_media, defaults: { collection: "ready" }
+      get "folders(/:collection)", to: "folders#show", as: :library_folders, constraints: { collection: /inbox|photobank|ready/ }
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do
@@ -103,7 +104,6 @@ Rails.application.routes.draw do
     end
 
     resources :library_media, only: %i[create update destroy], path: "library/media" do
-      patch :bulk_update, on: :collection
       member do
         post :extract
         patch :apply_extraction

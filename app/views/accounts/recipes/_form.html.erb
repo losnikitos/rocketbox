@@ -1,5 +1,5 @@
 <%# locals: (recipe:) %>
-<% slot_count = [ recipe.tag_ids.size, 5 ].max %>
+<% slot_count = [ recipe.tag_ids.size, 1 ].max %>
 <div class="@container space-y-4">
   <%= render "accounts/recipes/header", recipe: %>
 
@@ -20,39 +20,51 @@
         <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
       </div>
 
-      <div>
-        <%= f.label :body, "Prompt", class: tw_label_classes %>
-        <%= f.text_area :body, required: true, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
-      </div>
+      <%= render layout: "shared/pipeline_step", locals: { title: "Input" } do %>
+        <div>
+          <div id="recipe_inputs" class="space-y-2">
+            <% slot_count.times do |index| %>
+              <%= render layout: "shared/input_field", locals: { name: "Photobank", icon: "photo", removable: true } do %>
+                <%= select_tag "recipe[tag_ids][]",
+                      options_for_select(Tag.ordered.pluck(:name, :id), recipe.tag_ids[index]),
+                      id: "recipe_tag_ids_#{index}", include_blank: "—", "aria-label": "Input #{index + 1} tag",
+                      class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0" %>
+              <% end %>
+            <% end %>
+          </div>
+          <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
+                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), select = row.querySelector('select');
+                           select.value = ''; select.id = `recipe_tag_ids_${rows.children.length}`; select.ariaLabel = `Input ${rows.children.length + 1} tag`;
+                           rows.append(row); select.focus()">
+            <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+            Add input
+          </button>
+        </div>
+      <% end %>
 
-      <div class="max-w-md">
+      <%= render layout: "shared/pipeline_step", locals: { title: "Processing" } do %>
+        <p class="flex items-center gap-1.5 text-sm text-ink-700">
+          <%= heroicon "photo", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          Makes one photo
+        </p>
+        <div>
+          <%= f.label :body, "Prompt", class: tw_label_classes %>
+          <%= f.text_area :body, required: true, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
+        </div>
+        <div>
+          <%= f.label :shot_group, "Shot", class: tw_label_classes %>
+          <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
+          <p class="mt-1 text-xs text-ink-500">A shot from this group is picked for each post and added after the prompt.</p>
+        </div>
         <%= render "shared/generation_options", record: recipe, scope: "recipe",
               refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
-      </div>
+      <% end %>
 
-      <fieldset class="max-w-md">
-        <legend class="<%= tw_label_classes %>">Photos</legend>
-        <div id="recipe_tag_slots" class="space-y-2">
-          <% slot_count.times do |index| %>
-            <%= select_tag "recipe[tag_ids][]",
-                  options_for_select(Tag.ordered.pluck(:name, :id), recipe.tag_ids[index]),
-                  id: "recipe_tag_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
-          <% end %>
+      <%= render layout: "shared/pipeline_step", locals: { title: "Output" } do %>
+        <div class="grid grid-cols-2 gap-3">
+          <%= render "shared/folder_field", name: "Ready", icon: "check-circle" %>
         </div>
-        <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
-                onclick="const slots = document.getElementById('recipe_tag_slots'), slot = slots.lastElementChild.cloneNode(true);
-                         slot.value = ''; slot.id = `recipe_tag_ids_${slots.children.length}`; slot.ariaLabel = `Photo ${slots.children.length + 1}`;
-                         slots.append(slot); slot.focus()">
-          <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-          Add photo
-        </button>
-      </fieldset>
-
-      <div class="max-w-md">
-        <%= f.label :shot_group, "Shot", class: tw_label_classes %>
-        <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
-        <p class="mt-1 text-xs text-ink-500">A shot from this group is picked for each post and added after the prompt.</p>
-      </div>
+      <% end %>
     <% end %>
 
     <%= render "shared/examples", record: recipe, form_id: "recipe_form" %>

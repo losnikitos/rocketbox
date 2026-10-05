@@ -1,0 +1,74 @@
+<% content_for(:title, "#{@collection&.humanize || "Folders"} — Rocketbox") %>
+
+<nav aria-label="Breadcrumb" class="mb-4 flex items-center gap-1 text-sm font-medium">
+  <%= link_to "All files", library_folders_path, class: @collection ? "text-ink-500 hover:text-ink-900" : "text-ink-900", aria: { current: ("page" unless @collection) } %>
+  <% if @collection %>
+    <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-400", "aria-hidden": true } %>
+    <span class="text-ink-900" aria-current="page"><%= @collection.humanize %></span>
+  <% end %>
+</nav>
+
+<% if @collection %>
+  <% tags = Tag.ordered.to_a %>
+  <div class="mb-6">
+    <%= render "layouts/app/secondary_nav", tabs: [
+          [ library_folders_path(@collection), "All", params[:tag].blank?, @tag_counts.values.sum ],
+          :separator,
+          *tags.map { |t| [ library_folders_path(@collection, tag: t.slug), t.name, params[:tag] == t.slug, @tag_counts[t.id].to_i ] }
+        ] %>
+  </div>
+<% end %>
+
+<% if @collection.nil? %>
+  <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+    <% LibraryMedia.collections.each_key do |collection| %>
+      <li>
+        <%= link_to library_folders_path(collection), class: "flex flex-col items-center rounded-xl p-4 text-center hover:bg-ink-900/5 focus-visible:outline-2 focus-visible:outline-rocket" do %>
+          <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
+          <span class="mt-1 text-sm font-medium text-ink-900"><%= collection.humanize %></span>
+          <span class="text-xs text-ink-500"><%= pluralize(@counts[collection].to_i, "item") %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% elsif @library_media.any? %>
+  <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+    <% @library_media.each do |media| %>
+      <% name = media.file.attached? ? media.file.filename.to_s : media.kind %>
+      <li class="min-w-0 rounded-xl p-2 hover:bg-ink-900/5">
+        <% if media.story_image? %>
+          <button type="button" popovertarget="folder-media-<%= media.id %>" aria-label="View <%= name %>" class="block w-full cursor-zoom-in">
+            <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover" %>
+          </button>
+          <div id="folder-media-<%= media.id %>" popover class="size-full bg-black/90 p-4">
+            <button type="button" popovertarget="folder-media-<%= media.id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
+              <%= image_tag url_for(media.file), alt: name, class: "max-h-full max-w-full" %>
+            </button>
+          </div>
+        <% else %>
+          <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover", controls: true %>
+        <% end %>
+        <% menu_id = "tag-menu-#{media.id}" %>
+        <button type="button" popovertarget="<%= menu_id %>" style="anchor-name: --<%= menu_id %>" aria-label="Tag: <%= media.tag&.name || "none" %>"
+                class="mt-2 inline-flex max-w-full cursor-pointer items-center gap-0.5 rounded-full bg-ink-900/5 py-0.5 pr-1.5 pl-2 text-xs font-medium text-ink-600 hover:bg-ink-900/10 hover:text-ink-900">
+          <span class="truncate"><%= media.tag&.name || "—" %></span>
+          <%= heroicon "chevron-down", variant: :micro, options: { class: "size-3.5 shrink-0", "aria-hidden": true } %>
+        </button>
+        <div id="<%= menu_id %>" popover style="position-anchor: --<%= menu_id %>"
+             class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] min-w-40 rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+          <% [ [ "—", nil ], *tags.map { [ it.name, it.id ] } ].each do |name, id| %>
+            <% current = media.tag_id == id %>
+            <%= button_to library_media_path(media), method: :patch, params: { library_media: { tag_id: id } },
+                  aria: { current: ("true" if current), label: ("No tag" unless id) }, disabled: current,
+                  class: "flex w-full cursor-pointer items-center justify-between gap-2 rounded px-3 py-1.5 text-left text-sm text-ink-900 hover:bg-ink-900/5 disabled:cursor-default disabled:font-medium" do %>
+              <%= name %>
+              <% if current %><%= heroicon "check", variant: :micro, options: { class: "size-4 text-rocket", "aria-hidden": true } %><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-sm text-ink-600"><%= params[:tag].present? ? "Nothing with this tag here." : "This folder is empty." %></p>
+<% end %>

@@ -3,7 +3,7 @@
 require "test_helper"
 
 class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
-  test "admin creates a recipe with examples; the index previews it with tags and a use CTA" do
+  test "admin creates a recipe with examples; the index previews it with tags and links to a run" do
     @admin = sign_in_as(users(:admin_user))
 
     post recipes_url, params: { recipe: { name: "Team collage", body: "p",
@@ -15,9 +15,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     get recipes_url(account: @admin.id)
     assert_select "##{dom_id(recipe)}" do
       assert_select "img[alt='a.jpg']"
-      assert_select "a[href=?]", edit_recipe_path(recipe, account: @admin.id), text: "Team collage"
+      assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: "Team collage"
       assert_select "ul[aria-label=Tags] li", text: tags(:interior).name
-      assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: /Use recipe/
     end
 
     get edit_recipe_url(recipe, account: @admin.id)

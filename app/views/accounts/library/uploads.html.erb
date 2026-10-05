@@ -14,7 +14,6 @@
 <% if @review_media %>
   <%= render "accounts/library/review_media", attachments: @review_media %>
 <% else %>
-<div data-controller="library-select">
   <% if @library_media.present? %>
     <% if @collection != "photobank" %>
     <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
@@ -40,32 +39,6 @@
       <% end %>
     </ul>
     <% end %>
-
-    <div
-      class="sticky bottom-4 z-20 mt-6 hidden flex-col gap-3 rounded-xl border border-ink-900/10 bg-white/95 p-3 shadow-lg backdrop-blur data-[open]:flex sm:data-[open]:flex-row sm:data-[open]:items-center sm:data-[open]:justify-between"
-      data-library-select-target="bar"
-    >
-      <p class="text-sm text-ink-700">
-        <span class="font-semibold text-ink-900" data-library-select-target="count">0</span>
-        selected
-      </p>
-      <div class="flex items-center gap-2">
-        <%= form_with url: bulk_update_library_media_index_path, method: :patch do %>
-          <select
-            name="tag_id"
-            aria-label="Set tag"
-            data-action="change->library-select#setTag"
-            class="rounded-lg border border-ink-900/15 bg-white px-2.5 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30"
-          >
-            <option value="" disabled selected hidden>Set tag…</option>
-            <% Tag.ordered.each do |t| %>
-              <option value="<%= t.id %>"><%= t.name %></option>
-            <% end %>
-            <option value="">Not set</option>
-          </select>
-        <% end %>
-      </div>
-    </div>
   <% elsif (current_tag = Tag.find_by(slug: params[:tag])) %>
     <p class="text-sm text-ink-600">No <%= current_tag.name.pluralize.downcase %> yet.</p>
   <% elsif (recipe = params[:recipe].presence && Recipe.find_by(id: params[:recipe])) %>
@@ -75,5 +48,4 @@
       No media yet. Drop photos or videos anywhere here<% if @collection == "inbox" && (Current.account.telegram_user_id.present? || Current.account.whatsapp_phone.present?) %>, or send a photo to the bot<% end %>.
     </p>
   <% end %>
-</div>
 <% end %>
