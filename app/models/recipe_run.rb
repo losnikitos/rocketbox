@@ -31,7 +31,7 @@ class RecipeRun < ApplicationRecord
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
   def start!
     first = source_media.first
-    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", collection: recipe.output_collection, tag: first&.tag)
+    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", collection: recipe.output_collection, tag: recipe.output_tag)
     save!
     GenerateJob.perform_later(self)
     self

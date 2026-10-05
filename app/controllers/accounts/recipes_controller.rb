@@ -8,7 +8,7 @@ module Accounts
     before_action :set_recipe, only: %i[edit update destroy]
 
     def index
-      @recipes = Recipe.with_attached_examples.ordered
+      @recipes = Recipe.with_attached_examples.includes(:output_tag).ordered
       @recipes = @recipes.select { it.source == params[:source] } if params[:source].present?
     end
 
@@ -50,7 +50,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :kind, :body, :shot_group, :takes_style, :output_collection, inputs: [ %i[collection tag_id] ], examples: [], options: {} ])
+        params.expect(recipe: [ :name, :kind, :body, :shot_group, :takes_style, :output_collection, :output_tag_id, inputs: [ %i[collection tag_id] ], examples: [], options: {} ])
       end
 
       # The options refresh resubmits the form as a GET; examples wait for the save.

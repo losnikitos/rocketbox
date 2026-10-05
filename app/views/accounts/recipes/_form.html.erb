@@ -104,7 +104,10 @@
           <%= f.label :output_collection, "Folder", class: tw_label_classes %>
           <%= f.select :output_collection, Recipe::OUTPUT_COLLECTIONS.map { [ it.humanize, it ] }, {}, class: tw_input_classes %>
         </div>
-        <p class="text-xs text-ink-500">Results keep the first input's tag.</p>
+        <div>
+          <%= f.label :output_tag_id, "Tag", class: tw_label_classes %>
+          <%= f.select :output_tag_id, Tag.ordered.pluck(:name, :id), { prompt: "—" }, required: true, class: tw_input_classes %>
+        </div>
       </div>
     </section>
   </div>

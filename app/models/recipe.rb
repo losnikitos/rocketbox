@@ -3,9 +3,9 @@
 # How media is made from library media, one per input slot, plus example media.
 # `inputs` lists the slots in order as { "collection", "tag_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
-# a video, 1 second each. Results land in `output_collection` with the first input's tag.
+# a video, 1 second each. Results land in `output_collection` tagged `output_tag`.
 # `options` are the defaults for its AI runs (see GenerationOptions). Each run also picks a shot and a style if the recipe takes them.
-# ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing
+# ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing, and nulls the output tag
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
   include GenerationOptions
@@ -17,6 +17,7 @@ class Recipe < ApplicationRecord
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
   has_many_attached :examples
+  belongs_to :output_tag, class_name: "Tag"
 
   enum :kind, KINDS.keys.index_by(&:itself), validate: true
   # A stitch has no prompt.

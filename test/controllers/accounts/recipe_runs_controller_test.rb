@@ -51,7 +51,7 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", output_collection: "photobank",
+    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", output_collection: "photobank", output_tag: tags(:interior),
       inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ])
 
     get new_recipe_run_url(recipe, account: @admin.id, recipe_run: { extra_prompt: "Warmer.", options: { model: "gpt-image-2" } })
@@ -77,7 +77,7 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "starts from the recipe's options; picks override them and drop what the new model lacks" do
-    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ],
+    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", output_tag: tags(:interior), inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ],
       options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k", "quality" => "high" })
 
     get new_recipe_run_url(recipe, account: @admin.id)
@@ -94,7 +94,7 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
 
   test "a recipe taking a style offers every style as an input; the run keeps the pick" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", takes_style: true, inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ])
+    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", takes_style: true, output_tag: tags(:interior), inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ])
 
     get new_recipe_run_url(recipe, account: @admin.id)
     assert_select "label:has(input[type=radio][name=style_id][value=?][checked])", style.id.to_s, text: /Film\s+35mm grain/

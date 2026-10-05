@@ -69,7 +69,7 @@
               <%= arrow %>
 
               <div class="md:w-56 md:shrink-0" role="group" aria-label="Output">
-                <%= render "slot", collection: recipe.output_collection, tag: slots.first&.last %>
+                <%= render "slot", collection: recipe.output_collection, tag: recipe.output_tag %>
               </div>
 
               <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
