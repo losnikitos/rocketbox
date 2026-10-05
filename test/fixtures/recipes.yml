@@ -1,0 +1,17 @@
+cinematic:
+  name: Cinematic shop reel
+  kind: video
+  body: Slow cinematic push-in on the shop.
+  output_collection: photobank
+  inputs:
+    - collection: inbox
+      tag_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
+
+before_after:
+  name: Before → after energy
+  kind: video
+  body: Energetic before and after reveal.
+  output_collection: photobank
+  inputs:
+    - collection: inbox
+      tag_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>

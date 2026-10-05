@@ -8,9 +8,9 @@
   <% end %>
 
   <div class="flex flex-wrap items-start gap-6">
-    <% @slots.each_with_index do |(slot_tag, photos), index| %>
+    <% @slots.each_with_index do |(collection, slot_tag, photos), index| %>
       <fieldset data-controller="media-pick" class="group w-36">
-        <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= slot_tag&.name || "Unknown tag" %></legend>
+        <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= slot_tag&.name || "Unknown tag" %> <span class="text-ink-500">· <%= collection.humanize %></span></legend>
         <% if photos.any? %>
           <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
           <% popover_id = "media-pick-#{index}" %>
@@ -42,8 +42,8 @@
           </div>
         <% else %>
           <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-            No <%= slot_tag&.name&.downcase || "matching" %> photos in the photobank.
-            <%= link_to "Add some", library_photobank_path(tag: slot_tag&.slug), class: "underline hover:text-ink-900" %>
+            No <%= slot_tag&.name&.downcase || "matching" %> photos in <%= collection.humanize %>.
+            <%= link_to "Add some", library_collection_path(collection, tag: slot_tag&.slug), class: "underline hover:text-ink-900" %>
           </p>
         <% end %>
       </fieldset>
@@ -97,12 +97,17 @@
     </div>
   </details>
 
+  <div class="max-w-xl">
+    <%= label_tag "recipe_run_extra_prompt", "Extra prompt", class: tw_label_classes %>
+    <%= text_area_tag "recipe_run[extra_prompt]", @run.extra_prompt, rows: 3, placeholder: "Added after the recipe prompt", class: tw_input_classes %>
+  </div>
+
   <details class="group">
     <summary class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-ink-700 hover:text-ink-900">
       <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
       Options
     </summary>
-    <div class="mt-3">
+    <div class="mt-3 max-w-xl">
       <%= render "shared/generation_options", record: @run, scope: "recipe_run", refresh_url: new_recipe_run_path(@recipe) %>
     </div>
   </details>
@@ -113,16 +118,18 @@
   <% end %>
 <% end %>
 
-<% if @ready.any? %>
+<% if @made.any? %>
   <section class="mt-10 max-w-4xl">
     <div class="mb-3 flex items-baseline justify-between gap-3">
-      <h2 class="text-sm font-semibold text-ink-900">Ready from <%= @recipe.name %></h2>
-      <%= link_to "View all", library_ready_path(recipe: @recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+      <h2 class="text-sm font-semibold text-ink-900">Made with <%= @recipe.name %></h2>
+      <% if @recipe.output_collection == "ready" %>
+        <%= link_to "View all", library_ready_path(recipe: @recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+      <% end %>
     </div>
     <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-      <% @ready.limit(24).each do |media| %>
+      <% @made.limit(24).each do |media| %>
         <li class="min-w-0">
-          <%= link_to library_item_path(media), aria: { label: "Open ready #{media.kind}" }, class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+          <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
             <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover" %>
           <% end %>
         </li>

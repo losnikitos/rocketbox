@@ -52,20 +52,21 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(tag: "logo"), text: "Logo 0"
   end
 
-  test "source shows prompts and generated media; generated links back to its source" do
+  test "source shows recipes and generated media; generated links back to its source" do
     source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: @user)
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    source.generations.create!(prompt: prompts(:cinematic), generated_media: generated, status: "complete")
-    failed = source.generations.new(prompt: prompts(:cinematic)).start!
+    RecipeRun.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete", inputs: [ RecipeRunInput.new(library_media: source) ])
+    failed = recipes(:cinematic).run!(media: [ source ])
     get library_photobank_media_url(failed.generated_media)
-    assert_select "#generation-heading + span", text: "running"
+    assert_select "#recipe-run-heading + span", text: "running"
     failed.update!(status: "failed", error: "content policy")
 
     get library_upload_url(source)
-    assert_select "turbo-frame#side_panel[target=_top] a[data-turbo-frame=side_panel][href=?]", new_library_media_generation_path(source, prompt_id: prompts(:cinematic).id)
-    assert_select "a[href*=?]", "prompt_id=#{prompts(:before_after).id}", count: 0
+    assert_select "#apply_recipe a:not([data-turbo-frame])[href=?]", new_recipe_run_path(recipes(:cinematic), media_ids: { 0 => source.id }), text: /Cinematic shop reel/
+    assert_select "a[href^=?]", new_recipe_run_path(recipes(:before_after)), count: 0
+    assert_select "turbo-frame", count: 0
     assert_select "nav[aria-label=Versions] a", 3 do |links|
       assert_equal [ library_upload_path(source), library_photobank_media_path(generated), library_photobank_media_path(failed.generated_media) ],
         links.map { it["href"] }
@@ -76,12 +77,12 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=hero-media] img"
 
     get library_photobank_media_url(generated)
-    assert_select "#generation-heading + span", count: 0
+    assert_select "#recipe-run-heading + span", count: 0
     assert_select "label #compare-original"
     assert_select "button[popovertarget=hero-media][title='View full size']"
     assert_select "nav[aria-label=Versions] a[href=?]", library_upload_path(source), text: /Original/
     assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_photobank_media_path(generated)
-    assert_select "aside a[href=?]", library_upload_path(source), count: 0
+    assert_select "aside ul[aria-label='Source media'] a[href=?]", library_upload_path(source)
 
     get library_photobank_media_url(failed.generated_media)
     assert_select "section p", text: "content policy"
@@ -184,8 +185,8 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "ready lists recipe output; its page shows the recipe run" do
     source = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user,
       file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", tag_ids: [ tags(:interior).id ])
-    run = recipe.run!(user: @user, media: [ source ])
+    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
+    run = recipe.run!(media: [ source ])
 
     get library_ready_url
     assert_response :success
@@ -197,7 +198,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_ready_path(recipe: recipe.id), text: "Collage 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Interior/, count: 0
 
-    other = Recipe.create!(name: "Poster", body: "Make a poster.", tag_ids: [ tags(:interior).id ])
+    other = Recipe.create!(name: "Poster", body: "Make a poster.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:interior).id } ])
     get library_ready_url(recipe: other.id)
     assert_select "a[href=?]", library_ready_media_path(run.generated_media), count: 0
     assert_select "p", text: "No media from Poster yet."

@@ -152,9 +152,9 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     post library_media_index_url, params: { collection: "photobank", source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
 
     media = user.library_media.order(:id).last
-    assert_equal source, media.source_media
-    assert media.origin.complete?
-    assert_nil media.origin.prompt
+    assert_equal source, media.original
+    assert media.recipe_run.complete?
+    assert_nil media.recipe_run.recipe
     assert_equal tags(:interior), media.tag
     assert_redirected_to library_photobank_url
 

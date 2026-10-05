@@ -15,10 +15,10 @@
       <% record.examples.select(&:persisted?).each do |example| %>
         <li class="group relative">
           <% if example.video? %>
-            <%= render "accounts/prompts/example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+            <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
           <% else %>
             <button type="button" popovertarget="example-<%= example.id %>" aria-label="View <%= example.filename %>" class="block w-full cursor-zoom-in">
-              <%= render "accounts/prompts/example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+              <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
             </button>
             <div id="example-<%= example.id %>" popover class="size-full bg-black/90 p-4">
               <button type="button" popovertarget="example-<%= example.id %>" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">

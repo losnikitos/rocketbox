@@ -61,7 +61,7 @@ class LibraryMediaController < ApplicationController
 
       media = Current.account.library_media.create!(kind:, collection:, tag:)
       media.file.attach(file)
-      Generation.create!(source_media: source, generated_media: media, status: "complete") if source
+      RecipeRun.create!(generated_media: media, status: "complete", inputs: [ RecipeRunInput.new(library_media: source) ]) if source
       media
     end
 

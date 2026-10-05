@@ -48,11 +48,11 @@
       <ol>
         <% [
           [ "Inbox", library_uploads_path, :library, "inbox" ],
-          [ "Prompts", prompts_path, :prompts ],
+          [ "Recipes", recipes_path(folder: "inbox"), :recipes ],
           [ "Photobank", library_photobank_path, :photobank, "photo" ],
           [ "Shots", shots_path, :shots ],
           [ "Styles", styles_path, :styles ],
-          [ "Recipes", recipes_path, :recipes ],
+          [ "Recipes", recipes_path(folder: "photobank"), :recipes ],
           [ "Ready", library_ready_path, :ready, "check-circle" ],
           [ "Layers", layers_path, :layers ],
           [ "Features", features_path, :features ],
@@ -70,7 +70,7 @@
             <% elsif Current.user&.admin? %>
               <%= link_to label, path,
                     class: "block rounded-xl py-1 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                    aria: { selected: section == key } %>
+                    aria: { selected: section == key && (key != :recipes || current_page?(path)) } %>
             <% else %>
               <span class="block py-1 pr-3 pl-10 text-sm font-medium text-ink-500"><%= label %></span>
             <% end %>

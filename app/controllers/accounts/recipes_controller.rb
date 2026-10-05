@@ -9,6 +9,7 @@ module Accounts
 
     def index
       @recipes = Recipe.with_attached_examples.ordered
+      @recipes = @recipes.select { it.reads?(params[:folder]) } if params[:folder].present?
     end
 
     def new
@@ -49,7 +50,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :body, :shot_group, tag_ids: [], examples: [], options: {} ])
+        params.expect(recipe: [ :name, :kind, :body, :shot_group, :output_collection, inputs: [ %i[collection tag_id] ], examples: [], options: {} ])
       end
 
       # The options refresh resubmits the form as a GET; examples wait for the save.

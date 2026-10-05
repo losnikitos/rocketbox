@@ -80,20 +80,20 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_equal "before-after", Tag.find_by!(name: "Before after").slug
   end
 
-  test "generation is linked from its media page and opens in admin" do
+  test "recipe run is linked from its media page and opens in admin" do
     admin = sign_in_as(users(:admin_user))
     source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
-    generation = source.generations.new(prompt: prompts(:cinematic)).start!
+    generation = recipes(:cinematic).run!(media: [ source ])
     generation.update!(status: "failed", error: "content policy")
 
     get "/app/library/photobank/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
     assert_response :success
-    assert_select "a[href^='/admin/generations/#{generation.id}']"
-    get "/admin/generations/#{generation.id}", headers: @ua
+    assert_select "a[href^='/admin/recipe_runs/#{generation.id}']"
+    get "/admin/recipe_runs/#{generation.id}", headers: @ua
     assert_response :success
     assert_match "content policy", response.body
-    get "/admin/generations", headers: @ua
+    get "/admin/recipe_runs", headers: @ua
     assert_response :success
   end
 

@@ -22,7 +22,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 ```mermaid
 flowchart LR
-  Inbox[/Inbox/] --> Prompts --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features --> Posts
+  Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features --> Posts
   Styles --> Recipes
   Shots --> Recipes
   Layers --> Features
@@ -67,7 +67,7 @@ Authentication and session login.
 How the app is deployed and operated in production.
 
 ### [PROMPTS.md](./docs/PROMPTS.md)
-LLM prompts: content `Prompt` rows at `/app/prompts`; service prompts are constants in code.
+LLM prompts: content `Recipe` rows at `/app/recipes`; service prompts are constants in code.
 
 ### [ICONS.md](./docs/ICONS.md)
 Heroicons: `heroicon "name"` — no variant or size unless needed.

@@ -5,11 +5,11 @@ class LibraryMedia < ApplicationRecord
   belongs_to :tag, optional: true
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
-  # Generated media outlive their source; only the generation rows go.
-  has_many :generations, foreign_key: :source_media_id, inverse_of: :source_media, dependent: :destroy
-  has_many :generated_media, through: :generations
-  has_one :origin, class_name: "Generation", foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
-  has_one :source_media, through: :origin
+  # Generated media outlive their source; only the input rows go.
+  has_many :recipe_run_inputs, dependent: :delete_all
+  has_many :input_runs, through: :recipe_run_inputs, source: :recipe_run
+  has_many :generated_media, through: :input_runs
+  # The run that made this media; it has a status and an error.
   has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
   has_one_attached :file
   has_one_attached :extracted_logo
@@ -25,7 +25,7 @@ class LibraryMedia < ApplicationRecord
   }.freeze
 
   # Inbox: everything the owner sends or uploads. Photobank: curated media, manual upload only.
-  # Ready: recipe output.
+  # Ready: final recipe output.
   enum :collection, %w[inbox photobank ready].index_by(&:itself), default: "inbox", validate: true
 
   validates :kind, presence: true
@@ -35,8 +35,8 @@ class LibraryMedia < ApplicationRecord
 
   def business_card? = tag&.slug == "business-card"
 
-  # The Generation or RecipeRun that made this media; both have a status and an error.
-  def maker = origin || recipe_run
+  # The media this one is a version of.
+  def original = recipe_run&.source_media&.first || self
 
   def story_image?
     return false unless file.attached?
@@ -50,11 +50,11 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
   end
 
-  # Prompts that suit this media.
-  def prompts
+  # Recipes with an input slot this media fits.
+  def recipes
     return [] unless story_image? && tag
 
-    Prompt.where(tag:).with_attached_examples.ordered
+    Recipe.with_attached_examples.ordered.select { it.slot_for(self) }
   end
 
   def extraction_status
