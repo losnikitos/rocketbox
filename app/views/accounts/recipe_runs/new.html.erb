@@ -3,9 +3,7 @@
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
 
 <% example = render("accounts/recipes/example", example: @recipe.example, css: "aspect-2/3 w-28 shrink-0 rounded-lg object-cover") if @recipe.example.attached? %>
-<%= render layout: "accounts/recipes/header", locals: { recipe: @recipe, example: } do %>
-  <h1 class="text-2xl font-semibold text-ink-900"><%= @recipe.name %></h1>
-<% end %>
+<%= render "accounts/recipes/header", recipe: @recipe, example: %>
 
 <%= form_with url: recipe_runs_path(@recipe), class: "@container mt-6 space-y-6" do |f| %>
   <% if @error %>
