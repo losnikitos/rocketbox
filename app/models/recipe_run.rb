@@ -23,6 +23,16 @@ class RecipeRun < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validate :media_fit_recipe, on: :create, if: :recipe
 
+  # The user's last recipe runs, for the Generations panel.
+  scope :recent_for, ->(user) {
+    where.not(recipe_id: nil).joins(:generated_media).where(library_media: { user_id: user.id })
+      .includes(:recipe, generated_media: { file_attachment: :blob }).order(created_at: :desc).limit(5)
+  }
+
+  after_update_commit -> {
+    broadcast_update_to [ generated_media.user, :generations ], target: "generations", partial: "layouts/app/generations", locals: { user: generated_media.user }
+  }, if: :saved_change_to_status?
+
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
   def video? = recipe&.video?
