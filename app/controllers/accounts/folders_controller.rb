@@ -18,7 +18,9 @@ module Accounts
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
           .includes(recipe_run: { inputs: { library_media: { file_attachment: :blob } } }).order(created_at: :desc)
         @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
-        @recipes = Recipe.with_attached_examples.includes(:output_folder).ordered.select { it.folder_ids.include?(@folder.id) }
+        recipes = Recipe.with_attached_examples.includes(:output_folder).ordered.to_a
+        @read_recipes = recipes.select { it.folder_ids.include?(@folder.id) }
+        @write_recipes = recipes.select { it.output_folder_id == @folder.id }
       else
         @folder_media = media.includes(:folder).group_by { it.folder.parent_id || it.folder_id }
       end
@@ -35,8 +37,8 @@ module Accounts
     end
 
     def update
-      if @folder.update(name: params.dig(:folder, :name))
-        redirect_to helpers.folder_path(@folder), notice: "Folder renamed."
+      if @folder.update(params.expect(folder: %i[name color]))
+        redirect_to helpers.folder_path(@folder), notice: "Folder updated."
       else
         redirect_to helpers.folder_path(@folder), alert: @folder.errors.full_messages.to_sentence
       end

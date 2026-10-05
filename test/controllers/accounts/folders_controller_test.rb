@@ -54,8 +54,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
     assert_select "[id^=library-media-move-]", count: 0
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:cinematic))
-    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
+    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(recipes(:cinematic))
+    assert_select "aside[aria-label=Recipes] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
     assert_select "button[popovertarget=rename-folder]", count: 0
   end
 
@@ -67,6 +67,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
     assert_select "a[href=?]", library_item_path(collage.generated_media)
     assert_select "a[href=?]", library_item_path(poster.generated_media), count: 0
+    assert_select "section[aria-labelledby=folder-recipes-write] a[href=?]", new_recipe_run_path(collage.recipe)
+    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(collage.recipe), count: 0
   end
 
   test "admin creates, renames and deletes a subfolder; deleting moves its media up" do
@@ -118,6 +120,23 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     delete library_folders_url("clients")
     assert_redirected_to library_folders_url(account: admin.id)
     assert_not Folder.exists?(folder.id)
+  end
+
+  test "admin recolors a folder; new subfolders take their parent's color" do
+    admin = sign_in_as(users(:admin_user))
+    get library_folders_url("inbox", account: admin.id)
+    assert_select "[id^=folder-color-#{folders(:interior).id}-] form[action^=?] button[disabled]", library_folders_path("inbox", "interior"), text: /Emerald/
+
+    patch library_folders_url("inbox", "interior"), params: { folder: { color: "rose" } }
+    assert_equal "rose", folders(:interior).reload.color
+    get library_folders_url("inbox", account: admin.id)
+    assert_select "nav[aria-label='Folder tree'] a[href=?] svg.text-rose-400", library_folders_path("inbox", "interior")
+
+    patch library_folders_url("inbox", "interior"), params: { folder: { color: "neon" } }
+    assert_equal "rose", folders(:interior).reload.color
+
+    post library_folders_url("inbox"), params: { folder: { name: "Team" } }
+    assert_equal "emerald", folders(:inbox).children.find_by!(slug: "team").color
   end
 
   test "a folder that's a recipe output can't be deleted" do

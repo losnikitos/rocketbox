@@ -16,8 +16,11 @@ class Folder < ApplicationRecord
   has_many :library_media, dependent: :restrict_with_error
   has_many :output_recipes, class_name: "Recipe", foreign_key: :output_folder_id, inverse_of: :output_folder, dependent: :restrict_with_error
 
+  enum :color, %w[sky emerald amber rose violet slate].index_by(&:itself), validate: true
+
   validates :name, presence: true
   validate { errors.add(:parent, "must be a top-level folder") if parent&.parent_id }
+  before_validation(on: :create) { self.color = parent.color if parent && !color_changed? }
 
   scope :ordered, -> { order(:name) }
   scope :roots, -> { where(parent_id: nil) }

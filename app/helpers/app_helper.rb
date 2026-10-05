@@ -82,9 +82,10 @@ module AppHelper
     "Delete #{folder.name}? " + (folder.parent ? "Its media moves to #{folder.parent.name}." : "Only empty folders can be deleted.")
   end
 
-  def folder_color(folder)
-    folder&.root&.slug == "inbox" ? "text-emerald-500" : "text-sky-400"
-  end
+  FOLDER_COLORS = { "sky" => "text-sky-400", "emerald" => "text-emerald-500", "amber" => "text-amber-400",
+                    "rose" => "text-rose-400", "violet" => "text-violet-400", "slate" => "text-slate-400" }.freeze
+
+  def folder_color(folder) = FOLDER_COLORS[folder&.color || "sky"]
 
   def posts_tabs
     index = action_name == "index"

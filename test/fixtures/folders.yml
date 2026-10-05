@@ -2,6 +2,7 @@
 <%= root %>:
   name: <%= root.humanize %>
   slug: <%= root %>
+  color: <%= root == "inbox" ? "emerald" : "sky" %>
 <% end %>
 ready:
   name: Ready
@@ -12,6 +13,7 @@ ready:
   name: <%= key.humanize %>
   slug: <%= key.dasherize %>
   parent: inbox
+  color: emerald
 photobank_<%= key %>:
   name: <%= key.humanize %>
   slug: <%= key.dasherize %>
