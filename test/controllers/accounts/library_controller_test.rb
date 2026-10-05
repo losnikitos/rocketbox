@@ -164,12 +164,14 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_photobank_path(type: "interior"), text: "Interior 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Reviews/, count: 0
     assert_select "input[name=collection][value=photobank]"
-    assert_select "a[href=?]", library_photobank_media_path(curated)
+    assert_select "li[data-source-id=?] a[href=?]", curated.id.to_s, library_photobank_media_path(curated)
     assert_select "a[href=?]", library_upload_path(inbox), count: 0
 
     get library_uploads_url
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path, text: "All 1"
     assert_select "a[href=?]", library_photobank_media_path(curated), count: 0
+    assert_select "[data-source-id]", count: 0
+    assert_select "a[href=?]", library_upload_path(inbox)
 
     get library_photobank_media_url(curated)
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_photobank_path
@@ -193,6 +195,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_ready_path, text: "Ready"
     assert_select "a[href=?]", library_ready_media_path(run.generated_media), text: /Generating/
     assert_select "a[href=?]", library_photobank_media_path(source), count: 0
+    assert_select "[data-source-id]", count: 0
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_ready_path(recipe: recipe.id), text: "Collage 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Interior/, count: 0
 
