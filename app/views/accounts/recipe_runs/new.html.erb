@@ -80,7 +80,7 @@
       <h2 id="processing" class="<%= island_title %>"><a href="#processing" class="hover:underline">Processing</a></h2>
       <div class="<%= island %>">
         <% if @recipe.stitch? %>
-          <p class="text-sm text-ink-600">Each input plays for 1 second, in order.</p>
+          <p class="text-sm text-ink-600"><%= Recipe::EFFECTS[@recipe.effect].last %></p>
         <% else %>
           <details class="group">
             <summary class="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-ink-700 hover:text-ink-900">

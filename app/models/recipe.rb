@@ -3,7 +3,7 @@
 # How media is made from library media, one per input slot, plus example media.
 # `inputs` lists the slots in order as { "folder_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
-# a video, 1 second each. Results land in `output_folder`.
+# a video, cut by its `effect` (see EFFECTS). Results land in `output_folder`.
 # `options` are the defaults for its AI runs (see GenerationOptions). Each run also picks a shot and a style if the recipe takes them.
 # ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
@@ -12,6 +12,11 @@ class Recipe < ApplicationRecord
 
   # Label and icon per kind.
   KINDS = { "generate_image" => [ "Gen image", "photo" ], "generate_video" => [ "Gen video", "film" ], "stitch" => [ "Stitch", "scissors" ] }.freeze
+  # Label and description per stitch effect.
+  EFFECTS = {
+    "default" => [ "Default", "Each input plays for 1 second, in order." ],
+    "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ]
+  }.freeze
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
@@ -32,6 +37,7 @@ class Recipe < ApplicationRecord
   before_validation(if: :stitch?) { self.shot_group, self.takes_style = nil, false }
   validates :name, :inputs, presence: true
   validates :body, presence: true, unless: :stitch?
+  validates :effect, inclusion: { in: EFFECTS.keys }
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"

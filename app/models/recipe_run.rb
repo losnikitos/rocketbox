@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 # A recipe applied to library media, one per recipe input. The result lands in the recipe's output folder, created
 # up front so a running or failed run already has a page; GenerateJob attaches its file when the AI call finishes.
 # A run without a recipe records a version the owner dropped onto a media themselves; it never runs.
@@ -9,6 +11,8 @@ class RecipeRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
+  # The Doppler stitch effect's track (.wav) and its cut ends in seconds (.csv).
+  DOPPLER = Rails.root.join("lib/stitch/doppler").to_s
 
   belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
@@ -64,22 +68,34 @@ class RecipeRun < ApplicationRecord
 
   private
 
-    # The source media as one MP4, 1 second each (a video's first second).
-    # ponytail: fixed 9:16 1080x1920 at 30fps, no audio. Upgrade = aspect ratio and duration from the recipe options.
+    # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for the Doppler effect,
+    # the Doppler track cut on its beat, each cut a random input other than the one before.
+    # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
+    # from the recipe options, a per-media offset.
     def stitch
       media = source_media
+      doppler = recipe.effect == "doppler"
+      # [media, frames] per cut. Ends are rounded to frames, not durations, so cuts don't drift off the beat.
+      cuts = if doppler
+        ends = CSV.foreach("#{DOPPLER}.csv", headers: true).map { (it["end"].to_f * 30).round }
+        ends.zip([ 0, *ends ]).each_with_object([]) { |(stop, start), acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, stop - start ] }
+      else
+        media.map { [ it, 30 ] }
+      end
       Dir.mktmpdir do |dir|
-        inputs = media.each_with_index.flat_map do |item, i|
-          path = File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) }
+        paths = media.each_with_index.to_h { |item, i| [ item, File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) } ] }
+        inputs = cuts.flat_map do |item, frames|
           # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
-          # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
-          [ *(%w[-f image2 -loop 1] if item.story_image?), "-t", "1", "-i", path ]
+          # maps) as extra frames, and -loop 1 over those hangs ffmpeg. A second of slack; trim cuts exact frames.
+          [ *(%w[-f image2 -loop 1] if item.story_image?), "-t", (frames / 30.0 + 1).to_s, "-i", paths[item] ]
         end
         fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
-        filter = media.each_index.map { "[#{it}:v]#{fit}[v#{it}];" }.join + media.each_index.map { "[v#{it}]" }.join + "concat=n=#{media.size}:v=1:a=0[out]"
+        filter = cuts.each_with_index.map { |(_, frames), i| "[#{i}:v]#{fit},trim=end_frame=#{frames},setpts=PTS-STARTPTS[v#{i}];" }.join +
+          cuts.each_index.map { "[v#{it}]" }.join + "concat=n=#{cuts.size}:v=1:a=0[out]"
+        audio_in, audio_out = [ "-i", "#{DOPPLER}.wav" ], [ "-map", "#{cuts.size}:a", "-c:a", "aac" ] if doppler
         out = File.join(dir, "out.mp4")
-        log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", filter,
-          "-map", "[out]", "-c:v", "libx264", "-movflags", "+faststart", out)
+        log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *inputs, *audio_in, "-filter_complex", filter,
+          "-map", "[out]", *audio_out, "-c:v", "libx264", "-movflags", "+faststart", out)
         raise "ffmpeg failed: #{log.lines.last(3).join.strip}" unless status.success?
         File.binread(out)
       end

@@ -85,7 +85,21 @@
             <% end %>
           </div>
         </fieldset>
-        <p class="hidden text-sm text-ink-600 group-has-[[value=stitch]:checked]/recipe:block">Each input plays for 1 second, in order.</p>
+        <fieldset class="group/effect hidden group-has-[[value=stitch]:checked]/recipe:block">
+          <legend class="<%= tw_label_classes %>">Effect</legend>
+          <div class="<%= tw_segments_classes %>">
+            <% Recipe::EFFECTS.each do |effect, (label, _)| %>
+              <label class="<%= tw_segment_classes %> flex items-center justify-center px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
+                <%= f.radio_button :effect, effect, class: "sr-only" %>
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+          <% shown_when = { "default" => "group-has-[[value=default]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block" } %>
+          <% Recipe::EFFECTS.each do |effect, (_, description)| %>
+            <p class="mt-2 hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
+          <% end %>
+        </fieldset>
         <div class="<%= ai_only %>">
           <%= f.label :body, "Prompt", class: tw_label_classes %>
           <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
