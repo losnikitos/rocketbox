@@ -65,8 +65,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     poster = Recipe.create!(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
 
     get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
-    assert_select "a[href=?]", library_item_path(collage.generated_media)
-    assert_select "a[href=?]", library_item_path(poster.generated_media), count: 0
+    assert_select "main a[href=?]", library_item_path(collage.generated_media)
+    assert_select "main a[href=?]", library_item_path(poster.generated_media), count: 0
     assert_select "section[aria-labelledby=folder-recipes-write] a[href=?]", new_recipe_run_path(collage.recipe)
     assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(collage.recipe), count: 0
   end

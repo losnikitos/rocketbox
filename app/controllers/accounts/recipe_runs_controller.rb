@@ -15,7 +15,7 @@ module Accounts
     def create
       media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
       run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), style: @styles&.find_by(id: params[:style_id]), extra_prompt: params.dig(:recipe_run, :extra_prompt), options: options_params)
-      redirect_to helpers.library_item_path(run.generated_media), notice: "Generating #{@recipe.name}…"
+      redirect_to helpers.library_item_path(run.generated_media)
     rescue ActiveRecord::RecordInvalid => e
       @run = e.record
       @error = e.record.errors.full_messages.to_sentence
