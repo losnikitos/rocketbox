@@ -9,11 +9,12 @@
 </nav>
 
 <% if @collection %>
+  <% tags = Tag.ordered.to_a %>
   <div class="mb-6">
     <%= render "layouts/app/secondary_nav", tabs: [
           [ library_folders_path(@collection), "All", params[:tag].blank?, @tag_counts.values.sum ],
           :separator,
-          *Tag.ordered.map { |t| [ library_folders_path(@collection, tag: t.slug), t.name, params[:tag] == t.slug, @tag_counts[t.id].to_i ] }
+          *tags.map { |t| [ library_folders_path(@collection, tag: t.slug), t.name, params[:tag] == t.slug, @tag_counts[t.id].to_i ] }
         ] %>
   </div>
 <% end %>
@@ -47,11 +48,24 @@
         <% else %>
           <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover", controls: true %>
         <% end %>
-        <% if media.tag %>
-          <div class="mt-2 flex flex-wrap gap-1">
-            <%= link_to media.tag.name, library_folders_path(@collection, tag: media.tag.slug), class: "rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium text-ink-600 hover:bg-ink-900/10 hover:text-ink-900" %>
-          </div>
-        <% end %>
+        <% menu_id = "tag-menu-#{media.id}" %>
+        <button type="button" popovertarget="<%= menu_id %>" style="anchor-name: --<%= menu_id %>" aria-label="Tag: <%= media.tag&.name || "none" %>"
+                class="mt-2 inline-flex max-w-full cursor-pointer items-center gap-0.5 rounded-full bg-ink-900/5 py-0.5 pr-1.5 pl-2 text-xs font-medium text-ink-600 hover:bg-ink-900/10 hover:text-ink-900">
+          <span class="truncate"><%= media.tag&.name || "—" %></span>
+          <%= heroicon "chevron-down", variant: :micro, options: { class: "size-3.5 shrink-0", "aria-hidden": true } %>
+        </button>
+        <div id="<%= menu_id %>" popover style="position-anchor: --<%= menu_id %>"
+             class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] min-w-40 rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+          <% [ [ "—", nil ], *tags.map { [ it.name, it.id ] } ].each do |name, id| %>
+            <% current = media.tag_id == id %>
+            <%= button_to library_media_path(media), method: :patch, params: { library_media: { tag_id: id } },
+                  aria: { current: ("true" if current), label: ("No tag" unless id) }, disabled: current,
+                  class: "flex w-full cursor-pointer items-center justify-between gap-2 rounded px-3 py-1.5 text-left text-sm text-ink-900 hover:bg-ink-900/5 disabled:cursor-default disabled:font-medium" do %>
+              <%= name %>
+              <% if current %><%= heroicon "check", variant: :micro, options: { class: "size-4 text-rocket", "aria-hidden": true } %><% end %>
+            <% end %>
+          <% end %>
+        </div>
       </li>
     <% end %>
   </ul>

@@ -24,6 +24,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#folder-media-#{photo.id}"
     assert_select "#folder-media-#{inbox.id}", count: 0
+    assert_select "#tag-menu-#{photo.id} form[action=?]", library_media_path(photo)
   end
 
   test "folder filters by tag" do

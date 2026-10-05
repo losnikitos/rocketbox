@@ -17,9 +17,9 @@ class LibraryMediaController < ApplicationController
   def update
     media = Current.account.library_media.find(params[:id])
     if media.update(params.expect(library_media: [ :tag_id ]))
-      redirect_to helpers.library_item_path(media), notice: "Tag saved."
+      redirect_back_or_to helpers.library_item_path(media), notice: "Tag saved."
     else
-      redirect_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
+      redirect_back_or_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
   end
 
