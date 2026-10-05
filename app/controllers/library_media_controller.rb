@@ -16,21 +16,21 @@ class LibraryMediaController < ApplicationController
 
   def update
     media = Current.account.library_media.find(params[:id])
-    if media.update(params.expect(library_media: [ :media_type_id ]))
-      redirect_to helpers.library_item_path(media), notice: "Media type saved."
+    if media.update(params.expect(library_media: [ :tag_id ]))
+      redirect_to helpers.library_item_path(media), notice: "Tag saved."
     else
       redirect_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
   end
 
   def bulk_update
-    media_type_id = params[:media_type_id].presence
-    unless media_type_id.nil? || MediaType.exists?(media_type_id)
-      return redirect_back_or_to library_uploads_path, alert: "Unknown media type."
+    tag_id = params[:tag_id].presence
+    unless tag_id.nil? || Tag.exists?(tag_id)
+      return redirect_back_or_to library_uploads_path, alert: "Unknown tag."
     end
 
-    count = Current.account.library_media.where(id: params[:ids]).update_all(media_type_id:, updated_at: Time.current)
-    redirect_back_or_to library_uploads_path, notice: "Media type saved for #{helpers.pluralize(count, "file")}."
+    count = Current.account.library_media.where(id: params[:ids]).update_all(tag_id:, updated_at: Time.current)
+    redirect_back_or_to library_uploads_path, notice: "Tag saved for #{helpers.pluralize(count, "file")}."
   end
 
   def extract
@@ -64,7 +64,7 @@ class LibraryMediaController < ApplicationController
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind:, collection:, media_type: source&.media_type)
+      media = Current.account.library_media.create!(kind:, collection:, tag: source&.tag)
       media.file.attach(file)
       Generation.create!(source_media: source, generated_media: media, status: "complete") if source
       media

@@ -5,9 +5,9 @@ require "test_helper"
 class GenerationTest < ActiveSupport::TestCase
   setup do
     user = users(:lazaro_nixon)
-    source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user:,
+    source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user:,
       file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
-    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.")
+    prompt = Prompt.create!(name: "Polish", tag: tags(:interior), body: "Polish the shot.")
     @generation = source.generations.new(prompt:, extra_prompt: "Warmer.")
     @generation.start!
     @original_paint = RubyLLM.method(:paint)

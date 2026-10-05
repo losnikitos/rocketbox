@@ -25,7 +25,7 @@
           <% end %>
         </div>
         <ul class="flex flex-wrap gap-1.5" aria-label="Tags">
-          <% recipe.media_types.each do |type| %>
+          <% recipe.tags.each do |type| %>
             <li class="rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600"><%= type&.name || "Unknown" %></li>
           <% end %>
           <% if recipe.shot_group %>

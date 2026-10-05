@@ -8,15 +8,15 @@
   <% end %>
 
   <div class="flex flex-wrap items-start gap-6">
-    <% @slots.each_with_index do |(type, photos), index| %>
+    <% @slots.each_with_index do |(slot_tag, photos), index| %>
       <fieldset data-controller="media-pick" class="group w-36">
-        <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= type&.name || "Unknown media type" %></legend>
+        <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= slot_tag&.name || "Unknown tag" %></legend>
         <% if photos.any? %>
           <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
           <% popover_id = "media-pick-#{index}" %>
           <div class="space-y-2">
             <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
-                    aria-label="Choose <%= type&.name&.downcase || "media" %>"
+                    aria-label="Choose <%= slot_tag&.name&.downcase || "media" %>"
                     class="flex w-full cursor-pointer items-center justify-between gap-1 rounded-xl border border-ink-900/10 bg-white p-1.5 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
               <span data-media-pick-target="preview" class="block size-24 shrink-0 overflow-hidden rounded-lg">
                 <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover" %>
@@ -42,8 +42,8 @@
           </div>
         <% else %>
           <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-            No <%= type&.name&.downcase || "matching" %> photos in the photobank.
-            <%= link_to "Add some", library_photobank_path(type: type&.slug), class: "underline hover:text-ink-900" %>
+            No <%= slot_tag&.name&.downcase || "matching" %> photos in the photobank.
+            <%= link_to "Add some", library_photobank_path(tag: slot_tag&.slug), class: "underline hover:text-ink-900" %>
           </p>
         <% end %>
       </fieldset>

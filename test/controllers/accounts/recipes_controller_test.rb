@@ -7,7 +7,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     @admin = sign_in_as(users(:admin_user))
 
     post recipes_url, params: { recipe: { name: "Team collage", body: "p",
-      media_type_ids: [ media_types(:interior).id ], examples: [ image("a.jpg") ] } }
+      tag_ids: [ tags(:interior).id ], examples: [ image("a.jpg") ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Team collage")
     assert_equal %w[a.jpg], recipe.examples.map { it.filename.to_s }
@@ -16,7 +16,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(recipe)}" do
       assert_select "img[alt='a.jpg']"
       assert_select "a[href=?]", edit_recipe_path(recipe, account: @admin.id), text: "Team collage"
-      assert_select "ul[aria-label=Tags] li", text: media_types(:interior).name
+      assert_select "ul[aria-label=Tags] li", text: tags(:interior).name
       assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: /Use recipe/
     end
 

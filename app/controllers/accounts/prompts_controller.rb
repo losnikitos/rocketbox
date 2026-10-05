@@ -9,7 +9,7 @@ module Accounts
 
     def index
       @prompts = Prompt.with_attached_examples.ordered
-      @prompts = @prompts.joins(:media_type).where(media_type: { slug: params[:media_type] }) if params[:media_type].present?
+      @prompts = @prompts.joins(:tag).where(tag: { slug: params[:tag] }) if params[:tag].present?
     end
 
     def new
@@ -52,7 +52,7 @@ module Accounts
       end
 
       def prompt_params
-        params.expect(prompt: [ :name, :media_type_id, :kind, :body, examples: [], options: {} ])
+        params.expect(prompt: [ :name, :tag_id, :kind, :body, examples: [], options: {} ])
       end
 
       # The options refresh resubmits the form as a GET; examples wait for the save.

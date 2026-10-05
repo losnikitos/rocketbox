@@ -5,7 +5,7 @@ require "test_helper"
 class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = sign_in_as(users(:admin_user))
-    @media = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: @admin)
+    @media = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: @admin)
     @media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
   end
 
@@ -50,7 +50,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.")
+    prompt = Prompt.create!(name: "Polish", tag: tags(:interior), body: "Polish the shot.")
 
     get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id, generation: { extra_prompt: "Warmer.", options: { model: "gpt-image-2" } })
     assert_response :success
@@ -81,7 +81,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "starts from the prompt's options; picks override them and drop what the new model lacks" do
-    prompt = Prompt.create!(name: "Polish", media_type: media_types(:interior), body: "Polish the shot.",
+    prompt = Prompt.create!(name: "Polish", tag: tags(:interior), body: "Polish the shot.",
       options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k", "quality" => "high" })
 
     get new_library_media_generation_url(@media, prompt_id: prompt.id, account: @admin.id)
@@ -107,7 +107,7 @@ class Accounts::GenerationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a prompt that doesn't fit the media is refused" do
-    @media.update!(media_type: media_types(:exterior))
+    @media.update!(tag: tags(:exterior))
 
     get new_library_media_generation_url(@media, prompt_id: prompts(:cinematic).id, account: @admin.id)
     assert_redirected_to %r{/library/uploads/#{@media.id}\b}

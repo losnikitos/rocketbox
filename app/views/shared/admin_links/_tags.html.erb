@@ -1,0 +1,9 @@
+<% if Current.user&.admin? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "tags-admin-links", trigger_class: "cursor-pointer rounded-full p-2 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" } do %>
+    <%= render "shared/admin_links/item",
+        path: admin_tags_path,
+        label: "Tags",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+  <% end %>
+<% end %>

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Multi-select library media for the sticky bar; setMediaType copies the
-// selected ids into the bulk media-type form.
+// Multi-select library media for the sticky bar; setTag copies the
+// selected ids into the bulk tag form.
 export default class extends Controller {
   static targets = ["item", "checkbox", "bar", "count"]
 
@@ -13,7 +13,7 @@ export default class extends Controller {
     this.sync()
   }
 
-  setMediaType(event) {
+  setTag(event) {
     const form = event.target.form
     form.querySelectorAll('input[name="ids[]"]').forEach((input) => input.remove())
     this.checkboxTargets.filter((box) => box.checked).forEach((box) => {

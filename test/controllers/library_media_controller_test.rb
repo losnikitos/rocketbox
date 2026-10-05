@@ -47,41 +47,41 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Media not found.", flash[:alert]
   end
 
-  test "sets and clears media type" do
-    patch library_media_url(@media), params: { library_media: { media_type_id: media_types(:logo).id } }
+  test "sets and clears tag" do
+    patch library_media_url(@media), params: { library_media: { tag_id: tags(:logo).id } }
     assert_redirected_to library_upload_url(@media, account: @admin.id)
-    assert_equal media_types(:logo), @media.reload.media_type
+    assert_equal tags(:logo), @media.reload.tag
 
-    patch library_media_url(@media), params: { library_media: { media_type_id: "" } }
-    assert_nil @media.reload.media_type
+    patch library_media_url(@media), params: { library_media: { tag_id: "" } }
+    assert_nil @media.reload.tag
 
-    patch library_media_url(@media), params: { library_media: { media_type_id: 0 } }
-    assert_nil @media.reload.media_type
+    patch library_media_url(@media), params: { library_media: { tag_id: 0 } }
+    assert_nil @media.reload.tag
     assert flash[:alert].present?
   end
 
-  test "bulk sets media type within the account only" do
+  test "bulk sets tag within the account only" do
     other = LibraryMedia.create!(kind: "photo", user: @admin)
     foreign = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
 
-    interior = media_types(:interior)
-    patch bulk_update_library_media_index_url, params: { media_type_id: interior.id, ids: [ @media.id, other.id, foreign.id ] }
+    interior = tags(:interior)
+    patch bulk_update_library_media_index_url, params: { tag_id: interior.id, ids: [ @media.id, other.id, foreign.id ] }
     assert_redirected_to library_uploads_url(account: @admin.id)
-    assert_equal "Media type saved for 2 files.", flash[:notice]
-    assert_equal [ interior, interior ], [ @media.reload.media_type, other.reload.media_type ]
-    assert_nil foreign.reload.media_type
+    assert_equal "Tag saved for 2 files.", flash[:notice]
+    assert_equal [ interior, interior ], [ @media.reload.tag, other.reload.tag ]
+    assert_nil foreign.reload.tag
 
-    patch bulk_update_library_media_index_url, params: { media_type_id: "", ids: [ @media.id ] }
-    assert_nil @media.reload.media_type
+    patch bulk_update_library_media_index_url, params: { tag_id: "", ids: [ @media.id ] }
+    assert_nil @media.reload.tag
 
-    patch bulk_update_library_media_index_url, params: { media_type_id: 0, ids: [ other.id ] }
-    assert_equal interior, other.reload.media_type
-    assert_equal "Unknown media type.", flash[:alert]
+    patch bulk_update_library_media_index_url, params: { tag_id: 0, ids: [ other.id ] }
+    assert_equal interior, other.reload.tag
+    assert_equal "Unknown tag.", flash[:alert]
   end
 
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
-    @media.update!(media_type: media_types(:business_card), extracted_info: {
+    @media.update!(tag: tags(:business_card), extracted_info: {
       "status" => "done",
       "has_logo" => true,
       "fields" => { "business_name" => " Fade Co ", "phone" => "+1 555 0100", "website" => "https://fade.co", "address" => nil, "person_name" => "" }
@@ -107,7 +107,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_upload_url(@media, account: @admin.id)
     assert_nil @media.reload.extracted_info
 
-    @media.update!(media_type: media_types(:business_card))
+    @media.update!(tag: tags(:business_card))
     assert_enqueued_with(job: ExtractBusinessCardJob, args: [ @media.id ]) do
       post extract_library_media_url(@media)
     end
@@ -146,7 +146,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
   test "upload dropped onto a group attaches to its source" do
     user = sign_in_as(users(:lazaro_nixon))
-    source = user.library_media.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior))
+    source = user.library_media.create!(kind: "photo", collection: "photobank", tag: tags(:interior))
 
     post library_media_index_url, params: { collection: "photobank", source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
 
@@ -154,7 +154,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal source, media.source_media
     assert media.origin.complete?
     assert_nil media.origin.prompt
-    assert_equal media_types(:interior), media.media_type
+    assert_equal tags(:interior), media.tag
     assert_redirected_to library_photobank_url
 
     get library_photobank_media_url(media)

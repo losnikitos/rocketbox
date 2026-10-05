@@ -6,7 +6,7 @@ class RecipeTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
     @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.",
-      media_type_ids: [ media_types(:interior).id, "", media_types(:customer).id ])
+      tag_ids: [ tags(:interior).id, "", tags(:customer).id ])
     @interior = photo("interior.jpg", :interior)
     @customer = photo("customer.jpg", :customer)
     @original_paint = RubyLLM.method(:paint)
@@ -81,7 +81,7 @@ class RecipeTest < ActiveSupport::TestCase
   private
 
     def photo(filename, type, collection: "photobank", user: @user)
-      LibraryMedia.create!(kind: "photo", media_type: media_types(type), user:, collection:,
+      LibraryMedia.create!(kind: "photo", tag: tags(type), user:, collection:,
         file: { io: StringIO.new("img"), filename:, content_type: "image/jpeg" })
     end
 end

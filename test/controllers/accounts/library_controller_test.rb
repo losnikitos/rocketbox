@@ -32,31 +32,31 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     get library_uploads_url
     assert_response :success
     assert_select "input[data-library-select-target=?]", "checkbox"
-    assert_select "form[action=?] select[name=media_type_id]", bulk_update_library_media_index_path
+    assert_select "form[action=?] select[name=tag_id]", bulk_update_library_media_index_path
     assert_select "button", text: "Publish as Instagram story", count: 0
     assert_select "button", text: "Improve with AI", count: 0
   end
 
-  test "filters uploads by media type tab" do
-    card = LibraryMedia.create!(kind: "photo", media_type: media_types(:business_card), user: @user)
+  test "filters uploads by tag tab" do
+    card = LibraryMedia.create!(kind: "photo", tag: tags(:business_card), user: @user)
     card.file.attach(io: StringIO.new("img"), filename: "card.jpg", content_type: "image/jpeg")
-    interior = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: @user)
+    interior = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: @user)
     interior.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
 
-    get library_uploads_url(type: "business-card")
+    get library_uploads_url(tag: "business-card")
     assert_response :success
     assert_select "a[href=?]", library_upload_path(card)
     assert_select "a[href=?]", library_upload_path(interior), count: 0
     assert_select "li span", text: "Business card"
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "business-card"), text: "Business card 1"
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(tag: "business-card"), text: "Business card 1"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", library_uploads_path, text: "All 2"
-    assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(type: "logo"), text: "Logo 0"
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path(tag: "logo"), text: "Logo 0"
   end
 
   test "source shows prompts and generated media; generated links back to its source" do
-    source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: @user)
+    source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: @user)
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
-    generated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
+    generated = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
     source.generations.create!(prompt: prompts(:cinematic), generated_media: generated, status: "complete")
     failed = source.generations.new(prompt: prompts(:cinematic)).start!
@@ -130,14 +130,14 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "aside dd", text: "cut.jpg"
   end
 
-  test "show strips other media of the same type and collection" do
-    room, hall, card = [ :interior, :interior, :business_card ].map do |type|
-      LibraryMedia.create!(kind: "photo", media_type: media_types(type), user: @user)
+  test "show strips other media of the same tag and collection" do
+    room, hall, card = [ :interior, :interior, :business_card ].map do |slug|
+      LibraryMedia.create!(kind: "photo", tag: tags(slug), user: @user)
     end
-    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
+    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user)
 
     get library_upload_url(room)
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(type: "interior")
+    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path(tag: "interior")
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", library_uploads_path
     assert_select "nav[aria-label='Interior media']" do
       assert_select "a[href=?][aria-current=page]", library_upload_path(room)
@@ -153,7 +153,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "photobank lists only curated media, apart from the inbox" do
     inbox = LibraryMedia.create!(kind: "photo", user: @user)
     inbox.file.attach(io: StringIO.new("img"), filename: "inbox.jpg", content_type: "image/jpeg")
-    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user)
+    curated = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user)
     curated.file.attach(io: StringIO.new("img"), filename: "curated.jpg", content_type: "image/jpeg")
 
     get library_photobank_url
@@ -161,7 +161,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Photobank"
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_photobank_path, text: "Photobank"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_photobank_path, text: "All 1"
-    assert_select "nav[aria-label='Secondary'] a[href=?]", library_photobank_path(type: "interior"), text: "Interior 1"
+    assert_select "nav[aria-label='Secondary'] a[href=?]", library_photobank_path(tag: "interior"), text: "Interior 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Reviews/, count: 0
     assert_select "input[name=collection][value=photobank]"
     assert_select "li[data-source-id=?] a[href=?]", curated.id.to_s, library_photobank_media_path(curated)
@@ -184,9 +184,9 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "ready lists recipe output; its page shows the recipe run" do
-    source = LibraryMedia.create!(kind: "photo", collection: "photobank", media_type: media_types(:interior), user: @user,
+    source = LibraryMedia.create!(kind: "photo", collection: "photobank", tag: tags(:interior), user: @user,
       file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", media_type_ids: [ media_types(:interior).id ])
+    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", tag_ids: [ tags(:interior).id ])
     run = recipe.run!(user: @user, media: [ source ])
 
     get library_ready_url
@@ -199,7 +199,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_ready_path(recipe: recipe.id), text: "Collage 1"
     assert_select "nav[aria-label='Secondary'] a", text: /Interior/, count: 0
 
-    other = Recipe.create!(name: "Poster", body: "Make a poster.", media_type_ids: [ media_types(:interior).id ])
+    other = Recipe.create!(name: "Poster", body: "Make a poster.", tag_ids: [ tags(:interior).id ])
     get library_ready_url(recipe: other.id)
     assert_select "a[href=?]", library_ready_media_path(run.generated_media), count: 0
     assert_select "p", text: "No media from Poster yet."
