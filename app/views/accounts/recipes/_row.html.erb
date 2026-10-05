@@ -1,0 +1,13 @@
+<%# locals: (recipe:, path:) %>
+<%= link_to path, class: "flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
+  <% if (example = recipe.examples.first) %>
+    <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
+  <% else %>
+    <span class="aspect-2/3 w-12 shrink-0 rounded-md bg-ink-900/5" aria-hidden="true"></span>
+  <% end %>
+  <span class="min-w-0 space-y-1">
+    <span class="block truncate text-sm font-semibold text-ink-900"><%= recipe.name %></span>
+    <span class="block text-xs text-ink-500"><%= Recipe::KINDS[recipe.kind].first %></span>
+    <%= render "accounts/recipes/slot", collection: recipe.output_collection, tag: recipe.output_tag %>
+  </span>
+<% end %>
