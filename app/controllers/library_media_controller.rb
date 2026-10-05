@@ -23,16 +23,6 @@ class LibraryMediaController < ApplicationController
     end
   end
 
-  def bulk_update
-    tag_id = params[:tag_id].presence
-    unless tag_id.nil? || Tag.exists?(tag_id)
-      return redirect_back_or_to library_uploads_path, alert: "Unknown tag."
-    end
-
-    count = Current.account.library_media.where(id: params[:ids]).update_all(tag_id:, updated_at: Time.current)
-    redirect_back_or_to library_uploads_path, notice: "Tag saved for #{helpers.pluralize(count, "file")}."
-  end
-
   def extract
     media = Current.account.library_media.find(params[:id])
     unless media.business_card? && media.story_image?

@@ -1,19 +1,5 @@
 <%# locals: (media:) %>
-<li class="group relative min-w-0 rounded-lg" data-library-select-target="item">
-  <% if media.story_image? %>
-    <label class="absolute left-2 top-2 z-10 flex cursor-pointer items-center rounded bg-white/90 p-1 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-[:checked]:opacity-100">
-      <input
-        type="checkbox"
-        value="<%= media.id %>"
-        data-library-select-target="checkbox"
-        data-image="true"
-        data-action="change->library-select#changed"
-        class="size-4 rounded border-ink-900/30 text-rocket focus:ring-rocket"
-      >
-      <span class="sr-only">Select media</span>
-    </label>
-  <% end %>
-
+<li class="group relative min-w-0 rounded-lg">
   <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
     <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover" %>
   <% end %>

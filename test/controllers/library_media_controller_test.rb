@@ -60,25 +60,6 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?
   end
 
-  test "bulk sets tag within the account only" do
-    other = LibraryMedia.create!(kind: "photo", user: @admin)
-    foreign = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
-
-    interior = tags(:interior)
-    patch bulk_update_library_media_index_url, params: { tag_id: interior.id, ids: [ @media.id, other.id, foreign.id ] }
-    assert_redirected_to library_uploads_url(account: @admin.id)
-    assert_equal "Tag saved for 2 files.", flash[:notice]
-    assert_equal [ interior, interior ], [ @media.reload.tag, other.reload.tag ]
-    assert_nil foreign.reload.tag
-
-    patch bulk_update_library_media_index_url, params: { tag_id: "", ids: [ @media.id ] }
-    assert_nil @media.reload.tag
-
-    patch bulk_update_library_media_index_url, params: { tag_id: 0, ids: [ other.id ] }
-    assert_equal interior, other.reload.tag
-    assert_equal "Unknown tag.", flash[:alert]
-  end
-
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
     @media.update!(tag: tags(:business_card), extracted_info: {

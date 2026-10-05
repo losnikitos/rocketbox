@@ -20,7 +20,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget='use-cases-menu']", count: 0
   end
 
-  test "shows selectable story images without publish or improve" do
+  test "shows story images without publish or improve" do
     media = LibraryMedia.create!(
       telegram_file_id: "f3",
       telegram_file_unique_id: "u3-library-btn",
@@ -31,8 +31,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_uploads_url
     assert_response :success
-    assert_select "input[data-library-select-target=?]", "checkbox"
-    assert_select "form[action=?] select[name=tag_id]", bulk_update_library_media_index_path
+    assert_select "a[href=?]", library_upload_path(media)
     assert_select "button", text: "Publish as Instagram story", count: 0
     assert_select "button", text: "Improve with AI", count: 0
   end
@@ -113,7 +112,6 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?]", library_uploads_path, text: "All 0"
     assert_select "img[alt=?]", "Photo from Ana", count: 1
     assert_select "img[alt=?]", "Photo from Old", count: 0
-    assert_select "input[data-library-select-target=?]", "checkbox", count: 0
   end
 
   test "tiles link to media show page with details panel" do

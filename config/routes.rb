@@ -103,7 +103,6 @@ Rails.application.routes.draw do
     end
 
     resources :library_media, only: %i[create update destroy], path: "library/media" do
-      patch :bulk_update, on: :collection
       member do
         post :extract
         patch :apply_extraction
