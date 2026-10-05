@@ -17,9 +17,9 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", library_folders_path("inbox"), text: /Inbox/
     assert_select "a[href=?] [data-scrub-target=slide]", library_folders_path("inbox"), count: 2
     assert_select "a[href=?]", library_folders_path("photobank")
-    assert_select "nav[aria-label='Folder tree'] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior\s*1/
-    assert_select "nav[aria-label='Folder tree'] a[href=?]", library_folders_path("inbox"), text: /Inbox\s*1/
-    assert_select "nav[aria-label='Folder tree'] [aria-current=page]", count: 0
+    assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior\s*1/
+    assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("inbox"), text: /Inbox\s*1/
+    assert_select "[aria-label='Folder tree'] [aria-current=page]", count: 0
   end
 
   test "a top-level folder shows its subfolders and only its own media" do
@@ -48,8 +48,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label=Breadcrumb] a[href=?]", library_folders_path("inbox"), text: "Inbox"
     assert_select "nav[aria-label=Breadcrumb] [aria-current=page]", text: "Interior"
-    assert_select "nav[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("inbox", "interior"), text: /Interior\s*1/
-    assert_select "nav[aria-label='Folder tree'] a[href=?]", library_folders_path("photobank", "interior")
+    assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("inbox", "interior"), text: /Interior\s*1/
+    assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("photobank", "interior")
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
@@ -90,8 +90,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?] button[disabled]", library_media_path(media), text: "Photobank / Team"
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?]", library_media_path(media), text: "Inbox / Interior"
     assert_select "#folder-media-#{media.id}[draggable=true][data-move-url^=?]", library_media_path(media)
-    assert_select "nav[aria-label='Folder tree'] a[data-folder-id=?]", folders(:interior).id.to_s
-    assert_select "nav[aria-label='Folder tree'] a[data-folder-id=?]", folder.id.to_s, count: 0
+    assert_select "[aria-label='Folder tree'] a[data-folder-id=?]", folders(:interior).id.to_s
+    assert_select "[aria-label='Folder tree'] a[data-folder-id=?]", folder.id.to_s, count: 0
 
     patch library_folders_url("photobank", "team"), params: { folder: { name: "Crew" } }
     assert_equal [ "Crew", "team" ], folder.reload.values_at(:name, :slug)
@@ -131,7 +131,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     patch library_folders_url("inbox", "interior"), params: { folder: { color: "rose" } }
     assert_equal "rose", folders(:interior).reload.color
     get library_folders_url("inbox", account: admin.id)
-    assert_select "nav[aria-label='Folder tree'] a[href=?] svg.text-rose-400", library_folders_path("inbox", "interior")
+    assert_select "[aria-label='Folder tree'] a[href=?] svg.text-rose-400", library_folders_path("inbox", "interior")
 
     patch library_folders_url("inbox", "interior"), params: { folder: { color: "neon" } }
     assert_equal "rose", folders(:interior).reload.color

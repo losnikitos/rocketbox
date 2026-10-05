@@ -35,6 +35,7 @@
         Overview
       <% end %>
     </li>
+    <% current_folder = @folder || @media&.folder %>
     <li>
       <%= link_to library_folders_path,
             class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
@@ -42,6 +43,23 @@
         <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
         Media
       <% end %>
+      <% folder_counts = Current.account.library_media.group(:folder_id).count %>
+      <ul aria-label="Folder tree">
+        <% Folder.roots.ordered.includes(:children).each do |root| %>
+          <% [ root, *root.children ].each do |folder| %>
+            <li>
+              <%= link_to folder_path(folder),
+                    class: "flex items-center gap-2 rounded-xl py-1.5 pr-3 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900 data-drop-over:bg-rocket/10 data-drop-over:outline-2 data-drop-over:outline-rocket #{folder.root? ? "pl-3" : "pl-9"}",
+                    aria: { current: ("page" if folder == current_folder) },
+                    data: { folder_id: (folder.id if Current.user&.admin? && folder != current_folder) } do %>
+                <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
+                <span class="truncate"><%= folder.name %></span>
+                <span class="-ml-1 shrink-0 text-[10px] tabular-nums text-ink-300"><%= folder_counts[folder.id] %></span>
+              <% end %>
+            </li>
+          <% end %>
+        <% end %>
+      </ul>
     </li>
     <li class="mt-2">
       <ol>

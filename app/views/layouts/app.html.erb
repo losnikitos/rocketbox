@@ -21,7 +21,8 @@
 
   <% section, title, tabs = app_nav %>
   <body class="min-h-screen bg-ink-900/[0.03] font-sans text-ink-900 antialiased">
-    <div class="flex min-h-screen">
+    <div class="flex min-h-screen" data-controller="drag-move"
+         data-action="dragstart->drag-move#start dragover->drag-move#over dragleave->drag-move#leave drop->drag-move#drop dragend->drag-move#end">
       <input type="checkbox" id="app-nav-toggle" class="peer sr-only">
 
       <aside class="hidden w-52 shrink-0 flex-col max-sm:peer-checked:flex sm:flex sm:sticky sm:top-0 sm:h-screen sm:py-4 sm:pl-3">
