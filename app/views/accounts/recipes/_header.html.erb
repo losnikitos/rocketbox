@@ -1,17 +1,20 @@
 <%# locals: (recipe:) %>
-<header class="flex items-center justify-between gap-4">
+<header class="space-y-3">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
     <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
   </nav>
-  <% if recipe.persisted? %>
-    <% label, path, icon, color = controller_path == "accounts/recipe_runs" ?
-         [ "Edit", edit_recipe_path(recipe), "pencil", "text-blue-600" ] :
-         [ "Run", new_recipe_run_path(recipe), "play", "text-signal-green" ] %>
-    <%= link_to path, class: "rb-btn-ghost-on-light gap-2 text-base" do %>
-      <%= heroicon icon, variant: :solid, options: { class: "size-5 #{color}", "aria-hidden": true } %>
-      <%= label %>
+  <div class="flex flex-wrap items-start gap-6">
+    <%= yield %>
+    <% if recipe.persisted? %>
+      <% label, path, icon, color = controller_path == "accounts/recipe_runs" ?
+           [ "Edit", edit_recipe_path(recipe), "pencil", "text-blue-600" ] :
+           [ "Run", new_recipe_run_path(recipe), "play", "text-signal-green" ] %>
+      <%= link_to path, class: "rb-btn-ghost-on-light ml-auto gap-2 text-base" do %>
+        <%= heroicon icon, variant: :solid, options: { class: "size-5 #{color}", "aria-hidden": true } %>
+        <%= label %>
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
 </header>

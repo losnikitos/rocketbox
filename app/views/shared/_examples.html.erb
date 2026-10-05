@@ -1,4 +1,4 @@
-<%# locals: (record:, form_id:) %>
+<%# locals: (record:, form_id:, list: "grid grid-cols-3 gap-3") %>
 <%# Sits outside the form for layout; fields join it via form=form_id. %>
 <% field = "#{record.model_name.param_key}[examples][]" %>
 <div class="min-w-0">
@@ -11,7 +11,7 @@
     <template data-file-preview-target="remove"><%= tag.button trash, **remove %></template>
     <%# Keeps the key present so removing every example clears them on save. %>
     <%= hidden_field_tag field, "", id: nil, form: form_id %>
-    <ul class="grid grid-cols-3 gap-3" data-file-preview-target="list">
+    <ul class="<%= list %>" data-file-preview-target="list">
       <% record.examples.select(&:persisted?).each do |example| %>
         <li class="group relative">
           <% if example.video? %>
