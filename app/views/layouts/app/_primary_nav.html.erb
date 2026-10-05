@@ -36,28 +36,25 @@
       <% end %>
     </li>
     <% current_folder = @folder || @media&.folder %>
-    <li>
-      <%= link_to library_folders_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :folders } do %>
-        <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Media
-      <% end %>
+    <li class="mt-2">
       <% folder_counts = Current.account.library_media.group(:folder_id).count %>
       <ul aria-label="Folder tree">
         <% Folder.roots.ordered.includes(:children).each do |root| %>
-          <% [ root, *root.children ].each do |folder| %>
-            <li>
-              <%= link_to folder_path(folder),
-                    class: "flex items-center gap-2 rounded-xl py-1.5 pr-3 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900 data-drop-over:bg-rocket/10 data-drop-over:outline-2 data-drop-over:outline-rocket #{folder.root? ? "pl-3" : "pl-9"}",
-                    aria: { current: ("page" if folder == current_folder) },
-                    data: { folder_id: (folder.id if Current.user&.admin? && folder != current_folder) } do %>
-                <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
-                <span class="truncate"><%= folder.name %></span>
-                <span class="-ml-1 shrink-0 text-[10px] tabular-nums text-ink-300"><%= folder_counts[folder.id] %></span>
-              <% end %>
-            </li>
-          <% end %>
+          <li>
+            <details class="group" <%= "open" if current_folder&.root == root %>>
+              <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
+                <%= render "layouts/app/folder_link", folder: root, current_folder:, count: folder_counts[root.id] %>
+                <% if root.children.any? %>
+                  <%= heroicon "chevron-right", variant: :mini, options: { class: "mx-1 size-6 shrink-0 rounded-lg p-1 text-ink-400 transition hover:bg-ink-900/5 group-open:rotate-90", "aria-hidden": true } %>
+                <% end %>
+              </summary>
+              <ul>
+                <% root.children.each do |folder| %>
+                  <li><%= render "layouts/app/folder_link", folder:, current_folder:, count: folder_counts[folder.id] %></li>
+                <% end %>
+              </ul>
+            </details>
+          </li>
         <% end %>
       </ul>
     </li>

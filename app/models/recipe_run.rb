@@ -94,21 +94,27 @@ class RecipeRun < ApplicationRecord
       end
       Dir.mktmpdir do |dir|
         paths = media.each_with_index.to_h { |item, i| [ item, File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) } ] }
-        inputs = cuts.flat_map do |item, frames|
-          # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
-          # maps) as extra frames, and -loop 1 over those hangs ffmpeg. A second of slack; trim cuts exact frames.
-          [ *(%w[-f image2 -loop 1] if item.story_image?), "-t", (frames / 30.0 + 1).to_s, "-i", paths[item] ]
-        end
         fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
-        filter = cuts.each_with_index.map { |(_, frames), i| "[#{i}:v]#{fit},trim=end_frame=#{frames},setpts=PTS-STARTPTS[v#{i}];" }.join +
-          cuts.each_index.map { "[v#{it}]" }.join + "concat=n=#{cuts.size}:v=1:a=0[out]"
-        audio_in, audio_out = [ "-i", "#{DOPPLER}.wav" ], [ "-map", "#{cuts.size}:a", "-c:a", "aac" ] if doppler
+        # One ffmpeg per cut, then a lossless join: a single graph with an input per cut queues frames for every
+        # cut at once and got OOM-killed in production.
+        list = File.join(dir, "cuts.txt")
+        File.write(list, cuts.each_with_index.map do |(item, frames), i|
+          segment = File.join(dir, "cut#{i}.mp4")
+          # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
+          # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
+          ffmpeg!(*(%w[-f image2 -loop 1] if item.story_image?), "-i", paths[item], "-vf", fit, "-frames:v", frames.to_s, "-an", "-c:v", "libx264", segment)
+          "file '#{segment}'\n"
+        end.join)
+        audio_in, audio_out = [ "-i", "#{DOPPLER}.wav" ], [ "-map", "1:a", "-c:a", "aac" ] if doppler
         out = File.join(dir, "out.mp4")
-        log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *inputs, *audio_in, "-filter_complex", filter,
-          "-map", "[out]", *audio_out, "-c:v", "libx264", "-movflags", "+faststart", out)
-        raise "ffmpeg failed: #{log.lines.last(3).join.strip}" unless status.success?
+        ffmpeg!("-f", "concat", "-safe", "0", "-i", list, *audio_in, "-map", "0:v", *audio_out, "-c:v", "copy", "-movflags", "+faststart", out)
         File.binread(out)
       end
+    end
+
+    def ffmpeg!(*args)
+      log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *args)
+      raise "ffmpeg failed: #{log.lines.last(3).join.strip.presence || status}" unless status.success?
     end
 
     def media_fit_recipe
