@@ -22,8 +22,8 @@
     </ul>
     <% else %>
     <ul class="@container flex flex-wrap items-start gap-3 [--cols:3] sm:[--cols:4] lg:[--cols:5] xl:[--cols:6] 2xl:[--cols:8]">
-      <% @library_media.group_by { it.origin&.source_media || it }.each do |source, group| %>
-        <% generated = group.any?(&:origin) %>
+      <% @library_media.group_by(&:original).each do |source, group| %>
+        <% generated = group.any?(&:recipe_run) %>
         <%= tag.li class: "min-w-0 max-w-full rounded-xl border-2 border-stone-200 bg-white p-2 data-drop-over:border-rocket", aria: { label: ("Generated from one source" if generated) }, data: { source_id: source.id } do %>
           <% if generated %>
             <%= link_to library_item_path(source), class: "mb-2 flex items-center gap-2 text-xs font-medium text-ink-600 hover:text-ink-900" do %>

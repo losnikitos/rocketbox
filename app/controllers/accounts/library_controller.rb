@@ -12,7 +12,7 @@ module Accounts
       end
 
       @library_media = Current.account.library_media.where(collection: @collection).with_attached_file
-        .includes(:tag, :recipe_run, origin: { source_media: { file_attachment: :blob } }, generated_media: [ { file_attachment: :blob }, :origin ])
+        .includes(:tag, recipe_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: [ { file_attachment: :blob }, :recipe_run ])
         .order(created_at: :desc)
       @library_media = @library_media.joins(:tag).where(tag: { slug: params[:tag] }) if params[:tag].present?
       @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
@@ -21,10 +21,10 @@ module Accounts
     def show
       @collection = params[:collection]
       @media = Current.account.library_media.where(collection: @collection).with_attached_file.includes(
-        { origin: [ :prompt, { source_media: { file_attachment: :blob } } ], recipe_run: [ :recipe, :shot ] }
+        recipe_run: [ :recipe, :shot, { inputs: { library_media: { file_attachment: :blob } } } ]
       ).find(params[:id])
-      original = @media.origin&.source_media || @media
-      @versions = [ original, *original.generated_media.with_attached_file.includes(:origin).order(:created_at) ]
+      original = @media.original
+      @versions = [ original, *original.generated_media.with_attached_file.includes(:recipe_run).order(:created_at) ]
       # ponytail: loads every sibling; add a window around @media if libraries get big
       @siblings = Current.account.library_media.where(collection: @collection)
       @siblings = if @media.ready?
@@ -32,7 +32,7 @@ module Accounts
       else
         @siblings.where(tag_id: @media.tag_id)
       end
-      @siblings = @siblings.with_attached_file.includes(:origin, :recipe_run).order(created_at: :desc)
+      @siblings = @siblings.with_attached_file.includes(:recipe_run).order(created_at: :desc)
     end
   end
 end

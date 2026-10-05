@@ -56,7 +56,6 @@ Rails.application.routes.draw do
       get "calendar", to: "calendar#show", as: :calendar
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
-      resources :prompts, except: :show
       resources :shots, except: :show
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
@@ -108,7 +107,6 @@ Rails.application.routes.draw do
         post :extract
         patch :apply_extraction
       end
-      resources :generations, only: %i[new create], module: :accounts
     end
   end
 

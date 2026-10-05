@@ -34,8 +34,6 @@ module AppHelper
         :separator,
         [ library_uploads_path(type: "reviews"), "Reviews", params[:type] == "reviews", Current.account.reviews.active.media_attachments.count ]
       ] ]
-    when "accounts/generations"
-      [ :library, "Generate", [] ]
     when "accounts/posts"
       [ :posts, "Posts", posts_tabs ]
     when "accounts/business"
@@ -72,14 +70,6 @@ module AppHelper
       ] ]
     when "accounts/admin"
       [ :admin, "Admin", [] ]
-    when "accounts/prompts"
-      index = action_name == "index"
-      counts = Prompt.group(:tag_id).count
-      [ :prompts, "Prompts", [
-        [ prompts_path, "All", index && params[:tag].blank?, counts.values.sum ],
-        :separator,
-        *Tag.ordered.map { |t| [ prompts_path(tag: t.slug), t.name, index && params[:tag] == t.slug, counts[t.id].to_i ] }
-      ] ]
     when "accounts/shots"
       index = action_name == "index"
       counts = Shot.group(:group).count
@@ -91,7 +81,15 @@ module AppHelper
     when "accounts/layers"
       [ :layers, "Layers", [] ]
     when "accounts/recipes", "accounts/recipe_runs"
-      [ :recipes, "Recipes", [] ]
+      index = controller_path == "accounts/recipes" && action_name == "index"
+      recipes = Recipe.all.to_a
+      [ :recipes, "Recipes", [
+        [ recipes_path, "All", index && params[:folder].blank?, recipes.size ],
+        :separator,
+        *LibraryMedia.collections.keys.map do |folder|
+          [ recipes_path(folder:), folder.humanize, index && params[:folder] == folder, recipes.count { it.reads?(folder) } ]
+        end
+      ] ]
     when "accounts/features"
       [ :features, "Features", [] ]
     when "accounts/styles"

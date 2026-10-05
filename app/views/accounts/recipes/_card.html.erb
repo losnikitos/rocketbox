@@ -1,0 +1,16 @@
+<%# locals: (recipe:) %>
+<section class="flex gap-4 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="recipe-<%= recipe.id %>-heading">
+  <% if (example = recipe.examples.first) %>
+    <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-20 shrink-0 rounded-md object-cover" %>
+  <% end %>
+  <div class="min-w-0 space-y-1">
+    <div class="flex items-center gap-2">
+      <h3 id="recipe-<%= recipe.id %>-heading" class="text-sm font-semibold text-ink-900"><%= recipe.name %></h3>
+      <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.kind %></span>
+    </div>
+    <p class="line-clamp-4 text-sm text-ink-600"><%= recipe.body %></p>
+    <% if Current.user&.admin? %>
+      <%= link_to "Edit recipe", edit_recipe_path(recipe), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+    <% end %>
+  </div>
+</section>

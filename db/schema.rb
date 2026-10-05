@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -98,22 +98,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
     t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
 
-  create_table "generations", force: :cascade do |t|
-    t.decimal "cost", precision: 10, scale: 6
-    t.datetime "created_at", null: false
-    t.text "error"
-    t.text "extra_prompt"
-    t.integer "generated_media_id", null: false
-    t.json "options", default: {}, null: false
-    t.integer "prompt_id"
-    t.integer "source_media_id", null: false
-    t.string "status", default: "running", null: false
-    t.datetime "updated_at", null: false
-    t.index ["generated_media_id"], name: "index_generations_on_generated_media_id", unique: true
-    t.index ["prompt_id"], name: "index_generations_on_prompt_id"
-    t.index ["source_media_id"], name: "index_generations_on_source_media_id"
-  end
-
   create_table "incoming_messages", force: :cascade do |t|
     t.text "body"
     t.string "channel", null: false
@@ -195,27 +179,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
   end
 
-  create_table "prompts", force: :cascade do |t|
-    t.text "body", null: false
-    t.datetime "created_at", null: false
-    t.string "kind", default: "image", null: false
-    t.string "name", null: false
-    t.json "options", default: {}, null: false
-    t.integer "tag_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["tag_id"], name: "index_prompts_on_tag_id"
+  create_table "recipe_run_inputs", force: :cascade do |t|
+    t.integer "library_media_id", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "recipe_run_id", null: false
+    t.index ["library_media_id"], name: "index_recipe_run_inputs_on_library_media_id"
+    t.index ["recipe_run_id", "position"], name: "index_recipe_run_inputs_on_recipe_run_id_and_position", unique: true
+    t.index ["recipe_run_id"], name: "index_recipe_run_inputs_on_recipe_run_id"
   end
 
   create_table "recipe_runs", force: :cascade do |t|
     t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error"
+    t.text "extra_prompt"
     t.integer "generated_media_id", null: false
     t.json "options", default: {}, null: false
     t.text "prompt"
     t.integer "recipe_id"
     t.integer "shot_id"
-    t.json "source_media_ids", default: [], null: false
     t.string "status", default: "running", null: false
     t.datetime "updated_at", null: false
     t.index ["generated_media_id"], name: "index_recipe_runs_on_generated_media_id", unique: true
@@ -226,10 +208,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
   create_table "recipes", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
+    t.json "inputs", default: [], null: false
+    t.string "kind", default: "image", null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
+    t.string "output_collection", default: "ready", null: false
     t.string "shot_group"
-    t.json "tag_ids", default: [], null: false
     t.datetime "updated_at", null: false
   end
 
@@ -475,16 +459,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
   add_foreign_key "crawls", "links"
   add_foreign_key "feature_settings", "recipes", on_delete: :nullify
   add_foreign_key "feature_settings", "users"
-  add_foreign_key "generations", "library_media", column: "generated_media_id"
-  add_foreign_key "generations", "library_media", column: "source_media_id"
-  add_foreign_key "generations", "prompts"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "tags", on_delete: :nullify
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
-  add_foreign_key "prompts", "tags"
+  add_foreign_key "recipe_run_inputs", "library_media", on_delete: :cascade
+  add_foreign_key "recipe_run_inputs", "recipe_runs", on_delete: :cascade
   add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify

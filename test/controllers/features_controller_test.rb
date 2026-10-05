@@ -28,12 +28,12 @@ class FeaturesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "test run composes a draft from the picked photo while the feature is off" do
-    recipe = Recipe.create!(name: "Poster", body: "Compose.", tag_ids: [ tags(:working).id ])
+    recipe = Recipe.create!(name: "Poster", body: "Compose.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ])
     Feature.find("fully-booked").setting_for(@admin).update!(recipe:)
     source = LibraryMedia.create!(kind: "photo", tag: tags(:working), user: @admin, collection: "photobank",
       file: { io: file_fixture("logo.png").open, filename: "working.png", content_type: "image/png" })
     photos = 2.times.map do
-      recipe.run!(user: @admin, media: [ source ]).generated_media.tap do
+      recipe.run!(media: [ source ]).generated_media.tap do
         it.update!(file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
       end
     end

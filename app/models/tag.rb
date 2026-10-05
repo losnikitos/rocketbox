@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# What a library media shows; prompts are picked by it. Editable in admin.
+# What a library media shows; recipe inputs are picked by it. Editable in admin.
 # The slug is set from the name once and survives renames.
 # ponytail: code looks up business-card, logo and interior by slug (card extraction, WhatsApp onboarding),
 # so deleting those rows breaks onboarding. Upgrade = a locked flag on those rows.
@@ -10,7 +10,6 @@ class Tag < ApplicationRecord
   friendly_id :name, use: :slugged
 
   has_many :library_media, dependent: :nullify
-  has_many :prompts, dependent: :restrict_with_error
 
   validates :name, presence: true
 

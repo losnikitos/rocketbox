@@ -87,7 +87,7 @@ class FeatureTest < ActiveSupport::TestCase
     feature = Feature.find("daily")
     feature.setting_for(@user).update!(recipe: recipe("Poster"), layer_slug: "review")
     ready_photo(recipe("Poster"))
-    photo = ready_photo(Recipe.create!(id: 8, name: "Будни", body: "Compose.", tag_ids: [ tags(:working).id ]))
+    photo = ready_photo(Recipe.create!(id: 8, name: "Будни", body: "Compose.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ]))
     rendered = []
     Layer.define_singleton_method(:screenshot) { |html, size:| rendered << html and "png-bytes" }
 
@@ -100,10 +100,10 @@ class FeatureTest < ActiveSupport::TestCase
 
   private
 
-    def recipe(name) = Recipe.create!(name:, body: "Compose.", tag_ids: [ tags(:working).id ])
+    def recipe(name) = Recipe.create!(name:, body: "Compose.", inputs: [ { "collection" => "photobank", "tag_id" => tags(:working).id } ])
 
     def ready_photo(recipe)
-      recipe.run!(user: @user, media: [ @source ]).generated_media.tap do
+      recipe.run!(media: [ @source ]).generated_media.tap do
         it.update!(file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
       end
     end

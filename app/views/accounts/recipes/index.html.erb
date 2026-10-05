@@ -7,26 +7,39 @@
 <% end %>
 
 <% if @recipes.any? %>
-  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+  <% folder_icons = { "inbox" => "inbox", "photobank" => "photo", "ready" => "check-circle" } %>
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
     <% @recipes.each do |recipe| %>
       <% covered = recipe.examples.any? %>
       <li id="<%= dom_id(recipe) %>" class="flex flex-col gap-3">
-        <div class="relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+        <div class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
              data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
           <% recipe.examples.each_with_index do |example, index| %>
             <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-              <%= render "accounts/prompts/example", example:, css: "size-full object-cover" %>
+              <%= render "example", example:, css: "size-full object-cover" %>
             </div>
           <% end %>
           <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex items-start" do %>
-            <span class="w-full p-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+            <span class="w-full py-4 pr-12 pl-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
               <%= recipe.name %>
             </span>
           <% end %>
+          <% if recipe.video? %>
+            <span class="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm">
+              <%= heroicon "film", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              Video
+            </span>
+          <% end %>
+          <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
+            <%= render "shared/admin_links/recipe", recipe: %>
+          </div>
         </div>
-        <ul class="flex flex-wrap gap-1.5" aria-label="Tags">
-          <% recipe.tags.each do |type| %>
-            <li class="rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600"><%= type&.name || "Unknown" %></li>
+        <ul class="flex flex-wrap gap-1.5" aria-label="Inputs">
+          <% recipe.slots.each do |collection, tag| %>
+            <li class="inline-flex items-center gap-1 rounded-full border border-ink-900/10 px-2 py-0.5 text-xs text-ink-600" title="<%= collection.humanize %>">
+              <%= heroicon folder_icons[collection], variant: :micro, options: { class: "size-3.5 text-sky-600", "aria-label": collection.humanize } %>
+              <%= tag&.name || "Unknown" %>
+            </li>
           <% end %>
           <% if recipe.shot_group %>
             <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600"><%= recipe.shot_group %> shot</li>
@@ -37,6 +50,6 @@
   </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-    Add a recipe — a prompt that composes photobank photos into a Ready image.
+    Add a recipe — a prompt that turns library media into new photos or videos.
   </div>
 <% end %>

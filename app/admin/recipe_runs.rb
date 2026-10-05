@@ -1,12 +1,11 @@
-ActiveAdmin.register Generation do
+ActiveAdmin.register RecipeRun do
   actions :index, :show
 
-  includes :prompt, :source_media, :generated_media
+  includes :recipe, :generated_media
 
   index do
     id_column
-    column :source_media
-    column :prompt
+    column :recipe
     column :generated_media
     column :status
     column :created_at
@@ -16,9 +15,12 @@ ActiveAdmin.register Generation do
   show do
     attributes_table do
       row :id
-      row :source_media
-      row :prompt
+      row :recipe
+      row(:source_media) { |run| safe_join(run.source_media.map { auto_link(it) }, ", ") }
       row :generated_media
+      row :shot
+      row :extra_prompt
+      row :prompt
       row :status
       row :error
       row :created_at

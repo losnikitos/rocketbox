@@ -14,7 +14,7 @@
           data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
         <% shot.examples.each_with_index do |example, index| %>
           <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-            <%= render "accounts/prompts/example", example:, css: "size-full object-cover" %>
+            <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
           </div>
         <% end %>
         <%= link_to edit_shot_path(shot), class: "absolute inset-0 flex flex-col items-start" do %>
