@@ -47,7 +47,7 @@ class Feature
     recipe = recipe(user)
     return LibraryMedia.none unless recipe
 
-    user.library_media.in_tree(Folder.ready).joins(:recipe_run).where(recipe_runs: { recipe_id: recipe.id })
+    user.library_media.where(folder: Folder.ready).joins(:recipe_run).where(recipe_runs: { recipe_id: recipe.id })
   end
 
   def photo_backlog(user)

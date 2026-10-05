@@ -32,7 +32,7 @@ Rails.application.routes.draw do
     scope path: "library", module: :accounts do
       get "/", to: redirect(path: "/app/library/folders/inbox")
       get "media/:id", to: "library#show", as: :library_item
-      get "folders(/:root(/:child))", to: "folders#show", as: :library_folders, constraints: { root: /inbox|photobank|ready/ }
+      get "folders(/:root(/:child))", to: "folders#show", as: :library_folders, constraints: { root: /inbox|photobank/ }
       post "folders/:root", to: "folders#create", constraints: { root: /inbox|photobank/ }
       patch "folders/:root/:child", to: "folders#update"
       delete "folders/:root/:child", to: "folders#destroy"

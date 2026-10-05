@@ -12,7 +12,7 @@ module Accounts
       @versions = [ original, *original.generated_media.with_attached_file.includes(:recipe_run).order(:created_at) ]
       # ponytail: loads every sibling; add a window around @media if libraries get big
       @siblings = if @media.ready?
-        Current.account.library_media.in_tree(Folder.ready).joins(:recipe_run).where(recipe_runs: { recipe_id: @media.recipe_run&.recipe_id })
+        Current.account.library_media.where(folder: Folder.ready).joins(:recipe_run).where(recipe_runs: { recipe_id: @media.recipe_run&.recipe_id })
       else
         Current.account.library_media.where(folder: @media.folder)
       end

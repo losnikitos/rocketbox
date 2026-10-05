@@ -24,7 +24,7 @@ class FeaturesControllerTest < ActionDispatch::IntegrationTest
 
     get feature_url("daily", account: @admin.id)
     assert_select "select[name=?]", "feature_setting[recipe_id]", 0
-    assert_select "a[href=?]", library_folders_path("ready", recipe: 8, account: @admin.id)
+    assert_select "a[href=?]", library_folders_path("photobank", "ready", recipe: 8, account: @admin.id)
   end
 
   test "test run composes a draft from the picked photo while the feature is off" do

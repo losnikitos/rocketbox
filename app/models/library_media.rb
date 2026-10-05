@@ -29,11 +29,9 @@ class LibraryMedia < ApplicationRecord
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
-  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media, ready final recipe output.
-  scope :in_tree, ->(folder) { where(folder: folder.tree) }
-
+  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; photobank/ready is final recipe output.
   def business_card? = folder.slug == "business-card"
-  def ready? = folder.root.slug == "ready"
+  def ready? = folder.slug == "ready" && folder.parent&.slug == "photobank"
 
   # The media this one is a version of.
   def original = recipe_run&.source_media&.first || self

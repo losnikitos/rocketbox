@@ -12,7 +12,7 @@ class FolderTest < ActiveSupport::TestCase
 
   test "roots can't be renamed or deleted" do
     assert_not folders(:inbox).update(name: "Mail")
-    assert_not folders(:ready).destroy
-    assert Folder.exists?(folders(:ready).id)
+    assert_not folders(:photobank).destroy
+    assert Folder.exists?(folders(:photobank).id)
   end
 end

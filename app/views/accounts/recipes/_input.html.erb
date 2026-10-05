@@ -6,7 +6,7 @@
       <%= heroicon "folder", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
     </span>
   </span>
-  <%= select_tag "recipe[inputs][][folder_id]", grouped_options_for_select(Folder.grouped_options(roots: Folder::ROOTS), input["folder_id"]),
+  <%= select_tag "recipe[inputs][][folder_id]", grouped_options_for_select(Folder.grouped_options, input["folder_id"]),
         id: nil, include_blank: "—", "aria-label": "Input #{index + 1} folder",
         class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0" %>
   <button type="button" aria-label="Remove input" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900"

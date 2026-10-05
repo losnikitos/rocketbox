@@ -8,15 +8,18 @@ module Accounts
     before_action :authenticate_admin!, except: :show
     before_action :set_folder, except: :create
 
+    # ponytail: @folder_media loads every media in the listed folders just to count them and preview the newest few.
+    # Upgrade = a COUNT query plus a per-folder LIMIT (window function) once accounts hold thousands of media.
     def show
+      media = Current.account.library_media.with_attached_file.includes(:recipe_run).order(created_at: :desc)
       if @folder
-        @media_counts = Current.account.library_media.where(folder: @folder.children).group(:folder_id).count
+        @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
           .includes(recipe_run: { inputs: { library_media: { file_attachment: :blob } } }).order(created_at: :desc)
         @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
         @recipes = Recipe.with_attached_examples.includes(:output_folder).ordered.select { it.folder_ids.include?(@folder.id) }
       else
-        @media_counts = Current.account.library_media.joins(:folder).group(Arel.sql("COALESCE(folders.parent_id, folders.id)")).count
+        @folder_media = media.includes(:folder).group_by { it.folder.parent_id || it.folder_id }
       end
     end
 

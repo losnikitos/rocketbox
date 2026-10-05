@@ -7,15 +7,16 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "root shows the three top-level folders with their whole tree's count" do
+  test "root shows the top-level folders with their whole tree's previews" do
     photo(folders(:interior))
     photo(folders(:inbox))
 
     get library_folders_url
     assert_response :success
     assert_select "h1", "Folders"
-    assert_select "a[href=?]", library_folders_path("inbox"), text: /Inbox\s+2 items/
-    %w[photobank ready].each { assert_select "a[href=?]", library_folders_path(it) }
+    assert_select "a[href=?]", library_folders_path("inbox"), text: /Inbox/
+    assert_select "a[href=?] [data-scrub-target=slide]", library_folders_path("inbox"), count: 2
+    assert_select "a[href=?]", library_folders_path("photobank")
   end
 
   test "a top-level folder shows its subfolders and only its own media" do
@@ -26,7 +27,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     get library_folders_url("inbox")
     assert_response :success
     assert_select "h1", "Inbox"
-    assert_select "ul[aria-label=Folders] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior\s+1 item/
+    assert_select "ul[aria-label=Folders] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior/
+    assert_select "ul[aria-label=Folders] a[href=?] [data-scrub-target=slide]", library_folders_path("inbox", "interior"), count: 1
     assert_select "#folder-media-#{loose.id}"
     assert_select "#folder-media-#{filed.id}", count: 0
     assert_select "#folder-media-#{curated.id}", count: 0
@@ -58,7 +60,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     collage = Recipe.create!(name: "Collage", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
     poster = Recipe.create!(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
 
-    get library_folders_url("ready", recipe: collage.recipe_id)
+    get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
     assert_select "a[href=?]", library_item_path(collage.generated_media)
     assert_select "a[href=?]", library_item_path(poster.generated_media), count: 0
   end

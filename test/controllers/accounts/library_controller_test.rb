@@ -87,7 +87,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("ready"), text: "Ready"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("photobank"), text: "Photobank"
     assert_select "#recipe-run-heading + span", text: "failed"
     assert_select "section p", text: "content policy"
     assert_select "section a[href=?]", library_item_path(source)

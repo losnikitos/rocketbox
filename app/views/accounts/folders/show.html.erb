@@ -1,7 +1,7 @@
 <% content_for(:title, "#{@folder&.path || "Folders"} — Rocketbox") %>
 <% admin = Current.user&.admin? %>
 <% menu_css = "inset-auto m-0 top-[calc(anchor(bottom)+4px)] [position-try-fallbacks:flip-block,flip-inline] rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg" %>
-<% tile_css = "flex w-full cursor-pointer flex-col items-center rounded-xl p-4 text-center hover:bg-ink-900/5 focus-visible:outline-2 focus-visible:outline-rocket" %>
+<% tile_css = "flex w-full cursor-pointer flex-col items-center rounded-xl p-2 text-center hover:bg-ink-900/5 focus-visible:outline-2 focus-visible:outline-rocket" %>
 
 <% content_for(:header_actions) do %>
   <% if @folder %>
@@ -9,6 +9,19 @@
       <%= heroicon "arrow-up-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       Upload
     </label>
+  <% end %>
+  <% if admin && @folder&.root? %>
+    <button type="button" popovertarget="new-folder" style="anchor-name: --new-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
+      <%= heroicon "folder-plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      New folder
+    </button>
+    <%= form_with url: library_folders_path(@folder.slug), id: "new-folder", html: { popover: "", style: "position-anchor: --new-folder" },
+          class: "#{menu_css} right-[calc(anchor(right))] p-2" do |f| %>
+      <div class="flex gap-2">
+        <%= f.text_field "folder[name]", required: true, placeholder: "Exterior", "aria-label": "Folder name", class: tw_input_classes %>
+        <%= f.button "Create", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
+      </div>
+    <% end %>
   <% end %>
   <% if admin && @folder && !@folder.root? %>
     <button type="button" popovertarget="rename-folder" style="anchor-name: --rename-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
@@ -45,30 +58,37 @@
 </nav>
 
 <% folders = @folder ? @folder.children.to_a : Folder.roots.sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
-<% new_folder = admin && @folder&.slug.in?(%w[inbox photobank]) && @folder.root? %>
-<% if folders.any? || new_folder %>
+<% if folders.any? %>
   <ul aria-label="Folders" class="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
     <% folders.each do |folder| %>
+      <% previews = @folder_media[folder.id].to_a.first(12) %>
       <li>
         <%= link_to folder_path(folder), class: tile_css do %>
-          <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
-          <span class="mt-1 text-sm font-medium text-ink-900"><%= folder.name %></span>
-          <span class="text-xs text-ink-500"><%= pluralize(@media_counts[folder.id].to_i, "item") %></span>
-        <% end %>
-      </li>
-    <% end %>
-    <% if new_folder %>
-      <li>
-        <button type="button" popovertarget="new-folder" style="anchor-name: --new-folder" class="<%= tile_css %>">
-          <%= heroicon "folder-plus", options: { class: "size-20 text-ink-300", "aria-hidden": true } %>
-          <span class="mt-1 text-sm font-medium text-ink-600">New folder</span>
-        </button>
-        <%= form_with url: library_folders_path(@folder.slug), id: "new-folder", html: { popover: "", style: "position-anchor: --new-folder" },
-              class: "#{menu_css} left-[calc(anchor(left))] p-2" do |f| %>
-          <div class="flex gap-2">
-            <%= f.text_field "folder[name]", required: true, placeholder: "Exterior", "aria-label": "Folder name", class: tw_input_classes %>
-            <%= f.button "Create", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
-          </div>
+          <% if previews.any? %>
+            <span class="group/thumb relative block aspect-square w-full overflow-hidden rounded-lg bg-ink-900/5"
+                  data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+              <% previews.each_with_index do |preview, index| %>
+                <span class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+                  <%= render "accounts/library/file", media: preview, css: "size-full object-cover" %>
+                </span>
+              <% end %>
+              <span class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5 bg-white group-hover/thumb:hidden">
+                <% 4.times do |index| %>
+                  <span class="relative min-h-0 overflow-hidden bg-ink-900/5">
+                    <%= render "accounts/library/file", media: previews[index], css: "absolute inset-0 size-full object-cover" if previews[index] %>
+                  </span>
+                <% end %>
+              </span>
+            </span>
+          <% else %>
+            <span class="flex aspect-square w-full items-center justify-center">
+              <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
+            </span>
+          <% end %>
+          <span class="mt-2 flex w-full items-center justify-center gap-1 text-sm font-medium text-ink-900">
+            <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-sky-400", "aria-hidden": true } %>
+            <span class="truncate"><%= folder.name %></span>
+          </span>
         <% end %>
       </li>
     <% end %>
