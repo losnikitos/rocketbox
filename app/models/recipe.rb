@@ -1,21 +1,26 @@
 # frozen_string_literal: true
 
-# How media is made: one AI call over library media, one per input slot, plus example media.
+# How media is made from library media, one per input slot, plus example media.
 # `inputs` lists the slots in order as { "collection", "tag_id" } and may repeat one (two staff photos).
-# `kind` is what it makes; results land in `output_collection` with the first input's tag.
-# `options` are the defaults for its runs (see GenerationOptions).
+# `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
+# a video, 1 second each. Results land in `output_collection` with the first input's tag.
+# `options` are the defaults for its AI runs (see GenerationOptions).
 # ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
   include GenerationOptions
 
   OUTPUT_COLLECTIONS = %w[photobank ready].freeze
+  # Label and icon per kind.
+  KINDS = { "generate_image" => [ "Gen image", "photo" ], "generate_video" => [ "Gen video", "film" ], "stitch" => [ "Stitch", "scissors" ] }.freeze
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
   has_many_attached :examples
 
-  enum :kind, %w[image video].index_by(&:itself), validate: true
+  enum :kind, KINDS.keys.index_by(&:itself), validate: true
+  # A stitch has no prompt.
+  attribute :body, default: ""
 
   normalizes :inputs, with: ->(inputs) do
     Array(inputs).filter_map { { "collection" => it["collection"].to_s, "tag_id" => it["tag_id"].to_i } if it["tag_id"].present? }
@@ -23,7 +28,9 @@ class Recipe < ApplicationRecord
   # The shot group its runs pick a shot from; nil takes no shot.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
 
-  validates :name, :body, :inputs, presence: true
+  before_validation(if: :stitch?) { self.shot_group = nil }
+  validates :name, :inputs, presence: true
+  validates :body, presence: true, unless: :stitch?
   validates :output_collection, inclusion: { in: OUTPUT_COLLECTIONS }
   validate do
     errors.add(:inputs, "include an unknown folder") unless inputs.all? { it["collection"].in?(LibraryMedia.collections.keys) }
@@ -32,6 +39,10 @@ class Recipe < ApplicationRecord
   end
 
   scope :ordered, -> { order(:name) }
+
+  def video? = generate_video?
+
+  def takes?(media) = media.story_image? || (stitch? && media.video?)
 
   def tag_ids = inputs.map { it["tag_id"] }
 

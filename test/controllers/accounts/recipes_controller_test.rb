@@ -20,7 +20,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       inputs: [ input(:interior), input(:customer, collection: "inbox"), { collection: "inbox", tag_id: "" } ], examples: [ image("a.jpg") ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Team collage")
-    assert recipe.image?
+    assert recipe.generate_image?
     assert_equal [ { "collection" => "photobank", "tag_id" => tags(:interior).id }, { "collection" => "inbox", "tag_id" => tags(:customer).id } ], recipe.inputs
     assert_equal %w[a.jpg], recipe.examples.map { it.filename.to_s }
 
@@ -40,7 +40,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='recipe[output_collection]'] option[selected][value=ready]"
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", recipe.examples.first.signed_id
 
-    patch recipe_url(recipe), params: { recipe: { kind: "video", output_collection: "photobank", inputs: [ input(:exterior, collection: "inbox") ], examples: [ "" ] } }
+    patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_collection: "photobank", inputs: [ input(:exterior, collection: "inbox") ], examples: [ "" ] } }
     assert_redirected_to recipes_url(account: @admin.id)
     assert recipe.reload.video?
     assert_equal [ "photobank", [ tags(:exterior).id ] ], [ recipe.output_collection, recipe.tag_ids ]
@@ -55,13 +55,14 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     @admin = sign_in_as(users(:admin_user))
 
     get new_recipe_url(account: @admin.id)
-    assert_select "input[type=radio][name='recipe[kind]'][value=image][checked]"
+    assert_select "input[type=radio][name='recipe[kind]'][value=generate_image][checked]"
+    assert_equal %w[generate_image generate_video stitch], css_select("input[name='recipe[kind]']").map { it["value"] }
     assert_select "turbo-frame#generation_options input[name='recipe[options][model]'][value='gpt-image-2.5-flare'][checked]"
     assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("input[name='recipe[options][model]']").map { it["value"] }
     assert_select "select[name='recipe[options][style]']"
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_recipe_path(account: @admin.id)
 
-    get new_recipe_url(account: @admin.id, recipe: { kind: "video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
+    get new_recipe_url(account: @admin.id, recipe: { kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
     assert_select "input[name='recipe[options][model]'][value='grok-imagine-video-1.5'][checked]"
     assert_select "select[name='recipe[options][aspect_ratio]'] option[selected]", text: "9:16"
     assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"

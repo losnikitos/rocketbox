@@ -6,7 +6,7 @@
   <div class="min-w-0 space-y-1">
     <div class="flex items-center gap-2">
       <h3 id="recipe-<%= recipe.id %>-heading" class="text-sm font-semibold text-ink-900"><%= recipe.name %></h3>
-      <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= recipe.kind %></span>
+      <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium text-ink-700"><%= Recipe::KINDS[recipe.kind].first %></span>
     </div>
     <p class="line-clamp-4 text-sm text-ink-600"><%= recipe.body %></p>
     <% if Current.user&.admin? %>
