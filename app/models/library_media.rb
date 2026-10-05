@@ -52,7 +52,7 @@ class LibraryMedia < ApplicationRecord
   def recipes
     return [] unless story_image?
 
-    Recipe.with_attached_examples.ordered.select { it.slot_for(self) }
+    Recipe.with_attached_example.ordered.select { it.slot_for(self) }
   end
 
   def extraction_status

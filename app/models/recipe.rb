@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# How media is made from library media, one per input slot, plus example media.
+# How media is made from library media, one per input slot, plus an example image.
 # `inputs` lists the slots in order as { "folder_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
 # a video, cut by its `effect` (see EFFECTS). Results land in `output_folder`.
@@ -20,7 +20,7 @@ class Recipe < ApplicationRecord
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
-  has_many_attached :examples
+  has_one_attached :example
   belongs_to :output_folder, class_name: "Folder"
   before_validation(on: :create) { self.output_folder ||= Folder.ready }
 

@@ -1,7 +1,7 @@
 <%# locals: (recipe:) %>
 <section class="flex gap-4 rounded-2xl border border-ink-900/10 bg-white p-4" aria-labelledby="recipe-<%= recipe.id %>-heading">
-  <% if (example = recipe.examples.first) %>
-    <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-20 shrink-0 rounded-md object-cover" %>
+  <% if recipe.example.attached? %>
+    <%= render "accounts/recipes/example", example: recipe.example, css: "aspect-2/3 w-20 shrink-0 rounded-md object-cover" %>
   <% end %>
   <div class="min-w-0 space-y-1">
     <div class="flex items-center gap-2">

@@ -9,7 +9,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_url
   end
 
-  test "admin creates a recipe with inputs and examples; the index previews it and links to a run" do
+  test "admin creates a recipe with inputs and an example; the index previews it and links to a run" do
     @admin = sign_in_as(users(:admin_user))
 
     post recipes_url, params: { recipe: { name: "Team collage", kind: "audio", body: "p", inputs: [ input(:photobank_interior) ] } }
@@ -17,12 +17,12 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "Kind is not included in the list"
 
     post recipes_url, params: { recipe: { name: "Team collage", body: "p", output_folder_id: folders(:ready).id,
-      inputs: [ input(:photobank_interior), input(:customer), { folder_id: "" } ], examples: [ image("a.jpg") ] } }
+      inputs: [ input(:photobank_interior), input(:customer), { folder_id: "" } ], example: image("a.jpg") } }
     assert_redirected_to recipes_url(account: @admin.id)
     recipe = Recipe.find_by!(name: "Team collage")
     assert recipe.generate_image?
     assert_equal [ { "folder_id" => folders(:photobank_interior).id }, { "folder_id" => folders(:customer).id } ], recipe.inputs
-    assert_equal %w[a.jpg], recipe.examples.map { it.filename.to_s }
+    assert_equal "a.jpg", recipe.example.filename.to_s
 
     get recipes_url(account: @admin.id)
     assert_select "##{dom_id(recipe)}" do
@@ -39,13 +39,13 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "svg.text-emerald-500"
     end
     assert_select "input[type=hidden][name='recipe[output_folder_id]'][value=?]", folders(:ready).id.to_s
-    assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", recipe.examples.first.signed_id
+    assert_select "label:has(input[type=file][name='recipe[example]'][accept='image/*']) img[src*='a.jpg']"
 
-    patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], examples: [ "" ] } }
+    patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], example: image("b.jpg") } }
     assert_redirected_to recipes_url(account: @admin.id)
     assert recipe.reload.video?
     assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.folder_ids, recipe.output_folder ]
-    assert_empty recipe.examples
+    assert_equal "b.jpg", recipe.example.filename.to_s
 
     assert_difference -> { Recipe.count }, -1 do
       delete recipe_url(recipe)

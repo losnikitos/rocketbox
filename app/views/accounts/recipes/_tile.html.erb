@@ -1,6 +1,5 @@
 <%# locals: (recipe:, made:) %>
-<% examples = recipe.examples.first(5) %>
-<% slides = examples + made.first(5 - examples.size) %>
+<% slides = [ recipe.example.attachment, *made ].compact.first(5) %>
 <% covered = slides.any? %>
 <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
     data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">

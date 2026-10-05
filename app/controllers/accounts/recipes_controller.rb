@@ -8,7 +8,7 @@ module Accounts
     before_action :set_recipe, only: %i[edit update destroy]
 
     def index
-      @recipes = Recipe.with_attached_examples.order(created_at: :desc)
+      @recipes = Recipe.with_attached_example.order(created_at: :desc)
       # ponytail: loads every generation of the listed recipes to show a few each. Upgrade = a per-recipe window limit.
       @made = Current.account.library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipes.map(&:id) })
         .with_attached_file.includes(:recipe_run).order(created_at: :desc).group_by { it.recipe_run.recipe_id }
@@ -52,10 +52,10 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :takes_style, :output_folder_id, inputs: [ %i[folder_id] ], examples: [], options: {} ])
+        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :takes_style, :output_folder_id, :example, inputs: [ %i[folder_id] ], options: {} ])
       end
 
-      # The options refresh resubmits the form as a GET; examples wait for the save.
-      def draft_params = params[:recipe] ? recipe_params.except(:examples) : {}
+      # The options refresh resubmits the form as a GET; the example waits for the save.
+      def draft_params = params[:recipe] ? recipe_params.except(:example) : {}
   end
 end
