@@ -9,7 +9,7 @@
 <% if @recipes.any? %>
   <% chip = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs" %>
   <% slot_link = "inline-flex rounded-full hover:*:border-ink-900/30" %>
-  <% arrow = capture { heroicon "arrow-right", variant: :mini, options: { class: "hidden size-5 shrink-0 text-ink-300 md:block", "aria-hidden": true } } %>
+  <% arrow = capture { heroicon "arrow-right", variant: :mini, options: { class: "hidden size-5 shrink-0 text-ink-300 lg:block", "aria-hidden": true } } %>
   <div class="space-y-8">
     <% Recipe.by_source(@recipes).each do |group| %>
       <section class="space-y-3">
@@ -22,39 +22,35 @@
             <% kind_label, kind_icon = Recipe::KINDS[recipe.kind] %>
             <% settings = recipe.stitch? ? [ "1 s each" ] :
                  [ *recipe.options.values_at("model", "aspect_ratio", "resolution"), recipe.options["duration"]&.then { "#{it} s" } ].compact_blank %>
-            <li id="<%= dom_id(recipe) %>" class="group relative flex flex-col gap-4 rounded-2xl border border-ink-900/10 bg-white p-4 md:flex-row md:items-center md:pr-12">
-              <ul class="flex flex-col items-start gap-1.5 md:min-w-0 md:flex-1" aria-label="Inputs">
-                <% slots.each do |collection, tag| %>
-                  <li><%= link_to render("slot", collection:, tag:), library_collection_path(collection, tag: tag&.slug), class: slot_link %></li>
-                <% end %>
-                <% if recipe.takes_style? %>
-                  <li class="<%= chip %> border-violet-200 bg-violet-50 text-violet-700">
-                    <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                    Style
-                  </li>
-                <% end %>
-                <% if recipe.shot_group %>
-                  <li class="<%= chip %> border-amber-200 bg-amber-50 text-amber-700">
-                    <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                    <%= recipe.shot_group %> shot
-                  </li>
-                <% end %>
-              </ul>
-
-              <%= arrow %>
-
-              <div class="flex min-w-0 flex-1 items-center gap-4">
-                <%= link_to new_recipe_run_path(recipe), tabindex: -1, "aria-hidden": true,
-                      class: "relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30",
-                      data: { controller: "scrub", action: "mousemove->scrub#scrub mouseleave->scrub#reset" } do %>
-                  <% recipe.examples.each_with_index do |example, index| %>
-                    <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-                      <%= render "example", example:, css: "size-full object-cover" %>
-                    </div>
+            <li id="<%= dom_id(recipe) %>" class="group relative rounded-2xl border border-ink-900/10 bg-stone-50">
+              <div class="py-3 pr-12 pl-4">
+                <%= link_to recipe.name, new_recipe_run_path(recipe), class: "text-sm font-semibold text-ink-900 hover:underline" %>
+              </div>
+              <div class="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
+                <ul class="flex flex-col items-start gap-1.5 lg:flex-1" aria-label="Inputs">
+                  <% slots.each do |folder| %>
+                    <li><%= folder ? link_to(render("slot", folder:), folder_path(folder), class: slot_link) : render("slot", folder:) %></li>
                   <% end %>
-                <% end %>
-                <div class="min-w-0 space-y-2">
-                  <%= link_to recipe.name, new_recipe_run_path(recipe), class: "block text-sm font-semibold text-ink-900 hover:underline" %>
+                  <% if (media = @source_media[recipe.source]&.presence) %>
+                    <li><%= render "thumbs", media: %></li>
+                  <% end %>
+                  <% if recipe.takes_style? %>
+                    <li class="<%= chip %> border-violet-200 bg-violet-50 text-violet-700">
+                      <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                      Style
+                    </li>
+                  <% end %>
+                  <% if recipe.shot_group %>
+                    <li class="<%= chip %> border-amber-200 bg-amber-50 text-amber-700">
+                      <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+                      <%= recipe.shot_group %> shot
+                    </li>
+                  <% end %>
+                </ul>
+
+                <%= arrow %>
+
+                <div class="min-w-0 flex-1 space-y-2">
                   <p class="line-clamp-2 text-xs text-ink-500"><%= recipe.body %></p>
                   <ul class="flex flex-wrap gap-1.5" aria-label="Settings">
                     <li class="<%= chip %> border-transparent bg-ink-900/5 font-medium text-ink-900">
@@ -66,13 +62,14 @@
                     <% end %>
                   </ul>
                 </div>
-              </div>
 
-              <%= arrow %>
+                <%= arrow %>
 
-              <div class="md:min-w-0 md:flex-1" role="group" aria-label="Output">
-                <%= link_to render("slot", collection: recipe.output_collection, tag: recipe.output_tag),
-                      library_collection_path(recipe.output_collection, tag: recipe.output_tag&.slug), class: slot_link %>
+                <div class="space-y-2 lg:flex-1" role="group" aria-label="Output">
+                  <%= link_to render("slot", folder: recipe.output_folder), folder_path(recipe.output_folder), class: slot_link %>
+                  <% examples = recipe.examples.first(5) %>
+                  <%= render "thumbs", examples:, media: @made.fetch(recipe.id, []).first(5 - examples.size) %>
+                </div>
               </div>
 
               <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">

@@ -20,6 +20,8 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **SMM media pipeline:** The user's mental model for how SMM media gets produced, drawn as a fishbone at `/app/overview` ([view](/app/views/accounts/overview/show.html.erb)). Folders hold media; blocks transform it; side inputs feed a step. Keep the chart and this diagram in sync.
 
+**Folders** ([model](/app/models/folder.rb), browsed at `/app/library/folders/:root(/:child)`): one global table. Inbox, Photobank and Ready are fixed roots; subfolders sit one level below (`inbox/interior`, `photobank/logo`). Every media is in exactly one folder; recipe inputs and outputs point at folders.
+
 ```mermaid
 flowchart LR
   Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features --> Posts

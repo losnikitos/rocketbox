@@ -24,14 +24,13 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "app library has primary Library nav and links to profile" do
     sign_in_as(users(:lazaro_nixon))
 
-    get library_uploads_url
+    get library_folders_url("inbox")
 
     assert_response :success
     assert_select "h1", "Inbox"
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_uploads_path, text: "Inbox"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='false']", library_photobank_path, text: "Photobank"
-    assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", library_uploads_path, text: /\AAll/
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("inbox"), text: "Inbox"
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='false']", library_folders_path("photobank"), text: "Photobank"
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", instagram_posts_path, text: "Posts"
@@ -72,7 +71,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
   test "admin sees onboarding link in primary nav" do
     admin = sign_in_as(users(:admin_user))
 
-    get library_uploads_url(account: admin.id)
+    get library_folders_url("inbox", account: admin.id)
 
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path(account: admin.id), text: "Profile"

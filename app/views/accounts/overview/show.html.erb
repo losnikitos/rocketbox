@@ -23,12 +23,12 @@ end %>
 <div class="overflow-x-auto px-3 py-3">
   <div class="flex h-96 items-start">
     <% [
-      [ "Inbox", "inbox", library_uploads_path, "Recipes", "beaker", recipes_path, [] ],
-      [ "Photobank", "photo", library_photobank_path, "Recipes", "beaker", recipes_path, [
+      [ "Inbox", "inbox", library_folders_path("inbox"), "Recipes", "beaker", recipes_path, [] ],
+      [ "Photobank", "photo", library_folders_path("photobank"), "Recipes", "beaker", recipes_path, [
         node.("Styles", "swatch", admin_only.(styles_path)),
         node.("Shots", "camera", admin_only.(shots_path))
       ] ],
-      [ "Ready", "check-circle", library_ready_path, "Features", "bolt", features_path, [
+      [ "Ready", "check-circle", library_folders_path("ready"), "Features", "bolt", features_path, [
         node.("Layers", "square-3-stack-3d", admin_only.(layers_path)),
         data
       ] ]

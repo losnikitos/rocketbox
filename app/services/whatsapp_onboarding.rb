@@ -46,7 +46,7 @@ module WhatsappOnboarding
     TEXT
   }.freeze
 
-  # Photo step => Tag slug the next WhatsApp media gets.
+  # Photo step => slug of the inbox subfolder the next WhatsApp media goes into.
   MEDIA_REQUESTS = {
     "business_card" => "business-card",
     "logo" => "logo",

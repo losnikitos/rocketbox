@@ -3,25 +3,27 @@
 <%
   user = Current.account
   media_tab = params[:tab] == "media"
-  media_counts = user.library_media.joins(:tag).group("tags.slug").count
+  inbox = Folder.inbox
+  inbox_media = user.library_media.joins(:folder).where(folders: { parent_id: inbox.id })
+  media_counts = inbox_media.group("folders.slug").count
   steps = if media_tab
-    names = Tag.pluck(:slug, :name).to_h
+    names = inbox.children.pluck(:slug, :name).to_h
     WhatsappOnboarding::MEDIA_REQUESTS.values.uniq.map do |slug|
       count = media_counts[slug].to_i
-      { channel: :whatsapp, label: names[slug] || slug, path: library_uploads_path(tag: slug), ask: WhatsappOnboarding::MEDIA_REQUESTS.key(slug), ask_again: true,
+      { channel: :whatsapp, label: names[slug] || slug, path: library_folders_path("inbox", slug), ask: WhatsappOnboarding::MEDIA_REQUESTS.key(slug), ask_again: true,
         texts: WhatsappOnboarding::MEDIA_REQUESTS.select { _2 == slug }.keys, done: count.positive?, value: pluralize(count, "file"),
-        previews: user.library_media.joins(:tag).where(tag: { slug: }).with_attached_file.order(created_at: :desc).limit(6) }
+        previews: inbox_media.where(folders: { slug: }).with_attached_file.order(created_at: :desc).limit(6) }
     end
   else [
     { channel: :whatsapp, label: "WhatsApp linked", path: sign_up_path,
       done: user.whatsapp_phone.present?, value: user.whatsapp_phone&.then { "+#{_1}" }, reset: "whatsapp" },
-    { channel: :whatsapp, label: "Business card", path: library_uploads_path(tag: "business-card"), ask: "business_card",
+    { channel: :whatsapp, label: "Business card", path: library_folders_path("inbox", "business-card"), ask: "business_card",
       done: media_counts["business-card"].to_i.positive?, value: user.business_name },
     { channel: :whatsapp, label: "Logo", path: business_path, ask: "logo",
       done: user.logo.attached? },
     { channel: :instagram, label: "Instagram authorized", path: instagram_profile_path, ask: "instagram", texts: %w[instagram instagram_connected],
       done: user.instagram_authorized?, value: user.instagram_user_id, reset: "instagram" },
-    { channel: :whatsapp, label: "Interior photos", path: library_uploads_path(tag: "interior"), ask: "interior_back", texts: %w[interior_back interior_front],
+    { channel: :whatsapp, label: "Interior photos", path: library_folders_path("inbox", "interior"), ask: "interior_back", texts: %w[interior_back interior_front],
       done: media_counts["interior"].to_i >= 2, value: pluralize(media_counts["interior"].to_i, "photo") },
     { channel: :whatsapp, label: "Brand voice", path: business_path, ask: "brand_voice",
       done: user.brand_voice.present?, value: user.brand_voice&.capitalize, reset: "brand_voice" },

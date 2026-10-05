@@ -43,7 +43,7 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
-    customer.library_media.create!(kind: "photo", tag: tags(:interior),
+    customer.library_media.create!(kind: "photo", folder: folders(:interior),
       file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
     get onboarding_url(tab: "media", account: customer.id)
     assert_select "li", text: /Interior\b.*1 file/m

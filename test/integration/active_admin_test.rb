@@ -67,27 +67,27 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_select "td.col-media img[src*='cut.jpg']"
   end
 
-  test "admin can list and rename tags" do
+  test "admin can list and rename folders" do
     sign_in_as(users(:admin_user))
-    get "/admin/tags", headers: @ua
+    get "/admin/folders", headers: @ua
     assert_response :success
     assert_match "Business card", response.body
 
-    patch "/admin/tags/#{tags(:misc).id}", params: { tag: { name: "Other" } }, headers: @ua
-    assert_equal [ "Other", "misc" ], tags(:misc).reload.values_at(:name, :slug)
+    patch "/admin/folders/#{folders(:misc).id}", params: { folder: { name: "Other" } }, headers: @ua
+    assert_equal [ "Other", "misc" ], folders(:misc).reload.values_at(:name, :slug)
 
-    post "/admin/tags", params: { tag: { name: "Before after" } }, headers: @ua
-    assert_equal "before-after", Tag.find_by!(name: "Before after").slug
+    post "/admin/folders", params: { folder: { name: "Before after", parent_id: folders(:photobank).id } }, headers: @ua
+    assert_equal "before-after", folders(:photobank).children.find_by!(name: "Before after").slug
   end
 
   test "recipe run is linked from its media page and opens in admin" do
     admin = sign_in_as(users(:admin_user))
-    source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: admin)
+    source = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
     generation = recipes(:cinematic).run!(media: [ source ])
     generation.update!(status: "failed", error: "content policy")
 
-    get "/app/library/photobank/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
+    get "/app/library/media/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
     assert_response :success
     assert_select "a[href^='/admin/recipe_runs/#{generation.id}']"
     get "/admin/recipe_runs/#{generation.id}", headers: @ua

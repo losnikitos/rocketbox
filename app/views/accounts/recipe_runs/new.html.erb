@@ -22,15 +22,15 @@
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
       <div class="<%= island %>">
-        <% @slots.each_with_index do |(collection, slot_tag, photos), index| %>
+        <% @slots.each_with_index do |(folder, photos), index| %>
           <fieldset data-controller="media-pick" class="group min-w-0">
-            <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= slot_tag&.name || "Unknown tag" %> <span class="text-ink-500">· <%= collection.humanize %></span></legend>
+            <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= folder&.name || "Unknown folder" %><% if folder&.parent %> <span class="text-ink-500">· <%= folder.parent.name %></span><% end %></legend>
             <% if photos.any? %>
               <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
               <% popover_id = "media-pick-#{index}" %>
               <div class="flex gap-2">
                 <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
-                        aria-label="Choose <%= slot_tag&.name&.downcase || "media" %>"
+                        aria-label="Choose <%= folder&.name&.downcase || "media" %>"
                         class="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1 rounded-xl border border-ink-900/10 bg-white p-1.5 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
                   <span data-media-pick-target="preview" class="block size-14 shrink-0 overflow-hidden rounded-lg">
                     <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover" %>
@@ -56,8 +56,8 @@
               </div>
             <% else %>
               <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-                No <%= slot_tag&.name&.downcase || "matching" %> media in <%= collection.humanize %>.
-                <%= link_to "Add some", library_collection_path(collection, tag: slot_tag&.slug), class: "underline hover:text-ink-900" %>
+                No media in <%= folder&.path || "this folder" %>.
+                <%= link_to "Add some", folder_path(folder), class: "underline hover:text-ink-900" if folder %>
               </p>
             <% end %>
           </fieldset>
@@ -120,8 +120,8 @@
 
         <div class="flex items-baseline justify-between gap-3">
           <h2 class="text-sm font-semibold text-ink-900">Made with <%= @recipe.name %></h2>
-          <% if @made.any? && @recipe.output_collection == "ready" %>
-            <%= link_to "View all", library_ready_path(recipe: @recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+          <% if @made.any? %>
+            <%= link_to "View all", folder_path(@recipe.output_folder, recipe: @recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
           <% end %>
         </div>
         <% if @made.any? %>

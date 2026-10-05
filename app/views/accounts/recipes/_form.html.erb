@@ -32,9 +32,9 @@
             <% end %>
           </div>
           <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
-                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), tag = row.querySelector('[name$=&quot;[tag_id]&quot;]');
-                           tag.value = ''; row.querySelectorAll('select').forEach(select => select.ariaLabel = select.ariaLabel.replace(/\d+/, rows.children.length + 1));
-                           rows.append(row); tag.focus()">
+                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), folder = row.querySelector('select');
+                           folder.value = ''; folder.ariaLabel = folder.ariaLabel.replace(/\d+/, rows.children.length + 1);
+                           rows.append(row); folder.focus()">
             <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
             Add input
           </button>
@@ -101,12 +101,8 @@
       <h2 id="output" class="<%= island_title %>"><a href="#output" class="hover:underline">Output</a></h2>
       <div class="<%= island %>">
         <div>
-          <%= f.label :output_collection, "Folder", class: tw_label_classes %>
-          <%= f.select :output_collection, Recipe::OUTPUT_COLLECTIONS.map { [ it.humanize, it ] }, {}, class: tw_input_classes %>
-        </div>
-        <div>
-          <%= f.label :output_tag_id, "Tag", class: tw_label_classes %>
-          <%= f.select :output_tag_id, Tag.ordered.pluck(:name, :id), { prompt: "—" }, required: true, class: tw_input_classes %>
+          <%= f.label :output_folder_id, "Folder", class: tw_label_classes %>
+          <%= f.select :output_folder_id, grouped_options_for_select(Folder.grouped_options(roots: Recipe::OUTPUT_ROOTS), recipe.output_folder_id), {}, class: tw_input_classes %>
         </div>
       </div>
     </section>

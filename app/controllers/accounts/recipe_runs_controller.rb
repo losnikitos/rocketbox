@@ -27,7 +27,7 @@ module Accounts
       def set_recipe
         @recipe = Recipe.find(params[:recipe_id])
         library = Current.account.library_media.with_attached_file.order(created_at: :desc)
-        @slots = @recipe.slots.map { |collection, tag| [ collection, tag, tag ? library.where(collection:, tag:).select { @recipe.takes?(it) } : [] ] }
+        @slots = @recipe.slots.map { |folder| [ folder, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
         @shots = Shot.where(group: @recipe.shot_group).ordered.with_attached_examples if @recipe.shot_group
         @styles = Style.ordered.with_attached_examples if @recipe.takes_style?
         @made = Current.account.library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id })

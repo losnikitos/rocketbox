@@ -2,18 +2,14 @@ cinematic:
   name: Cinematic shop reel
   kind: generate_video
   body: Slow cinematic push-in on the shop.
-  output_collection: photobank
-  output_tag: interior
+  output_folder: photobank_interior
   inputs:
-    - collection: inbox
-      tag_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
+    - folder_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
 
 before_after:
   name: Before → after energy
   kind: generate_video
   body: Energetic before and after reveal.
-  output_collection: photobank
-  output_tag: misc
+  output_folder: photobank_misc
   inputs:
-    - collection: inbox
-      tag_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>
+    - folder_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>

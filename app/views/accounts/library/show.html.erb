@@ -1,11 +1,11 @@
-<% content_for(:title, "#{@media.kind.humanize} — #{@collection.humanize} — Rocketbox") %>
+<% content_for(:title, "#{@media.kind.humanize} — #{@media.folder.path} — Rocketbox") %>
 <% blob = @media.file.blob if @media.file.attached? %>
 <% sources = @media.recipe_run&.source_media.to_a if blob %>
 <% source = sources.first if sources&.one? && sources.first.file.attached? %>
 
-<%= link_to library_collection_path(@collection), class: "mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+<%= link_to folder_path(@media.folder), class: "mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
   <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-  <%= @collection.humanize %>
+  <%= @media.folder.path %>
 <% end %>
 
 <div class="flex flex-col gap-6 md:flex-row">
@@ -54,7 +54,7 @@
     </div>
 
     <% if @siblings.size > 1 %>
-      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.tag&.name || "Untagged" %> media"
+      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.folder.name %> media"
            class="relative flex gap-2 overflow-x-auto p-1" data-controller="center-current">
         <% @siblings.each do |media| %>
           <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
@@ -75,10 +75,10 @@
     </div>
 
     <%= form_with model: @media, url: library_media_path(@media), class: "mt-4" do |f| %>
-      <%= f.label :tag_id, "Tag", class: "mb-1 block text-sm text-ink-500" %>
-      <%= f.select :tag_id,
-            Tag.ordered.pluck(:name, :id),
-            { include_blank: "Not set" },
+      <%= f.label :folder_id, "Folder", class: "mb-1 block text-sm text-ink-500" %>
+      <%= f.select :folder_id,
+            grouped_options_for_select(Folder.grouped_options(roots: Folder::ROOTS), @media.folder_id),
+            {},
             class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
             onchange: "this.form.requestSubmit()" %>
     <% end %>
@@ -108,7 +108,7 @@
           <ul class="flex flex-wrap gap-2" aria-label="Source media">
             <% sources.each do |media| %>
               <li>
-                <%= link_to library_item_path(media), title: media.tag&.name,
+                <%= link_to library_item_path(media), title: media.folder.path,
                       class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-16 rounded-md object-cover" %>
                 <% end %>
@@ -129,10 +129,8 @@
     <% if @media.story_image? %>
       <section id="apply_recipe" class="mt-6" aria-labelledby="apply-recipe-heading">
         <h3 id="apply-recipe-heading" class="text-sm text-ink-500"><a href="#apply_recipe" class="hover:underline">Apply recipe</a></h3>
-        <% if @media.tag.nil? %>
-          <p class="mt-1 text-sm text-ink-600">Set a tag to see recipes.</p>
-        <% elsif (recipes = @media.recipes).empty? %>
-          <p class="mt-1 text-sm text-ink-600">No recipes take <%= @media.tag.name.downcase %> from <%= @collection.humanize %> yet.</p>
+        <% if (recipes = @media.recipes).empty? %>
+          <p class="mt-1 text-sm text-ink-600">No recipes take media from <%= @media.folder.path %> yet.</p>
         <% else %>
           <ul class="-mx-2 mt-1 flex flex-col gap-0.5">
             <% recipes.each do |recipe| %>

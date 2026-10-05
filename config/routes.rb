@@ -30,14 +30,12 @@ Rails.application.routes.draw do
     get "/", to: redirect(path: "/app/overview"), as: :app
 
     scope path: "library", module: :accounts do
-      get "/", to: redirect(path: "/app/library/uploads")
-      get "uploads", to: "library#uploads", as: :library_uploads, defaults: { collection: "inbox" }
-      get "photobank", to: "library#uploads", as: :library_photobank, defaults: { collection: "photobank" }
-      get "ready", to: "library#uploads", as: :library_ready, defaults: { collection: "ready" }
-      get "uploads/:id", to: "library#show", as: :library_upload, defaults: { collection: "inbox" }
-      get "photobank/:id", to: "library#show", as: :library_photobank_media, defaults: { collection: "photobank" }
-      get "ready/:id", to: "library#show", as: :library_ready_media, defaults: { collection: "ready" }
-      get "folders(/:collection)", to: "folders#show", as: :library_folders, constraints: { collection: /inbox|photobank|ready/ }
+      get "/", to: redirect(path: "/app/library/folders/inbox")
+      get "media/:id", to: "library#show", as: :library_item
+      get "folders(/:root(/:child))", to: "folders#show", as: :library_folders, constraints: { root: /inbox|photobank|ready/ }
+      post "folders/:root", to: "folders#create", constraints: { root: /inbox|photobank/ }
+      patch "folders/:root/:child", to: "folders#update"
+      delete "folders/:root/:child", to: "folders#destroy"
     end
 
     scope path: "instagram", module: :accounts, as: :instagram do
