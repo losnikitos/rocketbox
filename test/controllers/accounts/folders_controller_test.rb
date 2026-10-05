@@ -27,9 +27,9 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     get library_folders_url("inbox")
     assert_response :success
     assert_select "h1", "Inbox"
-    assert_select "ul[aria-label=Folders] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior/
-    assert_select "ul[aria-label=Folders] a[href=?] [data-scrub-target=slide]", library_folders_path("inbox", "interior"), count: 1
-    assert_select "#folder-media-#{loose.id}"
+    assert_select "ul[aria-label='Folders and files'] a[href=?]", library_folders_path("inbox", "interior"), text: /Interior/
+    assert_select "ul[aria-label='Folders and files'] a[href=?] [data-scrub-target=slide]", library_folders_path("inbox", "interior"), count: 1
+    assert_select "ul[aria-label='Folders and files'] #folder-media-#{loose.id}"
     assert_select "#folder-media-#{filed.id}", count: 0
     assert_select "#folder-media-#{curated.id}", count: 0
     assert_select "form[data-controller=drop-upload] input[name=folder_id][value=?]", folders(:inbox).id.to_s
@@ -37,7 +37,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=new-folder]", count: 0
   end
 
-  test "a subfolder shows its media, a move menu and the recipes reading it" do
+  test "a subfolder shows its media and the recipes reading it" do
     filed = photo(folders(:interior))
     loose = photo(folders(:inbox))
 
@@ -48,8 +48,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path("inbox"), text: "Inbox"
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
-    assert_select "#move-menu-#{filed.id} form[action=?] button[disabled]", library_media_path(filed), text: "Inbox / Interior"
-    assert_select "#move-menu-#{filed.id} form[action=?]", library_media_path(filed), text: "Photobank / Logo"
+    assert_select "[id^=library-media-move-]", count: 0
     assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:cinematic))
     assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
     assert_select "button[popovertarget=rename-folder]", count: 0
@@ -75,8 +74,13 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_folders_url("photobank", "team", account: admin.id)
     media = photo(folder, user: admin)
 
+    get library_folders_url("photobank", account: admin.id)
+    assert_select "[id^=folder-admin-links-#{folder.id}-] a[href=?][data-turbo-method=delete]", library_folders_path("photobank", "team")
+
     get library_folders_url("photobank", "team", account: admin.id)
     assert_select "form#rename-folder input[name='folder[name]'][value=Team]"
+    assert_select "[id^=library-media-move-#{media.id}-] form[action^=?] button[disabled]", library_media_path(media), text: "Photobank / Team"
+    assert_select "[id^=library-media-move-#{media.id}-] form[action^=?]", library_media_path(media), text: "Inbox / Interior"
 
     patch library_folders_url("photobank", "team"), params: { folder: { name: "Crew" } }
     assert_equal [ "Crew", "team" ], folder.reload.values_at(:name, :slug)

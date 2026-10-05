@@ -44,20 +44,18 @@
       <% end %>
     </li>
     <li class="mt-2">
-      <%# Metro map: folders are stations, the steps between them sit on the line %>
       <ol>
         <% [
           [ "Inbox", library_folders_path("inbox"), :inbox, "inbox" ],
-          [ "Recipes", recipes_path, :recipes ],
           [ "Photobank", library_folders_path("photobank"), :photobank, "photo" ],
+          [ "Recipes", recipes_path, :recipes ],
           [ "Shots", shots_path, :shots ],
           [ "Styles", styles_path, :styles ],
           [ "Layers", layers_path, :layers ],
           [ "Features", features_path, :features ],
           [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
         ].each do |label, path, key, icon| %>
-          <%# Steps draw the line, stretched to meet the station icons above and below %>
-          <li class="<%= "relative before:absolute before:-inset-y-2.5 before:left-5.5 before:w-0.5 before:-translate-x-1/2 before:bg-stone-300" unless icon %>">
+          <li>
             <% if icon %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
@@ -67,10 +65,10 @@
               <% end %>
             <% elsif Current.user&.admin? %>
               <%= link_to label, path,
-                    class: "block rounded-xl py-1 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    class: "block rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } %>
             <% else %>
-              <span class="block py-1 pr-3 pl-10 text-sm font-medium text-ink-500"><%= label %></span>
+              <span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500"><%= label %></span>
             <% end %>
           </li>
         <% end %>
