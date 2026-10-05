@@ -11,7 +11,6 @@ module Accounts
     # ponytail: @folder_media loads every media in the listed folders just to count them and preview the newest few.
     # Upgrade = a COUNT query plus a per-folder LIMIT (window function) once accounts hold thousands of media.
     def show
-      @folder_counts = Current.account.library_media.group(:folder_id).count
       media = Current.account.library_media.with_attached_file.includes(:recipe_run).order(created_at: :desc)
       if @folder
         @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)

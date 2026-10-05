@@ -3,10 +3,13 @@
 <% sources = @media.recipe_run&.source_media.to_a if blob %>
 <% source = sources.first if sources&.one? && sources.first.file.attached? %>
 
-<%= link_to folder_path(@media.folder), class: "mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
-  <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-  <%= @media.folder.path %>
-<% end %>
+<div class="mb-4 flex items-center justify-between gap-2">
+  <%= link_to folder_path(@media.folder), class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+    <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    <%= @media.folder.path %>
+  <% end %>
+  <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
+</div>
 
 <div class="flex flex-col gap-6 md:flex-row">
   <% if @versions.size > 1 %>
@@ -69,19 +72,7 @@
   </div>
 
   <aside id="details" class="w-full shrink-0 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108">
-    <div class="flex items-center justify-between gap-2">
-      <h2 class="text-sm font-medium text-ink-900"><a href="#details" class="hover:underline">Details</a></h2>
-      <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
-    </div>
-
-    <%= form_with model: @media, url: library_media_path(@media), class: "mt-4" do |f| %>
-      <%= f.label :folder_id, "Folder", class: "mb-1 block text-sm text-ink-500" %>
-      <%= f.select :folder_id,
-            grouped_options_for_select(Folder.grouped_options, @media.folder_id),
-            {},
-            class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
-            onchange: "this.form.requestSubmit()" %>
-    <% end %>
+    <h2 class="text-sm font-medium text-ink-900"><a href="#details" class="hover:underline">Details</a></h2>
 
     <% if (run = @media.recipe_run) %>
       <% made = run.recipe || run.prompt.present? %>
