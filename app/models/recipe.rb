@@ -33,6 +33,8 @@ class Recipe < ApplicationRecord
   end
   # The shot group its runs pick a shot from; nil takes no shot. `takes_style`: its runs pick a style.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
+  # The free-text group it's listed under on the index; nil is ungrouped.
+  normalizes :group, with: ->(value) { value.strip.presence }
 
   before_validation(if: :stitch?) { self.shot_group, self.takes_style = nil, false }
   validates :name, :inputs, presence: true
@@ -45,6 +47,8 @@ class Recipe < ApplicationRecord
   end
 
   scope :ordered, -> { order(:name) }
+
+  def self.groups = where.not(group: nil).distinct.order(:group).pluck(:group)
 
   def video? = generate_video?
 

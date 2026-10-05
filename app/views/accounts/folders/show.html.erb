@@ -49,7 +49,7 @@
 <div class="flex flex-col lg:-m-8 lg:min-h-[calc(100%+4rem)] lg:flex-row">
   <% if move_targets %>
     <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
-      <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "folder" } %>
+      <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "value" } %>
     <% end %>
   <% end %>
   <div class="@container min-w-0 flex-1 lg:p-8">

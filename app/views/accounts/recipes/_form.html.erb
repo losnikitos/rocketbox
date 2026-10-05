@@ -18,6 +18,15 @@
       <%= f.label :name, class: tw_label_classes %>
       <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
     </div>
+    <div class="w-full max-w-48">
+      <%= f.label :group, class: tw_label_classes %>
+      <%= f.text_field :group, list: "recipe_groups", placeholder: "Ungrouped", class: tw_input_classes %>
+      <datalist id="recipe_groups">
+        <% Recipe.groups.each do |group| %>
+          <option value="<%= group %>"></option>
+        <% end %>
+      </datalist>
+    </div>
     <%= render "shared/examples", record: recipe, form_id: "recipe_form", list: "flex flex-wrap gap-2 *:w-20" %>
   <% end %>
 

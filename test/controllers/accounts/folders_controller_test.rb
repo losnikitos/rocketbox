@@ -90,8 +90,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?] button[disabled]", library_media_path(media), text: "Photobank / Team"
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?]", library_media_path(media), text: "Inbox / Interior"
     assert_select "#folder-media-#{media.id}[draggable=true][data-move-url^=?]", library_media_path(media)
-    assert_select "[aria-label='Folder tree'] a[data-folder-id=?]", folders(:interior).id.to_s
-    assert_select "[aria-label='Folder tree'] a[data-folder-id=?]", folder.id.to_s, count: 0
+    assert_select "[aria-label='Folder tree'] a[data-move-to=?]", folders(:interior).id.to_s
+    assert_select "[aria-label='Folder tree'] a[data-move-to=?]", folder.id.to_s, count: 0
 
     patch library_folders_url("photobank", "team"), params: { folder: { name: "Crew" } }
     assert_equal [ "Crew", "team" ], folder.reload.values_at(:name, :slug)

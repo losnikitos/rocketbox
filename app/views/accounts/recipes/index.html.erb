@@ -7,36 +7,36 @@
 <% end %>
 
 <% if @recipes.any? %>
-  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
-    <% @recipes.each do |recipe| %>
-      <% examples = recipe.examples.first(5) %>
-      <% slides = examples + @made.fetch(recipe.id, []).first(5 - examples.size) %>
-      <% covered = slides.any? %>
-      <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
-          data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-        <% slides.each_with_index do |slide, index| %>
-          <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-            <% if slide.is_a?(LibraryMedia) %>
-              <%= render "accounts/library/file", media: slide, css: "size-full object-cover" %>
-            <% else %>
-              <%= render "example", example: slide, css: "size-full object-cover" %>
+  <% by_group = @recipes.group_by(&:group) %>
+  <% names = by_group.keys.compact.sort %>
+  <% drop_css = "rounded-xl data-drop-over:outline-2 data-drop-over:outline-offset-4 data-drop-over:outline-rocket" %>
+  <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
+    <%= hidden_field_tag "recipe[group]", nil, id: nil, data: { drag_move_target: "value" } %>
+  <% end %>
+  <div class="space-y-8">
+    <% (names + [ nil ]).each do |name| %>
+      <% recipes = by_group.fetch(name, []) %>
+      <%= tag.section class: drop_css, data: { move_to: name.to_s }, "aria-label": name || "Ungrouped" do %>
+        <% if names.any? %>
+          <h2 class="mb-3 text-sm font-semibold text-ink-900"><%= name || "Ungrouped" %></h2>
+        <% end %>
+        <% if recipes.any? %>
+          <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
+            <% recipes.each do |recipe| %>
+              <%= render "tile", recipe:, made: @made.fetch(recipe.id, []) %>
             <% end %>
-          </div>
+          </ul>
+        <% else %>
+          <p class="rounded-xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-500">Drop a recipe here to ungroup it.</p>
         <% end %>
-        <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex flex-col items-start" do %>
-          <span class="w-full p-4 pr-12 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
-            <%= recipe.name %>
-          </span>
-          <% unless covered %>
-            <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= recipe.body %></span>
-          <% end %>
-        <% end %>
-        <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
-          <%= render "shared/admin_links/recipe", recipe: %>
-        </div>
-      </li>
+      <% end %>
     <% end %>
-  </ul>
+    <div class="<%= drop_css %> flex items-center justify-center gap-1.5 border border-dashed border-ink-900/20 p-6 text-sm text-ink-500"
+         data-move-to="" data-move-prompt="Group name">
+      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Drop a recipe here to start a new group
+    </div>
+  </div>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
     Add a recipe — a prompt that turns library media into new photos or videos.

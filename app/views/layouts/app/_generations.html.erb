@@ -1,19 +1,10 @@
 <%# locals: (user:, **) %>
-<%# The inside of the layout's #generations <details>: RecipeRun broadcasts update it, so the owner's open/closed choice stays. %>
+<%# The inside of the layout's #generations popover: RecipeRun broadcasts update it, so an open panel stays open. The pill reads `li` / `data-running` via :has(). %>
 <% runs = RecipeRun.recent_for(user).to_a %>
 <% if runs.any? %>
-  <summary class="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden" aria-label="Generations">
-    <% if runs.any?(&:running?) %>
-      <%= heroicon "arrow-path", variant: :mini, options: { class: "size-5 animate-spin text-signal-yellow", "aria-hidden": true } %>
-    <% else %>
-      <%= heroicon "check-circle", variant: :mini, options: { class: "size-5 text-signal-green", "aria-hidden": true } %>
-    <% end %>
-    <%= heroicon "sparkles", variant: :mini, options: { class: "size-5 text-ink-500", "aria-hidden": true } %>
-    <span class="hidden group-open:inline">Generations</span>
-  </summary>
-  <ul class="border-t border-ink-900/10 p-2">
+  <ul>
     <% runs.each do |run| %>
-      <li>
+      <li <%= "data-running" if run.running? %>>
         <%= link_to library_item_path(run.generated_media), class: "flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
           <span class="flex size-10 shrink-0 overflow-hidden rounded">
             <%= render "accounts/library/file", media: run.generated_media, css: "size-10 object-cover" %>

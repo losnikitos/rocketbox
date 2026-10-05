@@ -1,8 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drag a [data-move-url] tile onto a [data-folder-id] tree entry to move it there.
+// Drag a [data-move-url] tile onto a [data-move-to] target to PATCH that value into the form's value field.
+// A target with [data-move-prompt] asks for the value instead.
 export default class extends Controller {
-  static targets = ["form", "folder"]
+  static targets = ["form", "value"]
 
   start(event) {
     this.url = event.target.closest("[data-move-url]")?.dataset.moveUrl
@@ -10,9 +11,9 @@ export default class extends Controller {
   }
 
   over(event) {
-    const folder = this.url && event.target.closest("[data-folder-id]")
-    this.highlight(folder)
-    if (!folder) return
+    const target = this.url && event.target.closest("[data-move-to]")
+    this.highlight(target)
+    if (!target) return
     event.preventDefault()
     event.dataTransfer.dropEffect = "move"
   }
@@ -22,12 +23,16 @@ export default class extends Controller {
   }
 
   drop(event) {
-    const folder = this.url && event.target.closest("[data-folder-id]")
-    if (!folder) return
+    const target = this.url && event.target.closest("[data-move-to]")
+    if (!target) return
     event.preventDefault()
-    this.formTarget.action = this.url
-    this.folderTarget.value = folder.dataset.folderId
-    this.formTarget.requestSubmit()
+    const { moveTo, movePrompt } = target.dataset
+    const value = movePrompt ? prompt(movePrompt)?.trim() : moveTo
+    if (!movePrompt || value) {
+      this.formTarget.action = this.url
+      this.valueTarget.value = value
+      this.formTarget.requestSubmit()
+    }
     this.end()
   }
 
@@ -36,10 +41,10 @@ export default class extends Controller {
     this.highlight(null)
   }
 
-  highlight(folder) {
-    if (this.target === folder) return
+  highlight(target) {
+    if (this.target === target) return
     if (this.target) delete this.target.dataset.dropOver
-    this.target = folder
-    if (folder) folder.dataset.dropOver = ""
+    this.target = target
+    if (target) target.dataset.dropOver = ""
   }
 }

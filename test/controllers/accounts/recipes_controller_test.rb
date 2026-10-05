@@ -92,6 +92,26 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary']", count: 0
   end
 
+  test "admin drops a recipe into a group; the index lists it under that group" do
+    @admin = sign_in_as(users(:admin_user))
+    reel = Recipe.create!(name: "Reel", kind: "stitch", inputs: [ input(:photobank_interior) ])
+
+    patch recipe_url(reel), params: { recipe: { group: " Promo " } }
+    assert_redirected_to recipes_url(account: @admin.id)
+    assert_equal "Promo", reel.reload.group
+    assert_includes Recipe.groups, "Promo"
+
+    get recipes_url(account: @admin.id)
+    assert_select "section[data-move-to=Promo]", text: /Promo/ do
+      assert_select "##{dom_id(reel)} a[draggable=true][data-move-url=?]", recipe_path(reel, account: @admin.id)
+    end
+    assert_select "section[data-move-to='']", text: /Ungrouped/
+    assert_select "form input[name='recipe[group]'][data-drag-move-target=value]"
+
+    patch recipe_url(reel), params: { recipe: { group: "" } }
+    assert_nil reel.reload.group
+  end
+
   private
 
     def input(folder) = { folder_id: folders(folder).id }

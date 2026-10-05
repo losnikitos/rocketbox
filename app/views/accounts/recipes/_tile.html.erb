@@ -1,0 +1,27 @@
+<%# locals: (recipe:, made:) %>
+<% examples = recipe.examples.first(5) %>
+<% slides = examples + made.first(5 - examples.size) %>
+<% covered = slides.any? %>
+<li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+    data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+  <% slides.each_with_index do |slide, index| %>
+    <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+      <% if slide.is_a?(LibraryMedia) %>
+        <%= render "accounts/library/file", media: slide, css: "size-full object-cover" %>
+      <% else %>
+        <%= render "accounts/recipes/example", example: slide, css: "size-full object-cover" %>
+      <% end %>
+    </div>
+  <% end %>
+  <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex flex-col items-start", draggable: "true", data: { move_url: recipe_path(recipe) } do %>
+    <span class="w-full p-4 pr-12 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+      <%= recipe.name %>
+    </span>
+    <% unless covered %>
+      <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= recipe.body %></span>
+    <% end %>
+  <% end %>
+  <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
+    <%= render "shared/admin_links/recipe", recipe: %>
+  </div>
+</li>
