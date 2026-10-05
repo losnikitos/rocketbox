@@ -72,114 +72,80 @@
         <% end %>
       </ol>
     </li>
+    <% business_sections = {
+      "Onboarding" => [ onboarding_path, :onboarding, "clipboard-document-check" ],
+      "Instagram" => [ instagram_profile_path, :instagram, "brands/instagram.svg" ],
+      "WhatsApp" => [ whatsapp_path, :whatsapp, "brands/whatsapp.svg" ],
+      "Business" => [ business_path, :business, "building-storefront" ],
+      "Calendar" => [ calendar_path, :calendar, "calendar-days" ],
+      "Services" => [ services_path, :services, "tag" ],
+      "Links" => [ links_path, :links, "link" ],
+      "Reviews" => [ reviews_path, :reviews, "star" ],
+      "Subscription" => [ subscription_path, :subscription, "credit-card" ],
+      "Profile" => [ profile_settings_path, :profile, "user" ]
+    } %>
     <li class="mt-2 border-t border-ink-900/10 pt-2">
-      <%= link_to onboarding_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :onboarding } do %>
-        <%= heroicon "clipboard-document-check", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Onboarding
-      <% end %>
-    </li>
-    <li>
-      <%= link_to instagram_profile_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :instagram } do %>
-        <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-        Instagram
-      <% end %>
-    </li>
-    <li>
-      <%= link_to whatsapp_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :whatsapp } do %>
-        <%= image_tag "brands/whatsapp.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-        WhatsApp
-      <% end %>
-    </li>
-    <li>
-      <%= link_to business_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :business } do %>
-        <%= heroicon "building-storefront", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Business
-      <% end %>
-    </li>
-    <li>
-      <%= link_to calendar_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :calendar } do %>
-        <%= heroicon "calendar-days", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Calendar
-      <% end %>
-    </li>
-    <li>
-      <%= link_to services_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :services } do %>
-        <%= heroicon "tag", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Services
-      <% end %>
-    </li>
-    <li>
-      <%= link_to links_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :links } do %>
-        <%= heroicon "link", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Links
-      <% end %>
-    </li>
-    <li>
-      <%= link_to reviews_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :reviews } do %>
-        <%= heroicon "star", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Reviews
-      <% end %>
-    </li>
-    <li>
-      <%= link_to subscription_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :subscription } do %>
-        <%= heroicon "credit-card", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Subscription
-      <% end %>
-    </li>
-    <li>
-      <%= link_to profile_settings_path,
-            class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-            aria: { selected: section == :profile } do %>
-        <%= heroicon "user", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-        Profile
-      <% end %>
+      <details class="group" <%= "open" if business_sections.values.any? { |_, key| key == section } %>>
+        <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
+          Business
+          <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>
+        </summary>
+        <ul class="flex flex-col gap-0.5">
+          <% business_sections.each do |label, (path, key, icon)| %>
+            <li>
+              <%= link_to path,
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    aria: { selected: section == key } do %>
+                <% if icon.end_with?(".svg") %>
+                  <%= image_tag icon, class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
+                <% else %>
+                  <%= heroicon icon, options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                <% end %>
+                <%= label %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </details>
     </li>
     <% if Current.user&.admin? %>
       <li class="mt-2 border-t border-ink-900/10 pt-2">
-        <%= link_to admin_path,
-              class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-              aria: { selected: section == :admin } do %>
-          <%= heroicon "wrench-screwdriver", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-          Admin
-        <% end %>
-      </li>
-      <li>
-        <%= link_to "/admin",
-              class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
-              target: "_blank",
-              rel: "noopener" do %>
-          <%= heroicon "table-cells", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-          Active Admin
-          <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
-        <% end %>
-      </li>
-      <li>
-        <%= link_to "/jobs",
-              class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
-              target: "_blank",
-              rel: "noopener" do %>
-          <%= heroicon "queue-list", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-          Jobs
-          <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
-        <% end %>
+        <details class="group" <%= "open" if section == :admin %>>
+          <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
+            Admin
+            <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>
+          </summary>
+          <ul class="flex flex-col gap-0.5">
+            <li>
+              <%= link_to admin_path,
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    aria: { selected: section == :admin } do %>
+                <%= heroicon "wrench-screwdriver", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Dashboard
+              <% end %>
+            </li>
+            <li>
+              <%= link_to "/admin",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    target: "_blank",
+                    rel: "noopener" do %>
+                <%= heroicon "table-cells", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Active Admin
+                <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
+              <% end %>
+            </li>
+            <li>
+              <%= link_to "/jobs",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    target: "_blank",
+                    rel: "noopener" do %>
+                <%= heroicon "queue-list", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Jobs
+                <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
+              <% end %>
+            </li>
+          </ul>
+        </details>
       </li>
     <% end %>
   </ul>
