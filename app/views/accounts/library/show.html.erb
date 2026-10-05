@@ -91,8 +91,7 @@
         <% if made && !run.recipe&.stitch? %>
           <%= render "accounts/recipe_runs/options", record: run, rows: [
                 [ "Recipe", ("Deleted" unless run.recipe) ],
-                [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ],
-                [ "Extra prompt", run.extra_prompt ]
+                [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]
               ] %>
         <% end %>
         <% if (sources = run.source_media).any? %>
@@ -125,7 +124,7 @@
         <% else %>
           <ul class="-mx-2 mt-1 flex flex-col gap-0.5">
             <% recipes.each do |recipe| %>
-              <li><%= render "accounts/recipes/row", recipe:, path: new_recipe_run_path(recipe, media_ids: { recipe.slot_for(@media) => @media.id }) %></li>
+              <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe, media_ids: { recipe.slot_for(@media) => @media.id }) %></li>
             <% end %>
           </ul>
         <% end %>

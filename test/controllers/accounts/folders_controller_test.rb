@@ -54,8 +54,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
     assert_select "[id^=library-media-move-]", count: 0
-    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(recipes(:cinematic))
-    assert_select "aside[aria-label=Recipes] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
+    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", recipe_path(recipes(:cinematic))
+    assert_select "aside[aria-label=Recipes] a[href=?]", recipe_path(recipes(:before_after)), count: 0
     assert_select "[id^=folder-rename-]", count: 0
   end
 
@@ -67,8 +67,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
     assert_select "main a[href=?]", library_item_path(collage.generated_media)
     assert_select "main a[href=?]", library_item_path(poster.generated_media), count: 0
-    assert_select "section[aria-labelledby=folder-recipes-write] a[href=?]", new_recipe_run_path(collage.recipe)
-    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(collage.recipe), count: 0
+    assert_select "section[aria-labelledby=folder-recipes-write] a[href=?]", recipe_path(collage.recipe)
+    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", recipe_path(collage.recipe), count: 0
   end
 
   test "admin creates, renames and deletes a subfolder; deleting moves its media up" do

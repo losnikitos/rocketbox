@@ -1,4 +1,4 @@
-<%# locals: (recipe:, f: nil, example: nil) %>
+<%# locals: (recipe:, f:, example:) %>
 <header class="flex items-start gap-6">
   <%= example %>
   <div class="min-w-0 flex-1 space-y-3">
@@ -7,32 +7,15 @@
       <span class="mx-1">/</span>
       <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
     </nav>
-    <div class="flex flex-wrap items-start gap-6">
-      <% group_css, name_css = "py-0.5 text-sm font-medium text-ink-500", "py-0.5 text-2xl font-semibold text-ink-900" %>
-      <div class="min-w-0 flex-1">
-        <% if f %>
-          <% inline = "-mx-2 block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
-          <%= f.text_field :group, list: "recipe_groups", placeholder: "Ungrouped", "aria-label": "Group", class: "#{inline} #{group_css}" %>
-          <datalist id="recipe_groups">
-            <% Recipe.groups.each do |group| %>
-              <option value="<%= group %>"></option>
-            <% end %>
-          </datalist>
-          <h1><%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Recipe name", "aria-label": "Name", class: "#{inline} #{name_css}" %></h1>
-        <% else %>
-          <p class="<%= group_css %>"><%= recipe.group || "Ungrouped" %></p>
-          <h1 class="<%= name_css %>"><%= recipe.name %></h1>
+    <div class="min-w-0">
+      <% inline = "-mx-2 block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+      <%= f.text_field :group, list: "recipe_groups", placeholder: "Ungrouped", "aria-label": "Group", class: "#{inline} py-0.5 text-sm font-medium text-ink-500" %>
+      <datalist id="recipe_groups">
+        <% Recipe.groups.each do |group| %>
+          <option value="<%= group %>"></option>
         <% end %>
-      </div>
-      <% if recipe.persisted? %>
-        <% label, path, icon, color = controller_path == "accounts/recipe_runs" ?
-             [ "Edit", edit_recipe_path(recipe), "pencil", "text-blue-600" ] :
-             [ "Run", new_recipe_run_path(recipe), "play", "text-signal-green" ] %>
-        <%= link_to path, class: "rb-btn-ghost-on-light ml-auto gap-2 text-base" do %>
-          <%= heroicon icon, variant: :solid, options: { class: "size-5 #{color}", "aria-hidden": true } %>
-          <%= label %>
-        <% end %>
-      <% end %>
+      </datalist>
+      <h1><%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Recipe name", "aria-label": "Name", class: "#{inline} py-0.5 text-2xl font-semibold text-ink-900" %></h1>
     </div>
   </div>
 </header>

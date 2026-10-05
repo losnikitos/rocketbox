@@ -1,9 +1,54 @@
-<%# locals: (input:, index:) %>
-<%# One input: a folder. Remove drops the row; the last row stays. %>
-<div class="group/input flex items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-  <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: input["folder_id"], label: "Input #{index + 1} folder" %>
-  <button type="button" aria-label="Remove input" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
-          onclick="this.parentElement.remove()">
-    <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-  </button>
+<%# locals: (folder:, photos:, index:, picked:) %>
+<%# One input: a folder, then the media a run takes from it. Picking a folder or removing the row refreshes the
+    inputs; the last row stays. `index` is nil for a row just added, until that refresh. %>
+<% label = index ? "Input #{index + 1}" : "New input" %>
+<div role="group" aria-label="<%= label %>" class="group/input space-y-2"
+     onchange="event.target.type == 'hidden' && this.closest('form').requestSubmit(this.closest('form').elements.refresh_inputs)">
+  <div class="flex items-center gap-2">
+    <% if index %><span class="text-sm font-medium text-ink-700"><%= index + 1 %>.</span><% end %>
+    <div class="flex min-w-0 flex-1 items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+      <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: folder&.id, label: "#{label} folder" %>
+      <button type="button" aria-label="Remove <%= label.downcase %>" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
+              onclick="const form = this.form; this.closest('[role=group]').remove(); form.requestSubmit(form.elements.refresh_inputs)">
+        <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      </button>
+    </div>
+  </div>
+  <% if folder && photos.any? %>
+    <% selected = picked[index] ||= (photos - picked).sample || photos.sample %>
+    <% popover_id = "media-pick-#{index}" %>
+    <div data-controller="media-pick" class="group">
+      <div class="flex gap-2">
+        <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
+                aria-label="Choose <%= folder.name.downcase %>"
+                class="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1 rounded-xl border border-ink-900/10 bg-white p-1.5 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+          <span data-media-pick-target="preview" class="block size-14 shrink-0 overflow-hidden rounded-lg">
+            <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover" %>
+          </span>
+          <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
+        </button>
+        <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light shrink-0 gap-1.5 px-3 py-1.5">
+          <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          Random
+        </button>
+      </div>
+      <div id="<%= popover_id %>" popover data-media-pick-target="popover"
+           style="position-anchor: --<%= popover_id %>"
+           class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-96 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg">
+        <div class="grid grid-cols-4 gap-2">
+          <% photos.each do |media| %>
+            <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+              <%= radio_button_tag "media_ids[#{index}]", media.id, media == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
+              <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover" %>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% elsif folder %>
+    <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
+      No media in <%= render "accounts/recipes/slot", folder: %>.
+      <%= link_to "Add some", folder_path(folder), class: "underline hover:text-ink-900" %>
+    </p>
+  <% end %>
 </div>

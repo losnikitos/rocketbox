@@ -64,9 +64,7 @@ Rails.application.routes.draw do
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end
-      resources :recipes, except: :show do
-        resources :runs, only: %i[new create], controller: "recipe_runs"
-      end
+      resources :recipes, except: :edit
       resources :features, only: %i[index show update] do
         post :generate, on: :member
       end

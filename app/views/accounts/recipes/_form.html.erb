@@ -1,6 +1,7 @@
 <%# locals: (recipe:) %>
 <% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
+<% refresh_url = recipe.persisted? ? recipe_path(recipe) : new_recipe_path %>
 <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
   <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden" %>
   <% if recipe.errors.any? %>
@@ -30,17 +31,20 @@
   <div class="grid items-start gap-6 @4xl:grid-cols-3">
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
-      <div class="<%= island %>">
+      <%# A folder or toggle change reloads just this frame through the hidden refresh button. %>
+      <turbo-frame id="recipe_inputs" target="_top" class="block <%= island %>">
+        <% refresh = "this.form.requestSubmit(this.form.elements.refresh_inputs)" %>
         <div>
-          <div id="recipe_inputs" class="space-y-2">
-            <% (recipe.inputs.presence || [ {} ]).each_with_index do |input, index| %>
-              <%= render "accounts/recipes/input", input:, index: %>
+          <% picked = @slots.each_with_index.map { |(_, photos), index| photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } } %>
+          <div id="recipe_input_list" class="space-y-4">
+            <% (@slots.presence || [ [ nil, [] ] ]).each_with_index do |(folder, photos), index| %>
+              <%= render "accounts/recipes/input", folder:, photos:, index:, picked: %>
             <% end %>
           </div>
+          <template id="recipe_input_template"><%= render "accounts/recipes/input", folder: nil, photos: [], index: nil, picked: [] %></template>
           <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
-                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), trigger = row.querySelector('button');
-                           row.querySelector('input').value = ''; trigger.ariaLabel = trigger.ariaLabel.replace(/\d+/, rows.children.length + 1);
-                           rows.append(row); trigger.focus()">
+                  onclick="const rows = document.getElementById('recipe_input_list');
+                           rows.append(document.getElementById('recipe_input_template').content.cloneNode(true)); rows.lastElementChild.querySelector('button').focus()">
             <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
             Add input
           </button>
@@ -51,7 +55,7 @@
           <% chip_css = "flex size-5 items-center justify-center rounded border" %>
           <div class="<%= row_css %>">
             <label class="<%= toggle_css %> flex-1 pr-3">
-              <%= f.check_box :takes_style, class: "size-4 accent-rocket" %>
+              <%= f.check_box :takes_style, class: "size-4 accent-rocket", onchange: refresh %>
               <span class="<%= chip_css %> border-violet-300 bg-violet-50 text-violet-600">
                 <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
               </span>
@@ -62,18 +66,29 @@
           <div class="<%= row_css %>">
             <label class="<%= toggle_css %> border-r border-ink-900/10 bg-stone-50 pr-3">
               <input type="checkbox" <%= "checked" if recipe.shot_group %> class="size-4 accent-rocket"
-                     onchange="this.closest('div').querySelector('select').disabled = !this.checked">
+                     onchange="this.closest('div').querySelector('select').disabled = !this.checked; <%= refresh %>">
               <span class="<%= chip_css %> border-amber-300 bg-amber-50 text-amber-600">
                 <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
               </span>
               <span class="font-medium text-ink-900">Shot</span>
             </label>
             <%= hidden_field_tag "recipe[shot_group]", "", id: nil %>
-            <%= f.select :shot_group, Shot.groups, {}, disabled: recipe.shot_group.nil?, "aria-label": "Shot group",
+            <%= f.select :shot_group, Shot.groups, {}, disabled: recipe.shot_group.nil?, "aria-label": "Shot group", onchange: refresh,
                   class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0 disabled:cursor-default" %>
           </div>
+          <% if @styles %>
+            <%= render "accounts/recipe_runs/pick", name: :style_id, label: "Style", items: @styles,
+                  selected: @styles.find { it.id.to_s == params[:style_id] } || @styles.sample,
+                  empty: safe_join([ "No styles yet. ", link_to("Add some", styles_path, class: "underline hover:text-ink-900") ]) %>
+          <% end %>
+          <% if @shots %>
+            <%= render "accounts/recipe_runs/pick", name: :shot_id, label: "Shot", items: @shots,
+                  selected: @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample,
+                  empty: safe_join([ "No #{recipe.shot_group} shots yet. ", link_to("Add some", shots_path(group: recipe.shot_group), class: "underline hover:text-ink-900") ]) %>
+          <% end %>
         </div>
-      </div>
+        <%= tag.button name: "refresh_inputs", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "recipe_inputs" } %>
+      </turbo-frame>
     </section>
 
     <section class="space-y-2">
@@ -111,8 +126,7 @@
           <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
         </div>
         <div class="<%= ai_only %>">
-          <%= render "shared/generation_options", record: recipe, scope: "recipe",
-                refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
+          <%= render "shared/generation_options", record: recipe, scope: "recipe", refresh_url: %>
         </div>
       </div>
     </section>
@@ -127,18 +141,47 @@
                   label: "Output folder", roots: Folder.roots.where(slug: "photobank") %>
           </div>
         </div>
+
+        <% if recipe.persisted? %>
+          <div class="grid grid-cols-2 gap-2">
+            <%= f.button name: "commit", value: "save_run", class: "rb-btn-primary col-span-2 gap-1.5 px-3.5 py-2" do %>
+              <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              Save and Run
+            <% end %>
+            <%= f.button "Run", name: "commit", value: "run", class: "rb-btn-ghost-on-light px-3.5 py-2" %>
+            <%= f.button "Save", name: "commit", value: "save", class: "rb-btn-ghost-on-light px-3.5 py-2" %>
+          </div>
+
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="text-sm font-semibold text-ink-900">Made with <%= recipe.name_was %></h2>
+            <% if @made.any? %>
+              <%= link_to "View all", folder_path(recipe.output_folder, recipe: recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+            <% end %>
+          </div>
+          <% if @made.any? %>
+            <ul class="grid grid-cols-3 gap-3">
+              <% @made.limit(24).each do |media| %>
+                <li class="min-w-0">
+                  <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                    <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover" %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-sm text-ink-500">Nothing made yet.</p>
+          <% end %>
+        <% else %>
+          <%= f.button "Save", class: "rb-btn-primary w-full px-3.5 py-2" %>
+        <% end %>
       </div>
     </section>
   </div>
 
-  <div class="flex items-center justify-between gap-2">
-    <% if recipe.persisted? %>
+  <% if recipe.persisted? %>
+    <div class="flex justify-end">
       <%= link_to "Remove", recipe_path(recipe), data: { turbo_method: :delete, turbo_confirm: "Remove this recipe?" },
             class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
-    <% end %>
-    <div class="ml-auto flex items-center gap-2">
-      <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
-      <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
     </div>
-  </div>
+  <% end %>
 <% end %>

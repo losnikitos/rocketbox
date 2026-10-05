@@ -17,6 +17,7 @@ export default class extends Controller {
 
   pick({ currentTarget }) {
     this.inputTarget.value = currentTarget.value
+    this.inputTarget.dispatchEvent(new Event("change", { bubbles: true }))
     this.show()
     this.popoverTarget.hidePopover()
   }

@@ -156,7 +156,7 @@
           <% if recipes.any? %>
             <ul class="flex flex-col gap-0.5">
               <% recipes.each do |recipe| %>
-                <li><%= render "accounts/recipes/row", recipe:, path: new_recipe_run_path(recipe) %></li>
+                <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe) %></li>
               <% end %>
             </ul>
           <% else %>

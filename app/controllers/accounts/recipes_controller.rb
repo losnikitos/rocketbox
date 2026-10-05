@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 module Accounts
+  # A recipe's page edits it inline and runs it: one library media per input (and a style and a shot, if it takes them).
+  # Update's `commit` picks the action: "save", "run" (the form as given, for this run only) or "save_run".
+  # `media_ids[i]` preselects input i, e.g. from a media page.
   class RecipesController < ApplicationController
     layout "app"
 
     before_action :authenticate_admin!
-    before_action :set_recipe, only: %i[edit update destroy]
+    before_action :set_recipe, only: %i[show update destroy]
 
     def index
       @recipes = Recipe.with_attached_example.order(created_at: :desc)
@@ -16,28 +19,40 @@ module Accounts
 
     def new
       @recipe = Recipe.new(draft_params)
+      set_picks
     end
 
     def create
       @recipe = Recipe.new(recipe_params)
       if @recipe.save
-        redirect_to recipes_path, notice: "Recipe added."
+        redirect_to recipe_path(@recipe), notice: "Recipe added."
       else
+        set_picks
         render :new, status: :unprocessable_entity
       end
     end
 
-    def edit
+    def show
       @recipe.assign_attributes(draft_params)
       @recipe.fill_options
+      set_picks
     end
 
     def update
-      if @recipe.update(recipe_params)
-        redirect_to recipes_path, notice: "Recipe saved."
-      else
-        render :edit, status: :unprocessable_entity
-      end
+      adhoc = params[:commit] == "run"
+      @recipe.assign_attributes(adhoc ? recipe_params.except(:example) : recipe_params)
+      adhoc ? @recipe.validate!(:run) : @recipe.save!
+      # Save, or a drop into a group on the index.
+      return redirect_back_or_to recipe_path(@recipe), notice: "Recipe saved." unless adhoc || params[:commit] == "save_run"
+
+      set_picks
+      media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
+      run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), style: @styles&.find_by(id: params[:style_id]))
+      redirect_to helpers.library_item_path(run.generated_media)
+    rescue ActiveRecord::RecordInvalid => e
+      e.record.errors.full_messages.each { @recipe.errors.add(:base, it) } unless e.record == @recipe
+      set_picks
+      render :show, status: :unprocessable_entity
     end
 
     def destroy
@@ -51,11 +66,20 @@ module Accounts
         @recipe = Recipe.find(params[:id])
       end
 
+      # What a run picks from, per the recipe as given.
+      def set_picks
+        library = Current.account.library_media.with_attached_file.order(created_at: :desc)
+        @slots = @recipe.slots.map { |folder| [ folder, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
+        @shots = Shot.where(group: @recipe.shot_group).ordered.with_attached_examples if @recipe.shot_group
+        @styles = Style.ordered.with_attached_examples if @recipe.takes_style?
+        @made = library.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id }).includes(:recipe_run) if @recipe.persisted?
+      end
+
       def recipe_params
         params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :takes_style, :output_folder_id, :example, inputs: [ %i[folder_id] ], options: {} ])
       end
 
-      # The options refresh resubmits the form as a GET; the example waits for the save.
+      # The refreshes resubmit the form as a GET; the example waits for the save.
       def draft_params = params[:recipe] ? recipe_params.except(:example) : {}
   end
 end

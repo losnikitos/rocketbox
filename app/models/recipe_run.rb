@@ -5,8 +5,9 @@ require "csv"
 # A recipe applied to library media, one per recipe input. The result lands in the recipe's output folder, created
 # up front so a running or failed run already has a page; GenerateJob attaches its file when the AI call finishes.
 # A run without a recipe records a version the owner dropped onto a media themselves; it never runs.
-# `options` start from the recipe's (see GenerationOptions). `extra_prompt` is appended to the recipe body.
-# `prompt` keeps the text as sent, as the recipe, shot and style may change later.
+# `options` start from the recipe's (see GenerationOptions).
+# `prompt` is set on start from the recipe as given, so a run with unsaved edits sends them; it also keeps the text
+# as sent, as the recipe, shot and style may change later.
 class RecipeRun < ApplicationRecord
   include GenerationOptions
 
@@ -46,6 +47,7 @@ class RecipeRun < ApplicationRecord
   def start!
     first = source_media.first
     build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", folder: recipe.output_folder)
+    self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") unless recipe.stitch?
     save!
     GenerateJob.perform_later(self)
     self
@@ -58,7 +60,6 @@ class RecipeRun < ApplicationRecord
       return update!(status: "complete", error: nil)
     end
     opts = ai_options
-    self.prompt = [ recipe.body, shot&.body, style&.body, extra_prompt ].compact_blank.join("\n\n")
     images = source_media.map { it.file.blob }
     args = { model: opts[:model], provider: opts[:provider], provider_options: opts.except(:provider, :model) }
     if video?

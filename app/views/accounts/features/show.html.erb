@@ -100,7 +100,7 @@
             <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
               <% if @recipe %>
                 No <%= @recipe.name %> photos in Ready.
-                <%= link_to "Make some", new_recipe_run_path(@recipe), class: "underline hover:text-ink-900" %>
+                <%= link_to "Make some", recipe_path(@recipe), class: "underline hover:text-ink-900" %>
               <% else %>
                 Pick a background photo recipe above.
               <% end %>

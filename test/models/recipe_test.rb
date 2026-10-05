@@ -44,14 +44,16 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
-  test "run! paints every input in order with the recipe's options, overridden per run, into the output folder" do
+  test "run! paints every input in order with the recipe as given, unsaved edits included, into the output folder" do
     calls = []
     RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|
       calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 })
     end
     @recipe.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
-    run = @recipe.run!(media: [ @interior, @customer ], extra_prompt: "Warmer.", options: { "quality" => "low" })
+    @recipe.assign_attributes(body: "Compose a collage.\n\nWarmer.", options: @recipe.options.merge("quality" => "low"))
+    run = @recipe.run!(media: [ @interior, @customer ])
+    assert_equal "Compose a collage.", @recipe.reload.body
     media = run.generated_media
 
     assert_equal [ folders(:ready), @user, "running" ], [ media.folder, media.user, run.status ]

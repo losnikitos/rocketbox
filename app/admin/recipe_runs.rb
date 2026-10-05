@@ -19,7 +19,6 @@ ActiveAdmin.register RecipeRun do
       row(:source_media) { |run| safe_join(run.source_media.map { auto_link(it) }, ", ") }
       row :generated_media
       row :shot
-      row :extra_prompt
       row :prompt
       row :status
       row :error

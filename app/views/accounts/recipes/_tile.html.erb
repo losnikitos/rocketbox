@@ -12,7 +12,7 @@
       <% end %>
     </div>
   <% end %>
-  <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex flex-col items-start", draggable: "true", data: { move_url: recipe_path(recipe) } do %>
+  <%= link_to recipe_path(recipe), class: "absolute inset-0 flex flex-col items-start", draggable: "true", data: { move_url: recipe_path(recipe) } do %>
     <span class="w-full p-4 pr-12 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
       <%= recipe.name %>
     </span>

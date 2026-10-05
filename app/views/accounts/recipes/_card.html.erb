@@ -10,7 +10,7 @@
     </div>
     <p class="line-clamp-4 text-sm text-ink-600"><%= recipe.body %></p>
     <% if Current.user&.admin? %>
-      <%= link_to "Edit recipe", edit_recipe_path(recipe), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
+      <%= link_to "Open recipe", recipe_path(recipe), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
     <% end %>
   </div>
 </section>

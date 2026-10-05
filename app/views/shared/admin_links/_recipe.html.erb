@@ -3,11 +3,6 @@
 <% if Current.user&.admin? && recipe.present? %>
   <%= render layout: "shared/admin_links/menu", locals: { popover_id: "recipe-admin-links-#{recipe.id}", align: local_assigns.fetch(:align, :right) } do %>
     <%= render "shared/admin_links/item",
-        path: edit_recipe_path(recipe),
-        label: "Edit",
-        icon: "pencil",
-        chip: "bg-blue-600" %>
-    <%= render "shared/admin_links/item",
         path: recipe_path(recipe),
         label: "Remove",
         icon: "trash",

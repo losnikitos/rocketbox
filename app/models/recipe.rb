@@ -45,6 +45,8 @@ class Recipe < ApplicationRecord
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, "must be a single photo to make a video") if video? && inputs.size > 1
   end
+  # A run of unsaved edits: its job reloads the recipe, so it would run the saved kind and effect.
+  validate(on: :run) { errors.add(:base, "Save to change the type.") if kind_changed? || effect_changed? }
 
   scope :ordered, -> { order(:name) }
 
@@ -65,12 +67,10 @@ class Recipe < ApplicationRecord
   # The index of the first slot the media fits, or nil.
   def slot_for(media) = folder_ids.index(media.folder_id)
 
-  # `media` fill the slots in order; `shot` is from the recipe's shot group; `style` if it takes one; `options` override the recipe's.
+  # `media` fill the slots in order; `shot` is from the recipe's shot group; `style` if it takes one.
+  # Runs the recipe as it is in memory, unsaved edits included (see RecipeRun#start!).
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
-  def run!(media:, shot: nil, style: nil, extra_prompt: nil, options: {})
-    run = runs.new(shot:, style:, extra_prompt:, inputs: media.each_with_index.map { |item, position| RecipeRunInput.new(library_media: item, position:) })
-    # Set after the defaults fill in, so an unavailable pick fails validation instead of being dropped.
-    run.options = run.options.merge(options.to_h.stringify_keys)
-    run.start!
+  def run!(media:, shot: nil, style: nil)
+    runs.new(shot:, style:, inputs: media.each_with_index.map { |item, position| RecipeRunInput.new(library_media: item, position:) }).start!
   end
 end
