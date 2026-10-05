@@ -55,16 +55,7 @@ module AppHelper
     when "accounts/layers"
       [ :layers, "Layers", [] ]
     when "accounts/recipes", "accounts/recipe_runs"
-      index = controller_path == "accounts/recipes" && action_name == "index"
-      recipes = Recipe.all.to_a
-      [ :recipes, "Recipes", [
-        [ recipes_path, "All", index && params[:source].blank?, recipes.size ],
-        :separator,
-        *Recipe.by_source(recipes).flat_map do |group|
-          source = group.first.source
-          [ (:separator if source == "multiple"), [ recipes_path(source:), group.first.source_label, index && params[:source] == source, group.size ] ].compact
-        end
-      ] ]
+      [ :recipes, "Recipes", [] ]
     when "accounts/features"
       [ :features, "Features", [] ]
     when "accounts/styles"

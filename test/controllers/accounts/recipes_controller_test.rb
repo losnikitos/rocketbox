@@ -28,8 +28,6 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(recipe)}" do
       assert_select "img[alt='a.jpg']"
       assert_select "a[href=?]", new_recipe_run_path(recipe, account: @admin.id), text: "Team collage"
-      assert_select "ul[aria-label=Inputs] li a[href=?]", library_folders_path("photobank", "interior", account: @admin.id), text: "Photobank / Interior"
-      assert_select "[aria-label=Output] a[href=?]", library_folders_path("photobank", "ready", account: @admin.id), text: "Photobank / Ready"
       assert_select "[popover] a[href=?]", edit_recipe_path(recipe, account: @admin.id)
       assert_select "[popover] a[href^='/app/recipes/#{recipe.id}?'][data-turbo-method=delete]"
     end
@@ -85,29 +83,13 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Aspect ratio 2:1 isn't available/
   end
 
-  test "index tabs filter by input folder; recipes reading several go under multiple inputs" do
+  test "index lists recipes newest first" do
     @admin = sign_in_as(users(:admin_user))
     reel = Recipe.create!(name: "Reel", kind: "stitch", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
-    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
 
     get recipes_url(account: @admin.id)
-    headers = css_select("section h2").map(&:text)
-    assert_includes headers, "Photobank / Interior"
-    assert_equal "Multiple inputs", headers.last
-    assert_select "section", text: /Multiple inputs.*Collage/m
-
-    get recipes_url(account: @admin.id, source: folders(:interior).id.to_s)
-    assert_select "section h2", count: 0
-    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: %r{Inbox / Interior\s+1}
-    assert_select "nav[aria-label='Secondary'] a[href=?]", recipes_path(source: folders(:photobank_interior).id.to_s, account: @admin.id), text: %r{Photobank / Interior\s+1}
-    assert_select "nav[aria-label='Secondary'] a", text: /Multiple inputs\s+1/
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(account: @admin.id)
-    assert_select "##{dom_id(recipes(:cinematic))}"
-    assert_select "##{dom_id(reel)}", count: 0
-
-    get recipes_url(account: @admin.id, source: "multiple")
-    assert_select "##{dom_id(collage)}"
-    assert_select "##{dom_id(reel)}", count: 0
+    assert_equal dom_id(reel), css_select("main li[id^='recipe_']").first["id"]
+    assert_select "nav[aria-label='Secondary']", count: 0
   end
 
   private

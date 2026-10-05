@@ -7,80 +7,36 @@
 <% end %>
 
 <% if @recipes.any? %>
-  <% chip = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs" %>
-  <% slot_link = "inline-flex rounded-full hover:*:border-ink-900/30" %>
-  <% arrow = capture { heroicon "arrow-right", variant: :mini, options: { class: "hidden size-5 shrink-0 text-ink-300 lg:block", "aria-hidden": true } } %>
-  <div class="space-y-8">
-    <% Recipe.by_source(@recipes).each do |group| %>
-      <section class="space-y-3">
-        <% if params[:source].blank? %>
-          <h2 class="text-sm font-bold text-ink-900"><%= group.first.source_label %></h2>
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
+    <% @recipes.each do |recipe| %>
+      <% examples = recipe.examples.first(5) %>
+      <% slides = examples + @made.fetch(recipe.id, []).first(5 - examples.size) %>
+      <% covered = slides.any? %>
+      <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+          data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+        <% slides.each_with_index do |slide, index| %>
+          <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+            <% if slide.is_a?(LibraryMedia) %>
+              <%= render "accounts/library/file", media: slide, css: "size-full object-cover" %>
+            <% else %>
+              <%= render "example", example: slide, css: "size-full object-cover" %>
+            <% end %>
+          </div>
         <% end %>
-        <ul class="space-y-3">
-          <% group.each do |recipe| %>
-            <% slots = recipe.slots %>
-            <% kind_label, kind_icon = Recipe::KINDS[recipe.kind] %>
-            <% settings = recipe.stitch? ? [ recipe.effect == "doppler" ? "Doppler" : "1 s each" ] :
-                 [ *recipe.options.values_at("model", "aspect_ratio", "resolution"), recipe.options["duration"]&.then { "#{it} s" } ].compact_blank %>
-            <li id="<%= dom_id(recipe) %>" class="group relative rounded-2xl border border-ink-900/10 bg-stone-50">
-              <div class="py-3 pr-12 pl-4">
-                <%= link_to recipe.name, new_recipe_run_path(recipe), class: "text-sm font-semibold text-ink-900 hover:underline" %>
-              </div>
-              <div class="flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
-                <ul class="flex flex-col items-start gap-1.5 lg:flex-1" aria-label="Inputs">
-                  <% slots.each do |folder| %>
-                    <li><%= folder ? link_to(render("slot", folder:), folder_path(folder), class: slot_link) : render("slot", folder:) %></li>
-                  <% end %>
-                  <% if (media = @source_media[recipe.source]&.presence) %>
-                    <li><%= render "thumbs", media: %></li>
-                  <% end %>
-                  <% if recipe.takes_style? %>
-                    <li class="<%= chip %> border-violet-200 bg-violet-50 text-violet-700">
-                      <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                      Style
-                    </li>
-                  <% end %>
-                  <% if recipe.shot_group %>
-                    <li class="<%= chip %> border-amber-200 bg-amber-50 text-amber-700">
-                      <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                      <%= recipe.shot_group %> shot
-                    </li>
-                  <% end %>
-                </ul>
-
-                <%= arrow %>
-
-                <div class="min-w-0 flex-1 space-y-2">
-                  <p class="line-clamp-2 text-xs text-ink-500"><%= recipe.body %></p>
-                  <ul class="flex flex-wrap gap-1.5" aria-label="Settings">
-                    <li class="<%= chip %> border-transparent bg-ink-900/5 font-medium text-ink-900">
-                      <%= heroicon kind_icon, variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-                      <%= kind_label %>
-                    </li>
-                    <% settings.each do |setting| %>
-                      <li class="<%= chip %> border-ink-900/10 text-ink-600"><%= setting %></li>
-                    <% end %>
-                  </ul>
-                </div>
-
-                <%= arrow %>
-
-                <div class="space-y-2 lg:flex-1" role="group" aria-label="Output">
-                  <%= link_to render("slot", folder: recipe.output_folder), folder_path(recipe.output_folder), class: slot_link %>
-                  <% examples = recipe.examples.first(5) %>
-                  <%= render "thumbs", examples:, media: @made.fetch(recipe.id, []).first(5 - examples.size) %>
-                </div>
-              </div>
-
-              <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
-                <%= render "shared/admin_links/recipe", recipe: %>
-              </div>
-            </li>
+        <%= link_to new_recipe_run_path(recipe), class: "absolute inset-0 flex flex-col items-start" do %>
+          <span class="w-full p-4 pr-12 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+            <%= recipe.name %>
+          </span>
+          <% unless covered %>
+            <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= recipe.body %></span>
           <% end %>
-        </ul>
-      </section>
+        <% end %>
+        <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
+          <%= render "shared/admin_links/recipe", recipe: %>
+        </div>
+      </li>
     <% end %>
-  </div>
+  </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
     Add a recipe — a prompt that turns library media into new photos or videos.
