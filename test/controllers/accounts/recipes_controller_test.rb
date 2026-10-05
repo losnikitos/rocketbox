@@ -36,8 +36,11 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     get edit_recipe_url(recipe, account: @admin.id)
     assert_select "#recipe_inputs > div", 2
-    assert_select "select[name='recipe[inputs][][folder_id]'] option[selected][value=?]", folders(:customer).id.to_s
-    assert_select "select[name='recipe[output_folder_id]'] option[selected][value=?]", folders(:ready).id.to_s
+    assert_select "input[type=hidden][name='recipe[inputs][][folder_id]'][value=?]", folders(:customer).id.to_s
+    assert_select "#recipe_inputs button[value=?][aria-current=true]", folders(:customer).id.to_s, text: "Inbox / Customer" do
+      assert_select "svg.text-emerald-500"
+    end
+    assert_select "input[type=hidden][name='recipe[output_folder_id]'][value=?]", folders(:ready).id.to_s
     assert_select "input[type=hidden][name='recipe[examples][]'][form=recipe_form][value=?]", recipe.examples.first.signed_id
 
     patch recipe_url(recipe), params: { recipe: { kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], examples: [ "" ] } }

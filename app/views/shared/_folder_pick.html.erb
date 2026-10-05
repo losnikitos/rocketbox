@@ -1,0 +1,28 @@
+<%# locals: (name:, selected:, label:, roots: Folder.roots) %>
+<%# Folder dropdown: options and the closed state show the same chip as everywhere else (accounts/recipes/slot). %>
+<% roots = roots.ordered.includes(:children).to_a %>
+<% selected = roots.flat_map { [ it, *it.children ] }.find { it.id.to_s == selected.to_s } %>
+<div data-controller="folder-pick" class="group min-w-0 flex-1">
+  <%= hidden_field_tag name, selected&.id, id: nil, data: { folder_pick_target: "input" } %>
+  <template data-folder-pick-target="placeholder"><span class="text-ink-500">Choose folder</span></template>
+  <button type="button" data-folder-pick-target="trigger" aria-label="<%= label %>"
+          class="flex w-full min-w-0 cursor-pointer items-center gap-1 py-1.5 pr-2 pl-2.5 text-left text-sm focus:outline-none">
+    <span data-folder-pick-target="preview" class="flex min-h-5.5 min-w-0 flex-1 items-center">
+      <% if selected %><%= render "accounts/recipes/slot", folder: selected %><% else %><span class="text-ink-500">Choose folder</span><% end %>
+    </span>
+    <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
+  </button>
+  <div popover data-folder-pick-target="popover"
+       class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 min-w-60 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+    <% roots.each_with_index do |root, index| %>
+      <% if index.positive? %><div class="mx-2 my-1 h-px bg-ink-900/10" aria-hidden="true"></div><% end %>
+      <% [ root, *root.children ].each do |folder| %>
+        <%= tag.button type: "button", value: folder.id, aria: { current: ("true" if folder == selected) },
+              data: { folder_pick_target: "option", action: "folder-pick#pick" },
+              class: "flex w-full cursor-pointer rounded-lg px-2 py-1.5 text-left hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" do %>
+          <%= render "accounts/recipes/slot", folder: %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

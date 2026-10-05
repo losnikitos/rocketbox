@@ -1,16 +1,9 @@
 <%# locals: (input:, index:) %>
-<%# One input: a folder. Remove drops the row, or clears the last one. %>
-<div class="flex items-center overflow-hidden rounded-lg border border-ink-900/15 bg-white text-sm focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-  <span class="flex shrink-0 items-center self-stretch border-r border-ink-900/10 bg-stone-50 px-3">
-    <span class="flex size-5 items-center justify-center rounded border border-sky-300 bg-sky-50 text-sky-600">
-      <%= heroicon "folder", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-    </span>
-  </span>
-  <%= select_tag "recipe[inputs][][folder_id]", grouped_options_for_select(Folder.grouped_options, input["folder_id"]),
-        id: nil, include_blank: "—", "aria-label": "Input #{index + 1} folder",
-        class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0" %>
-  <button type="button" aria-label="Remove input" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900"
-          onclick="const row = this.parentElement; row.parentElement.children.length > 1 ? row.remove() : row.querySelector('select').value = ''">
+<%# One input: a folder. Remove drops the row; the last row stays. %>
+<div class="group/input flex items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+  <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: input["folder_id"], label: "Input #{index + 1} folder" %>
+  <button type="button" aria-label="Remove input" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
+          onclick="this.parentElement.remove()">
     <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
   </button>
 </div>

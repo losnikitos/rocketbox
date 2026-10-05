@@ -24,7 +24,7 @@
       <div class="<%= island %>">
         <% @slots.each_with_index do |(folder, photos), index| %>
           <fieldset data-controller="media-pick" class="group min-w-0">
-            <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= folder&.name || "Unknown folder" %><% if folder&.parent %> <span class="text-ink-500">· <%= folder.parent.name %></span><% end %></legend>
+            <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= render "accounts/recipes/slot", folder: %></legend>
             <% if photos.any? %>
               <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
               <% popover_id = "media-pick-#{index}" %>
@@ -56,7 +56,7 @@
               </div>
             <% else %>
               <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-                No media in <%= folder&.path || "this folder" %>.
+                No media in <%= render "accounts/recipes/slot", folder: %>.
                 <%= link_to "Add some", folder_path(folder), class: "underline hover:text-ink-900" if folder %>
               </p>
             <% end %>
@@ -117,6 +117,9 @@
           <%= heroicon @recipe.stitch? ? "scissors" : "sparkles", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
           <%= @recipe.stitch? ? "Stitch" : "Generate" %>
         <% end %>
+        <p class="flex items-center gap-1.5 text-sm text-ink-600">
+          Saves to <%= link_to render("accounts/recipes/slot", folder: @recipe.output_folder), folder_path(@recipe.output_folder), class: "inline-flex rounded-full hover:*:border-ink-900/30" %>
+        </p>
 
         <div class="flex items-baseline justify-between gap-3">
           <h2 class="text-sm font-semibold text-ink-900">Made with <%= @recipe.name %></h2>

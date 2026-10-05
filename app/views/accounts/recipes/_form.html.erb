@@ -32,9 +32,9 @@
             <% end %>
           </div>
           <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
-                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), folder = row.querySelector('select');
-                           folder.value = ''; folder.ariaLabel = folder.ariaLabel.replace(/\d+/, rows.children.length + 1);
-                           rows.append(row); folder.focus()">
+                  onclick="const rows = document.getElementById('recipe_inputs'), row = rows.lastElementChild.cloneNode(true), trigger = row.querySelector('button');
+                           row.querySelector('input').value = ''; trigger.ariaLabel = trigger.ariaLabel.replace(/\d+/, rows.children.length + 1);
+                           rows.append(row); trigger.focus()">
             <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
             Add input
           </button>
@@ -101,8 +101,11 @@
       <h2 id="output" class="<%= island_title %>"><a href="#output" class="hover:underline">Output</a></h2>
       <div class="<%= island %>">
         <div>
-          <%= f.label :output_folder_id, "Folder", class: tw_label_classes %>
-          <%= f.select :output_folder_id, grouped_options_for_select(Folder.grouped_options(roots: Folder.roots.where(slug: "photobank")), recipe.output_folder_id), {}, class: tw_input_classes %>
+          <p class="<%= tw_label_classes %>">Folder</p>
+          <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+            <%= render "shared/folder_pick", name: "recipe[output_folder_id]", selected: recipe.output_folder_id || Folder.ready.id,
+                  label: "Output folder", roots: Folder.roots.where(slug: "photobank") %>
+          </div>
         </div>
       </div>
     </section>

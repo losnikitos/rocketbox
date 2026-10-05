@@ -20,7 +20,9 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "input[name='media_ids[0]'][value=?][checked]", @media.id.to_s
     assert_select "input[name='media_ids[0]'][value=?]:not([checked])", other.id.to_s
-    assert_select "legend", text: /Interior\s+· Inbox/
+    assert_select "legend", text: /Inbox \/ Interior/ do
+      assert_select "svg.text-emerald-500"
+    end
     assert_select "input[name='recipe_run[options][model]'][value='grok-imagine-video-1.5'][checked]"
     assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("input[name='recipe_run[options][model]']").map { it["value"] }
     assert_select "a[href='/admin/models']", text: "Manage models"
