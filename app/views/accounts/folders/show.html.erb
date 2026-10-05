@@ -26,26 +26,11 @@
       </div>
     <% end %>
   <% end %>
-  <% if admin && @folder %>
-    <button type="button" popovertarget="rename-folder" style="anchor-name: --rename-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
-      <%= heroicon "pencil", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      Rename
-    </button>
-    <%= form_with url: folder_path(@folder), method: :patch, id: "rename-folder", html: { popover: "", style: "position-anchor: --rename-folder" },
-          class: "#{menu_css} right-[calc(anchor(right))] p-2" do |f| %>
-      <div class="flex gap-2">
-        <%= f.text_field "folder[name]", value: @folder.name, required: true, "aria-label": "Folder name", class: tw_input_classes %>
-        <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
-      </div>
-    <% end %>
-    <%= button_to folder_path(@folder), method: :delete,
-          form: { data: { turbo_confirm: delete_folder_confirm(@folder) } },
-          class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
-      <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      Delete
-    <% end %>
+  <% if @folder %>
+    <%= render "shared/admin_links/folder", folder: @folder, trigger_class: "cursor-pointer rounded-full p-2 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+  <% else %>
+    <%= render "shared/admin_links/folders" %>
   <% end %>
-  <%= render "shared/admin_links/folders" %>
 <% end %>
 
 <% if @folder %>

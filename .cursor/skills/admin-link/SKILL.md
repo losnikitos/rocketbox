@@ -29,7 +29,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Entity | Partial | Typical items |
 |--------|---------|-----------------|
 | Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Move to (opt-in submenu), Admin, Remove |
-| Folder | [`_folder`](/app/views/shared/admin_links/_folder.html.erb) | Color (submenu), Admin, Delete |
+| Folder | [`_folder`](/app/views/shared/admin_links/_folder.html.erb) | Rename (submenu), Color (submenu), Admin, Delete |
 | SMM post | [`_smm_post`](/app/views/shared/admin_links/_smm_post.html.erb) | Admin, Remove |
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Recipe | [`_recipe`](/app/views/shared/admin_links/_recipe.html.erb) | Edit, Remove |

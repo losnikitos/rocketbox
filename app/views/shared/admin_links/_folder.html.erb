@@ -1,7 +1,24 @@
-<%# Locals: folder %>
+<%# Locals: folder, align (optional), trigger_class (optional) %>
 <% folder = local_assigns[:folder] %>
 <% if Current.user&.admin? && folder.present? %>
-  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "folder-admin-links-#{folder.id}", align: local_assigns.fetch(:align, :right) } do %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "folder-admin-links-#{folder.id}", align: local_assigns.fetch(:align, :right), trigger_class: local_assigns[:trigger_class] }.compact do %>
+    <% submenu_css = "inset-auto m-0 top-[calc(anchor(top)-4px)] left-[calc(anchor(right)+4px)] [position-try-fallbacks:flip-inline,flip-block,flip-block_flip-inline] rounded-lg border border-ink-900/15 bg-white shadow-lg" %>
+    <% rename_id = "folder-rename-#{folder.id}#{admin_link_id_suffix}" %>
+    <button type="button" popovertarget="<%= rename_id %>" style="anchor-name: --<%= rename_id %>"
+            class="flex w-full cursor-pointer items-center gap-2 rounded px-3 py-2 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5">
+      <span class="flex items-center justify-center rounded p-1 text-white bg-ink-700">
+        <%= heroicon "pencil", variant: :micro, options: { class: "size-3.5" } %>
+      </span>
+      Rename
+      <%= heroicon "chevron-right", variant: :micro, options: { class: "ml-auto size-4 text-ink-400", "aria-hidden": true } %>
+    </button>
+    <%= form_with url: folder_path(folder), method: :patch, id: rename_id, html: { popover: "", style: "position-anchor: --#{rename_id}" },
+          class: "#{submenu_css} p-2" do |f| %>
+      <div class="flex gap-2">
+        <%= f.text_field "folder[name]", value: folder.name, required: true, "aria-label": "Folder name", class: tw_input_classes %>
+        <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
+      </div>
+    <% end %>
     <% color_id = "folder-color-#{folder.id}#{admin_link_id_suffix}" %>
     <button type="button" popovertarget="<%= color_id %>" style="anchor-name: --<%= color_id %>"
             class="flex w-full cursor-pointer items-center gap-2 rounded px-3 py-2 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5">
@@ -12,7 +29,7 @@
       <%= heroicon "chevron-right", variant: :micro, options: { class: "ml-auto size-4 text-ink-400", "aria-hidden": true } %>
     </button>
     <div id="<%= color_id %>" popover style="position-anchor: --<%= color_id %>"
-         class="inset-auto m-0 top-[calc(anchor(top)-4px)] left-[calc(anchor(right)+4px)] [position-try-fallbacks:flip-inline,flip-block,flip-block_flip-inline] min-w-32 whitespace-nowrap rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+         class="<%= submenu_css %> min-w-32 whitespace-nowrap p-1">
       <% Folder.colors.each_key do |color| %>
         <% current = folder.color == color %>
         <%= button_to folder_path(folder), method: :patch, params: { folder: { color: } },

@@ -56,7 +56,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "[id^=library-media-move-]", count: 0
     assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", new_recipe_run_path(recipes(:cinematic))
     assert_select "aside[aria-label=Recipes] a[href=?]", new_recipe_run_path(recipes(:before_after)), count: 0
-    assert_select "button[popovertarget=rename-folder]", count: 0
+    assert_select "[id^=folder-rename-]", count: 0
   end
 
   test "ready filters by recipe" do
@@ -85,7 +85,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "[id^=folder-admin-links-#{folder.id}-] a[href=?][data-turbo-method=delete]", library_folders_path("photobank", "team")
 
     get library_folders_url("photobank", "team", account: admin.id)
-    assert_select "form#rename-folder input[name='folder[name]'][value=Team]"
+    assert_select "form[id^=folder-rename-#{folder.id}-] input[name='folder[name]'][value=Team]"
+    assert_select "[id^=folder-admin-links-#{folder.id}-] a[href=?][data-turbo-method=delete]", library_folders_path("photobank", "team")
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?] button[disabled]", library_media_path(media), text: "Photobank / Team"
     assert_select "[id^=library-media-move-#{media.id}-] form[action^=?]", library_media_path(media), text: "Inbox / Interior"
     assert_select "#folder-media-#{media.id}[draggable=true][data-move-url^=?]", library_media_path(media)
@@ -112,7 +113,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
 
     get library_folders_url("clients", account: admin.id)
     assert_select "form#new-folder[action=?]", library_folders_path("clients", account: admin.id)
-    assert_select "form#rename-folder[action=?]", library_folders_path("clients", account: admin.id)
+    assert_select "form[id^=folder-rename-#{folder.id}-][action=?]", library_folders_path("clients", account: admin.id)
 
     patch library_folders_url("clients"), params: { folder: { name: "Customers" } }
     assert_equal [ "Customers", "clients" ], folder.reload.values_at(:name, :slug)
