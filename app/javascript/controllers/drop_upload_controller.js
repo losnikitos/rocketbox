@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Hidden multipart form: drop files anywhere on the nearest <main> to upload.
 // Dropping onto a [data-source-id] group attaches the files to that source.
+// Browsers expose dragged page images as "Files" too, so drags that start in the page are ignored.
 export default class extends Controller {
   static targets = ["input", "source"]
 
@@ -23,8 +24,16 @@ export default class extends Controller {
     this.highlight(null)
   }
 
+  internalStart() {
+    this.internal = true
+  }
+
+  internalEnd() {
+    this.internal = false
+  }
+
   dragover(event) {
-    if (!event.dataTransfer.types.includes("Files")) return
+    if (this.internal || !event.dataTransfer.types.includes("Files")) return
     event.preventDefault()
     this.zone.dataset.dragging = ""
     this.highlight(event.target.closest("[data-source-id]"))
@@ -37,7 +46,7 @@ export default class extends Controller {
   }
 
   drop(event) {
-    if (!event.dataTransfer.types.includes("Files")) return
+    if (this.internal || !event.dataTransfer.types.includes("Files")) return
     event.preventDefault()
     delete this.zone.dataset.dragging
     this.highlight(null)
