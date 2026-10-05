@@ -40,6 +40,22 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#folder-media-#{other.id}", count: 0
   end
 
+  test "recipes panel lists recipes reading from the folder and tag" do
+    cinematic, before_after = new_recipe_run_path(recipes(:cinematic)), new_recipe_run_path(recipes(:before_after))
+
+    get library_folders_url("inbox")
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", cinematic
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", before_after
+
+    get library_folders_url("inbox", tag: "interior")
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", cinematic
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a[href=?]", before_after, count: 0
+
+    get library_folders_url("photobank")
+    assert_select "aside[aria-labelledby=folder-recipes-heading] a", count: 0
+    assert_select "aside[aria-labelledby=folder-recipes-heading]", /No recipes use this folder/
+  end
+
   test "unknown folder is not found" do
     get "/app/library/folders/nope"
     assert_response :not_found

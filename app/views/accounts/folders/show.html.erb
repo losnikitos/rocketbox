@@ -22,7 +22,7 @@
   </ul>
 <% else %>
   <% tags = Tag.ordered.to_a %>
-  <div class="flex flex-col gap-6 sm:flex-row">
+  <div class="flex flex-col gap-6 sm:flex-row sm:flex-wrap lg:flex-nowrap">
     <nav aria-label="Tags" class="shrink-0 sm:w-44">
       <ul class="flex flex-col gap-0.5">
         <% [ [ library_folders_path(@collection), "All", params[:tag].blank?, @tag_counts.values.sum ],
@@ -87,5 +87,31 @@
         <p class="text-sm text-ink-600"><%= params[:tag].present? ? "Nothing with this tag here." : "This folder is empty." %></p>
       <% end %>
     </div>
+
+    <aside aria-labelledby="folder-recipes-heading" class="shrink-0 sm:w-full lg:w-72">
+      <h2 id="folder-recipes-heading" class="mb-2 px-2 text-sm font-bold text-ink-900">Recipes</h2>
+      <% if @recipes.any? %>
+        <ul class="flex flex-col gap-0.5">
+          <% @recipes.each do |recipe| %>
+            <li>
+              <%= link_to new_recipe_run_path(recipe), class: "flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
+                <% if (example = recipe.examples.first) %>
+                  <%= render "accounts/recipes/example", example:, css: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
+                <% else %>
+                  <span class="aspect-2/3 w-12 shrink-0 rounded-md bg-ink-900/5" aria-hidden="true"></span>
+                <% end %>
+                <span class="min-w-0 space-y-1">
+                  <span class="block truncate text-sm font-semibold text-ink-900"><%= recipe.name %></span>
+                  <span class="block text-xs text-ink-500"><%= Recipe::KINDS[recipe.kind].first %></span>
+                  <%= render "accounts/recipes/slot", collection: recipe.output_collection, tag: recipe.output_tag %>
+                </span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="px-2 text-sm text-ink-600"><%= params[:tag].present? ? "No recipes use this tag here." : "No recipes use this folder." %></p>
+      <% end %>
+    </aside>
   </div>
 <% end %>
