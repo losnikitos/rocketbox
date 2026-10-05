@@ -29,36 +29,6 @@
       </div>
       <% next %>
     <% end %>
-    <% if key == "style" %>
-      <div>
-        <div class="flex items-baseline justify-between gap-2">
-          <%= label_tag "#{scope}_options_style", "Style", class: tw_label_classes %>
-          <% if Current.user&.admin? %>
-            <%= link_to "Manage styles", styles_path, target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
-          <% end %>
-        </div>
-        <select name="<%= scope %>[options][style]" id="<%= scope %>_options_style"
-                class="flex w-full items-center gap-2 rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-left text-sm text-ink-900 [appearance:base-select] focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 [&::picker(select)]:mt-1 [&::picker(select)]:max-h-96 [&::picker(select)]:rounded-lg [&::picker(select)]:border [&::picker(select)]:border-ink-900/15 [&::picker(select)]:[appearance:base-select]">
-          <button class="min-w-0 flex-1 text-left"><selectedcontent class="flex min-w-0 items-center gap-2"></selectedcontent></button>
-          <% option_css = "flex min-w-0 items-center gap-2 px-2.5 py-1 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden" %>
-          <option value="" class="<%= option_css %>">
-            <span class="size-8 shrink-0 rounded-md bg-ink-900/5"></span>
-            <span class="text-ink-500">No style</span>
-          </option>
-          <% record.styles.each do |style| %>
-            <option value="<%= style.id %>" <%= "selected" if record.options["style"] == style.id.to_s %> class="<%= option_css %>">
-              <% if (example = style.examples.find(&:image?)) %>
-                <%= image_tag example.variant(resize_to_fill: [ 64, 64 ]), alt: "", class: "size-8 shrink-0 rounded-md object-cover" %>
-              <% else %>
-                <span class="size-8 shrink-0 rounded-md bg-ink-900/5"></span>
-              <% end %>
-              <span class="truncate"><%= style.name %></span>
-            </option>
-          <% end %>
-        </select>
-      </div>
-      <% next %>
-    <% end %>
     <% if key == "aspect_ratio" && record.provider == "openai" %>
       <fieldset>
         <legend class="<%= tw_label_classes %>">Aspect ratio</legend>

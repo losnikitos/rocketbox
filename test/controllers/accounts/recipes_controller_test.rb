@@ -59,7 +59,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal %w[generate_image generate_video stitch], css_select("input[name='recipe[kind]']").map { it["value"] }
     assert_select "turbo-frame#generation_options input[name='recipe[options][model]'][value='gpt-image-2.5-flare'][checked]"
     assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("input[name='recipe[options][model]']").map { it["value"] }
-    assert_select "select[name='recipe[options][style]']"
+    assert_select "input[type=checkbox][name='recipe[takes_style]']"
+    assert_select "select[name='recipe[shot_group]'][disabled]"
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_recipe_path(account: @admin.id)
 
     get new_recipe_url(account: @admin.id, recipe: { kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })

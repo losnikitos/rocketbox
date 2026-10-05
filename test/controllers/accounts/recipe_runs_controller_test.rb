@@ -92,6 +92,17 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='recipe_run[options][quality]'][value=''][checked]"
   end
 
+  test "a recipe taking a style offers every style as an input; the run keeps the pick" do
+    style = Style.create!(name: "Film", body: "35mm grain.")
+    recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", takes_style: true, inputs: [ { "collection" => "inbox", "tag_id" => tags(:interior).id } ])
+
+    get new_recipe_run_url(recipe, account: @admin.id)
+    assert_select "label:has(input[type=radio][name=style_id][value=?][checked])", style.id.to_s, text: /Film\s+35mm grain/
+
+    post recipe_runs_url(recipe), params: { media_ids: { 0 => @media.id }, style_id: style.id }
+    assert_equal style, @media.input_runs.sole.style
+  end
+
   test "rejects options xAI doesn't offer and media that don't fit the input" do
     assert_difference -> { RecipeRun.count } => 0, -> { LibraryMedia.count } => 0 do
       post recipe_runs_url(@recipe), params: { media_ids: { 0 => @media.id }, recipe_run: { options: { model: "grok-imagine-video-1.5", resolution: "8k" } } }

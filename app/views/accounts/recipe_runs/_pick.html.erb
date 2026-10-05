@@ -1,0 +1,32 @@
+<%# locals: (name:, label:, items:, selected:, empty:) %>
+<%# One shot or style for the run: radios live in a popover; `empty` shows when there's nothing to pick. %>
+<% popover_id = "#{label.parameterize}-pick" %>
+<fieldset data-controller="media-pick" class="group min-w-0">
+  <legend class="<%= tw_label_classes %>"><%= label %></legend>
+  <% if items.any? %>
+    <div class="flex gap-2">
+      <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>" aria-label="Choose <%= label.downcase %>"
+              class="flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-xl border border-ink-900/10 bg-white px-2.5 py-1.5 text-left transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
+        <span data-media-pick-target="preview" class="min-w-0 flex-1">
+          <%= render "accounts/recipe_runs/pick_option", record: selected %>
+        </span>
+        <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
+      </button>
+      <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light shrink-0 gap-1.5 px-3 py-1.5">
+        <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Random
+      </button>
+    </div>
+    <div id="<%= popover_id %>" popover data-media-pick-target="popover" style="position-anchor: --<%= popover_id %>"
+         class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-80 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+      <% items.each do |item| %>
+        <label class="block cursor-pointer rounded-lg px-3 py-2 transition hover:bg-ink-900/5 has-checked:bg-rocket/10 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+          <%= radio_button_tag name, item.id, item == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
+          <%= render "accounts/recipe_runs/pick_option", record: item %>
+        </label>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600"><%= empty %></p>
+  <% end %>
+</fieldset>

@@ -1,26 +1,30 @@
 <%# locals: (recipe:) %>
-<div class="@container space-y-4">
-  <%= render "accounts/recipes/header", recipe: %>
+<% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
+<% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
+<%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
+  <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden" %>
+  <% if recipe.errors.any? %>
+    <div class="<%= tw_alert_error_classes %>" role="alert">
+      <ul class="list-inside list-disc">
+        <% recipe.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
-  <div class="grid items-start gap-8 @3xl:grid-cols-2">
-    <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe min-w-0 space-y-4" do |f| %>
-      <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden" %>
-      <% if recipe.errors.any? %>
-        <div class="<%= tw_alert_error_classes %>" role="alert">
-          <ul class="list-inside list-disc">
-            <% recipe.errors.full_messages.each do |message| %>
-              <li><%= message %></li>
-            <% end %>
-          </ul>
-        </div>
-      <% end %>
+  <%= render layout: "accounts/recipes/header", locals: { recipe: } do %>
+    <div class="w-full max-w-xs">
+      <%= f.label :name, class: tw_label_classes %>
+      <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
+    </div>
+    <%= render "shared/examples", record: recipe, form_id: "recipe_form", list: "flex flex-wrap gap-2 *:w-20" %>
+  <% end %>
 
-      <div class="max-w-md">
-        <%= f.label :name, class: tw_label_classes %>
-        <%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Team collage", class: tw_input_classes %>
-      </div>
-
-      <%= render layout: "shared/pipeline_step", locals: { title: "Input" } do %>
+  <div class="grid items-start gap-6 @4xl:grid-cols-3">
+    <section class="space-y-2">
+      <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
+      <div class="<%= island %>">
         <div>
           <div id="recipe_inputs" class="space-y-2">
             <% (recipe.inputs.presence || [ {} ]).each_with_index do |input, index| %>
@@ -35,9 +39,40 @@
             Add input
           </button>
         </div>
-      <% end %>
+        <div class="<%= ai_only %> space-y-2">
+          <% row_css = "flex items-center overflow-hidden rounded-lg border border-ink-900/15 bg-white text-sm opacity-60 transition has-[[type=checkbox]:checked]:opacity-100 focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" %>
+          <% toggle_css = "flex shrink-0 cursor-pointer items-center gap-2 self-stretch py-2 pl-3" %>
+          <% chip_css = "flex size-5 items-center justify-center rounded border" %>
+          <div class="<%= row_css %>">
+            <label class="<%= toggle_css %> flex-1 pr-3">
+              <%= f.check_box :takes_style, class: "size-4 accent-rocket" %>
+              <span class="<%= chip_css %> border-violet-300 bg-violet-50 text-violet-600">
+                <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              </span>
+              <span class="font-medium text-ink-900">Style</span>
+              <span class="ml-auto text-xs text-ink-500">Picked per run</span>
+            </label>
+          </div>
+          <div class="<%= row_css %>">
+            <label class="<%= toggle_css %> border-r border-ink-900/10 bg-stone-50 pr-3">
+              <input type="checkbox" <%= "checked" if recipe.shot_group %> class="size-4 accent-rocket"
+                     onchange="this.closest('div').querySelector('select').disabled = !this.checked">
+              <span class="<%= chip_css %> border-amber-300 bg-amber-50 text-amber-600">
+                <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+              </span>
+              <span class="font-medium text-ink-900">Shot</span>
+            </label>
+            <%= hidden_field_tag "recipe[shot_group]", "", id: nil %>
+            <%= f.select :shot_group, Shot.groups, {}, disabled: recipe.shot_group.nil?, "aria-label": "Shot group",
+                  class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0 disabled:cursor-default" %>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <%= render layout: "shared/pipeline_step", locals: { title: "Processing" } do %>
+    <section class="space-y-2">
+      <h2 id="processing" class="<%= island_title %>"><a href="#processing" class="hover:underline">Processing</a></h2>
+      <div class="<%= island %>">
         <fieldset>
           <legend class="<%= tw_label_classes %>">Type</legend>
           <div class="<%= tw_segments_classes %>">
@@ -56,26 +91,22 @@
           <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
         </div>
         <div class="<%= ai_only %>">
-          <%= f.label :shot_group, "Shot", class: tw_label_classes %>
-          <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
-          <p class="mt-1 text-xs text-ink-500">A shot from this group is picked for each run and added after the prompt.</p>
-        </div>
-        <div class="<%= ai_only %>">
           <%= render "shared/generation_options", record: recipe, scope: "recipe",
                 refresh_url: recipe.persisted? ? edit_recipe_path(recipe) : new_recipe_path %>
         </div>
-      <% end %>
+      </div>
+    </section>
 
-      <%= render layout: "shared/pipeline_step", locals: { title: "Output" } do %>
-        <div class="max-w-xs">
+    <section class="space-y-2">
+      <h2 id="output" class="<%= island_title %>"><a href="#output" class="hover:underline">Output</a></h2>
+      <div class="<%= island %>">
+        <div>
           <%= f.label :output_collection, "Folder", class: tw_label_classes %>
           <%= f.select :output_collection, Recipe::OUTPUT_COLLECTIONS.map { [ it.humanize, it ] }, {}, class: tw_input_classes %>
         </div>
         <p class="text-xs text-ink-500">Results keep the first input's tag.</p>
-      <% end %>
-    <% end %>
-
-    <%= render "shared/examples", record: recipe, form_id: "recipe_form" %>
+      </div>
+    </section>
   </div>
 
   <div class="flex items-center justify-between gap-2">
@@ -85,7 +116,7 @@
     <% end %>
     <div class="ml-auto flex items-center gap-2">
       <%= link_to "Cancel", recipes_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
-      <button type="submit" form="recipe_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
+      <%= f.button "Save", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
     </div>
   </div>
-</div>
+<% end %>

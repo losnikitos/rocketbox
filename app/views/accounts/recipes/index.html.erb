@@ -42,6 +42,9 @@
               <%= tag&.name || "Unknown" %>
             </li>
           <% end %>
+          <% if recipe.takes_style? %>
+            <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600">Style</li>
+          <% end %>
           <% if recipe.shot_group %>
             <li class="rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs text-ink-600"><%= recipe.shot_group %> shot</li>
           <% end %>

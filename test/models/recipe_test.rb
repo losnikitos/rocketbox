@@ -95,7 +95,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  test "a recipe with a shot group needs a shot from it, and paints the shot and style after the recipe body" do
+  test "a recipe with a shot group and a style needs both, and paints the shot and style after the recipe body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
@@ -103,14 +103,15 @@ class RecipeTest < ActiveSupport::TestCase
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
     @recipe = Recipe.find(@recipe.id)
-    @recipe.update!(shot_group: "Daily", options: { "style" => style.id.to_s })
+    @recipe.update!(shot_group: "Daily", takes_style: true)
     shot = Shot.create!(name: "Empty Chair", body: "The empty chair.", group: "Daily")
     other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot: other) }
-    run = @recipe.run!(media:, shot:)
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, style:) }
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot: other, style:) }
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot:) }
+    run = @recipe.run!(media:, shot:, style:)
     run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
