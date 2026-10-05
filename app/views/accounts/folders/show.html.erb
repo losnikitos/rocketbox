@@ -1,7 +1,9 @@
 <% content_for(:title, "#{@folder&.path || "Folders"} — Rocketbox") %>
 <% admin = Current.user&.admin? %>
 <% menu_css = "inset-auto m-0 top-[calc(anchor(bottom)+4px)] [position-try-fallbacks:flip-block,flip-inline] rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg" %>
-<% tile_css = "flex w-full cursor-pointer flex-col items-center rounded-xl p-2 text-center hover:bg-ink-900/5 focus-visible:outline-2 focus-visible:outline-rocket" %>
+<% tile_css = "relative min-w-0 rounded-xl p-2 hover:bg-ink-900/5" %>
+<% link_css = "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
+<% name_css = "mt-2 flex items-center justify-center gap-1 text-sm font-medium text-ink-900" %>
 
 <% content_for(:header_actions) do %>
   <% if @folder %>
@@ -57,44 +59,6 @@
   <% end %>
 </nav>
 
-<% folders = @folder ? @folder.children.to_a : Folder.roots.sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
-<% if folders.any? %>
-  <ul aria-label="Folders" class="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
-    <% folders.each do |folder| %>
-      <% previews = @folder_media[folder.id].to_a.first(12) %>
-      <li>
-        <%= link_to folder_path(folder), class: tile_css do %>
-          <% if previews.any? %>
-            <span class="group/thumb relative block aspect-square w-full overflow-hidden rounded-lg bg-ink-900/5"
-                  data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-              <% previews.each_with_index do |preview, index| %>
-                <span class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-                  <%= render "accounts/library/file", media: preview, css: "size-full object-cover" %>
-                </span>
-              <% end %>
-              <span class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5 bg-white group-hover/thumb:hidden">
-                <% 4.times do |index| %>
-                  <span class="relative min-h-0 overflow-hidden bg-ink-900/5">
-                    <%= render "accounts/library/file", media: previews[index], css: "absolute inset-0 size-full object-cover" if previews[index] %>
-                  </span>
-                <% end %>
-              </span>
-            </span>
-          <% else %>
-            <span class="flex aspect-square w-full items-center justify-center">
-              <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
-            </span>
-          <% end %>
-          <span class="mt-2 flex w-full items-center justify-center gap-1 text-sm font-medium text-ink-900">
-            <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-sky-400", "aria-hidden": true } %>
-            <span class="truncate"><%= folder.name %></span>
-          </span>
-        <% end %>
-      </li>
-    <% end %>
-  </ul>
-<% end %>
-
 <% if @folder %>
   <%= form_with url: library_media_index_path, multipart: true, class: "hidden", data: { controller: "drop-upload" } do %>
     <%= hidden_field_tag :folder_id, @folder.id %>
@@ -102,60 +66,83 @@
     <%= file_field_tag "files[]", multiple: true, accept: "image/*,video/*,.heic,.heif", id: "library-upload-input",
           data: { drop_upload_target: "input", action: "change->drop-upload#changed" } %>
   <% end %>
+<% end %>
 
-  <% move_targets = Folder.grouped_options %>
-  <div class="flex flex-col gap-6 lg:flex-row">
-    <div class="min-w-0 flex-1">
-      <% if @library_media.any? %>
-        <ul class="@container flex flex-wrap items-start gap-3 [--cols:3] sm:[--cols:4] lg:[--cols:5] xl:[--cols:6] 2xl:[--cols:8]">
-          <% @library_media.group_by(&:original).each do |source, group| %>
-            <% grouped = group.size > 1 %>
-            <%= tag.li class: [ "min-w-0 max-w-full rounded-xl border-2 data-drop-over:border-rocket", grouped ? "border-ink-900/10 bg-white" : "border-transparent" ],
-                  aria: { label: ("Versions of one source" if grouped) }, data: { source_id: source.id } do %>
-              <% if grouped %>
-                <%= link_to library_item_path(source), class: "flex items-center gap-2 px-2 pt-2 text-xs font-medium text-ink-600 hover:text-ink-900" do %>
-                  <%= render "accounts/library/file", media: source, css: "size-6 rounded object-cover" %>
-                  Source
-                <% end %>
-              <% end %>
-              <ul class="flex flex-wrap gap-3 *:w-[calc((100cqw_-_(var(--cols)_-_1)_*_0.75rem)_/_var(--cols)_-_4px)]">
-                <% group.each do |media| %>
-                  <% name = media.file.attached? ? media.file.filename.to_s : media.kind %>
-                  <li class="min-w-0 rounded-xl p-2 hover:bg-ink-900/5">
-                    <%= link_to library_item_path(media), id: "folder-media-#{media.id}", aria: { label: "Open #{name}" }, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-                      <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover" %>
+<% folders = @folder ? @folder.children.to_a : Folder.roots.sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
+<% media_groups = @library_media.to_a.group_by(&:original) %>
+<% move_targets = Folder.grouped_options if admin && media_groups.any? %>
+<div class="flex flex-col gap-6 lg:flex-row">
+  <div class="min-w-0 flex-1">
+    <% if folders.any? || media_groups.any? %>
+      <ul aria-label="Folders and files" class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+        <% folders.each do |folder| %>
+          <% previews = @folder_media[folder.id].to_a.first(12) %>
+          <li class="<%= tile_css %>">
+            <%= link_to folder_path(folder), class: link_css do %>
+              <% if previews.any? %>
+                <span class="group/thumb relative block aspect-square w-full overflow-hidden rounded-lg bg-ink-900/5"
+                      data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+                  <% previews.each_with_index do |preview, index| %>
+                    <span class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+                      <%= render "accounts/library/file", media: preview, css: "size-full object-cover" %>
+                    </span>
+                  <% end %>
+                  <span class="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5 bg-white group-hover/thumb:hidden">
+                    <% 4.times do |index| %>
+                      <span class="relative min-h-0 overflow-hidden bg-ink-900/5">
+                        <%= render "accounts/library/file", media: previews[index], css: "absolute inset-0 size-full object-cover" if previews[index] %>
+                      </span>
                     <% end %>
-                    <% menu_id = "move-menu-#{media.id}" %>
-                    <button type="button" popovertarget="<%= menu_id %>" style="anchor-name: --<%= menu_id %>" aria-label="Move <%= name %>"
-                            class="mt-2 inline-flex max-w-full cursor-pointer items-center gap-0.5 rounded-full bg-ink-900/5 py-0.5 pr-1.5 pl-2 text-xs font-medium text-ink-600 hover:bg-ink-900/10 hover:text-ink-900">
-                      <span class="truncate">Move to</span>
-                      <%= heroicon "chevron-down", variant: :micro, options: { class: "size-3.5 shrink-0", "aria-hidden": true } %>
-                    </button>
-                    <div id="<%= menu_id %>" popover style="position-anchor: --<%= menu_id %>" class="<%= menu_css %> left-[calc(anchor(left))] max-h-96 min-w-40 overflow-y-auto">
-                      <% move_targets.each_with_index do |(_root, options), index| %>
-                        <% if index.positive? %><div class="mx-2 my-1 h-px bg-ink-900/10" aria-hidden="true"></div><% end %>
-                        <% options.each do |label, id| %>
-                          <% current = media.folder_id == id %>
-                          <%= button_to library_media_path(media), method: :patch, params: { library_media: { folder_id: id } },
-                                aria: { current: ("true" if current) }, disabled: current,
-                                class: "flex w-full cursor-pointer items-center justify-between gap-2 rounded px-3 py-1.5 text-left text-sm text-ink-900 hover:bg-ink-900/5 disabled:cursor-default disabled:font-medium" do %>
-                            <%= label %>
-                            <% if current %><%= heroicon "check", variant: :micro, options: { class: "size-4 text-rocket", "aria-hidden": true } %><% end %>
-                          <% end %>
-                        <% end %>
-                      <% end %>
-                    </div>
-                  </li>
-                <% end %>
-              </ul>
+                  </span>
+                </span>
+              <% else %>
+                <span class="flex aspect-square w-full items-center justify-center">
+                  <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
+                </span>
+              <% end %>
+              <span class="<%= name_css %>">
+                <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-sky-400", "aria-hidden": true } %>
+                <span class="truncate"><%= folder.name %></span>
+              </span>
+            <% end %>
+            <div class="absolute top-3 right-3"><%= render "shared/admin_links/folder", folder: %></div>
+          </li>
+        <% end %>
+
+        <%# A source with versions spans a full row, its tiles on the same columns; dropping onto it attaches a version. %>
+        <% media_groups.each do |source, group| %>
+          <% grouped = group.size > 1 %>
+          <% if grouped %>
+            <li aria-label="Versions of one source" data-source-id="<%= source.id %>"
+                class="col-span-full grid grid-cols-subgrid rounded-xl bg-white outline-2 outline-ink-900/10 data-drop-over:outline-rocket">
+              <%= link_to library_item_path(source), class: "col-span-full flex items-center gap-2 px-2 pt-2 text-xs font-medium text-ink-600 hover:text-ink-900" do %>
+                <%= render "accounts/library/file", media: source, css: "size-6 rounded object-cover" %>
+                Source
+              <% end %>
+              <ul class="col-span-full grid grid-cols-subgrid gap-y-3">
+          <% end %>
+          <% group.each do |media| %>
+            <% name = media.file.attached? ? media.file.filename.to_s : media.kind %>
+            <%= tag.li class: [ tile_css, ("data-drop-over:outline-2 data-drop-over:outline-rocket" unless grouped) ], data: { source_id: (source.id unless grouped) } do %>
+              <%= link_to library_item_path(media), id: "folder-media-#{media.id}", class: link_css do %>
+                <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover" %>
+                <span class="<%= name_css %>"><span class="truncate"><%= name %></span></span>
+              <% end %>
+              <div class="absolute top-3 right-3"><%= render "shared/admin_links/library_media", library_media: media, links: { move: true }, move_targets: %></div>
             <% end %>
           <% end %>
-        </ul>
-      <% elsif folders.none? %>
-        <p class="text-sm text-ink-600">This folder is empty. Drop photos or videos anywhere here to upload.</p>
-      <% end %>
-    </div>
+          <% if grouped %>
+              </ul>
+            </li>
+          <% end %>
+        <% end %>
+      </ul>
+    <% elsif @folder %>
+      <p class="text-sm text-ink-600">This folder is empty. Drop photos or videos anywhere here to upload.</p>
+    <% end %>
+  </div>
 
+  <% if @folder %>
     <aside aria-labelledby="folder-recipes-heading" class="shrink-0 lg:w-72">
       <h2 id="folder-recipes-heading" class="mb-2 px-2 text-sm font-bold text-ink-900">Recipes</h2>
       <% if @recipes.any? %>
@@ -168,5 +155,5 @@
         <p class="px-2 text-sm text-ink-600">No recipes use this folder.</p>
       <% end %>
     </aside>
-  </div>
-<% end %>
+  <% end %>
+</div>

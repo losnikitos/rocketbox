@@ -1,0 +1,19 @@
+<%# Locals: folder %>
+<% folder = local_assigns[:folder] %>
+<% if Current.user&.admin? && folder.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "folder-admin-links-#{folder.id}", align: local_assigns.fetch(:align, :right) } do %>
+    <%= render "shared/admin_links/item",
+        path: admin_folder_path(folder.id),
+        label: "Admin",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+    <% unless folder.root? %>
+      <%= render "shared/admin_links/item",
+          path: library_folders_path(folder.root.slug, folder.slug),
+          label: "Delete",
+          icon: "trash",
+          chip: "bg-signal-red",
+          data: { turbo_method: :delete, turbo_confirm: "Delete #{folder.name}? Its media moves to #{folder.parent.name}." } %>
+    <% end %>
+  <% end %>
+<% end %>
