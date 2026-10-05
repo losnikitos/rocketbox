@@ -1,0 +1,11 @@
+<%# locals: (record:) %>
+<%# A shot or a style: first example image, name and body. %>
+<span class="flex min-w-0 items-center gap-2.5">
+  <% if (example = record.examples.find(&:image?)) %>
+    <%= image_tag example.variant(resize_to_fill: [ 80, 80 ]), alt: "", class: "size-10 shrink-0 rounded-md object-cover" %>
+  <% end %>
+  <span class="block min-w-0">
+    <span class="block truncate text-sm font-medium text-ink-900"><%= record.name %></span>
+    <span class="block truncate text-sm text-ink-500"><%= record.body %></span>
+  </span>
+</span>

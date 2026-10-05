@@ -4,7 +4,7 @@
 # `inputs` lists the slots in order as { "collection", "tag_id" } and may repeat one (two staff photos).
 # `kind` is how: one AI call making an image or a video, or a stitch of the inputs (photos or videos) into
 # a video, 1 second each. Results land in `output_collection` with the first input's tag.
-# `options` are the defaults for its AI runs (see GenerationOptions).
+# `options` are the defaults for its AI runs (see GenerationOptions). Each run also picks a shot and a style if the recipe takes them.
 # ponytail: slots are a JSON array, so deleting a tag leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
@@ -25,10 +25,10 @@ class Recipe < ApplicationRecord
   normalizes :inputs, with: ->(inputs) do
     Array(inputs).filter_map { { "collection" => it["collection"].to_s, "tag_id" => it["tag_id"].to_i } if it["tag_id"].present? }
   end
-  # The shot group its runs pick a shot from; nil takes no shot.
+  # The shot group its runs pick a shot from; nil takes no shot. `takes_style`: its runs pick a style.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
 
-  before_validation(if: :stitch?) { self.shot_group = nil }
+  before_validation(if: :stitch?) { self.shot_group, self.takes_style = nil, false }
   validates :name, :inputs, presence: true
   validates :body, presence: true, unless: :stitch?
   validates :output_collection, inclusion: { in: OUTPUT_COLLECTIONS }
@@ -57,10 +57,10 @@ class Recipe < ApplicationRecord
 
   def reads?(collection) = inputs.any? { it["collection"] == collection }
 
-  # `media` fill the slots in order; `shot` is from the recipe's shot group; `options` override the recipe's.
-  # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit or an option isn't available.
-  def run!(media:, shot: nil, extra_prompt: nil, options: {})
-    run = runs.new(shot:, extra_prompt:, inputs: media.each_with_index.map { |item, position| RecipeRunInput.new(library_media: item, position:) })
+  # `media` fill the slots in order; `shot` is from the recipe's shot group; `style` if it takes one; `options` override the recipe's.
+  # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
+  def run!(media:, shot: nil, style: nil, extra_prompt: nil, options: {})
+    run = runs.new(shot:, style:, extra_prompt:, inputs: media.each_with_index.map { |item, position| RecipeRunInput.new(library_media: item, position:) })
     # Set after the defaults fill in, so an unavailable pick fails validation instead of being dropped.
     run.options = run.options.merge(options.to_h.stringify_keys)
     run.start!

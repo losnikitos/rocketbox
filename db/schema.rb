@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -199,10 +199,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
     t.integer "recipe_id"
     t.integer "shot_id"
     t.string "status", default: "running", null: false
+    t.integer "style_id"
     t.datetime "updated_at", null: false
     t.index ["generated_media_id"], name: "index_recipe_runs_on_generated_media_id", unique: true
     t.index ["recipe_id"], name: "index_recipe_runs_on_recipe_id"
     t.index ["shot_id"], name: "index_recipe_runs_on_shot_id"
+    t.index ["style_id"], name: "index_recipe_runs_on_style_id"
   end
 
   create_table "recipes", force: :cascade do |t|
@@ -214,6 +216,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
     t.json "options", default: {}, null: false
     t.string "output_collection", default: "ready", null: false
     t.string "shot_group"
+    t.boolean "takes_style", default: false, null: false
     t.datetime "updated_at", null: false
   end
 
@@ -470,6 +473,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_130000) do
   add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
+  add_foreign_key "recipe_runs", "styles", on_delete: :nullify
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
