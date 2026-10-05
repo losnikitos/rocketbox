@@ -1,5 +1,5 @@
 <%# locals: (folder:) %>
 <span class="inline-flex items-center gap-1 rounded-full border border-ink-900/10 bg-white px-2 py-0.5 text-xs text-ink-700">
-  <%= heroicon "folder", variant: :micro, options: { class: "size-3.5 text-sky-600", "aria-hidden": true } %>
+  <%= heroicon "folder", variant: :micro, options: { class: "size-3.5 #{folder_color(folder)}", "aria-hidden": true } %>
   <span class="font-medium"><%= folder&.path || "Unknown" %></span>
 </span>

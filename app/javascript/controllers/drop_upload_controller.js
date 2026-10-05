@@ -24,6 +24,7 @@ export default class extends Controller {
   }
 
   dragover(event) {
+    if (!event.dataTransfer.types.includes("Files")) return
     event.preventDefault()
     this.zone.dataset.dragging = ""
     this.highlight(event.target.closest("[data-source-id]"))
@@ -36,6 +37,7 @@ export default class extends Controller {
   }
 
   drop(event) {
+    if (!event.dataTransfer.types.includes("Files")) return
     event.preventDefault()
     delete this.zone.dataset.dragging
     this.highlight(null)

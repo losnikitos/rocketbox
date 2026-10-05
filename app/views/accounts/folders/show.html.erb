@@ -57,11 +57,43 @@
   <% end %>
 <% end %>
 
-<% folders = @folder ? @folder.children.to_a : Folder.roots.sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
+<% roots = Folder.roots.includes(:children).sort_by { Folder::ROOTS.index(it.slug) || Folder::ROOTS.size } %>
+<% folders = @folder ? @folder.children.to_a : roots %>
 <% media_groups = @library_media.to_a.group_by(&:original) %>
 <% move_targets = Folder.grouped_options if admin && media_groups.any? %>
-<%# Bleeds into main's lg:p-8 so the recipes divider spans the full panel height. %>
-<div class="flex flex-col lg:-m-8 lg:min-h-[calc(100%+4rem)] lg:flex-row">
+<%# Bleeds into main's lg:p-8 so the tree and recipes dividers span the full panel height. %>
+<%= tag.div class: "flex flex-col lg:-m-8 lg:min-h-[calc(100%+4rem)] lg:flex-row",
+      data: ({ controller: "drag-move", action: "dragstart->drag-move#start dragover->drag-move#over dragleave->drag-move#leave drop->drag-move#drop dragend->drag-move#end" } if move_targets) do %>
+  <% if move_targets %>
+    <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
+      <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "folder" } %>
+    <% end %>
+  <% end %>
+  <nav aria-label="Folder tree" class="shrink-0 border-ink-900/10 max-lg:hidden lg:w-56 lg:border-r lg:px-4 lg:py-8">
+    <% tree_css = "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900 data-drop-over:bg-rocket/10 data-drop-over:outline-2 data-drop-over:outline-rocket" %>
+    <ul class="flex flex-col gap-0.5">
+      <% roots.each do |root| %>
+        <li>
+          <%= link_to folder_path(root), class: tree_css, aria: { current: ("page" if root == @folder) }, data: { folder_id: (root.id if move_targets && root != @folder) } do %>
+            <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 #{folder_color(root)}", "aria-hidden": true } %>
+            <span class="truncate"><%= root.name %></span>
+          <% end %>
+          <% if root.children.any? %>
+            <ul class="ml-4 flex flex-col gap-0.5 border-l border-ink-900/10 pl-2">
+              <% root.children.each do |child| %>
+                <li>
+                  <%= link_to folder_path(child), class: tree_css, aria: { current: ("page" if child == @folder) }, data: { folder_id: (child.id if move_targets && child != @folder) } do %>
+                    <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 #{folder_color(child)}", "aria-hidden": true } %>
+                    <span class="truncate"><%= child.name %></span>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </nav>
   <div class="min-w-0 flex-1 lg:p-8">
     <nav aria-label="Breadcrumb" class="mb-4 flex items-center gap-1 text-sm font-medium">
       <% crumbs = [ [ "All files", library_folders_path ], *[ @folder&.parent, @folder ].compact.map { [ it.name, folder_path(it) ] } ] %>
@@ -99,11 +131,11 @@
                 </span>
               <% else %>
                 <span class="flex aspect-square w-full items-center justify-center">
-                  <%= heroicon "folder", variant: :solid, options: { class: "size-20 text-sky-400", "aria-hidden": true } %>
+                  <%= heroicon "folder", variant: :solid, options: { class: "size-20 #{folder_color(folder)}", "aria-hidden": true } %>
                 </span>
               <% end %>
               <span class="<%= name_css %>">
-                <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-sky-400", "aria-hidden": true } %>
+                <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
                 <span class="truncate"><%= folder.name %></span>
               </span>
             <% end %>
@@ -126,7 +158,8 @@
           <% (grouped ? group - [ source ] : group).each do |media| %>
             <% name = media.file.attached? ? media.file.filename.to_s : media.kind %>
             <%= tag.li class: [ tile_css, ("data-drop-over:outline-2 data-drop-over:outline-rocket" unless grouped) ], data: { source_id: (source.id unless grouped) } do %>
-              <%= link_to library_item_path(media), id: "folder-media-#{media.id}", class: link_css do %>
+              <%= link_to library_item_path(media), id: "folder-media-#{media.id}", class: link_css,
+                    draggable: ("true" if move_targets), data: { move_url: (library_media_path(media) if move_targets) } do %>
                 <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover" %>
                 <span class="<%= name_css %>"><span class="truncate"><%= name %></span></span>
               <% end %>
@@ -158,4 +191,4 @@
       <% end %>
     </aside>
   <% end %>
-</div>
+<% end %>

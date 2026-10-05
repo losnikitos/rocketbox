@@ -78,6 +78,10 @@ module AppHelper
     library_folders_path(*[ folder.root.slug, (folder.slug unless folder.root?) ].compact, **params)
   end
 
+  def folder_color(folder)
+    folder&.root&.slug == "inbox" ? "text-emerald-500" : "text-sky-400"
+  end
+
   def posts_tabs
     index = action_name == "index"
     [
