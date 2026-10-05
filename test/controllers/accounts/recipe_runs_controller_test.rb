@@ -94,6 +94,19 @@ class Accounts::RecipeRunsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='recipe_run[options][quality]'][value=''][checked]"
   end
 
+  test "inputs from the same folder start on different media while there are enough" do
+    other = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @admin,
+      file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+    recipe = Recipe.create!(name: "Pair", body: "Pair them.", inputs: [ { "folder_id" => folders(:interior).id } ] * 2)
+
+    get new_recipe_run_url(recipe, account: @admin.id)
+    picks = [ 0, 1 ].map { css_select("input[name='media_ids[#{it}]'][checked]").sole["value"] }
+    assert_equal [ @media.id, other.id ].map(&:to_s).sort, picks.sort
+
+    get new_recipe_run_url(recipe, media_ids: { 1 => @media.id }, account: @admin.id)
+    assert_select "input[name='media_ids[0]'][value=?][checked]", other.id.to_s
+  end
+
   test "a recipe taking a style offers every style as an input; the run keeps the pick" do
     style = Style.create!(name: "Film", body: "35mm grain.")
     recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", takes_style: true, inputs: [ { "folder_id" => folders(:interior).id } ])

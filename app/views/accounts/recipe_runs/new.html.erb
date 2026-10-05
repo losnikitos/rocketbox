@@ -22,11 +22,12 @@
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
       <div class="<%= island %>">
+        <% picked = @slots.each_with_index.map { |(_, photos), index| photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } } %>
         <% @slots.each_with_index do |(folder, photos), index| %>
           <fieldset data-controller="media-pick" class="group min-w-0">
             <legend class="<%= tw_label_classes %>"><%= index + 1 %>. <%= render "accounts/recipes/slot", folder: %></legend>
             <% if photos.any? %>
-              <% selected = photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } || photos.first %>
+              <% selected = picked[index] ||= (photos - picked).sample || photos.sample %>
               <% popover_id = "media-pick-#{index}" %>
               <div class="flex gap-2">
                 <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
