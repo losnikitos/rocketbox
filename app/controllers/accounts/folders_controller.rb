@@ -9,7 +9,7 @@ module Accounts
       if @collection
         @library_media = Current.account.library_media.where(collection: @collection)
         @tag_counts = @library_media.group(:tag_id).count
-        @library_media = @library_media.with_attached_file.includes(:tag, :recipe_run).order(created_at: :desc)
+        @library_media = @library_media.with_attached_file.includes(:tag, recipe_run: { inputs: { library_media: { file_attachment: :blob } } }).order(created_at: :desc)
         @library_media = @library_media.joins(:tag).where(tag: { slug: params[:tag] }) if params[:tag].present?
         tag = Tag.find_by(slug: params[:tag]) if params[:tag].present?
         @recipes = Recipe.with_attached_examples.includes(:output_tag).ordered.select do |recipe|
