@@ -26,6 +26,19 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#folder-media-#{inbox.id}", count: 0
   end
 
+  test "folder filters by tag" do
+    logo = LibraryMedia.create!(kind: "photo", collection: "photobank", user: @user, tag: tags(:logo))
+    logo.file.attach(io: StringIO.new("img"), filename: "logo.jpg", content_type: "image/jpeg")
+    other = LibraryMedia.create!(kind: "photo", collection: "photobank", user: @user, tag: tags(:interior))
+    other.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
+
+    get library_folders_url("photobank", tag: "logo")
+    assert_response :success
+    assert_select "main a[aria-selected=true][href=?]", library_folders_path("photobank", tag: "logo")
+    assert_select "#folder-media-#{logo.id}"
+    assert_select "#folder-media-#{other.id}", count: 0
+  end
+
   test "unknown folder is not found" do
     get "/app/library/folders/nope"
     assert_response :not_found

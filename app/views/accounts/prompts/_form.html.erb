@@ -23,33 +23,40 @@
         <%= f.text_field :name, required: true, autofocus: prompt.new_record?, placeholder: "Bank holiday story", class: tw_input_classes %>
       </div>
 
-      <div class="max-w-md">
-        <%= f.label :tag_id, "Suitable for", class: tw_label_classes %>
-        <%= f.select :tag_id, Tag.ordered.pluck(:name, :id), {}, required: true, class: tw_input_classes %>
-      </div>
+      <%= render layout: "shared/pipeline_step", locals: { title: "Input" } do %>
+        <%= render layout: "shared/input_field", locals: { name: "Inbox", icon: "inbox" } do %>
+          <%= f.select :tag_id, Tag.ordered.pluck(:name, :id), {}, required: true, "aria-label": "Tag",
+                class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0" %>
+        <% end %>
+      <% end %>
 
-      <fieldset class="max-w-md">
-        <legend class="<%= tw_label_classes %>">Makes</legend>
-        <div class="<%= tw_segments_classes %>">
-          <% { "image" => "photo", "video" => "film" }.each do |kind, icon| %>
-            <label class="<%= tw_segment_classes %> flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
-              <%= f.radio_button :kind, kind, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
-              <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-              <%= kind.humanize %>
-            </label>
-          <% end %>
+      <%= render layout: "shared/pipeline_step", locals: { title: "Processing" } do %>
+        <fieldset>
+          <legend class="<%= tw_label_classes %>">Makes</legend>
+          <div class="<%= tw_segments_classes %>">
+            <% { "image" => "photo", "video" => "film" }.each do |kind, icon| %>
+              <label class="<%= tw_segment_classes %> flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
+                <%= f.radio_button :kind, kind, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
+                <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+                <%= kind.humanize %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+        <div>
+          <%= f.label :body, "Prompt", class: tw_label_classes %>
+          <%= f.text_area :body, required: true, rows: 6, class: tw_input_classes %>
         </div>
-      </fieldset>
-
-      <div class="max-w-md">
         <%= render "shared/generation_options", record: prompt, scope: "prompt",
               refresh_url: prompt.persisted? ? edit_prompt_path(prompt) : new_prompt_path %>
-      </div>
+      <% end %>
 
-      <div>
-        <%= f.label :body, "Prompt", class: tw_label_classes %>
-        <%= f.text_area :body, required: true, rows: 6, class: tw_input_classes %>
-      </div>
+      <%= render layout: "shared/pipeline_step", locals: { title: "Output" } do %>
+        <div class="grid grid-cols-2 gap-3">
+          <%= render "shared/folder_field", name: "Photobank", icon: "photo" %>
+        </div>
+        <p class="text-xs text-ink-500">Results keep the input item's tag.</p>
+      <% end %>
     <% end %>
 
     <%= render "shared/examples", record: prompt, form_id: "prompt_form" %>
