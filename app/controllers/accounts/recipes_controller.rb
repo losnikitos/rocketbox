@@ -9,7 +9,7 @@ module Accounts
 
     def index
       @recipes = Recipe.with_attached_examples.ordered
-      @recipes = @recipes.select { it.reads?(params[:folder]) } if params[:folder].present?
+      @recipes = @recipes.select { it.source == params[:source] } if params[:source].present?
     end
 
     def new

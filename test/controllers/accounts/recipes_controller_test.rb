@@ -83,20 +83,29 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Aspect ratio 2:1 isn't available/
   end
 
-  test "index tabs filter by input folder" do
+  test "index tabs filter by input folder and tag; recipes reading several go under multiple inputs" do
     @admin = sign_in_as(users(:admin_user))
-    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ input(:interior) ])
+    reel = Recipe.create!(name: "Reel", kind: "stitch", inputs: [ input(:interior), input(:interior) ])
+    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ input(:interior), input(:customer) ])
 
-    get recipes_url(account: @admin.id, folder: "inbox")
-    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Inbox\s+2/
-    assert_select "nav[aria-label='Secondary'] a", text: /Photobank\s+1/
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(folder: "inbox", account: @admin.id)
+    get recipes_url(account: @admin.id)
+    headers = css_select("section h2").map(&:text)
+    assert_includes headers, "Photobank · #{tags(:interior).name}"
+    assert_equal "Multiple inputs", headers.last
+    assert_select "section", text: /Multiple inputs.*Collage/m
+
+    get recipes_url(account: @admin.id, source: "inbox/#{tags(:interior).id}")
+    assert_select "section h2", count: 0
+    assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Inbox · #{tags(:interior).name}\s+1/
+    assert_select "nav[aria-label='Secondary'] a[href=?]", recipes_path(source: "photobank/#{tags(:interior).id}", account: @admin.id), text: /Photobank · #{tags(:interior).name}\s+1/
+    assert_select "nav[aria-label='Secondary'] a", text: /Multiple inputs\s+1/
+    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", recipes_path(account: @admin.id)
     assert_select "##{dom_id(recipes(:cinematic))}"
-    assert_select "##{dom_id(collage)}", count: 0
+    assert_select "##{dom_id(reel)}", count: 0
 
-    get recipes_url(account: @admin.id, folder: "photobank")
+    get recipes_url(account: @admin.id, source: "multiple")
     assert_select "##{dom_id(collage)}"
-    assert_select "##{dom_id(recipes(:cinematic))}", count: 0
+    assert_select "##{dom_id(reel)}", count: 0
   end
 
   private
