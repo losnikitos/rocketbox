@@ -13,7 +13,7 @@ module Accounts
 
     def create
       photobank = Current.account.library_media.photobank
-      media = @recipe.media_type_ids.each_index.map { photobank.find_by(id: params.dig(:media_ids, it.to_s)) }.compact
+      media = @recipe.tag_ids.each_index.map { photobank.find_by(id: params.dig(:media_ids, it.to_s)) }.compact
       run = @recipe.run!(user: Current.account, media:, shot: @shots&.find_by(id: params[:shot_id]), options: options_params)
       redirect_to helpers.library_item_path(run.generated_media), notice: "Generating #{@recipe.name}…"
     rescue ActiveRecord::RecordInvalid => e
@@ -27,7 +27,7 @@ module Accounts
       def set_recipe
         @recipe = Recipe.find(params[:recipe_id])
         photobank = Current.account.library_media.photobank.with_attached_file.order(created_at: :desc)
-        @slots = @recipe.media_types.map { [ it, it ? photobank.where(media_type: it).select(&:story_image?) : [] ] }
+        @slots = @recipe.tags.map { [ it, it ? photobank.where(tag: it).select(&:story_image?) : [] ] }
         @shots = Shot.where(group: @recipe.shot_group).ordered if @recipe.shot_group
         @ready = Current.account.library_media.ready.includes(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id })
           .with_attached_file.order(created_at: :desc)

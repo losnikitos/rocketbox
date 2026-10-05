@@ -67,22 +67,22 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_select "td.col-media img[src*='cut.jpg']"
   end
 
-  test "admin can list and rename media types" do
+  test "admin can list and rename tags" do
     sign_in_as(users(:admin_user))
-    get "/admin/media_types", headers: @ua
+    get "/admin/tags", headers: @ua
     assert_response :success
     assert_match "Business card", response.body
 
-    patch "/admin/media_types/#{media_types(:misc).id}", params: { media_type: { name: "Other" } }, headers: @ua
-    assert_equal [ "Other", "misc" ], media_types(:misc).reload.values_at(:name, :slug)
+    patch "/admin/tags/#{tags(:misc).id}", params: { tag: { name: "Other" } }, headers: @ua
+    assert_equal [ "Other", "misc" ], tags(:misc).reload.values_at(:name, :slug)
 
-    post "/admin/media_types", params: { media_type: { name: "Before after" } }, headers: @ua
-    assert_equal "before-after", MediaType.find_by!(name: "Before after").slug
+    post "/admin/tags", params: { tag: { name: "Before after" } }, headers: @ua
+    assert_equal "before-after", Tag.find_by!(name: "Before after").slug
   end
 
   test "generation is linked from its media page and opens in admin" do
     admin = sign_in_as(users(:admin_user))
-    source = LibraryMedia.create!(kind: "photo", media_type: media_types(:interior), user: admin)
+    source = LibraryMedia.create!(kind: "photo", tag: tags(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
     generation = source.generations.new(prompt: prompts(:cinematic)).start!
     generation.update!(status: "failed", error: "content policy")

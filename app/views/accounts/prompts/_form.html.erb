@@ -24,8 +24,8 @@
       </div>
 
       <div class="max-w-md">
-        <%= f.label :media_type_id, "Suitable for", class: tw_label_classes %>
-        <%= f.select :media_type_id, MediaType.ordered.pluck(:name, :id), {}, required: true, class: tw_input_classes %>
+        <%= f.label :tag_id, "Suitable for", class: tw_label_classes %>
+        <%= f.select :tag_id, Tag.ordered.pluck(:name, :id), {}, required: true, class: tw_input_classes %>
       </div>
 
       <fieldset class="max-w-md">

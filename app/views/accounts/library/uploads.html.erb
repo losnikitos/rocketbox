@@ -52,13 +52,13 @@
       <div class="flex items-center gap-2">
         <%= form_with url: bulk_update_library_media_index_path, method: :patch do %>
           <select
-            name="media_type_id"
-            aria-label="Set media type"
-            data-action="change->library-select#setMediaType"
+            name="tag_id"
+            aria-label="Set tag"
+            data-action="change->library-select#setTag"
             class="rounded-lg border border-ink-900/15 bg-white px-2.5 py-2 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30"
           >
-            <option value="" disabled selected hidden>Set media type…</option>
-            <% MediaType.ordered.each do |t| %>
+            <option value="" disabled selected hidden>Set tag…</option>
+            <% Tag.ordered.each do |t| %>
               <option value="<%= t.id %>"><%= t.name %></option>
             <% end %>
             <option value="">Not set</option>
@@ -66,8 +66,8 @@
         <% end %>
       </div>
     </div>
-  <% elsif (media_type = MediaType.find_by(slug: params[:type])) %>
-    <p class="text-sm text-ink-600">No <%= media_type.name.pluralize.downcase %> yet.</p>
+  <% elsif (current_tag = Tag.find_by(slug: params[:tag])) %>
+    <p class="text-sm text-ink-600">No <%= current_tag.name.pluralize.downcase %> yet.</p>
   <% elsif (recipe = params[:recipe].presence && Recipe.find_by(id: params[:recipe])) %>
     <p class="text-sm text-ink-600">No media from <%= recipe.name %> yet.</p>
   <% else %>

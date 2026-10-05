@@ -1,5 +1,5 @@
 <%# locals: (recipe:) %>
-<% slot_count = [ recipe.media_type_ids.size, 5 ].max %>
+<% slot_count = [ recipe.tag_ids.size, 5 ].max %>
 <div class="@container space-y-4">
   <%= render "accounts/recipes/header", recipe: %>
 
@@ -32,16 +32,16 @@
 
       <fieldset class="max-w-md">
         <legend class="<%= tw_label_classes %>">Photos</legend>
-        <div id="recipe_media_type_slots" class="space-y-2">
+        <div id="recipe_tag_slots" class="space-y-2">
           <% slot_count.times do |index| %>
-            <%= select_tag "recipe[media_type_ids][]",
-                  options_for_select(MediaType.ordered.pluck(:name, :id), recipe.media_type_ids[index]),
-                  id: "recipe_media_type_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
+            <%= select_tag "recipe[tag_ids][]",
+                  options_for_select(Tag.ordered.pluck(:name, :id), recipe.tag_ids[index]),
+                  id: "recipe_tag_ids_#{index}", include_blank: "—", "aria-label": "Photo #{index + 1}", class: tw_input_classes %>
           <% end %>
         </div>
         <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
-                onclick="const slots = document.getElementById('recipe_media_type_slots'), slot = slots.lastElementChild.cloneNode(true);
-                         slot.value = ''; slot.id = `recipe_media_type_ids_${slots.children.length}`; slot.ariaLabel = `Photo ${slots.children.length + 1}`;
+                onclick="const slots = document.getElementById('recipe_tag_slots'), slot = slots.lastElementChild.cloneNode(true);
+                         slot.value = ''; slot.id = `recipe_tag_ids_${slots.children.length}`; slot.ariaLabel = `Photo ${slots.children.length + 1}`;
                          slots.append(slot); slot.focus()">
           <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
           Add photo

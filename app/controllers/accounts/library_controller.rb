@@ -12,9 +12,9 @@ module Accounts
       end
 
       @library_media = Current.account.library_media.where(collection: @collection).with_attached_file
-        .includes(:media_type, :recipe_run, origin: { source_media: { file_attachment: :blob } }, generated_media: [ { file_attachment: :blob }, :origin ])
+        .includes(:tag, :recipe_run, origin: { source_media: { file_attachment: :blob } }, generated_media: [ { file_attachment: :blob }, :origin ])
         .order(created_at: :desc)
-      @library_media = @library_media.joins(:media_type).where(media_type: { slug: params[:type] }) if params[:type].present?
+      @library_media = @library_media.joins(:tag).where(tag: { slug: params[:tag] }) if params[:tag].present?
       @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
     end
 
@@ -30,7 +30,7 @@ module Accounts
       @siblings = if @media.ready?
         @siblings.joins(:recipe_run).where(recipe_runs: { recipe_id: @media.recipe_run&.recipe_id })
       else
-        @siblings.where(media_type_id: @media.media_type_id)
+        @siblings.where(tag_id: @media.tag_id)
       end
       @siblings = @siblings.with_attached_file.includes(:origin, :recipe_run).order(created_at: :desc)
     end

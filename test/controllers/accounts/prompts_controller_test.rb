@@ -20,7 +20,7 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: "Kind is not included in the list"
 
     assert_difference -> { Prompt.video.count } do
-      post prompts_url, params: { prompt: { name: "Second cinematic", kind: "video", body: "Neon night vibe", media_type_id: media_types(:interior).id } }
+      post prompts_url, params: { prompt: { name: "Second cinematic", kind: "video", body: "Neon night vibe", tag_id: tags(:interior).id } }
     end
     assert_equal "Neon night vibe", Prompt.find_by!(name: "Second cinematic").body
 
@@ -28,7 +28,7 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=radio][name='prompt[kind]'][value=image][checked]"
     assert_select "input[type=radio][name='prompt[kind]'][value=video]"
 
-    post prompts_url, params: { prompt: { name: "Story teaser", body: "Film look", media_type_id: media_types(:interior).id, examples: [ image("a.jpg"), image("b.jpg") ] } }
+    post prompts_url, params: { prompt: { name: "Story teaser", body: "Film look", tag_id: tags(:interior).id, examples: [ image("a.jpg"), image("b.jpg") ] } }
     assert_redirected_to prompts_url(account: @admin.id)
     prompt = Prompt.find_by!(name: "Story teaser")
     assert prompt.image?
@@ -66,7 +66,7 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='prompt[options][aspect_ratio]'] option[selected]", text: "9:16"
     assert_select "select[name='prompt[options][duration]'] option[selected]", text: "8 s"
 
-    post prompts_url, params: { prompt: { name: "Square", body: "p", media_type_id: media_types(:interior).id,
+    post prompts_url, params: { prompt: { name: "Square", body: "p", tag_id: tags(:interior).id,
       options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "" } } }
     prompt = Prompt.find_by!(name: "Square")
     assert_equal({ "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k" }, prompt.options)
@@ -100,27 +100,27 @@ class Accounts::PromptsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "index tabs filter by media type, set on create and edit" do
+  test "index tabs filter by tag, set on create and edit" do
     @admin = sign_in_as(users(:admin_user))
-    get prompts_url(account: @admin.id, media_type: "exterior")
+    get prompts_url(account: @admin.id, tag: "exterior")
     assert_select "nav[aria-label='Secondary'] a[aria-selected='true']", text: /Exterior/
     assert_select "nav[aria-label='Secondary'] a", text: /Interior\s+1/
     assert_select "##{dom_id(prompts(:cinematic))}", count: 0
 
-    get prompts_url(account: @admin.id, media_type: "interior")
+    get prompts_url(account: @admin.id, tag: "interior")
     assert_select "##{dom_id(prompts(:cinematic))}"
 
-    card = media_types(:business_card)
-    post prompts_url, params: { prompt: { name: "Card promo", body: "p", media_type_id: card.id } }
+    card = tags(:business_card)
+    post prompts_url, params: { prompt: { name: "Card promo", body: "p", tag_id: card.id } }
     prompt = Prompt.find_by!(name: "Card promo")
-    assert_equal card, prompt.media_type
+    assert_equal card, prompt.tag
 
     get edit_prompt_url(prompt, account: @admin.id)
-    assert_select "select[name='prompt[media_type_id]'] option[selected][value=?]", card.id.to_s
-    patch prompt_url(prompt), params: { prompt: { media_type_id: media_types(:exterior).id } }
-    assert_equal media_types(:exterior), prompt.reload.media_type
+    assert_select "select[name='prompt[tag_id]'] option[selected][value=?]", card.id.to_s
+    patch prompt_url(prompt), params: { prompt: { tag_id: tags(:exterior).id } }
+    assert_equal tags(:exterior), prompt.reload.tag
 
-    post prompts_url, params: { prompt: { name: "Bad", body: "p", media_type_id: 0 } }
+    post prompts_url, params: { prompt: { name: "Bad", body: "p", tag_id: 0 } }
     assert_response :unprocessable_entity
   end
 

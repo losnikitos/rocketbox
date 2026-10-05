@@ -4,7 +4,7 @@
 # The slug is set from the name once and survives renames.
 # ponytail: code looks up business-card, logo and interior by slug (card extraction, WhatsApp onboarding),
 # so deleting those rows breaks onboarding. Upgrade = a locked flag on those rows.
-class MediaType < ApplicationRecord
+class Tag < ApplicationRecord
   extend FriendlyId
 
   friendly_id :name, use: :slugged

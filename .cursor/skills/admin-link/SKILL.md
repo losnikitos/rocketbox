@@ -33,7 +33,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Prompt | [`_prompt`](/app/views/shared/admin_links/_prompt.html.erb) | Admin, Remove |
 | Generation | [`_generation`](/app/views/shared/admin_links/_generation.html.erb) | Admin |
-| Media types (library tabs) | [`_media_types`](/app/views/shared/admin_links/_media_types.html.erb) | Media types |
+| Tags (library tabs) | [`_tags`](/app/views/shared/admin_links/_tags.html.erb) | Tags |
 
 ## Usage
 

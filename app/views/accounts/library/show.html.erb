@@ -54,7 +54,7 @@
     </div>
 
     <% if @siblings.size > 1 %>
-      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.media_type&.name || "Untyped" %> media"
+      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.tag&.name || "Untagged" %> media"
            class="relative flex gap-2 overflow-x-auto p-1" data-controller="center-current">
         <% @siblings.each do |media| %>
           <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
@@ -77,9 +77,9 @@
     </div>
 
     <%= form_with model: @media, url: library_media_path(@media), class: "mt-4" do |f| %>
-      <%= f.label :media_type_id, "Media type", class: "mb-1 block text-sm text-ink-500" %>
-      <%= f.select :media_type_id,
-            MediaType.ordered.pluck(:name, :id),
+      <%= f.label :tag_id, "Tag", class: "mb-1 block text-sm text-ink-500" %>
+      <%= f.select :tag_id,
+            Tag.ordered.pluck(:name, :id),
             { include_blank: "Not set" },
             class: "block w-full rounded-lg border border-ink-900/15 bg-white px-2.5 py-1.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30",
             onchange: "this.form.requestSubmit()" %>
@@ -123,7 +123,7 @@
           <ul class="flex flex-wrap gap-2" aria-label="Photos">
             <% sources.each do |media| %>
               <li>
-                <%= link_to library_item_path(media), title: media.media_type&.name,
+                <%= link_to library_item_path(media), title: media.tag&.name,
                       class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-16 rounded-md object-cover" %>
                 <% end %>
@@ -144,10 +144,10 @@
     <% if @media.story_image? %>
       <section id="apply_prompt" class="mt-6" aria-labelledby="apply-prompt-heading">
         <h3 id="apply-prompt-heading" class="text-sm text-ink-500"><a href="#apply_prompt" class="hover:underline">Apply prompt</a></h3>
-        <% if @media.media_type.nil? %>
-          <p class="mt-1 text-sm text-ink-600">Set a media type to see prompts.</p>
+        <% if @media.tag.nil? %>
+          <p class="mt-1 text-sm text-ink-600">Set a tag to see prompts.</p>
         <% elsif (prompts = @media.prompts).empty? %>
-          <p class="mt-1 text-sm text-ink-600">No <%= @media.media_type.name.downcase %> prompts yet.</p>
+          <p class="mt-1 text-sm text-ink-600">No <%= @media.tag.name.downcase %> prompts yet.</p>
         <% else %>
           <ul class="mt-2 flex snap-x gap-2 overflow-x-auto pb-1">
             <% prompts.each do |prompt| %>

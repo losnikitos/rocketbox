@@ -2,7 +2,7 @@
 
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
-  belongs_to :media_type, optional: true
+  belongs_to :tag, optional: true
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the generation rows go.
@@ -29,11 +29,11 @@ class LibraryMedia < ApplicationRecord
   enum :collection, %w[inbox photobank ready].index_by(&:itself), default: "inbox", validate: true
 
   validates :kind, presence: true
-  validates :media_type, presence: true, if: :media_type_id
+  validates :tag, presence: true, if: :tag_id
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
-  def business_card? = media_type&.slug == "business-card"
+  def business_card? = tag&.slug == "business-card"
 
   # The Generation or RecipeRun that made this media; both have a status and an error.
   def maker = origin || recipe_run
@@ -52,9 +52,9 @@ class LibraryMedia < ApplicationRecord
 
   # Prompts that suit this media.
   def prompts
-    return [] unless story_image? && media_type
+    return [] unless story_image? && tag
 
-    Prompt.where(media_type:).with_attached_examples.ordered
+    Prompt.where(tag:).with_attached_examples.ordered
   end
 
   def extraction_status

@@ -1,11 +1,11 @@
 cinematic:
   name: Cinematic shop reel
   kind: video
-  media_type: interior
+  tag: interior
   body: Slow cinematic push-in on the shop.
 
 before_after:
   name: Before → after energy
   kind: video
-  media_type: misc
+  tag: misc
   body: Energetic before and after reveal.

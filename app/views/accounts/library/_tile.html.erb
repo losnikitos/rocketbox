@@ -23,8 +23,8 @@
       <%= heroicon "play", variant: :solid, options: { class: "size-10 text-white drop-shadow-md" } %>
     </div>
   <% end %>
-  <% if media.media_type %>
-    <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><%= media.media_type.name %></span>
+  <% if media.tag %>
+    <span class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-ink-900 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><%= media.tag.name %></span>
   <% end %>
   <% if media.generated_media.any? %>
     <div class="absolute bottom-2 right-2 z-10 flex gap-2" aria-label="Generated media">

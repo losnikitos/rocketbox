@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_110000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -137,15 +137,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
     t.json "extracted_info"
     t.integer "from_id"
     t.string "kind", null: false
-    t.integer "media_type_id"
     t.string "source_url"
+    t.integer "tag_id"
     t.string "telegram_file_id"
     t.string "telegram_file_unique_id"
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.string "whatsapp_from"
     t.string "whatsapp_media_id"
-    t.index ["media_type_id"], name: "index_library_media_on_media_type_id"
+    t.index ["tag_id"], name: "index_library_media_on_tag_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
     t.index ["user_id", "source_url"], name: "index_library_media_on_user_id_and_source_url"
     t.index ["user_id"], name: "index_library_media_on_user_id"
@@ -160,14 +160,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
     t.integer "user_id", null: false
     t.index ["user_id", "url"], name: "index_links_on_user_id_and_url", unique: true
     t.index ["user_id"], name: "index_links_on_user_id"
-  end
-
-  create_table "media_types", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.string "slug", null: false
-    t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_media_types_on_slug", unique: true
   end
 
   create_table "messages", force: :cascade do |t|
@@ -207,11 +199,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.string "kind", default: "image", null: false
-    t.integer "media_type_id", null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
+    t.integer "tag_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["media_type_id"], name: "index_prompts_on_media_type_id"
+    t.index ["tag_id"], name: "index_prompts_on_tag_id"
   end
 
   create_table "recipe_runs", force: :cascade do |t|
@@ -234,10 +226,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
   create_table "recipes", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.json "media_type_ids", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
     t.string "shot_group"
+    t.json "tag_ids", default: [], null: false
     t.datetime "updated_at", null: false
   end
 
@@ -440,6 +432,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
     t.index ["crawl_id"], name: "index_suggestions_on_crawl_id"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_tags_on_slug", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "address"
     t.string "brand_voice"
@@ -479,12 +479,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_224119) do
   add_foreign_key "generations", "library_media", column: "source_media_id"
   add_foreign_key "generations", "prompts"
   add_foreign_key "incoming_messages", "users"
-  add_foreign_key "library_media", "media_types", on_delete: :nullify
+  add_foreign_key "library_media", "tags", on_delete: :nullify
   add_foreign_key "library_media", "users"
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
-  add_foreign_key "prompts", "media_types"
+  add_foreign_key "prompts", "tags"
   add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify

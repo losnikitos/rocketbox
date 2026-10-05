@@ -105,7 +105,7 @@
           <ul class="mt-2 flex flex-wrap gap-2">
             <% @post.library_media.each do |media| %>
               <li>
-                <%= link_to library_item_path(media), title: media.media_type&.name,
+                <%= link_to library_item_path(media), title: media.tag&.name,
                       class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-16 rounded-md object-cover" %>
                 <% end %>

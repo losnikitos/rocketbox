@@ -24,7 +24,7 @@ class Generation < ApplicationRecord
   # Raises ActiveRecord::RecordInvalid on bad options, before the photobank media is created.
   def start!
     build_generated_media(user: source_media.user, kind: video? ? "video" : "photo", collection: "photobank",
-      media_type: source_media.media_type)
+      tag: source_media.tag)
     save!
     GenerateJob.perform_later(self)
     self

@@ -1,4 +1,4 @@
-ActiveAdmin.register MediaType do
+ActiveAdmin.register Tag do
   permit_params :name
 
   config.sort_order = "name_asc"

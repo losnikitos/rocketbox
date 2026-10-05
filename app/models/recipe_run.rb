@@ -55,8 +55,8 @@ class RecipeRun < ApplicationRecord
       return errors.add(:recipe, "is missing") unless recipe
 
       media = source_media
-      fits = source_media_ids.size == recipe.media_type_ids.size && media.size == source_media_ids.size && source_media_ids.uniq.size == media.size &&
-        media.zip(recipe.media_type_ids).all? { |item, type_id| item.photobank? && item.media_type_id == type_id && item.story_image? }
+      fits = source_media_ids.size == recipe.tag_ids.size && media.size == source_media_ids.size && source_media_ids.uniq.size == media.size &&
+        media.zip(recipe.tag_ids).all? { |item, type_id| item.photobank? && item.tag_id == type_id && item.story_image? }
       errors.add(:base, "Pick a different photobank photo for every slot.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
     end

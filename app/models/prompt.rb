@@ -6,7 +6,7 @@ class Prompt < ApplicationRecord
   include GenerationOptions
 
   # The library media this prompt suits.
-  belongs_to :media_type
+  belongs_to :tag
   has_many :generations, dependent: :restrict_with_exception
   has_many_attached :examples
 

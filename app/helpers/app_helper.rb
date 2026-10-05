@@ -18,12 +18,12 @@ module AppHelper
         ] ]
       end
 
-      counts = Current.account.library_media.where(collection: @collection).group(:media_type_id).count
-      type = @media ? @media.media_type&.slug : params[:type]
+      counts = Current.account.library_media.where(collection: @collection).group(:tag_id).count
+      slug = @media ? @media.tag&.slug : params[:tag]
       tabs = [
-        [ library_collection_path(@collection), "All", type.blank?, counts.values.sum ],
+        [ library_collection_path(@collection), "All", slug.blank? && params[:type].blank?, counts.values.sum ],
         :separator,
-        *MediaType.ordered.map { |t| [ library_collection_path(@collection, type: t.slug), t.name, type == t.slug, counts[t.id].to_i ] }
+        *Tag.ordered.map { |t| [ library_collection_path(@collection, tag: t.slug), t.name, slug == t.slug, counts[t.id].to_i ] }
       ]
       return [ :photobank, "Photobank", tabs ] if @collection == "photobank"
 
@@ -72,11 +72,11 @@ module AppHelper
       [ :admin, "Admin", [] ]
     when "accounts/prompts"
       index = action_name == "index"
-      counts = Prompt.group(:media_type_id).count
+      counts = Prompt.group(:tag_id).count
       [ :prompts, "Prompts", [
-        [ prompts_path, "All", index && params[:media_type].blank?, counts.values.sum ],
+        [ prompts_path, "All", index && params[:tag].blank?, counts.values.sum ],
         :separator,
-        *MediaType.ordered.map { |t| [ prompts_path(media_type: t.slug), t.name, index && params[:media_type] == t.slug, counts[t.id].to_i ] }
+        *Tag.ordered.map { |t| [ prompts_path(tag: t.slug), t.name, index && params[:tag] == t.slug, counts[t.id].to_i ] }
       ] ]
     when "accounts/shots"
       index = action_name == "index"
