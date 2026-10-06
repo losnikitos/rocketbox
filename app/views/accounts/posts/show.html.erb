@@ -72,7 +72,7 @@
       </div>
     <% elsif @post.generating? || @post.draft? %>
       <div class="flex aspect-9/16 w-64 items-center justify-center rounded-lg bg-stone-50 px-3 text-center text-sm text-ink-600">
-        <%= @post.recipe_id ? "Composing…" : "Generating with AI…" %>
+        Generating with AI…
       </div>
     <% end %>
 
@@ -92,28 +92,4 @@
       </div>
     <% end %>
   </div>
-
-  <% if Current.user.admin? && @post.recipe %>
-    <aside id="generation" class="w-full shrink-0 space-y-6 rounded-2xl border border-ink-900/10 bg-stone-50 p-6 md:w-96 lg:w-108" aria-labelledby="generation-heading">
-      <h2 id="generation-heading" class="text-sm font-medium text-ink-900">Generation</h2>
-
-      <p class="text-sm text-ink-500">Recipe <%= link_to @post.recipe.name, recipe_path(@post.recipe), class: "ml-2 text-ink-900 underline hover:text-ink-600" %></p>
-
-      <% if @post.library_media.any? %>
-        <section aria-labelledby="generation-photos-heading">
-          <h3 id="generation-photos-heading" class="text-sm text-ink-500">Photos</h3>
-          <ul class="mt-2 flex flex-wrap gap-2">
-            <% @post.library_media.each do |media| %>
-              <li>
-                <%= link_to library_item_path(media), title: media.folder.path,
-                      class: "block rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-                  <%= render "accounts/library/file", media:, css: "aspect-2/3 w-16 rounded-md object-cover" %>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
-        </section>
-      <% end %>
-    </aside>
-  <% end %>
 </div>

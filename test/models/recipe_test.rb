@@ -166,7 +166,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_not Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: []).valid?
     two = Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: [ input(:ready), input(:ready) ])
     assert_not two.valid?
-    assert_includes two.errors.full_messages, "Inputs must be a single photo to make a post"
+    assert_includes two.errors.full_messages, "Inputs must be a single photo to make a story"
   end
 
   test "run! records a failure" do
@@ -194,23 +194,25 @@ class RecipeTest < ActiveSupport::TestCase
       video.ai_options)
   end
 
-  test "a feature composes a story draft and renders its layer for tomorrow over the photo" do
-    feature = Recipe.create!(name: "Fully booked", kind: "feature", layer_slug: "fully-booked", inputs: [ input(:ready) ])
+  test "a feature renders its layer for tomorrow over the photo into its output folder" do
+    feature = Recipe.create!(name: "Fully booked", kind: "feature", layer_slug: "fully-booked", inputs: [ input(:ready) ],
+      output_folder: folders(:photobank_logo))
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     rendered = stub_screenshot
 
-    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(@user, media: @interior) }
-    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(users(:admin_user), media: photo) }
-    post = feature.compose!(@user, media: photo)
-    post.generate!
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ @interior ]) }
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], user: users(:admin_user)) }
+    run = feature.run!(media: [ photo ])
+    run.run!
 
     html, size = rendered.sole
     assert_equal [ 1080, 1920 ], size
     assert_includes html, "background-image: url(data:image/jpeg;base64,"
     assert_includes html, Date.tomorrow.strftime("%a, %b %-d")
-    assert_equal [ "ready", "story", feature, [ photo ] ], [ post.reload.status, post.format, post.recipe, post.library_media.to_a ]
-    assert_equal [ "png-bytes" ], post.smm_slides.map { it.media.download }
+    media = run.reload.generated_media
+    assert_equal [ "complete", nil, "photo", folders(:photobank_logo), [ photo ] ], [ run.status, run.prompt, media.kind, media.folder, run.source_media ]
+    assert_equal [ "image/png", "png-bytes" ], [ media.file.content_type, media.file.download ]
   end
 
   test "a feature taking a review needs one and renders it on its layer" do
@@ -223,12 +225,13 @@ class RecipeTest < ActiveSupport::TestCase
     rendered = stub_screenshot
 
     assert_equal [ review ], @user.reviews.postable.to_a
-    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(@user, media: photo) }
-    post = feature.compose!(@user, media: photo, review:)
-    post.generate!
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ]) }
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], review: users(:admin_user).reviews.create!(source: "google", customer_name: "X", rating: 5, body: "Hi.")) }
+    run = feature.run!(media: [ photo ], review:)
+    run.run!
 
     html, = rendered.sole
-    assert_equal [ "ready", review ], [ post.reload.status, post.review ]
+    assert_equal [ "complete", review ], [ run.reload.status, run.review ]
     assert_includes html, "Best fade in town."
     assert_includes html, "Dana K."
     assert_includes html, %(src="data:image/jpeg;base64,)

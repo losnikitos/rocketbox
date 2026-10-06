@@ -140,14 +140,13 @@
     <section class="space-y-2">
       <h2 id="output" class="<%= island_title %>"><a href="#output" class="hover:underline">Output</a></h2>
       <div class="<%= island %>">
-        <div class="group-has-[[value=feature]:checked]/recipe:hidden">
+        <div>
           <p class="<%= tw_label_classes %>">Folder</p>
           <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
             <%= render "shared/folder_pick", name: "recipe[output_folder_id]", selected: recipe.output_folder_id || Folder.ready.id,
                   label: "Output folder", roots: Folder.roots.where(slug: "photobank") %>
           </div>
         </div>
-        <p class="<%= feature_only %> text-sm text-ink-600">An Instagram Story draft.</p>
 
         <% if recipe.persisted? %>
           <div class="grid grid-cols-2 gap-2">
@@ -166,21 +165,7 @@
             <% end %>
           </div>
           <% tile = "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
-          <% if @posts&.any? %>
-            <ul class="grid grid-cols-3 gap-3">
-              <% @posts.limit(24).each do |post| %>
-                <li class="min-w-0">
-                  <%= link_to instagram_post_path(post), aria: { label: "Open post" }, class: tile do %>
-                    <% if (slide = post.smm_slides.find { it.media.attached? }) %>
-                      <%= image_tag url_for(slide.media), alt: "", class: "aspect-2/3 w-full object-cover" %>
-                    <% else %>
-                      <span class="flex aspect-2/3 items-center justify-center bg-ink-900/5 text-xs text-ink-500"><%= post.status %></span>
-                    <% end %>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
-          <% elsif @made.any? %>
+          <% if @made.any? %>
             <ul class="grid grid-cols-3 gap-3">
               <% @made.limit(24).each do |media| %>
                 <li class="min-w-0">

@@ -18,6 +18,7 @@ class RecipeRun < ApplicationRecord
   belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
   belongs_to :style, optional: true
+  belongs_to :review, optional: true
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :recipe_run
   has_many :inputs, -> { order(:position) }, class_name: "RecipeRunInput", inverse_of: :recipe_run, dependent: :delete_all
 
@@ -46,17 +47,19 @@ class RecipeRun < ApplicationRecord
   # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
   # or an option isn't available.
   def start!(user)
-    build_generated_media(user:, kind: recipe.generate_image? ? "photo" : "video", folder: recipe.output_folder)
-    self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") unless recipe.stitch?
+    build_generated_media(user:, kind: recipe.video? || recipe.stitch? ? "video" : "photo", folder: recipe.output_folder)
+    self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") if recipe.ai?
     save!
     GenerateJob.perform_later(self)
     self
   end
 
-  # One AI call on the source media, or a stitch of them.
+  # One AI call on the source media, a stitch of them, or a feature's layer over the first.
   def run!
-    if recipe.stitch?
-      generated_media.update!(file: { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" })
+    unless recipe.ai?
+      file = recipe.stitch? ? { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" } :
+        { io: StringIO.new(layer_png), filename: "#{recipe.layer_slug}.png", content_type: "image/png" }
+      generated_media.update!(file:)
       return update!(status: "complete", error: nil)
     end
     opts = ai_options
@@ -113,6 +116,18 @@ class RecipeRun < ApplicationRecord
       end
     end
 
+    # PNG bytes: the recipe's layer over the first source media, cropped to the layer's size, filled from the review if any.
+    def layer_png
+      layer = recipe.layer
+      photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
+      html = Current.set(account: generated_media.user) do
+        ApplicationController.render("accounts/layers/canvas", layout: false,
+          assigns: { layer:, values: layer.values(review&.layer_values || {}) },
+          locals: { background: "data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}" })
+      end
+      Layer.screenshot(html, size: layer.size)
+    end
+
     def ffmpeg!(*args)
       log, status = Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", *args)
       raise "ffmpeg failed: #{log.lines.last(3).join.strip.presence || status}" unless status.success?
@@ -125,5 +140,6 @@ class RecipeRun < ApplicationRecord
         media.zip(recipe.inputs).all? { |item, slot| item.folder_id == slot["folder_id"] && recipe.takes?(item) }
       errors.add(:base, "Pick a different matching photo for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
+      errors.add(:base, "Pick a review.") unless review.present? == recipe.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end
 end
