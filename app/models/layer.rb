@@ -44,6 +44,13 @@ class Layer
       Field.new(:headline, "Text", :text, "Book your slot"),
       Field.new(:date, "Start date", :date, -> { Date.current }),
       Field.new(:accent, "Accent", :color, "#ebcb9f")
+    ]),
+    new(slug: "welcome", name: "Welcome", size: [ 1080, 1920 ], fields: [
+      Field.new(:line1, "Line 1", :text, "Welcome"),
+      Field.new(:line2, "Line 2", :text, "To"),
+      Field.new(:line3, "Line 3", :text, "Wick Lane"),
+      Field.new(:line4, "Line 4", :text, "Barbershop"),
+      Field.new(:lines, "Lines shown", :text, "4")
     ])
   ].freeze
 

@@ -12,8 +12,8 @@ class RecipeRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
-  # The Doppler stitch effect's track (.wav) and its cut ends in seconds (.csv).
-  DOPPLER = Rails.root.join("lib/stitch/doppler").to_s
+  # Per stitch effect besides default, `<effect>.wav` is its track and `<effect>.csv` its cut ends in seconds.
+  TRACKS = Rails.root.join("lib/stitch").to_s
 
   belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
@@ -88,16 +88,17 @@ class RecipeRun < ApplicationRecord
     # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
     def filename(ext) = "#{recipe.slug.underscore}_#{id}.#{ext}"
 
-    # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for the Doppler effect,
-    # the Doppler track cut on its beat, each cut a random input other than the one before.
+    # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for a track effect
+    # (Doppler, Welcome), its track cut at its cut ends, each cut a random input other than the one before.
+    # A layer builds up over the first cuts: cut i shows its first i + 1 lines, up to its `lines`; later cuts show none.
     # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
     # from the recipe options, a per-media offset.
     def stitch
       media = source_media
-      doppler = recipe.effect == "doppler"
+      track = "#{TRACKS}/#{recipe.effect}" unless recipe.effect == "default"
       # [media, frames] per cut. Ends are rounded to frames, not durations, so cuts don't drift off the beat.
-      cuts = if doppler
-        ends = CSV.foreach("#{DOPPLER}.csv", headers: true).map { (it["end"].to_f * 30).round }
+      cuts = if track
+        ends = CSV.foreach("#{track}.csv", headers: true).map { (it["end"].to_f * 30).round }
         ends.zip([ 0, *ends ]).each_with_object([]) { |(stop, start), acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, stop - start ] }
       else
         media.map { [ it, 30 ] }
@@ -105,17 +106,23 @@ class RecipeRun < ApplicationRecord
       Dir.mktmpdir do |dir|
         paths = media.each_with_index.to_h { |item, i| [ item, File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) } ] }
         fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
+        steps = recipe.layer ? recipe.layer.values[:lines].to_i : 0
         # One ffmpeg per cut, then a lossless join: a single graph with an input per cut queues frames for every
         # cut at once and got OOM-killed in production.
         list = File.join(dir, "cuts.txt")
         File.write(list, cuts.each_with_index.map do |(item, frames), i|
           segment = File.join(dir, "cut#{i}.mp4")
+          filter = [ "-vf", fit ]
+          if i < steps
+            png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: { lines: (i + 1).to_s })) }
+            filter = [ "-i", png, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
+          end
           # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
           # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
-          ffmpeg!(*(%w[-f image2 -loop 1] if item.story_image?), "-i", paths[item], "-vf", fit, "-frames:v", frames.to_s, "-an", "-c:v", "libx264", segment)
+          ffmpeg!(*(%w[-f image2 -loop 1] if item.story_image?), "-i", paths[item], *filter, "-frames:v", frames.to_s, "-an", "-c:v", "libx264", segment)
           "file '#{segment}'\n"
         end.join)
-        audio_in, audio_out = [ "-i", "#{DOPPLER}.wav" ], [ "-map", "1:a", "-c:a", "aac" ] if doppler
+        audio_in, audio_out = [ "-i", "#{track}.wav" ], [ "-map", "1:a", "-c:a", "aac" ] if track
         out = File.join(dir, "out.mp4")
         ffmpeg!("-f", "concat", "-safe", "0", "-i", list, *audio_in, "-map", "0:v", *audio_out, "-c:v", "copy", "-movflags", "+faststart", out)
         File.binread(out)
@@ -124,9 +131,9 @@ class RecipeRun < ApplicationRecord
 
     def layer_over_video? = recipe.feature? && source_media.first&.video?
 
-    # PNG bytes: the recipe's layer over the first source media, cropped to the layer's size, filled from the review if any.
-    # Transparent behind the layer when `over_photo` is false.
-    def layer_png(over_photo: true)
+    # PNG bytes: the recipe's layer over the first source media, cropped to the layer's size, filled from `values`
+    # (the review's, if any). Transparent behind the layer when `over_photo` is false.
+    def layer_png(over_photo: true, values: review&.layer_values || {})
       layer = recipe.layer
       if over_photo
         photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
@@ -134,7 +141,7 @@ class RecipeRun < ApplicationRecord
       end
       html = Current.set(account: generated_media.user) do
         ApplicationController.render("accounts/layers/canvas", layout: false,
-          assigns: { layer:, values: layer.values(review&.layer_values || {}) }, locals: { background: })
+          assigns: { layer:, values: layer.values(values) }, locals: { background: })
       end
       Layer.screenshot(html, size: layer.size)
     end

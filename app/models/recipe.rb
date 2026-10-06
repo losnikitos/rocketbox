@@ -7,7 +7,8 @@
 # Results land in `output_folder`.
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds);
-# a review its runs pick (`takes_review`) and a fixed `layer_slug` (features).
+# a review its runs pick (`takes_review`, features) and a fixed `layer_slug`: a feature's is required, a stitch's is
+# optional and builds up over its first cuts (see RecipeRun#stitch), so it needs a `lines` field.
 # ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
@@ -25,7 +26,8 @@ class Recipe < ApplicationRecord
   # Label and description per stitch effect.
   EFFECTS = {
     "default" => [ "Default", "Each input plays for 1 second, in order." ],
-    "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ]
+    "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ],
+    "welcome" => [ "Welcome", "Cuts where the Welcome reel cuts, under its track, a random input per cut, never the same one twice in a row." ]
   }.freeze
 
   # Runs outlive their recipe.
@@ -49,14 +51,16 @@ class Recipe < ApplicationRecord
 
   before_validation do
     self.shot_group, self.style = nil, nil unless ai?
-    self.takes_review, self.layer_slug = false, nil unless feature?
+    self.takes_review = false unless feature?
+    self.layer_slug = nil unless feature? || stitch?
   end
   validates :name, presence: true
   validates :inputs, presence: true, unless: :generate_image?
   validates :body, presence: true, if: :ai?
   validates :effect, inclusion: { in: EFFECTS.keys }
-  validates :layer_slug, inclusion: { in: Layer::ALL.map(&:slug) }, if: :feature?
+  validates :layer_slug, inclusion: { in: Layer::ALL.map(&:slug) }, if: -> { feature? || layer_slug }
   validate do
+    errors.add(:layer_slug, "must have a Lines field to build up in a stitch") if stitch? && Layer::ALL.find { it.slug == layer_slug }&.fields&.none? { it.name == :lines }
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || feature?) && inputs.size > 1

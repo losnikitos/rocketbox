@@ -39,6 +39,12 @@ class LayersControllerTest < ActionDispatch::IntegrationTest
     assert_select "img", 0
   end
 
+  test "welcome shows its first lines and keeps the rest's space" do
+    get canvas_layer_url("welcome", account: @admin.id, lines: "2")
+    assert_select "span.block:not(.invisible)", text: /\A(Welcome|To)\z/, count: 2
+    assert_select "span.invisible", text: /\A(Wick Lane|Barbershop)\z/, count: 2
+  end
+
   test "png is a transparent screenshot of the canvas" do
     Ferrum::Browser.new.quit rescue skip("Chrome not available")
 
