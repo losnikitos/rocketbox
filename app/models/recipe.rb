@@ -8,7 +8,7 @@
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds);
 # a review its runs pick (`takes_review`, features) and a fixed `layer_slug`: a feature's is required, a stitch's is
-# optional and builds up over its first cuts (see RecipeRun#stitch), so it needs a `lines` field.
+# optional and overlays its first cuts, one per `layer_steps` entry, each filled from its entry (see RecipeRun#stitch).
 # ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
@@ -27,7 +27,10 @@ class Recipe < ApplicationRecord
   EFFECTS = {
     "default" => [ "Default", "Each input plays for 1 second, in order." ],
     "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ],
-    "welcome" => [ "Welcome", "Cuts where the Welcome reel cuts, under its track, a random input per cut, never the same one twice in a row." ]
+    "welcome" => [ "Welcome", "Cuts where the Welcome reel cuts, under its track, a random input per cut, never the same one twice in a row." ],
+    # Instagram's own copy of the track: https://www.instagram.com/reels/audio/27554386410835342/
+    # The Graph API can't attach library audio to a reel, so the track is baked into the video.
+    "black-eyed-peas" => [ "Black Eyed Peas", "Cuts every bar of its track, five cuts, a random input per cut, never the same one twice in a row." ]
   }.freeze
 
   # Runs outlive their recipe.
@@ -44,6 +47,8 @@ class Recipe < ApplicationRecord
   normalizes :inputs, with: ->(inputs) do
     Array(inputs).filter_map { { "folder_id" => it["folder_id"].to_i } if it["folder_id"].present? }
   end
+  # Blank values fall back to the layer's defaults; an all-blank step is dropped.
+  normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank }.reject(&:empty?) }
   # nil takes no shot.
   normalizes :shot_group, :layer_slug, with: ->(value) { value.strip.presence }
   # The free-text group it's listed under on the index; nil is ungrouped.
@@ -53,6 +58,7 @@ class Recipe < ApplicationRecord
     self.shot_group, self.style = nil, nil unless ai?
     self.takes_review = false unless feature?
     self.layer_slug = nil unless feature? || stitch?
+    self.layer_steps = [] unless stitch? && layer_slug
   end
   validates :name, presence: true
   validates :inputs, presence: true, unless: :generate_image?
@@ -60,13 +66,12 @@ class Recipe < ApplicationRecord
   validates :effect, inclusion: { in: EFFECTS.keys }
   validates :layer_slug, inclusion: { in: Layer::ALL.map(&:slug) }, if: -> { feature? || layer_slug }
   validate do
-    errors.add(:layer_slug, "must have a Lines field to build up in a stitch") if stitch? && Layer::ALL.find { it.slug == layer_slug }&.fields&.none? { it.name == :lines }
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || feature?) && inputs.size > 1
   end
   # A run of unsaved edits: its job reloads the recipe, so it would run the saved kind, effect and layer.
-  validate(on: :run) { errors.add(:base, "Save to change the type or layer.") if kind_changed? || effect_changed? || layer_slug_changed? }
+  validate(on: :run) { errors.add(:base, "Save to change the type or layer.") if kind_changed? || effect_changed? || layer_slug_changed? || layer_steps_changed? }
 
   scope :ordered, -> { order(:name) }
 

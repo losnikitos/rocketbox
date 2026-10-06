@@ -89,8 +89,8 @@ class RecipeRun < ApplicationRecord
     def filename(ext) = "#{recipe.slug.underscore}_#{id}.#{ext}"
 
     # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for a track effect
-    # (Doppler, Welcome), its track cut at its cut ends, each cut a random input other than the one before.
-    # A layer builds up over the first cuts: cut i shows its first i + 1 lines, up to its `lines`; later cuts show none.
+    # (Doppler, Welcome, Black Eyed Peas), its track cut at its cut ends, each cut a random input other than the one before.
+    # A layer overlays the first cuts: cut i filled from the recipe's layer step i; cuts past its steps show none.
     # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
     # from the recipe options, a per-media offset.
     def stitch
@@ -106,15 +106,15 @@ class RecipeRun < ApplicationRecord
       Dir.mktmpdir do |dir|
         paths = media.each_with_index.to_h { |item, i| [ item, File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) } ] }
         fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
-        steps = recipe.layer ? recipe.layer.values[:lines].to_i : 0
+        steps = recipe.layer ? recipe.layer_steps : []
         # One ffmpeg per cut, then a lossless join: a single graph with an input per cut queues frames for every
         # cut at once and got OOM-killed in production.
         list = File.join(dir, "cuts.txt")
         File.write(list, cuts.each_with_index.map do |(item, frames), i|
           segment = File.join(dir, "cut#{i}.mp4")
           filter = [ "-vf", fit ]
-          if i < steps
-            png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: { lines: (i + 1).to_s })) }
+          if steps[i]
+            png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: steps[i].symbolize_keys)) }
             filter = [ "-i", png, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
           end
           # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain

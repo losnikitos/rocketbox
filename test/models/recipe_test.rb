@@ -112,7 +112,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  { "doppler" => 9.6, "welcome" => 8.1 }.each do |effect, length|
+  { "doppler" => 9.6, "welcome" => 8.1, "black-eyed-peas" => 7.0 }.each do |effect, length|
     test "a #{effect} stitch lays its track under its cuts" do
       recipe = Recipe.create!(name: effect, kind: "stitch", effect:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
       media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
@@ -129,10 +129,11 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
-  test "a stitch builds its layer up over its first cuts, one line per cut" do
-    assert_not Recipe.new(name: "x", kind: "stitch", layer_slug: "daily", inputs: [ input(:photobank_interior) ]).valid?
-    recipe = Recipe.create!(name: "Welcome", kind: "stitch", effect: "welcome", layer_slug: "welcome",
-      inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+  test "a stitch overlays its first cuts with its layer, each filled from its own step" do
+    recipe = Recipe.create!(name: "Black eyed peas", kind: "stitch", effect: "black-eyed-peas", layer_slug: "caption",
+      inputs: [ input(:photobank_interior), input(:photobank_customer) ],
+      layer_steps: [ { "line2" => "coffee" }, { "line1" => "", "line2" => "" }, { "line1" => "Our", "line2" => "tools" }, { "line2" => "" } ])
+    assert_equal [ { "line2" => "coffee" }, { "line1" => "Our", "line2" => "tools" } ], recipe.layer_steps
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
@@ -141,7 +142,7 @@ class RecipeTest < ActiveSupport::TestCase
     run.run!
 
     assert_equal "complete", run.reload.status, run.error
-    assert_equal [ 3, 2, 1, 0 ], htmls.map { it.scan(/class="block invisible"/).size }
+    assert_equal [ %w[The coffee], %w[Our tools] ], htmls.map { it.scan(/<p class="font-[^>]*>([^<]*)</).flatten }
     assert htmls.none? { it.include?("background-image: url(") }
   end
 

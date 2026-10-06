@@ -85,7 +85,7 @@ module Accounts
 
       def recipe_params
         params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :takes_review, :layer_slug, :output_folder_id, :example,
-          inputs: [ %i[folder_id] ], options: {} ])
+          inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 
       # The refreshes resubmit the form as a GET; the example waits for the save.
