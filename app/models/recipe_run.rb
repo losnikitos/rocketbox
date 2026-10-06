@@ -58,9 +58,9 @@ class RecipeRun < ApplicationRecord
   # One AI call on the source media, a stitch of them, or a feature's layer over the first.
   def run!
     unless recipe.ai?
-      file = if recipe.stitch? then { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" }
-      elsif layer_over_video? then { io: StringIO.new(layer_video), filename: "#{recipe.layer_slug}.mp4", content_type: "video/mp4" }
-      else { io: StringIO.new(layer_png), filename: "#{recipe.layer_slug}.png", content_type: "image/png" }
+      file = if recipe.stitch? then { io: StringIO.new(stitch), filename: filename("mp4"), content_type: "video/mp4" }
+      elsif layer_over_video? then { io: StringIO.new(layer_video), filename: filename("mp4"), content_type: "video/mp4" }
+      else { io: StringIO.new(layer_png), filename: filename("png"), content_type: "image/png" }
       end
       generated_media.update!(file:)
       return update!(status: "complete", error: nil)
@@ -70,11 +70,11 @@ class RecipeRun < ApplicationRecord
     args = { model: opts[:model], provider: opts[:provider], provider_options: opts.except(:provider, :model) }
     if video?
       result = RubyLLM.animate(prompt, with: images.first, **args)
-      file = { io: StringIO.new(result.to_blob), filename: "recipe.mp4", content_type: "video/mp4" }
+      file = { io: StringIO.new(result.to_blob), filename: filename("mp4"), content_type: "video/mp4" }
     else
       result = RubyLLM.paint(prompt, with: images.presence, **args)
       self.cost = result.cost.total
-      file = { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" }
+      file = { io: StringIO.new(result.to_blob), filename: filename("jpg"), content_type: "image/jpeg" }
     end
     generated_media.update!(file:)
     update!(status: "complete", error: nil)
@@ -84,6 +84,9 @@ class RecipeRun < ApplicationRecord
   end
 
   private
+
+    # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
+    def filename(ext) = "#{recipe.name.parameterize(separator: "_").presence || "recipe"}_#{id}.#{ext}"
 
     # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for the Doppler effect,
     # the Doppler track cut on its beat, each cut a random input other than the one before.

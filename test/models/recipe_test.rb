@@ -68,6 +68,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ [ "Compose a collage.\n\nWarmer.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
     assert_equal [ "complete", 0.04, "Compose a collage.\n\nWarmer." ], [ run.reload.status, run.cost, run.prompt ]
     assert_equal "jpeg-bytes", media.reload.file.download
+    assert_equal "#{@recipe.name.parameterize(separator: "_")}_#{run.id}.jpg", media.file.filename.to_s
   end
 
   test "a video recipe animates its one input into a video" do
@@ -97,7 +98,7 @@ class RecipeTest < ActiveSupport::TestCase
 
     assert_equal [ "complete", nil ], [ run.reload.status, run.prompt ]
     file = run.generated_media.reload.file
-    assert_equal [ "video", "video/mp4" ], [ run.generated_media.kind, file.content_type ]
+    assert_equal [ "video", "video/mp4", "reel_#{run.id}.mp4" ], [ run.generated_media.kind, file.content_type, file.filename.to_s ]
     duration = file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", it.path).first.to_f }
     assert_in_delta 2.0, duration, 0.1
   end
