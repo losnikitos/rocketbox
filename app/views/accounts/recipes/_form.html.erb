@@ -123,28 +123,34 @@
             <% end %>
           </div>
         </fieldset>
-        <fieldset class="group/effect <%= scripted_only %> space-y-2">
-          <legend class="<%= tw_label_classes %>">Effect</legend>
-          <%# Overlays on the first row, reels on the second; a pick refreshes the inputs, which follow its layer. %>
-          <% Recipe::EFFECTS.partition { |effect, _| effect.in?(Recipe::OVERLAYS) }.each do |effects| %>
-            <div class="<%= tw_segments_classes %>">
-              <% effects.each do |effect, (label, _, _)| %>
-                <label class="<%= tw_segment_classes %> flex items-center justify-center px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
-                  <%= f.radio_button :effect, effect, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh_inputs)" %>
-                  <%= label %>
-                </label>
-              <% end %>
-            </div>
-          <% end %>
+        <div class="group/effect <%= scripted_only %> space-y-2">
+          <%= f.label :effect, class: tw_label_classes %>
+          <%# A pick refreshes the inputs, which follow its layer. %>
+          <% overlays, reels = Recipe::EFFECTS.map { |effect, (label, _, _)| [ label, effect ] }.partition { |_, effect| effect.in?(Recipe::OVERLAYS) } %>
+          <%= f.select :effect, { "Overlays" => overlays, "Reels" => reels }, {},
+                onchange: "this.form.requestSubmit(this.form.elements.refresh_inputs)", class: tw_input_classes %>
           <% shown_when = { "fully-booked" => "group-has-[[value=fully-booked]:checked]/effect:block", "daily" => "group-has-[[value=daily]:checked]/effect:block",
                            "review" => "group-has-[[value=review]:checked]/effect:block", "calendar" => "group-has-[[value=calendar]:checked]/effect:block",
                            "steps" => "group-has-[[value=steps]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
                            "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
                            "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block" } %>
-          <% Recipe::EFFECTS.each do |effect, (_, _, description)| %>
-            <p class="hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
+          <% Recipe::EFFECTS.each do |effect, (_, slug, description)| %>
+            <div class="hidden space-y-3 <%= shown_when[effect] %>">
+              <p class="text-sm text-ink-600"><%= description %></p>
+              <% if slug %>
+                <% layer = Layer.find(slug) %>
+                <div class="relative w-24 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
+                     style="aspect-ratio: <%= layer.size.join(" / ") %>">
+                  <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+                  <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
+                </div>
+              <% end %>
+              <% if File.exist?("#{RecipeRun::TRACKS}/#{effect}.wav") %>
+                <%= tag.audio controls: true, preload: "none", src: track_recipes_path(effect), "aria-label": "Track", class: "w-full" %>
+              <% end %>
+            </div>
           <% end %>
-        </fieldset>
+        </div>
         <div class="<%= ai_only %>">
           <%= f.label :body, "Prompt", class: tw_label_classes %>
           <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>

@@ -280,7 +280,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "input[name='media_ids[0]'][value=?][checked]", ready.id.to_s
       assert_select "label:has(input[type=radio][name=review_id][value=?][checked])", review.id.to_s, text: /Dana K\.\s+Best fade in town/
       assert_select "section[aria-label=Layer] a[href=?]", layer_path("review", account: @admin.id), text: "Preview"
-      assert_select "input[type=radio][name='recipe[effect]'][value=review][checked]"
+      assert_select "select[name='recipe[effect]'] option[value=review][selected]"
 
       assert_difference -> { RecipeRun.count } => 1, -> { SmmPost.count } => 0 do
         assert_enqueued_with(job: GenerateJob) do
@@ -294,6 +294,21 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, recipe: { effect: "daily" } }
       assert_response :unprocessable_entity
       assert_select "[role=alert]", text: /Save to change the type or effect/
+    end
+
+    test "each effect previews its layer and track, served to admins only for known effects" do
+      get new_recipe_url(account: @admin.id)
+      assert_select "iframe[src=?]", canvas_layer_path("caption", account: @admin.id)
+      assert_select "audio[src=?]", track_recipes_path("black-eyed-peas", account: @admin.id)
+      assert_select "audio[src=?]", track_recipes_path("steps", account: @admin.id), count: 0
+
+      get track_recipes_url("doppler", account: @admin.id)
+      assert_response :success
+      assert_equal "audio/wav", response.media_type
+      get track_recipes_url("steps", account: @admin.id)
+      assert_response :not_found
+      get track_recipes_url("..%2F..%2Fconfig%2Fmaster", account: @admin.id)
+      assert_response :not_found
     end
 
     test "rejects options xAI doesn't offer and media that don't fit the input" do

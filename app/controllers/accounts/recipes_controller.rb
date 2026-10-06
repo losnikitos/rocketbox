@@ -65,6 +65,14 @@ module Accounts
       redirect_to recipes_path
     end
 
+    # A reel effect's track, previewed on the form.
+    def track
+      path = "#{RecipeRun::TRACKS}/#{params[:effect]}.wav"
+      return head :not_found unless Recipe::EFFECTS.key?(params[:effect]) && File.exist?(path)
+
+      send_file path, type: "audio/wav", disposition: "inline"
+    end
+
     private
 
       def set_recipe
