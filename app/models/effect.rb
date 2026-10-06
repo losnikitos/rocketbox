@@ -22,7 +22,11 @@ class Effect
     # Instagram's own copy of the track: https://www.instagram.com/reels/audio/27554386410835342/
     # The Graph API can't attach library audio to a reel, so the track is baked into the video.
     Track.new("black-eyed-peas", "Black Eyed Peas", "Cuts every bar of its track, five cuts, a random input per cut, never the same one twice in a row.",
-      layer: "caption")
+      layer: "caption"),
+    # Cut from mr_azzurro's reel (reels/azzurro/azzurro.mp4): https://www.instagram.com/reel/DV6iiG6jOVc/
+    # Its original audio "Mix": https://www.instagram.com/reels/audio/26474853948777658/
+    Track.new("azzurro", "Azzurro", "Cuts where the Azzurro reel cuts, bursts every few frames between three held shots, under its track, " \
+      "a random input per cut, never the same one twice in a row.")
   ].freeze
 
   def self.find(slug) = all.find { it.slug == slug }

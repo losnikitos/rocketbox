@@ -134,7 +134,8 @@
                            "review" => "group-has-[[value=review]:checked]/effect:block", "calendar" => "group-has-[[value=calendar]:checked]/effect:block",
                            "steps" => "group-has-[[value=steps]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
                            "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
-                           "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block" } %>
+                           "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block",
+                           "azzurro" => "group-has-[[value=azzurro]:checked]/effect:block" } %>
           <% Effect.all.each do |effect| %>
             <div class="hidden space-y-3 <%= shown_when[effect.slug] %>">
               <p class="text-sm text-ink-600"><%= effect.description %></p>

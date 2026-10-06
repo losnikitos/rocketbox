@@ -112,7 +112,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  { "doppler" => 9.6, "welcome" => 8.1, "black-eyed-peas" => 7.0 }.each do |effect, length|
+  { "doppler" => 9.6, "welcome" => 8.1, "black-eyed-peas" => 7.0, "azzurro" => 6.4 }.each do |effect, length|
     test "a #{effect} recipe lays its track under its cuts" do
       recipe = Recipe.create!(name: effect, kind: "scripted", effect:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
       media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
