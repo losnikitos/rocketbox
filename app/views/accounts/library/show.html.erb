@@ -91,7 +91,7 @@
           <p class="text-sm text-signal-red"><%= run.error %></p>
         <% end %>
         <%= render "accounts/recipes/card", recipe: run.recipe if run.recipe %>
-        <% if made && !run.recipe&.stitch? %>
+        <% if made && !run.recipe&.scripted? %>
           <%= render "accounts/recipe_runs/options", record: run, rows: [
                 [ "Recipe", ("Deleted" unless run.recipe) ],
                 [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_141846) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_150000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -208,11 +208,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_141846) do
   create_table "recipes", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.string "effect", default: "default", null: false
+    t.string "effect"
     t.string "group"
     t.json "inputs", default: [], null: false
     t.string "kind", default: "generate_image", null: false
-    t.string "layer_slug"
     t.json "layer_steps", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
@@ -220,7 +219,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_141846) do
     t.string "shot_group"
     t.string "slug", null: false
     t.integer "style_id"
-    t.boolean "takes_review", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
     t.index ["slug"], name: "index_recipes_on_slug", unique: true

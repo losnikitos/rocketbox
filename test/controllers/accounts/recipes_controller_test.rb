@@ -46,7 +46,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.folder_ids, recipe.output_folder ]
     assert_equal "b.jpg", recipe.example.filename.to_s
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "stitch", layer_slug: "caption",
+    patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "scripted", effect: "black-eyed-peas",
       layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ] } }
     assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" } ], recipe.reload.layer_steps
     get recipe_url(recipe, account: @admin.id)
@@ -62,11 +62,12 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     get new_recipe_url(account: @admin.id)
     assert_select "input[type=radio][name='recipe[kind]'][value=generate_image][checked]"
-    assert_equal %w[generate_image generate_video stitch feature], css_select("input[name='recipe[kind]']").map { it["value"] }
+    assert_equal %w[generate_image generate_video scripted], css_select("input[name='recipe[kind]']").map { it["value"] }
     assert_select "turbo-frame#generation_options input[type=hidden][name='recipe[options][model]'][value='gpt-image-2.5-flare']"
     assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("turbo-frame#generation_options button[data-pick-target=option]").map { it["value"] }
     assert_select "section[aria-label=Media] input[type=checkbox][name='on[media]'][checked]"
-    %w[Style Shot Review Layer].each { assert_select "section[aria-label=#{it}] fieldset[disabled]" }
+    %w[Style Shot].each { assert_select "section[aria-label=#{it}] fieldset[disabled]" }
+    %w[Review Layer].each { assert_select "section[aria-label=#{it}]", count: 0 }
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_recipe_path(account: @admin.id)
     assert_select "button[name=commit]", count: 0
 
@@ -92,7 +93,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "index lists recipes newest first" do
     @admin = sign_in_as(users(:admin_user))
-    reel = Recipe.create!(name: "Reel", kind: "stitch", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
+    reel = Recipe.create!(name: "Reel", kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
 
     get recipes_url(account: @admin.id)
     assert_equal dom_id(reel), css_select("main li[id^='recipe_']").first["id"]
@@ -101,7 +102,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "admin drops a recipe into a group; the index lists it under that group" do
     @admin = sign_in_as(users(:admin_user))
-    reel = Recipe.create!(name: "Reel", kind: "stitch", inputs: [ input(:photobank_interior) ])
+    reel = Recipe.create!(name: "Reel", kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior) ])
 
     patch recipe_url(reel), params: { recipe: { group: " Promo " } }, headers: { "HTTP_REFERER" => recipes_url(account: @admin.id) }
     assert_redirected_to recipes_url(account: @admin.id)
@@ -122,7 +123,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "admin renames a group; every recipe in it moves to the new name" do
     @admin = sign_in_as(users(:admin_user))
-    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "stitch", inputs: [ input(:photobank_interior) ], group: "Promo") }
+    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior) ], group: "Promo") }
     other.update!(group: "Other")
 
     patch rename_group_recipes_url(account: @admin.id), params: { from: "Promo", to: " Sale " }
@@ -269,16 +270,17 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "section[aria-label=Shot] fieldset:not([disabled]) select[name='recipe[shot_group]']"
     end
 
-    test "a feature recipe's run renders the picked photo and review into its output folder" do
+    test "a review recipe's run renders the picked photo and review into its output folder" do
       ready = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @admin,
         file: { io: StringIO.new("img"), filename: "ready.jpg", content_type: "image/jpeg" })
       review = @admin.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.")
-      recipe = Recipe.create!(name: "Reviews", kind: "feature", layer_slug: "review", takes_review: true, inputs: [ { "folder_id" => folders(:ready).id } ])
+      recipe = Recipe.create!(name: "Reviews", kind: "scripted", effect: "review", inputs: [ { "folder_id" => folders(:ready).id } ])
 
       get recipe_url(recipe, account: @admin.id)
       assert_select "input[name='media_ids[0]'][value=?][checked]", ready.id.to_s
       assert_select "label:has(input[type=radio][name=review_id][value=?][checked])", review.id.to_s, text: /Dana K\.\s+Best fade in town/
-      assert_select "section[aria-label=Layer] select[name='recipe[layer_slug]'] option[selected][value=review]"
+      assert_select "section[aria-label=Layer] a[href=?]", layer_path("review", account: @admin.id), text: "Preview"
+      assert_select "input[type=radio][name='recipe[effect]'][value=review][checked]"
 
       assert_difference -> { RecipeRun.count } => 1, -> { SmmPost.count } => 0 do
         assert_enqueued_with(job: GenerateJob) do
@@ -289,9 +291,9 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
       assert_equal [ review, [ ready ], folders(:ready) ], [ run.review, run.source_media, run.generated_media.folder ]
 
-      patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, recipe: { layer_slug: "daily" } }
+      patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, recipe: { effect: "daily" } }
       assert_response :unprocessable_entity
-      assert_select "[role=alert]", text: /Save to change the type or layer/
+      assert_select "[role=alert]", text: /Save to change the type or effect/
     end
 
     test "rejects options xAI doesn't offer and media that don't fit the input" do

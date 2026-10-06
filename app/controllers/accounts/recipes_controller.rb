@@ -84,7 +84,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :takes_review, :layer_slug, :output_folder_id, :example,
+        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :output_folder_id, :example,
           inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 

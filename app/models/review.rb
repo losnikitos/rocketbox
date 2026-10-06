@@ -13,7 +13,7 @@ class Review < ApplicationRecord
 
   scope :active, -> { where(archived_at: nil) }
   scope :archived, -> { where.not(archived_at: nil) }
-  # What a feature recipe's review input picks from.
+  # What a review recipe's review input picks from.
   scope :postable, -> { active.where(rating: 5).where.not(body: [ nil, "" ]) }
   scope :with_media, -> { where(id: ActiveStorage::Attachment.where(record_type: name, name: "media").select(:record_id)) }
 

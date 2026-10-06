@@ -3,9 +3,8 @@
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
 <% refresh_url = recipe.persisted? ? recipe_path(recipe) : new_recipe_path %>
 <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
-  <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden group-has-[[value=feature]:checked]/recipe:hidden" %>
-  <% feature_only = "hidden group-has-[[value=feature]:checked]/recipe:block" %>
-  <% feature_or_stitch = "#{feature_only} group-has-[[value=stitch]:checked]/recipe:block" %>
+  <% ai_only = "group-has-[[value=scripted]:checked]/recipe:hidden" %>
+  <% scripted_only = "hidden group-has-[[value=scripted]:checked]/recipe:block" %>
   <% if recipe.errors.any? %>
     <div class="<%= tw_alert_error_classes %>" role="alert">
       <ul class="list-inside list-disc">
@@ -75,37 +74,34 @@
           <% end %>
         <% end %>
 
-        <%= render "accounts/recipes/input_section", title: "Review", icon: "star", chip: "border-yellow-300 bg-yellow-50 text-yellow-600", key: :review,
-              enabled: on.(:review, recipe.takes_review?), blank: "recipe[takes_review]", off: "0", css: feature_only do %>
-          <%= f.hidden_field :takes_review, value: "1", id: nil %>
-          <% if @reviews %>
+        <% if @reviews %>
+          <%= render "accounts/recipes/input_section", title: "Review", icon: "star", chip: "border-yellow-300 bg-yellow-50 text-yellow-600", toggle: false, css: scripted_only do %>
             <%= render "accounts/recipe_runs/pick", name: :review_id, label: "Review", items: @reviews, option: "accounts/recipe_runs/review_option",
                   selected: @reviews.find { it.id.to_s == params[:review_id] } || @reviews.sample,
                   empty: safe_join([ "No 5-star reviews with text yet. ", link_to("See reviews", reviews_path, class: "underline hover:text-ink-900") ]) %>
           <% end %>
         <% end %>
 
-        <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", key: :layer,
-              enabled: on.(:layer, recipe.layer_slug), blank: "recipe[layer_slug]", css: feature_or_stitch do %>
-          <div class="flex items-center gap-3">
-            <%= f.select :layer_slug, Layer::ALL.map { [ it.name, it.slug ] }, {}, "aria-label": "Layer", onchange: refresh, class: tw_input_classes %>
-            <% if recipe.layer %>
-              <%= link_to "Preview", layer_path(recipe.layer), class: "shrink-0 text-sm text-ink-600 underline hover:text-ink-900" %>
-            <% end %>
-          </div>
-          <% if recipe.layer %>
-            <%# One row per cut it overlays, plus a blank one to add the next; blank rows are dropped on save. %>
-            <div class="hidden space-y-2 group-has-[[value=stitch]:checked]/recipe:block">
-              <% (recipe.layer_steps + [ {} ]).each_with_index do |step, i| %>
-                <div class="flex items-center gap-2">
-                  <span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span>
-                  <% recipe.layer.fields.each do |field| %>
-                    <%= text_field_tag "recipe[layer_steps][][#{field.name}]", step[field.name.to_s], id: nil, placeholder: field.label,
-                          "aria-label": "Cut #{i + 1} #{field.label}", class: "#{tw_input_classes} min-w-0" %>
-                  <% end %>
-                </div>
-              <% end %>
+        <% if (layer = recipe.layer) %>
+          <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", toggle: false, css: scripted_only do %>
+            <div class="flex items-center justify-between gap-3 text-sm text-ink-900">
+              <%= layer.name %>
+              <%= link_to "Preview", layer_path(layer), class: "shrink-0 text-ink-600 underline hover:text-ink-900" %>
             </div>
+            <% if recipe.reel? %>
+              <%# One row per cut it overlays, plus a blank one to add the next; blank rows are dropped on save. %>
+              <div class="space-y-2">
+                <% (recipe.layer_steps + [ {} ]).each_with_index do |step, i| %>
+                  <div class="flex items-center gap-2">
+                    <span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span>
+                    <% layer.fields.each do |field| %>
+                      <%= text_field_tag "recipe[layer_steps][][#{field.name}]", step[field.name.to_s], id: nil, placeholder: field.label,
+                            "aria-label": "Cut #{i + 1} #{field.label}", class: "#{tw_input_classes} min-w-0" %>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
           <% end %>
         <% end %>
         <%= tag.button name: "refresh_inputs", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "recipe_inputs" } %>
@@ -127,21 +123,26 @@
             <% end %>
           </div>
         </fieldset>
-        <fieldset class="group/effect hidden group-has-[[value=stitch]:checked]/recipe:block">
+        <fieldset class="group/effect <%= scripted_only %> space-y-2">
           <legend class="<%= tw_label_classes %>">Effect</legend>
-          <div class="<%= tw_segments_classes %>">
-            <% Recipe::EFFECTS.each do |effect, (label, _)| %>
-              <label class="<%= tw_segment_classes %> flex items-center justify-center px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
-                <%= f.radio_button :effect, effect, class: "sr-only" %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-          <% shown_when = { "default" => "group-has-[[value=default]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
+          <%# Overlays on the first row, reels on the second; a pick refreshes the inputs, which follow its layer. %>
+          <% Recipe::EFFECTS.partition { |effect, _| effect.in?(Recipe::OVERLAYS) }.each do |effects| %>
+            <div class="<%= tw_segments_classes %>">
+              <% effects.each do |effect, (label, _, _)| %>
+                <label class="<%= tw_segment_classes %> flex items-center justify-center px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
+                  <%= f.radio_button :effect, effect, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh_inputs)" %>
+                  <%= label %>
+                </label>
+              <% end %>
+            </div>
+          <% end %>
+          <% shown_when = { "fully-booked" => "group-has-[[value=fully-booked]:checked]/effect:block", "daily" => "group-has-[[value=daily]:checked]/effect:block",
+                           "review" => "group-has-[[value=review]:checked]/effect:block", "calendar" => "group-has-[[value=calendar]:checked]/effect:block",
+                           "steps" => "group-has-[[value=steps]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
                            "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
                            "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block" } %>
-          <% Recipe::EFFECTS.each do |effect, (_, description)| %>
-            <p class="mt-2 hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
+          <% Recipe::EFFECTS.each do |effect, (_, _, description)| %>
+            <p class="hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
           <% end %>
         </fieldset>
         <div class="<%= ai_only %>">
