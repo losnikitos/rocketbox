@@ -27,7 +27,7 @@
           <h2 class="mb-3 text-sm font-semibold text-ink-900">Ungrouped</h2>
         <% end %>
         <% if recipes.any? %>
-          <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
+          <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 min-[1800px]:grid-cols-10">
             <% recipes.each do |recipe| %>
               <%= render "tile", recipe:, made: @made.fetch(recipe.id, []) %>
             <% end %>

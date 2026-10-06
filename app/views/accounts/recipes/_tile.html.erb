@@ -13,11 +13,11 @@
     </div>
   <% end %>
   <%= link_to recipe_path(recipe), class: "absolute inset-0 flex flex-col items-start", draggable: "true", data: { move_url: recipe_path(recipe) } do %>
-    <span class="w-full p-4 pr-12 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+    <span class="w-full p-3 pr-10 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
       <%= recipe.name %>
     </span>
     <% unless covered %>
-      <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= recipe.body %></span>
+      <span class="line-clamp-8 px-3 text-xs text-ink-600"><%= recipe.body %></span>
     <% end %>
   <% end %>
   <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">
