@@ -8,3 +8,4 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 pin "three" # @0.170.0 (full three.module.min.js — jspm stub is unusable under importmap)
 pin "swiper" # @12.2.0 (full +esm bundle — jspm stub is unusable under importmap)
 pin "gsap" # @3.13.0 (full +esm bundle — jspm stub is unusable under importmap)
+pin "@dagrejs/dagre", to: "@dagrejs--dagre.js" # @3.1.1
