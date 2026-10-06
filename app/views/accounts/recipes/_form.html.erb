@@ -5,6 +5,7 @@
 <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
   <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden group-has-[[value=feature]:checked]/recipe:hidden" %>
   <% feature_only = "hidden group-has-[[value=feature]:checked]/recipe:block" %>
+  <% feature_or_stitch = "#{feature_only} group-has-[[value=stitch]:checked]/recipe:block" %>
   <% if recipe.errors.any? %>
     <div class="<%= tw_alert_error_classes %>" role="alert">
       <ul class="list-inside list-disc">
@@ -85,7 +86,7 @@
         <% end %>
 
         <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", key: :layer,
-              enabled: on.(:layer, recipe.layer_slug), blank: "recipe[layer_slug]", css: feature_only do %>
+              enabled: on.(:layer, recipe.layer_slug), blank: "recipe[layer_slug]", css: feature_or_stitch do %>
           <div class="flex items-center gap-3">
             <%= f.select :layer_slug, Layer::ALL.map { [ it.name, it.slug ] }, {}, "aria-label": "Layer", onchange: refresh, class: tw_input_classes %>
             <% if recipe.layer %>

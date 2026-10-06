@@ -129,6 +129,22 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
+  test "a stitch builds its layer up over its first cuts, one line per cut" do
+    assert_not Recipe.new(name: "x", kind: "stitch", layer_slug: "daily", inputs: [ input(:photobank_interior) ]).valid?
+    recipe = Recipe.create!(name: "Welcome", kind: "stitch", effect: "welcome", layer_slug: "welcome",
+      inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
+    png, htmls = file_fixture("logo.png").binread, []
+    Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
+
+    run = recipe.run!(media:)
+    run.run!
+
+    assert_equal "complete", run.reload.status, run.error
+    assert_equal [ 3, 2, 1, 0 ], htmls.map { it.scan(/class="block invisible"/).size }
+    assert htmls.none? { it.include?("background-image: url(") }
+  end
+
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
