@@ -300,7 +300,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
         patch recipe_url(@recipe), params: { commit: "run", media_ids: { 0 => @media.id }, recipe: { body: @recipe.body } }
       end
       assert_response :unprocessable_entity
-      assert_select "[role=alert]", text: /Pick a different matching photo for every input/
+      assert_select "[role=alert]", text: /Pick a matching photo for every input/
     end
   end
 

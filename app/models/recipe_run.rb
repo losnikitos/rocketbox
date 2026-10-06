@@ -156,10 +156,9 @@ class RecipeRun < ApplicationRecord
 
     def media_fit_recipe
       media = source_media
-      fits = media.size == recipe.inputs.size && media.all? && media.uniq.size == media.size &&
-        media.all? { it.user_id == generated_media&.user_id } &&
+      fits = media.size == recipe.inputs.size && media.all? && media.all? { it.user_id == generated_media&.user_id } &&
         media.zip(recipe.inputs).all? { |item, slot| item.folder_id == slot["folder_id"] && recipe.takes?(item) }
-      errors.add(:base, "Pick a different matching photo for every input.") unless fits
+      errors.add(:base, "Pick a matching photo for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
       errors.add(:base, "Pick a review.") unless review.present? == recipe.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end
