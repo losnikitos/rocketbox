@@ -49,12 +49,13 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=hero-media][title='View full size']"
     assert_select "nav[aria-label=Versions] a[href=?]", library_item_path(source), text: /Original/
     assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_item_path(generated)
-    assert_select "aside ul[aria-label='Source media'] a[href=?]", library_item_path(source)
+    assert_select "#recipe-run-heading", text: "Generation"
+    assert_select "aside a[href=?]", library_item_path(source), count: 0
 
     get library_item_url(failed.generated_media)
-    assert_select "section p", text: "content policy"
-    assert_select "section h3", text: "Cinematic shop reel"
-    assert_select "section tr", text: /Model\s*\S+/
+    assert_select "details:has(#recipe-run-heading) p", text: "content policy"
+    assert_select "details:has(#recipe-run-heading) a[href=?]", recipe_path(recipes(:cinematic)), text: /Cinematic shop reel/
+    assert_select "details:has(#recipe-run-heading) tr", text: /Model\s*\S+/
   end
 
   test "show strips other media of the same folder" do
@@ -87,8 +88,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     get library_item_url(run.generated_media)
     assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("photobank", "ready")
     assert_select "#recipe-run-heading + span", text: "failed"
-    assert_select "section p", text: "content policy"
-    assert_select "section a[href=?]", library_item_path(source)
+    assert_select "details:has(#recipe-run-heading) p", text: "content policy"
     assert_select "nav[aria-label='Collage media']" do
       assert_select "a[href=?]", library_item_path(sibling.generated_media)
       assert_select "a[href=?]", library_item_path(other.generated_media), count: 0
