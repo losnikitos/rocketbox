@@ -8,12 +8,7 @@
     <%# Laid out by flow_controller; hidden until the nodes are placed. %>
     <div class="invisible relative" data-flow-target="canvas">
       <svg class="absolute inset-0 size-full overflow-visible" aria-hidden="true">
-        <defs>
-          <marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0 0L10 5L0 10z" class="fill-ink-900/30" />
-          </marker>
-        </defs>
-        <g data-flow-target="edges" class="stroke-ink-900/25" fill="none" stroke-width="2"></g>
+        <g data-flow-target="edges" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
       </svg>
       <% @nodes.each do |id, n| %>
         <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false",
