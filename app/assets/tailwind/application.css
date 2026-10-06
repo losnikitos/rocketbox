@@ -27,6 +27,12 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* Marching ants along SVG strokes; the offset step must equal one dash + gap. */
+  --animate-march: march 0.6s linear infinite;
+  @keyframes march {
+    to { stroke-dashoffset: -10; }
+  }
 }
 
 @layer components {

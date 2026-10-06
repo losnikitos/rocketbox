@@ -89,7 +89,7 @@ export default class extends Controller {
       // It routes through node centres; lift the bends to icon height, blending from source to target.
       const lift = t => (from.y - source.y) * (1 - t) + (to.y - target.y) * t
       const points = [from, ...via.map((p, i) => ({ x: p.x, y: p.y + lift((i + 1) / (via.length + 1)) })), to]
-      return `<path d="${curve(points)}" marker-end="url(#flow-arrow)" />`
+      return `<path d="${curve(points)}" />`
     }).join("")
   }
 }

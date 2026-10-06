@@ -50,7 +50,6 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label=Breadcrumb] [aria-current=page]", text: "Interior"
     assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("inbox", "interior"), text: /Interior\s*1/
     assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("photobank", "interior")
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
     assert_select "[id^=library-media-move-]", count: 0

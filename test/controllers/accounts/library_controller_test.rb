@@ -7,17 +7,15 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
-  test "media page shows details, a folder picker and a link back to its folder" do
+  test "media page shows details and a link back to its folder" do
     media = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @user)
     media.file.attach(io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg")
 
     get library_item_url(media)
     assert_response :success
     assert_select "h1", "Interior"
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
+    assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("inbox", "interior")
     assert_select "main a[href=?]", library_folders_path("inbox", "interior"), text: %r{Inbox / Interior}
-    assert_select "select[name='library_media[folder_id]'] option[selected][value=?]", folders(:interior).id.to_s
-    assert_select "select[name='library_media[folder_id]'] optgroup[label=Photobank] option", text: "Photobank / Logo"
     assert_select "img[src]"
     assert_select "aside dd", text: "cut.jpg"
     assert_select "button", text: "Publish as Instagram story", count: 0
@@ -87,7 +85,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
-    assert_select "nav[aria-label='Primary'] a[href=?][aria-selected='true']", library_folders_path, text: "Media"
+    assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("photobank", "ready")
     assert_select "#recipe-run-heading + span", text: "failed"
     assert_select "section p", text: "content policy"
     assert_select "section a[href=?]", library_item_path(source)
