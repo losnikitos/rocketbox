@@ -146,6 +146,11 @@ class RecipeTest < ActiveSupport::TestCase
     assert htmls.none? { it.include?("background-image: url(") }
   end
 
+  test "welcome reveals its one step's lines one per cut over the first four cuts" do
+    steps = [ { "line1" => "Hi", "lines" => "4" }, { "line1" => "ignored" } ]
+    assert_equal [ *(1..4).map { { "line1" => "Hi", "lines" => it.to_s } }, nil ], (0..4).map { Effect.find("welcome").layer_values(steps, it) }
+  end
+
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|

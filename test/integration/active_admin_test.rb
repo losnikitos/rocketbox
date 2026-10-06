@@ -97,6 +97,20 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "admin can list and open recipes" do
+    admin = sign_in_as(users(:admin_user))
+    recipe = recipes(:cinematic)
+    get "/app/recipes/#{recipe.slug}?account=#{admin.id}", headers: @ua
+    assert_response :success
+    assert_select "header a[href^='/admin/recipes/#{recipe.slug}']"
+    get "/admin/recipes", headers: @ua
+    assert_response :success
+    assert_match recipe.name, response.body
+    get "/admin/recipes/#{recipe.slug}", headers: @ua
+    assert_response :success
+    assert_select "a[href='/app/recipes/#{recipe.slug}']"
+  end
+
   test "admin can refresh models" do
     sign_in_as(users(:admin_user))
     with_model_refresh_stub(nil) do

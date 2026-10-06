@@ -67,10 +67,10 @@ module Accounts
 
     # A reel effect's track, previewed on the form.
     def track
-      path = "#{RecipeRun::TRACKS}/#{params[:effect]}.wav"
-      return head :not_found unless Recipe::EFFECTS.key?(params[:effect]) && File.exist?(path)
+      track = Effect.find(params[:effect])&.track
+      return head :not_found unless track
 
-      send_file path, type: "audio/wav", disposition: "inline"
+      send_file "#{track}.wav", type: "audio/wav", disposition: "inline"
     end
 
     private

@@ -89,11 +89,12 @@
               <%= link_to "Preview", layer_path(layer), class: "shrink-0 text-ink-600 underline hover:text-ink-900" %>
             </div>
             <% if recipe.reel? %>
-              <%# One row per cut it overlays, plus a blank one to add the next; blank rows are dropped on save. %>
+              <%# One row per step, plus a blank one to add the next up to the script's limit; blank rows are dropped on save. %>
+              <% max = recipe.script.max_steps %>
               <div class="space-y-2">
-                <% (recipe.layer_steps + [ {} ]).each_with_index do |step, i| %>
+                <% (recipe.layer_steps + [ {} ]).first(max || recipe.layer_steps.size + 1).each_with_index do |step, i| %>
                   <div class="flex items-center gap-2">
-                    <span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span>
+                    <% if max != 1 %><span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span><% end %>
                     <% layer.fields.each do |field| %>
                       <%= text_field_tag "recipe[layer_steps][][#{field.name}]", step[field.name.to_s], id: nil, placeholder: field.label,
                             "aria-label": "Cut #{i + 1} #{field.label}", class: "#{tw_input_classes} min-w-0" %>
@@ -126,7 +127,7 @@
         <div class="group/effect <%= scripted_only %> space-y-2">
           <%= f.label :effect, class: tw_label_classes %>
           <%# A pick refreshes the inputs, which follow its layer. %>
-          <% overlays, reels = Recipe::EFFECTS.map { |effect, (label, _, _)| [ label, effect ] }.partition { |_, effect| effect.in?(Recipe::OVERLAYS) } %>
+          <% overlays, reels = Effect.all.partition(&:overlay?).map { |effects| effects.map { [ it.label, it.slug ] } } %>
           <%= f.select :effect, { "Overlays" => overlays, "Reels" => reels }, {},
                 onchange: "this.form.requestSubmit(this.form.elements.refresh_inputs)", class: tw_input_classes %>
           <% shown_when = { "fully-booked" => "group-has-[[value=fully-booked]:checked]/effect:block", "daily" => "group-has-[[value=daily]:checked]/effect:block",
@@ -134,19 +135,18 @@
                            "steps" => "group-has-[[value=steps]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
                            "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
                            "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block" } %>
-          <% Recipe::EFFECTS.each do |effect, (_, slug, description)| %>
-            <div class="hidden space-y-3 <%= shown_when[effect] %>">
-              <p class="text-sm text-ink-600"><%= description %></p>
-              <% if slug %>
-                <% layer = Layer.find(slug) %>
+          <% Effect.all.each do |effect| %>
+            <div class="hidden space-y-3 <%= shown_when[effect.slug] %>">
+              <p class="text-sm text-ink-600"><%= effect.description %></p>
+              <% if (layer = effect.layer) %>
                 <div class="relative w-24 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
                      style="aspect-ratio: <%= layer.size.join(" / ") %>">
                   <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
                   <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
                 </div>
               <% end %>
-              <% if File.exist?("#{RecipeRun::TRACKS}/#{effect}.wav") %>
-                <%= tag.audio controls: true, preload: "none", src: track_recipes_path(effect), "aria-label": "Track", class: "w-full" %>
+              <% if effect.track %>
+                <%= tag.audio controls: true, preload: "none", src: track_recipes_path(effect.slug), "aria-label": "Track", class: "w-full" %>
               <% end %>
             </div>
           <% end %>
