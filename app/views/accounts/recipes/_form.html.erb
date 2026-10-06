@@ -3,7 +3,8 @@
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
 <% refresh_url = recipe.persisted? ? recipe_path(recipe) : new_recipe_path %>
 <%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
-  <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden" %>
+  <% ai_only = "group-has-[[value=stitch]:checked]/recipe:hidden group-has-[[value=feature]:checked]/recipe:hidden" %>
+  <% feature_only = "hidden group-has-[[value=feature]:checked]/recipe:block" %>
   <% if recipe.errors.any? %>
     <div class="<%= tw_alert_error_classes %>" role="alert">
       <ul class="list-inside list-disc">
@@ -31,10 +32,12 @@
   <div class="grid items-start gap-6 @4xl:grid-cols-3">
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
-      <%# A folder or toggle change reloads just this frame through the hidden refresh button. %>
-      <turbo-frame id="recipe_inputs" target="_top" class="block <%= island %>">
+      <%# A folder, toggle or group change reloads just this frame through the hidden refresh button. %>
+      <turbo-frame id="recipe_inputs" target="_top" class="block space-y-4">
         <% refresh = "this.form.requestSubmit(this.form.elements.refresh_inputs)" %>
-        <div>
+        <% on = ->(key, value) { value.present? || params.dig(:on, key).present? } %>
+        <%= render "accounts/recipes/input_section", title: "Media", icon: "photo", chip: "border-sky-300 bg-sky-50 text-sky-600", key: :media,
+              enabled: on.(:media, recipe.inputs) || (recipe.new_record? && params[:recipe].nil?), blank: "recipe[inputs][][folder_id]" do %>
           <% picked = @slots.each_with_index.map { |(_, photos), index| photos.find { it.id.to_s == params.dig(:media_ids, index.to_s) } } %>
           <div id="recipe_input_list" class="space-y-4">
             <% (@slots.presence || [ [ nil, [] ] ]).each_with_index do |(folder, photos), index| %>
@@ -42,51 +45,54 @@
             <% end %>
           </div>
           <template id="recipe_input_template"><%= render "accounts/recipes/input", folder: nil, photos: [], index: nil, picked: [] %></template>
-          <button type="button" class="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
+          <button type="button" class="inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
                   onclick="const rows = document.getElementById('recipe_input_list');
                            rows.append(document.getElementById('recipe_input_template').content.cloneNode(true)); rows.lastElementChild.querySelector('button').focus()">
             <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
             Add input
           </button>
-        </div>
-        <div class="<%= ai_only %> space-y-2">
-          <% row_css = "flex items-center overflow-hidden rounded-lg border border-ink-900/15 bg-white text-sm opacity-60 transition has-[[type=checkbox]:checked]:opacity-100 focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" %>
-          <% toggle_css = "flex shrink-0 cursor-pointer items-center gap-2 self-stretch py-2 pl-3" %>
-          <% chip_css = "flex size-5 items-center justify-center rounded border" %>
-          <div class="<%= row_css %>">
-            <label class="<%= toggle_css %> flex-1 pr-3">
-              <%= f.check_box :takes_style, class: "size-4 accent-rocket", onchange: refresh %>
-              <span class="<%= chip_css %> border-violet-300 bg-violet-50 text-violet-600">
-                <%= heroicon "swatch", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-              </span>
-              <span class="font-medium text-ink-900">Style</span>
-              <span class="ml-auto text-xs text-ink-500">Picked per run</span>
-            </label>
-          </div>
-          <div class="<%= row_css %>">
-            <label class="<%= toggle_css %> border-r border-ink-900/10 bg-stone-50 pr-3">
-              <input type="checkbox" <%= "checked" if recipe.shot_group %> class="size-4 accent-rocket"
-                     onchange="this.closest('div').querySelector('select').disabled = !this.checked; <%= refresh %>">
-              <span class="<%= chip_css %> border-amber-300 bg-amber-50 text-amber-600">
-                <%= heroicon "camera", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-              </span>
-              <span class="font-medium text-ink-900">Shot</span>
-            </label>
-            <%= hidden_field_tag "recipe[shot_group]", "", id: nil %>
-            <%= f.select :shot_group, Shot.groups, {}, disabled: recipe.shot_group.nil?, "aria-label": "Shot group", onchange: refresh,
-                  class: "min-w-0 flex-1 cursor-pointer border-0 bg-transparent py-2 pl-3 text-ink-900 focus:outline-none focus:ring-0 disabled:cursor-default" %>
-          </div>
-          <% if @styles %>
-            <%= render "accounts/recipe_runs/pick", name: :style_id, label: "Style", items: @styles,
-                  selected: @styles.find { it.id.to_s == params[:style_id] } || @styles.sample,
-                  empty: safe_join([ "No styles yet. ", link_to("Add some", styles_path, class: "underline hover:text-ink-900") ]) %>
+        <% end %>
+
+        <%= render "accounts/recipes/input_section", title: "Style", icon: "swatch", chip: "border-violet-300 bg-violet-50 text-violet-600", key: :style,
+              enabled: on.(:style, recipe.style_id), blank: "recipe[style_id]", css: ai_only do %>
+          <% if (styles = Style.ordered.pluck(:name, :id)).any? %>
+            <%= f.select :style_id, styles, {}, "aria-label": "Style", class: tw_input_classes %>
+          <% else %>
+            <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
+              No styles yet. <%= link_to "Add some", styles_path, class: "underline hover:text-ink-900" %>
+            </p>
           <% end %>
+        <% end %>
+
+        <%= render "accounts/recipes/input_section", title: "Shot", icon: "camera", chip: "border-amber-300 bg-amber-50 text-amber-600", key: :shot,
+              enabled: on.(:shot, recipe.shot_group), blank: "recipe[shot_group]", css: ai_only do %>
+          <%= f.select :shot_group, Shot.groups, {}, "aria-label": "Shot group", onchange: refresh, class: tw_input_classes %>
           <% if @shots %>
             <%= render "accounts/recipe_runs/pick", name: :shot_id, label: "Shot", items: @shots,
                   selected: @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample,
                   empty: safe_join([ "No #{recipe.shot_group} shots yet. ", link_to("Add some", shots_path(group: recipe.shot_group), class: "underline hover:text-ink-900") ]) %>
           <% end %>
-        </div>
+        <% end %>
+
+        <%= render "accounts/recipes/input_section", title: "Review", icon: "star", chip: "border-yellow-300 bg-yellow-50 text-yellow-600", key: :review,
+              enabled: on.(:review, recipe.takes_review?), blank: "recipe[takes_review]", off: "0", css: feature_only do %>
+          <%= f.hidden_field :takes_review, value: "1", id: nil %>
+          <% if @reviews %>
+            <%= render "accounts/recipe_runs/pick", name: :review_id, label: "Review", items: @reviews, option: "accounts/recipe_runs/review_option",
+                  selected: @reviews.find { it.id.to_s == params[:review_id] } || @reviews.sample,
+                  empty: safe_join([ "No 5-star reviews with text yet. ", link_to("See reviews", reviews_path, class: "underline hover:text-ink-900") ]) %>
+          <% end %>
+        <% end %>
+
+        <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", key: :layer,
+              enabled: on.(:layer, recipe.layer_slug), blank: "recipe[layer_slug]", css: feature_only do %>
+          <div class="flex items-center gap-3">
+            <%= f.select :layer_slug, Layer::ALL.map { [ it.name, it.slug ] }, {}, "aria-label": "Layer", onchange: refresh, class: tw_input_classes %>
+            <% if recipe.layer %>
+              <%= link_to "Preview", layer_path(recipe.layer), class: "shrink-0 text-sm text-ink-600 underline hover:text-ink-900" %>
+            <% end %>
+          </div>
+        <% end %>
         <%= tag.button name: "refresh_inputs", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "recipe_inputs" } %>
       </turbo-frame>
     </section>
@@ -134,13 +140,14 @@
     <section class="space-y-2">
       <h2 id="output" class="<%= island_title %>"><a href="#output" class="hover:underline">Output</a></h2>
       <div class="<%= island %>">
-        <div>
+        <div class="group-has-[[value=feature]:checked]/recipe:hidden">
           <p class="<%= tw_label_classes %>">Folder</p>
           <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
             <%= render "shared/folder_pick", name: "recipe[output_folder_id]", selected: recipe.output_folder_id || Folder.ready.id,
                   label: "Output folder", roots: Folder.roots.where(slug: "photobank") %>
           </div>
         </div>
+        <p class="<%= feature_only %> text-sm text-ink-600">An Instagram Story draft.</p>
 
         <% if recipe.persisted? %>
           <div class="grid grid-cols-2 gap-2">
@@ -158,11 +165,26 @@
               <%= link_to "View all", folder_path(recipe.output_folder, recipe: recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
             <% end %>
           </div>
-          <% if @made.any? %>
+          <% tile = "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
+          <% if @posts&.any? %>
+            <ul class="grid grid-cols-3 gap-3">
+              <% @posts.limit(24).each do |post| %>
+                <li class="min-w-0">
+                  <%= link_to instagram_post_path(post), aria: { label: "Open post" }, class: tile do %>
+                    <% if (slide = post.smm_slides.find { it.media.attached? }) %>
+                      <%= image_tag url_for(slide.media), alt: "", class: "aspect-2/3 w-full object-cover" %>
+                    <% else %>
+                      <span class="flex aspect-2/3 items-center justify-center bg-ink-900/5 text-xs text-ink-500"><%= post.status %></span>
+                    <% end %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% elsif @made.any? %>
             <ul class="grid grid-cols-3 gap-3">
               <% @made.limit(24).each do |media| %>
                 <li class="min-w-0">
-                  <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                  <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: tile do %>
                     <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover" %>
                   <% end %>
                 </li>

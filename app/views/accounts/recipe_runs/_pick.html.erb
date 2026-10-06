@@ -1,5 +1,5 @@
-<%# locals: (name:, label:, items:, selected:, empty:) %>
-<%# One shot or style for the run: radios live in a popover; `empty` shows when there's nothing to pick. %>
+<%# locals: (name:, label:, items:, selected:, empty:, option: "accounts/recipe_runs/pick_option") %>
+<%# One shot or review for the run: radios live in a popover; `option` renders an item; `empty` shows when there's nothing to pick. %>
 <% popover_id = "#{label.parameterize}-pick" %>
 <fieldset data-controller="media-pick" class="group min-w-0">
   <legend class="<%= tw_label_classes %>"><%= label %></legend>
@@ -8,7 +8,7 @@
       <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>" aria-label="Choose <%= label.downcase %>"
               class="flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-xl border border-ink-900/10 bg-white px-2.5 py-1.5 text-left transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
         <span data-media-pick-target="preview" class="min-w-0 flex-1">
-          <%= render "accounts/recipe_runs/pick_option", record: selected %>
+          <%= render option, record: selected %>
         </span>
         <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
       </button>
@@ -22,7 +22,7 @@
       <% items.each do |item| %>
         <label class="block cursor-pointer rounded-lg px-3 py-2 transition hover:bg-ink-900/5 has-checked:bg-rocket/10 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
           <%= radio_button_tag name, item.id, item == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
-          <%= render "accounts/recipe_runs/pick_option", record: item %>
+          <%= render option, record: item %>
         </label>
       <% end %>
     </div>

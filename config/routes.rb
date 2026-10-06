@@ -67,9 +67,6 @@ Rails.application.routes.draw do
       resources :recipes, except: :edit do
         patch :rename_group, on: :collection
       end
-      resources :features, only: %i[index show update] do
-        post :generate, on: :member
-      end
       resources :styles, except: :show
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do

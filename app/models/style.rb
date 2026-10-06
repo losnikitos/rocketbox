@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 # A visual style (lighting, camera, colour, mood): its `body` is appended to a recipe's body when a run uses it.
-# Recipes that take a style (`takes_style`) get one picked per run.
+# A recipe takes one fixed style.
 class Style < ApplicationRecord
-  # Runs outlive their style.
+  # Recipes and runs outlive their style.
+  has_many :recipes, dependent: :nullify
   has_many :recipe_runs, dependent: :nullify
   has_many_attached :examples
 

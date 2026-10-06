@@ -22,7 +22,7 @@ class Layer
   ALL = [
     new(slug: "fully-booked", name: "Fully booked", size: [ 1080, 1920 ], fields: [
       Field.new(:headline, "Text", :text, "Fully Booked"),
-      Field.new(:date, "Date", :date, -> { Date.current })
+      Field.new(:date, "Date", :date, -> { Date.tomorrow })
     ]),
     new(slug: "fully-booked-color", name: "Fully booked (color)", size: [ 1080, 1920 ], fields: [
       Field.new(:headline, "Text", :text, "Fully Booked"),

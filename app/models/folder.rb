@@ -4,7 +4,7 @@
 # Top-level folders (inbox and photobank are seeded) hold subfolders one level below.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
 # ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
-# (card extraction, WhatsApp onboarding) and photobank/ready (recipe output, features) by slug, so deleting those rows breaks them.
+# (card extraction, WhatsApp onboarding) and photobank/ready (recipe output) by slug, so deleting those rows breaks them.
 # Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId

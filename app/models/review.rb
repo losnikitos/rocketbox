@@ -13,11 +13,20 @@ class Review < ApplicationRecord
 
   scope :active, -> { where(archived_at: nil) }
   scope :archived, -> { where.not(archived_at: nil) }
+  # What a feature recipe's review input picks from.
+  scope :postable, -> { active.where(rating: 5).where.not(body: [ nil, "" ]) }
   scope :with_media, -> { where(id: ActiveStorage::Attachment.where(record_type: name, name: "media").select(:record_id)) }
 
   def self.media_attachments = ActiveStorage::Attachment.where(record: all, name: "media")
 
   def archived? = archived_at.present?
+
+  # The Review layer's fields.
+  def layer_values
+    photo = avatar.variant(resize_to_fill: [ 256, 256 ], format: :jpeg).processed if avatar.attached?
+    { text: body.truncate(240, separator: " "), name: customer_name,
+      photo: ("data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}" if photo) }
+  end
 
   private
 
