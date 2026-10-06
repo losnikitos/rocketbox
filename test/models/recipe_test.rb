@@ -160,13 +160,13 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review, @recipe.layer_slug ]
   end
 
-  test "a feature needs a layer and one photo input" do
+  test "a feature needs a layer and one input" do
     assert Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: [ input(:ready) ]).valid?
     assert_not Recipe.new(name: "x", kind: "feature", inputs: [ input(:ready) ]).valid?
     assert_not Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: []).valid?
     two = Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: [ input(:ready), input(:ready) ])
     assert_not two.valid?
-    assert_includes two.errors.full_messages, "Inputs must be a single photo to make a story"
+    assert_includes two.errors.full_messages, "Inputs must be a single photo or video to make a story"
   end
 
   test "run! records a failure" do
@@ -213,6 +213,29 @@ class RecipeTest < ActiveSupport::TestCase
     media = run.reload.generated_media
     assert_equal [ "complete", nil, "photo", folders(:photobank_logo), [ photo ] ], [ run.status, run.prompt, media.kind, media.folder, run.source_media ]
     assert_equal [ "image/png", "png-bytes" ], [ media.file.content_type, media.file.download ]
+  end
+
+  test "a feature over a video lays its transparent layer over the video, as a video" do
+    feature = Recipe.create!(name: "Daily", kind: "feature", layer_slug: "daily", inputs: [ input(:ready) ])
+    clip = Tempfile.new([ "clip", ".mp4" ])
+    Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-pix_fmt", "yuv420p", clip.path)
+    video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user,
+      file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
+    assert feature.takes?(video)
+    assert_not @recipe.takes?(video)
+    png, htmls = file_fixture("logo.png").binread, []
+    Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
+
+    run = feature.run!(media: [ video ])
+    run.run!
+
+    assert_equal "complete", run.reload.status, run.error
+    assert_not_includes htmls.sole, "background-image: url("
+    media = run.generated_media.reload
+    assert_equal [ "video", "video/mp4" ], [ media.kind, media.file.content_type ]
+    probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "csv=p=0", it.path).first }
+    assert_equal "1080,1920", probe.lines.first.strip
+    assert_in_delta 1.0, probe.lines.last.to_f, 0.1
   end
 
   test "a feature taking a review needs one and renders it on its layer" do

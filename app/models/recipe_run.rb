@@ -47,7 +47,7 @@ class RecipeRun < ApplicationRecord
   # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
   # or an option isn't available.
   def start!(user)
-    build_generated_media(user:, kind: recipe.video? || recipe.stitch? ? "video" : "photo", folder: recipe.output_folder)
+    build_generated_media(user:, kind: recipe.video? || recipe.stitch? || layer_over_video? ? "video" : "photo", folder: recipe.output_folder)
     self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") if recipe.ai?
     save!
     GenerateJob.perform_later(self)
@@ -57,8 +57,10 @@ class RecipeRun < ApplicationRecord
   # One AI call on the source media, a stitch of them, or a feature's layer over the first.
   def run!
     unless recipe.ai?
-      file = recipe.stitch? ? { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" } :
-        { io: StringIO.new(layer_png), filename: "#{recipe.layer_slug}.png", content_type: "image/png" }
+      file = if recipe.stitch? then { io: StringIO.new(stitch), filename: "recipe.mp4", content_type: "video/mp4" }
+      elsif layer_over_video? then { io: StringIO.new(layer_video), filename: "#{recipe.layer_slug}.mp4", content_type: "video/mp4" }
+      else { io: StringIO.new(layer_png), filename: "#{recipe.layer_slug}.png", content_type: "image/png" }
+      end
       generated_media.update!(file:)
       return update!(status: "complete", error: nil)
     end
@@ -116,16 +118,35 @@ class RecipeRun < ApplicationRecord
       end
     end
 
+    def layer_over_video? = recipe.feature? && source_media.first&.video?
+
     # PNG bytes: the recipe's layer over the first source media, cropped to the layer's size, filled from the review if any.
-    def layer_png
+    # Transparent behind the layer when `over_photo` is false.
+    def layer_png(over_photo: true)
       layer = recipe.layer
-      photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
+      if over_photo
+        photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
+        background = "data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}"
+      end
       html = Current.set(account: generated_media.user) do
         ApplicationController.render("accounts/layers/canvas", layout: false,
-          assigns: { layer:, values: layer.values(review&.layer_values || {}) },
-          locals: { background: "data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}" })
+          assigns: { layer:, values: layer.values(review&.layer_values || {}) }, locals: { background: })
       end
       Layer.screenshot(html, size: layer.size)
+    end
+
+    # MP4 bytes: the recipe's layer over the first source media, a video cropped to the layer's size, its sound kept.
+    def layer_video
+      width, height = recipe.layer.size
+      Dir.mktmpdir do |dir|
+        video, layer, out = %w[video layer.png out.mp4].map { File.join(dir, it) }
+        File.binwrite(video, source_media.first.file.download)
+        File.binwrite(layer, layer_png(over_photo: false))
+        fit = "scale=#{width}:#{height}:force_original_aspect_ratio=increase,crop=#{width}:#{height},setsar=1"
+        ffmpeg!("-i", video, "-i", layer, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p[v]",
+          "-map", "[v]", "-map", "0:a?", "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", out)
+        File.binread(out)
+      end
     end
 
     def ffmpeg!(*args)
