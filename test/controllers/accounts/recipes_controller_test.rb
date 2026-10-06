@@ -100,35 +100,48 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary']", count: 0
   end
 
-  test "admin drops a recipe into a group; the index lists it under that group" do
+  test "admin drops a recipe into a new folder; the index and the sidebar list it" do
     @admin = sign_in_as(users(:admin_user))
     reel = Recipe.create!(name: "Reel", kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior) ])
 
-    patch recipe_url(reel), params: { recipe: { group: " Promo " } }, headers: { "HTTP_REFERER" => recipes_url(account: @admin.id) }
+    get recipe_url(reel, account: @admin.id), params: { recipe: { folder_name: "Draft" } }
+    assert_nil RecipeFolder.find_by(name: "Draft"), "a form refresh doesn't make the folder"
+
+    patch recipe_url(reel), params: { recipe: { folder_name: " Promo " } }, headers: { "HTTP_REFERER" => recipes_url(account: @admin.id) }
     assert_redirected_to recipes_url(account: @admin.id)
-    assert_equal "Promo", reel.reload.group
-    assert_includes Recipe.groups, "Promo"
+    promo = reel.reload.recipe_folder
+    assert_equal [ "Promo", "promo" ], [ promo.name, promo.slug ]
 
     get recipes_url(account: @admin.id)
     assert_select "section[data-move-to=Promo]" do
-      assert_select "form[action=?] input[name=to][value=Promo]", rename_group_recipes_path(account: @admin.id)
+      assert_select "form[action=?] input[name=name][value=Promo]", folder_recipes_path(promo, account: @admin.id)
       assert_select "##{dom_id(reel)} a[draggable=true][data-move-url=?]", recipe_path(reel, account: @admin.id)
     end
     assert_select "section[data-move-to='']", text: /Ungrouped/
-    assert_select "form input[name='recipe[group]'][data-drag-move-target=value]"
+    assert_select "form input[name='recipe[folder_name]'][data-drag-move-target=value]"
+    assert_select "details:not([open]) ul[aria-label='Recipe folders'] a[href=?]", folder_recipes_path(promo, account: @admin.id)
 
-    patch recipe_url(reel), params: { recipe: { group: "" } }
-    assert_nil reel.reload.group
+    get folder_recipes_url(promo, account: @admin.id)
+    assert_select "main section", 1
+    assert_select "details[open] ul[aria-label='Recipe folders'] a[aria-current=page][href=?]", folder_recipes_path(promo, account: @admin.id)
+
+    get recipe_url(reel, account: @admin.id)
+    assert_select "details[open] ul[aria-label='Recipe folders'] a[aria-current=page]", text: /Promo/
+
+    patch recipe_url(reel), params: { recipe: { folder_name: "" } }
+    assert_nil reel.reload.recipe_folder
   end
 
-  test "admin renames a group; every recipe in it moves to the new name" do
+  test "admin renames a folder; its recipes follow and the slug stays" do
     @admin = sign_in_as(users(:admin_user))
-    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior) ], group: "Promo") }
-    other.update!(group: "Other")
+    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "scripted", effect: "steps", inputs: [ input(:photobank_interior) ], folder_name: "Promo") }
+    other.update!(folder_name: "Other")
+    promo = a.recipe_folder
 
-    patch rename_group_recipes_url(account: @admin.id), params: { from: "Promo", to: " Sale " }
-    assert_redirected_to recipes_url(account: @admin.id)
-    assert_equal %w[Sale Sale Other], [ a, b, other ].map { it.reload.group }
+    patch folder_recipes_url(promo, account: @admin.id), params: { name: " Sale " }
+    assert_redirected_to folder_recipes_url(promo, account: @admin.id)
+    assert_equal %w[Sale Sale Other], [ a, b, other ].map { it.reload.folder_name }
+    assert_equal "promo", promo.reload.slug
   end
 
   class RunTest < ActionDispatch::IntegrationTest

@@ -3,13 +3,13 @@ ActiveAdmin.register Recipe do
 
   config.sort_order = "name_asc"
 
-  includes :output_folder, :style
+  includes :output_folder, :style, :recipe_folder
 
   index do
     id_column
     column :name
     column :type_label
-    column :group
+    column :recipe_folder
     column :output_folder
     column("Runs") { it.runs.count }
     column :updated_at
@@ -24,7 +24,7 @@ ActiveAdmin.register Recipe do
       row(:edit) { link_to "Open in app", recipe_path(it) }
       row :kind
       row :effect
-      row :group
+      row :recipe_folder
       row(:inputs) { safe_join(it.slots.map { |folder| folder ? auto_link(folder) : "missing" }, ", ") }
       row :output_folder
       row :style

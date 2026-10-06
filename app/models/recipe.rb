@@ -29,6 +29,8 @@ class Recipe < ApplicationRecord
   has_one_attached :example
   belongs_to :output_folder, class_name: "Folder"
   belongs_to :style, optional: true
+  # Where it's listed on the index and in the sidebar; nil is ungrouped.
+  belongs_to :recipe_folder, optional: true
   before_validation(on: :create) { self.output_folder ||= Folder.ready }
 
   enum :kind, KINDS.keys.index_by(&:itself), validate: true
@@ -42,8 +44,6 @@ class Recipe < ApplicationRecord
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank }.reject(&:empty?) }
   # nil takes no shot.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
-  # The free-text group it's listed under on the index; nil is ungrouped.
-  normalizes :group, with: ->(value) { value.strip.presence }
 
   before_validation do
     self.shot_group, self.style = nil, nil unless ai?
@@ -64,10 +64,15 @@ class Recipe < ApplicationRecord
 
   scope :ordered, -> { order(:name) }
 
-  def self.groups = where.not(group: nil).distinct.order(:group).pluck(:group)
-
   # A numeric slug would be found as an id.
   def normalize_friendly_id(text) = super.then { it.match?(/\A\d+\z/) ? "recipe-#{it}" : it }
+
+  def folder_name = recipe_folder&.name
+
+  # Files it by folder name, a new one saved with the recipe; blank ungroups it.
+  def folder_name=(name)
+    self.recipe_folder = name.to_s.strip.presence&.then { RecipeFolder.find_or_initialize_by(name: it) }
+  end
 
   def ai? = generate_image? || generate_video?
 
