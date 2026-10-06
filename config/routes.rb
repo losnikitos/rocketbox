@@ -66,7 +66,8 @@ Rails.application.routes.draw do
         get :canvas, on: :member
       end
       resources :recipes, except: :edit do
-        patch :rename_group, on: :collection
+        get "folders/:folder", action: :index, on: :collection, as: :folder
+        patch "folders/:folder", action: :rename_folder, on: :collection
         get "tracks/:effect", action: :track, on: :collection, as: :track
       end
       resources :styles, except: :show

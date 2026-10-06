@@ -68,15 +68,46 @@
     </li>
     <li class="mt-2">
       <ol>
+        <% if Current.user&.admin? %>
+          <% current_recipe_folder_id = @recipe_folder&.id || @recipe&.recipe_folder_id_was %>
+          <% recipe_counts = Recipe.group(:recipe_folder_id).count %>
+          <li>
+            <details class="group" <%= "open" if current_recipe_folder_id %>>
+              <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
+                <%= link_to recipes_path,
+                      class: "inline-flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                      aria: { selected: section == :recipes && !current_recipe_folder_id } do %>
+                  <%= heroicon "sparkles", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                  Recipes
+                <% end %>
+                <%= heroicon "chevron-right", variant: :mini, options: { class: "mx-1 size-6 shrink-0 rounded-lg p-1 text-ink-400 transition hover:bg-ink-900/5 group-open:rotate-90", "aria-hidden": true } %>
+              </summary>
+              <ul aria-label="Recipe folders">
+                <% RecipeFolder.ordered.each do |folder| %>
+                  <li>
+                    <%= link_to folder_recipes_path(folder),
+                          class: "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-3 pl-9 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
+                          aria: { current: ("page" if folder.id == current_recipe_folder_id) } do %>
+                      <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-ink-400", "aria-hidden": true } %>
+                      <span class="truncate"><%= folder.name %></span>
+                      <span class="-ml-1 shrink-0 text-[10px] tabular-nums text-ink-300"><%= recipe_counts[folder.id] %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ul>
+            </details>
+          </li>
+        <% else %>
+          <li><span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500">Recipes</span></li>
+        <% end %>
         <% [
-          [ "Recipes", recipes_path, :recipes, "sparkles", true ],
           [ "Shots", shots_path, :shots ],
           [ "Styles", styles_path, :styles ],
           [ "Layers", layers_path, :layers ],
           [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
-        ].each do |label, path, key, icon, admin_only| %>
+        ].each do |label, path, key, icon| %>
           <li>
-            <% if icon && (Current.user&.admin? || !admin_only) %>
+            <% if icon %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>

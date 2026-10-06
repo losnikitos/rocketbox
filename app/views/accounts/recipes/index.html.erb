@@ -6,24 +6,23 @@
   <% end %>
 <% end %>
 
-<% if @recipes.any? %>
-  <% by_group = @recipes.group_by(&:group) %>
-  <% names = by_group.keys.compact.sort %>
+<% if @recipes.any? || @recipe_folder %>
+  <% by_folder = @recipes.group_by(&:recipe_folder_id) %>
+  <% folders = @recipe_folder ? [ @recipe_folder ] : RecipeFolder.ordered.to_a %>
   <% drop_css = "rounded-xl data-drop-over:outline-2 data-drop-over:outline-offset-4 data-drop-over:outline-rocket" %>
   <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
-    <%= hidden_field_tag "recipe[group]", nil, id: nil, data: { drag_move_target: "value" } %>
+    <%= hidden_field_tag "recipe[folder_name]", nil, id: nil, data: { drag_move_target: "value" } %>
   <% end %>
   <div class="space-y-8">
-    <% (names + [ nil ]).each do |name| %>
-      <% recipes = by_group.fetch(name, []) %>
-      <%= tag.section class: drop_css, data: { move_to: name.to_s }, "aria-label": name || "Ungrouped" do %>
-        <% if name %>
-          <%= form_with url: rename_group_recipes_path, method: :patch, class: "mb-3" do %>
-            <%= hidden_field_tag :from, name, id: nil %>
-            <h2><%= text_field_tag :to, name, id: nil, required: true, "aria-label": "Group name",
+    <% (@recipe_folder ? folders : folders + [ nil ]).each do |folder| %>
+      <% recipes = by_folder.fetch(folder&.id, []) %>
+      <%= tag.section class: drop_css, data: { move_to: folder&.name.to_s }, "aria-label": folder&.name || "Ungrouped" do %>
+        <% if folder %>
+          <%= form_with url: folder_recipes_path(folder), method: :patch, class: "mb-3" do %>
+            <h2><%= text_field_tag :name, folder.name, id: nil, required: true, "aria-label": "Folder name",
                   class: "-mx-2 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 text-sm font-semibold text-ink-900 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %></h2>
           <% end %>
-        <% elsif names.any? %>
+        <% elsif folders.any? %>
           <h2 class="mb-3 text-sm font-semibold text-ink-900">Ungrouped</h2>
         <% end %>
         <% if recipes.any? %>
@@ -33,15 +32,17 @@
             <% end %>
           </ul>
         <% else %>
-          <p class="rounded-xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-500">Drop a recipe here to ungroup it.</p>
+          <p class="rounded-xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-500"><%= folder ? "No recipes in this folder yet." : "Drop a recipe here to ungroup it." %></p>
         <% end %>
       <% end %>
     <% end %>
-    <div class="<%= drop_css %> flex items-center justify-center gap-1.5 border border-dashed border-ink-900/20 p-6 text-sm text-ink-500"
-         data-move-to="" data-move-prompt="Group name">
-      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      Drop a recipe here to start a new group
-    </div>
+    <% unless @recipe_folder %>
+      <div class="<%= drop_css %> flex items-center justify-center gap-1.5 border border-dashed border-ink-900/20 p-6 text-sm text-ink-500"
+           data-move-to="" data-move-prompt="Folder name">
+        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        Drop a recipe here to start a new folder
+      </div>
+    <% end %>
   </div>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">

@@ -11,7 +11,8 @@ module Accounts
     before_action :set_recipe, only: %i[show update destroy]
 
     def index
-      @recipes = Recipe.with_attached_example.order(created_at: :desc)
+      @recipe_folder = RecipeFolder.find(params[:folder]) if params[:folder]
+      @recipes = (@recipe_folder&.recipes || Recipe).with_attached_example.order(created_at: :desc)
       # ponytail: loads every generation of the listed recipes to show a few each. Upgrade = a per-recipe window limit.
       @made = Current.account.library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipes.map(&:id) })
         .with_attached_file.includes(:recipe_run).order(created_at: :desc).group_by { it.recipe_run.recipe_id }
@@ -42,7 +43,7 @@ module Accounts
       adhoc = params[:commit] == "run"
       @recipe.assign_attributes(adhoc ? recipe_params.except(:example) : recipe_params)
       adhoc ? @recipe.validate!(:run) : @recipe.save!
-      # Save, or a drop into a group on the index.
+      # Save, or a drop into a folder on the index.
       return redirect_back_or_to recipe_path(@recipe), notice: "Recipe saved." unless adhoc || params[:commit] == "save_run"
 
       set_picks
@@ -60,9 +61,13 @@ module Accounts
       redirect_to recipes_path, notice: "Recipe removed."
     end
 
-    def rename_group
-      Recipe.where(group: params.expect(:from)).update_all(group: Recipe.normalize_value_for(:group, params.expect(:to)))
-      redirect_to recipes_path
+    def rename_folder
+      folder = RecipeFolder.find(params[:folder])
+      if folder.update(name: params.expect(:name))
+        redirect_back_or_to folder_recipes_path(folder)
+      else
+        redirect_back_or_to folder_recipes_path(folder), alert: folder.errors.full_messages.to_sentence
+      end
     end
 
     # A reel effect's track, previewed on the form.
@@ -92,7 +97,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :output_folder_id, :example,
+        params.expect(recipe: [ :name, :folder_name, :kind, :effect, :body, :shot_group, :style_id, :output_folder_id, :example,
           inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 

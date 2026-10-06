@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_160000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -176,6 +176,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_150000) do
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
   end
 
+  create_table "recipe_folders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_recipe_folders_on_slug", unique: true
+  end
+
   create_table "recipe_run_inputs", force: :cascade do |t|
     t.integer "library_media_id", null: false
     t.integer "position", default: 0, null: false
@@ -209,18 +217,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_150000) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.string "effect"
-    t.string "group"
     t.json "inputs", default: [], null: false
     t.string "kind", default: "generate_image", null: false
     t.json "layer_steps", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
     t.integer "output_folder_id", null: false
+    t.integer "recipe_folder_id"
     t.string "shot_group"
     t.string "slug", null: false
     t.integer "style_id"
     t.datetime "updated_at", null: false
     t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
+    t.index ["recipe_folder_id"], name: "index_recipes_on_recipe_folder_id"
     t.index ["slug"], name: "index_recipes_on_slug", unique: true
     t.index ["style_id"], name: "index_recipes_on_style_id"
   end
@@ -469,6 +478,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_150000) do
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "recipe_runs", "styles", on_delete: :nullify
   add_foreign_key "recipes", "folders", column: "output_folder_id"
+  add_foreign_key "recipes", "recipe_folders"
   add_foreign_key "recipes", "styles", on_delete: :nullify
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"

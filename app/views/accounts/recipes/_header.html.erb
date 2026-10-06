@@ -5,14 +5,18 @@
     <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
       <%= link_to "Recipes", recipes_path, class: "underline underline-offset-2 hover:text-ink-900" %>
       <span class="mx-1">/</span>
+      <% if (folder = RecipeFolder.find_by(id: recipe.recipe_folder_id_was)) %>
+        <%= link_to folder.name, folder_recipes_path(folder), class: "underline underline-offset-2 hover:text-ink-900" %>
+        <span class="mx-1">/</span>
+      <% end %>
       <span aria-current="page"><%= recipe.new_record? ? "New recipe" : recipe.name_was %></span>
     </nav>
     <div class="min-w-0">
       <% inline = "-mx-2 block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
-      <%= f.text_field :group, list: "recipe_groups", placeholder: "Ungrouped", "aria-label": "Group", class: "#{inline} py-0.5 text-sm font-medium text-ink-500" %>
-      <datalist id="recipe_groups">
-        <% Recipe.groups.each do |group| %>
-          <option value="<%= group %>"></option>
+      <%= f.text_field :folder_name, list: "recipe_folders", placeholder: "Ungrouped", "aria-label": "Folder", class: "#{inline} py-0.5 text-sm font-medium text-ink-500" %>
+      <datalist id="recipe_folders">
+        <% RecipeFolder.ordered.pluck(:name).each do |name| %>
+          <option value="<%= name %>"></option>
         <% end %>
       </datalist>
       <h1><%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Recipe name", "aria-label": "Name", class: "#{inline} py-0.5 text-2xl font-semibold text-ink-900" %></h1>
