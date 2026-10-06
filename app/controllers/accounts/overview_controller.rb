@@ -4,7 +4,7 @@ module Accounts
   class OverviewController < ApplicationController
     layout "app"
 
-    # How media flows: Inbox sorts into its subfolders; recipes read from folders and write to a folder.
+    # How media flows: recipes read from folders and write to a folder.
     # Styles, shot groups, layers and reviews are drawn as folders too. Recipe links are admin-only.
     def show
       recipes = Recipe.includes(:style).ordered
@@ -25,9 +25,6 @@ module Accounts
         @edges.concat(inputs.map { [ it, id ] })
         @edges << [ id, output ] if output
       end
-      # New media lands in Inbox and gets sorted into its subfolders.
-      inbox = Folder.inbox
-      inbox.children.each { @edges << [ folder.(inbox), folder.(it) ] }
     end
   end
 end
