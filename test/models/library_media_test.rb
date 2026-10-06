@@ -18,4 +18,14 @@ class LibraryMediaTest < ActiveSupport::TestCase
     assert_nil media.telegram_file_id
     assert_nil media.whatsapp_media_id
   end
+
+  test "generated media are versions of the first input only" do
+    user = users(:lazaro_nixon)
+    source, extra, result = 3.times.map { LibraryMedia.create!(kind: "photo", user:) }
+    RecipeRun.create!(generated_media: result, status: "complete",
+      inputs: [ RecipeRunInput.new(library_media: source, position: 0), RecipeRunInput.new(library_media: extra, position: 1) ])
+
+    assert_equal [ result ], source.generated_media.to_a
+    assert_empty extra.generated_media
+  end
 end

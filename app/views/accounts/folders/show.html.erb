@@ -72,7 +72,7 @@
           <li class="<%= tile_css %>">
             <%= link_to folder_path(folder), class: link_css do %>
               <% if previews.any? %>
-                <span class="group/thumb relative block aspect-square w-full overflow-hidden rounded-lg bg-ink-900/5"
+                <span class="group/thumb relative block aspect-2/3 w-full overflow-hidden rounded-lg bg-ink-900/5"
                       data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
                   <% previews.each_with_index do |preview, index| %>
                     <span class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
@@ -88,7 +88,7 @@
                   </span>
                 </span>
               <% else %>
-                <span class="flex aspect-square w-full items-center justify-center">
+                <span class="flex aspect-2/3 w-full items-center justify-center">
                   <%= heroicon "folder", variant: :solid, options: { class: "size-20 #{folder_color(folder)}", "aria-hidden": true } %>
                 </span>
               <% end %>
@@ -103,12 +103,12 @@
 
         <%# A source with versions spans a full row, its tiles on the same columns; dropping onto it attaches a version. %>
         <% media_groups.each do |source, group| %>
-          <% grouped = group.size > 1 %>
+          <% grouped = group != [ source ] %>
           <% if grouped %>
             <li aria-label="Versions of one source" data-source-id="<%= source.id %>"
                 class="col-span-full grid grid-cols-subgrid rounded-xl data-drop-over:outline-2 data-drop-over:outline-rocket">
               <%= link_to library_item_path(source), title: "Source", "aria-label": "Source", class: "relative self-start rounded-xl p-2 hover:bg-ink-900/5" do %>
-                <%= render "accounts/library/file", media: source, css: "aspect-square w-full rounded-lg object-cover opacity-50" %>
+                <%= render "accounts/library/file", media: source, css: "aspect-2/3 w-full rounded-lg object-cover opacity-50" %>
                 <%= heroicon "arrow-right", variant: :mini, options: { class: "absolute top-1/2 -right-4 size-5 -translate-y-1/2 text-ink-400", "aria-hidden": true } %>
               <% end %>
               <ul class="col-start-2 -col-end-1 grid grid-cols-subgrid gap-y-3">
@@ -118,7 +118,19 @@
             <%= tag.li class: [ tile_css, ("data-drop-over:outline-2 data-drop-over:outline-rocket" unless grouped) ], data: { source_id: (source.id unless grouped) } do %>
               <%= link_to library_item_path(media), id: "folder-media-#{media.id}", class: link_css,
                     draggable: ("true" if move_targets), data: { move_url: (library_media_path(media) if move_targets) } do %>
-                <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover", play: true %>
+                <% generated = media.generated_media.select { it.file.attached? }.sort_by(&:created_at).reverse %>
+                <span class="relative block">
+                  <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover", play: true %>
+                  <% if generated.any? %>
+                    <span class="absolute inset-x-1.5 bottom-1.5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-hidden="true">
+                      <% generated.first(5).each do |version| %>
+                        <span class="w-10.5 shrink-0 overflow-hidden rounded-md border-2 border-white shadow">
+                          <%= render "accounts/library/file", media: version, css: "aspect-2/3 w-full object-cover" %>
+                        </span>
+                      <% end %>
+                    </span>
+                  <% end %>
+                </span>
                 <span class="<%= name_css %>"><span class="truncate"><%= name %></span></span>
               <% end %>
               <div class="<%= tile_menu_css %>"><%= render "shared/admin_links/library_media", library_media: media, links: { move: true }, move_targets: %></div>

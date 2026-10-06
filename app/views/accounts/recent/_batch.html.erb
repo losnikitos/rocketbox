@@ -2,7 +2,7 @@
   <li class="min-w-0 rounded-xl p-2 hover:bg-ink-900/5">
     <%= link_to library_item_path(media), id: "recent-media-#{media.id}",
           class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-      <%= render "accounts/library/file", media:, css: "aspect-square w-full rounded-lg object-cover", play: true %>
+      <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover", play: true %>
       <span class="mt-2 flex items-center justify-center gap-1 text-sm font-medium text-ink-900">
         <span class="truncate"><%= media.file.attached? ? media.file.filename : media.kind %></span>
       </span>

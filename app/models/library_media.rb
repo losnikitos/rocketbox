@@ -8,8 +8,10 @@ class LibraryMedia < ApplicationRecord
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the input rows go.
   has_many :recipe_run_inputs, dependent: :delete_all
-  has_many :input_runs, through: :recipe_run_inputs, source: :recipe_run
-  has_many :generated_media, through: :input_runs
+  # Versions are the runs this media is the first input of, as in #original; other inputs only fill a slot.
+  has_many :source_inputs, -> { where(position: 0) }, class_name: "RecipeRunInput"
+  has_many :source_runs, through: :source_inputs, source: :recipe_run
+  has_many :generated_media, through: :source_runs
   # The run that made this media; it has a status and an error.
   has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
   has_one_attached :file

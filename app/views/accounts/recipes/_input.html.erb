@@ -28,8 +28,8 @@
         <button type="button" popovertarget="<%= popover_id %>" style="anchor-name: --<%= popover_id %>"
                 aria-label="Choose <%= folder.name.downcase %>"
                 class="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1 rounded-xl border border-ink-900/10 bg-white p-1.5 transition hover:border-ink-900/20 focus-visible:ring-2 focus-visible:ring-rocket/30">
-          <span data-media-pick-target="preview" class="block size-14 shrink-0 overflow-hidden rounded-lg">
-            <%= render "accounts/library/file", media: selected, css: "aspect-square w-full object-cover", play: true %>
+          <span data-media-pick-target="preview" class="block aspect-2/3 h-14 shrink-0 overflow-hidden rounded-lg">
+            <%= render "accounts/library/file", media: selected, css: "aspect-2/3 w-full object-cover", play: true %>
           </span>
           <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
         </button>
@@ -45,7 +45,7 @@
           <% photos.each do |media| %>
             <label class="block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 transition hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
               <%= radio_button_tag "media_ids[#{index}]", media.id, media == selected, class: "sr-only", data: { media_pick_target: "radio", action: "media-pick#pick" } %>
-              <%= render "accounts/library/file", media:, css: "aspect-square w-full object-cover", play: true %>
+              <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %>
             </label>
           <% end %>
         </div>
