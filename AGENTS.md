@@ -18,13 +18,13 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 
-**SMM media pipeline:** How SMM media gets produced, drawn live from the recipes at `/app/overview` ([controller](/app/controllers/accounts/overview_controller.rb)): folders hold media, recipes read from folders and write to a folder (feature recipes to Posts). Styles, shot groups, layers and reviews are drawn as folders too. Laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js).
+**SMM media pipeline:** How SMM media gets produced, drawn live from the recipes at `/app/overview` ([controller](/app/controllers/accounts/overview_controller.rb)): folders hold media, recipes read from folders and write to a folder (feature recipes to Stories). Styles, shot groups, layers and reviews are drawn as folders too. Laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js).
 
 **Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, the default recipe output. Every media is in exactly one folder; recipe inputs and outputs point at folders.
 
 ```mermaid
 flowchart LR
- Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features[Feature recipes] --> Posts[/Posts/]
+ Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Features[Feature recipes] --> Stories[/Stories/]
  Styles[/Styles/] --> Recipes
  Shots[/Shot groups/] --> Recipes
  Layers[/Layers/] --> Features

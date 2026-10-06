@@ -2,7 +2,6 @@
 
 module Accounts
   # A recipe's page edits it inline and runs it: one library media per input (and a shot or a review, if it takes one).
-  # A feature recipe's run composes a Story draft.
   # Update's `commit` picks the action: "save", "run" (the form as given, for this run only) or "save_run".
   # `media_ids[i]` preselects input i, e.g. from a media page.
   class RecipesController < ApplicationController
@@ -48,13 +47,8 @@ module Accounts
 
       set_picks
       media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
-      if @recipe.feature?
-        post = @recipe.compose!(Current.account, media: media.first, review: @reviews&.find_by(id: params[:review_id]))
-        redirect_to instagram_post_path(post), notice: "Composing #{@recipe.name}…"
-      else
-        run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), user: Current.account)
-        redirect_to helpers.library_item_path(run.generated_media)
-      end
+      run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), review: @reviews&.find_by(id: params[:review_id]), user: Current.account)
+      redirect_to helpers.library_item_path(run.generated_media)
     rescue ActiveRecord::RecordInvalid => e
       e.record.errors.full_messages.each { @recipe.errors.add(:base, it) } unless e.record == @recipe
       set_picks
@@ -87,7 +81,6 @@ module Accounts
         return unless @recipe.persisted?
 
         @made = library.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id }).includes(:recipe_run)
-        @posts = Current.account.smm_posts.where(recipe: @recipe).includes(smm_slides: { media_attachment: :blob }).recent if @recipe.feature?
       end
 
       def recipe_params

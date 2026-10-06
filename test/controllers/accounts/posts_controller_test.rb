@@ -102,20 +102,6 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Post removed.", flash[:notice]
   end
 
-  test "only admins see which feature recipe made a post" do
-    post_record = create_ready_post!
-    recipe = Recipe.create!(name: "Fully booked", kind: "feature", layer_slug: "fully-booked", inputs: [ { "folder_id" => folders(:ready).id } ])
-    post_record.update_columns(recipe_id: recipe.id)
-
-    get instagram_post_url(post_record)
-    assert_select "#generation", count: 0
-
-    @user = sign_in_as(users(:admin_user))
-    post_record.update_columns(user_id: @user.id)
-    get instagram_post_url(post_record, account: @user.id)
-    assert_select "#generation a[href=?]", recipe_path(recipe, account: @user.id), text: "Fully booked"
-  end
-
   test "react saves thumbs up instantly" do
     post_record = create_ready_post!
 

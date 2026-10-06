@@ -4,9 +4,6 @@ class SmmPost < ApplicationRecord
   STATUSES = %w[draft generating ready published failed].freeze
   REACTIONS = %w[up down].freeze
   belongs_to :user
-  # The feature recipe that composed it, and the review it shows.
-  belongs_to :recipe, optional: true
-  belongs_to :review, optional: true
   has_many :smm_post_media_items, -> { order(:position) }, dependent: :destroy, inverse_of: :smm_post
   has_many :library_media, through: :smm_post_media_items
   has_many :smm_slides, -> { order(:position) }, dependent: :destroy
@@ -52,14 +49,5 @@ class SmmPost < ApplicationRecord
 
   def mark_published!
     update!(status: "published", published_at: Time.current, error_message: nil)
-  end
-
-  # A feature recipe's post renders its layer over its photo.
-  def generate!
-    smm_slides.create!(media: { io: StringIO.new(recipe.render(self)), filename: "#{recipe.layer_slug}.png", content_type: "image/png" })
-    update!(status: "ready", error_message: nil)
-  rescue StandardError => e
-    Rails.logger.error("[SmmPost#generate!] id=#{id} #{e.class}: #{e.message}")
-    update!(status: "failed", error_message: e.message.to_s.truncate(1000))
   end
 end

@@ -263,7 +263,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "section[aria-label=Shot] fieldset:not([disabled]) select[name='recipe[shot_group]']"
     end
 
-    test "a feature recipe's run composes a story draft from the picked photo and review" do
+    test "a feature recipe's run renders the picked photo and review into its output folder" do
       ready = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @admin,
         file: { io: StringIO.new("img"), filename: "ready.jpg", content_type: "image/jpeg" })
       review = @admin.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.")
@@ -274,17 +274,14 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "label:has(input[type=radio][name=review_id][value=?][checked])", review.id.to_s, text: /Dana K\.\s+Best fade in town/
       assert_select "section[aria-label=Layer] select[name='recipe[layer_slug]'] option[selected][value=review]"
 
-      assert_difference -> { SmmPost.count } => 1, -> { RecipeRun.count } => 0 do
-        assert_enqueued_with(job: GenerateSmmPostJob) do
+      assert_difference -> { RecipeRun.count } => 1, -> { SmmPost.count } => 0 do
+        assert_enqueued_with(job: GenerateJob) do
           patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, review_id: review.id, recipe: { name: "Reviews" } }
         end
       end
-      post = @admin.smm_posts.sole
-      assert_redirected_to instagram_post_url(post, account: @admin.id)
-      assert_equal [ recipe, review, "story", [ ready ] ], [ post.recipe, post.review, post.format, post.library_media.to_a ]
-
-      get recipe_url(recipe, account: @admin.id)
-      assert_select "a[href=?]", instagram_post_path(post, account: @admin.id)
+      run = recipe.runs.sole
+      assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
+      assert_equal [ review, [ ready ], folders(:ready) ], [ run.review, run.source_media, run.generated_media.folder ]
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, recipe: { layer_slug: "daily" } }
       assert_response :unprocessable_entity

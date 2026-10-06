@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -193,12 +193,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
     t.json "options", default: {}, null: false
     t.text "prompt"
     t.integer "recipe_id"
+    t.integer "review_id"
     t.integer "shot_id"
     t.string "status", default: "running", null: false
     t.integer "style_id"
     t.datetime "updated_at", null: false
     t.index ["generated_media_id"], name: "index_recipe_runs_on_generated_media_id", unique: true
     t.index ["recipe_id"], name: "index_recipe_runs_on_recipe_id"
+    t.index ["review_id"], name: "index_recipe_runs_on_review_id"
     t.index ["shot_id"], name: "index_recipe_runs_on_shot_id"
     t.index ["style_id"], name: "index_recipe_runs_on_style_id"
   end
@@ -371,13 +373,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
-    t.integer "recipe_id"
-    t.integer "review_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["recipe_id"], name: "index_smm_posts_on_recipe_id"
-    t.index ["review_id"], name: "index_smm_posts_on_review_id"
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_smm_posts_on_user_id"
@@ -466,6 +464,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
   add_foreign_key "recipe_run_inputs", "recipe_runs", on_delete: :cascade
   add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
   add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
+  add_foreign_key "recipe_runs", "reviews", on_delete: :nullify
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "recipe_runs", "styles", on_delete: :nullify
   add_foreign_key "recipes", "folders", column: "output_folder_id"
@@ -475,8 +474,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
-  add_foreign_key "smm_posts", "recipes", on_delete: :nullify
-  add_foreign_key "smm_posts", "reviews", on_delete: :nullify
   add_foreign_key "smm_posts", "users"
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
