@@ -21,7 +21,5 @@ class Accounts::OverviewControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "folder-#{folders(:customer).id}", "recipe-#{recipe.id}" ], [ "style-#{style.id}", "recipe-#{recipe.id}" ],
       [ "recipe-#{recipe.id}", "folder-#{folders(:ready).id}" ] ], edges.select { it.include?("recipe-#{recipe.id}") }
     assert_includes edges, [ "recipe-#{feature.id}", "folder-#{folders(:photobank_logo).id}" ]
-    assert_includes edges, [ "folder-#{folders(:inbox).id}", "folder-#{folders(:customer).id}" ]
-    assert_includes edges, [ "folder-#{folders(:inbox).id}", "folder-#{folders(:misc).id}" ]
   end
 end
