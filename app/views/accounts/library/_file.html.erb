@@ -4,7 +4,7 @@
     <%= image_tag url_for(media.file), alt: media.kind, class: css %>
   <% elsif media.video? && play %>
     <span class="relative block">
-      <%= video_tag url_for(media.file), muted: true, playsinline: true, preload: "metadata", class: "bg-ink-900/5 #{css}" %>
+      <%= video_tag "#{url_for(media.file)}#t=0.1", muted: true, playsinline: true, preload: "metadata", class: "bg-ink-900/5 #{css}" %>
       <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
         <span class="flex aspect-square w-2/5 max-w-10 items-center justify-center rounded-full bg-black/45 text-white">
           <%= heroicon "play", options: { class: "size-1/2 translate-x-px", "aria-hidden": true } %>

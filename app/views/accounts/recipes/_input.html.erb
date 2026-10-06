@@ -8,6 +8,12 @@
     <% if index %><span class="text-sm font-medium text-ink-700"><%= index + 1 %>.</span><% end %>
     <div class="flex min-w-0 flex-1 items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
       <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: folder&.id, label: "#{label} folder" %>
+      <% if folder %>
+        <%= link_to folder_path(folder), target: "_blank", aria: { label: "Open #{folder.path}" },
+              class: "shrink-0 rounded-md p-1.5 text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+          <%= heroicon "arrow-top-right-on-square", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        <% end %>
+      <% end %>
       <button type="button" aria-label="Remove <%= label.downcase %>" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
               onclick="const form = this.form; this.closest('[role=group]').remove(); form.requestSubmit(form.elements.refresh_inputs)">
         <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
