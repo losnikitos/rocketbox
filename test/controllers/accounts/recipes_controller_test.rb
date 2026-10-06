@@ -168,7 +168,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
             recipe: { body: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } } }
         end
       end
-      run = @media.input_runs.sole
+      run = @media.source_runs.sole
       assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
       assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
       assert_equal [ "Make it snow.", "Make it snow." ], [ @recipe.reload.body, run.prompt ]
@@ -184,7 +184,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     test "run sends the edited prompt and options for that run only; a type change needs a save" do
       patch recipe_url(@recipe), params: { commit: "run", media_ids: { 0 => @media.id },
         recipe: { body: "Make it snow.", options: { model: "grok-imagine-video", duration: "5" } } }
-      run = @media.input_runs.sole
+      run = @media.source_runs.sole
       assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
       assert_equal [ "Make it snow.", { "model" => "grok-imagine-video", "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "5" } ], [ run.prompt, run.options ]
       assert_equal [ "Slow cinematic push-in on the shop.", {} ], [ @recipe.reload.body, @recipe.options ]
@@ -220,7 +220,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => @media.id },
         recipe: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high" } } }
-      run = @media.input_runs.sole
+      run = @media.source_runs.sole
       assert_equal({ model: "gpt-image-2", size: "2880x2880", quality: "high", output_format: "jpeg", provider: :openai }, run.ai_options)
     end
 
@@ -255,7 +255,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "section[aria-label=Style] fieldset:not([disabled]) select[name='recipe[style_id]'] option[selected][value=?]", style.id.to_s
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => @media.id }, recipe: { body: "Polish the shot." } }
-      run = @media.input_runs.sole
+      run = @media.source_runs.sole
       assert_equal [ style, "Polish the shot.\n\n35mm grain." ], [ run.style, run.prompt ]
 
       patch recipe_url(recipe), params: { commit: "save", recipe: { style_id: "" } }
