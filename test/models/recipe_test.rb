@@ -112,19 +112,21 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  test "a doppler stitch lays the Doppler track under its beat cuts" do
-    recipe = Recipe.create!(name: "Doppler", kind: "stitch", effect: "doppler", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
-    media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
-    run = recipe.run!(media:)
+  { "doppler" => 9.6, "welcome" => 8.1 }.each do |effect, length|
+    test "a #{effect} stitch lays its track under its cuts" do
+      recipe = Recipe.create!(name: effect, kind: "stitch", effect:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+      media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
+      run = recipe.run!(media:)
 
-    run.run!
+      run.run!
 
-    assert_equal "complete", run.reload.status, run.error
-    probe = run.generated_media.reload.file.open do
-      Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "csv=p=0", it.path).first
+      assert_equal "complete", run.reload.status, run.error
+      probe = run.generated_media.reload.file.open do
+        Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "csv=p=0", it.path).first
+      end
+      assert_equal %w[video audio], probe.lines.map(&:strip).grep(/\A[a-z]+\z/)
+      assert_in_delta length, probe.lines.last.to_f, 0.1
     end
-    assert_equal %w[video audio], probe.lines.map(&:strip).grep(/\A[a-z]+\z/)
-    assert_in_delta 9.6, probe.lines.last.to_f, 0.1
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do

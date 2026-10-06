@@ -25,7 +25,8 @@ class Recipe < ApplicationRecord
   # Label and description per stitch effect.
   EFFECTS = {
     "default" => [ "Default", "Each input plays for 1 second, in order." ],
-    "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ]
+    "doppler" => [ "Doppler", "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ],
+    "welcome" => [ "Welcome", "Cuts where the Welcome reel cuts, under its track, a random input per cut, never the same one twice in a row." ]
   }.freeze
 
   # Runs outlive their recipe.

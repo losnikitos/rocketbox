@@ -122,7 +122,8 @@
               </label>
             <% end %>
           </div>
-          <% shown_when = { "default" => "group-has-[[value=default]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block" } %>
+          <% shown_when = { "default" => "group-has-[[value=default]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
+                           "welcome" => "group-has-[[value=welcome]:checked]/effect:block" } %>
           <% Recipe::EFFECTS.each do |effect, (_, description)| %>
             <p class="mt-2 hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
           <% end %>
