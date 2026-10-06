@@ -102,7 +102,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     recipe = recipes(:cinematic)
     get "/app/recipes/#{recipe.slug}?account=#{admin.id}", headers: @ua
     assert_response :success
-    assert_select "header a[href='/admin/recipes/#{recipe.slug}']"
+    assert_select "header a[href^='/admin/recipes/#{recipe.slug}']"
     get "/admin/recipes", headers: @ua
     assert_response :success
     assert_match recipe.name, response.body

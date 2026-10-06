@@ -2,9 +2,9 @@
 
 # How media is made from library media, one per input slot, plus an example image.
 # `inputs` lists the slots in order as { "folder_id" } and may repeat one (two staff photos).
-# `kind` is how: one AI call making an image or a video, or scripted, no AI, by its `effect` (see EFFECTS), which fixes
-# its layer: an overlay effect lays it over one photo or video, as the same; a reel effect cuts the inputs (photos or
-# videos) into a video, its layer over its first cuts, one per `layer_steps` entry, each filled from its entry (see RecipeRun#reel).
+# `kind` is how: one AI call making an image or a video, or scripted, no AI, by its `effect`, the slug of its `script`
+# (see Effect), which fixes its layer: an overlay effect lays it over one photo or video, as the same; a reel effect
+# cuts the inputs (photos or videos) into a video, its layer over the cuts its script fills from `layer_steps` (see RecipeRun#reel).
 # Results land in `output_folder`.
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
@@ -23,21 +23,6 @@ class Recipe < ApplicationRecord
     "generate_image" => [ "Gen image", "photo" ], "generate_video" => [ "Gen video", "film" ],
     "scripted" => [ "Scripted", "bolt" ]
   }.freeze
-  # Label, layer slug (nil for none) and description per scripted effect.
-  EFFECTS = {
-    "fully-booked" => [ "Fully booked", "fully-booked-color", "Fully booked for the day, over one photo or video." ],
-    "daily" => [ "Daily", "daily", "The time and a caption, over one photo or video." ],
-    "review" => [ "Review", "review", "A 5-star review, over one photo or video." ],
-    "calendar" => [ "Calendar", "calendar", "Free slots for the next three days, over one photo or video." ],
-    "steps" => [ "Steps", nil, "Each input plays for 1 second, in order." ],
-    "doppler" => [ "Doppler", nil, "Cuts on the beat of the Doppler track, a random input per cut, never the same one twice in a row." ],
-    "welcome" => [ "Welcome", "welcome", "Cuts where the Welcome reel cuts, under its track, a random input per cut, never the same one twice in a row." ],
-    # Instagram's own copy of the track: https://www.instagram.com/reels/audio/27554386410835342/
-    # The Graph API can't attach library audio to a reel, so the track is baked into the video.
-    "black-eyed-peas" => [ "Black Eyed Peas", "caption", "Cuts every bar of its track, five cuts, a random input per cut, never the same one twice in a row." ]
-  }.freeze
-  # The effects laying their layer over one photo or video; the rest cut their inputs into a reel.
-  OVERLAYS = %w[fully-booked daily review calendar].freeze
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
@@ -68,7 +53,7 @@ class Recipe < ApplicationRecord
   validates :name, presence: true
   validates :inputs, presence: true, unless: :generate_image?
   validates :body, presence: true, if: :ai?
-  validates :effect, inclusion: { in: EFFECTS.keys }, if: :scripted?
+  validates :effect, inclusion: { in: -> { Effect.all.map(&:slug) } }, if: :scripted?
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
@@ -88,16 +73,18 @@ class Recipe < ApplicationRecord
 
   def video? = generate_video?
 
-  def overlay? = scripted? && effect.in?(OVERLAYS)
+  def script = (Effect.find(effect) if scripted?)
 
-  def reel? = scripted? && !overlay?
+  def overlay? = !!script&.overlay?
 
-  def layer = (EFFECTS.dig(effect, 1)&.then { Layer.find(it) } if scripted?)
+  def reel? = script&.overlay? == false
 
-  def takes_review? = scripted? && effect == "review"
+  def layer = script&.layer
+
+  def takes_review? = !!script&.takes_review?
 
   # "Gen image", or "Scripted · Fully booked".
-  def type_label = [ KINDS[kind].first, EFFECTS.dig(effect, 0) ].compact.join(" · ")
+  def type_label = [ KINDS[kind].first, script&.label ].compact.join(" · ")
 
   def takes?(media) = media.story_image? || (!ai? && media.video?)
 

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "csv"
-
 # A recipe applied to library media, one per recipe input. The result lands in the recipe's output folder, created
 # up front so a running or failed run already has a page; GenerateJob attaches its file when the AI call finishes.
 # A run without a recipe records a version the owner dropped onto a media themselves; it never runs.
@@ -12,8 +10,6 @@ class RecipeRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
-  # Per reel effect besides steps, `<effect>.wav` is its track and `<effect>.csv` its cut ends in seconds.
-  TRACKS = Rails.root.join("lib/tracks").to_s
 
   belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
@@ -88,33 +84,25 @@ class RecipeRun < ApplicationRecord
     # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
     def filename(ext) = "#{recipe.slug.underscore}_#{id}.#{ext}"
 
-    # The source media as one 30fps MP4: for Steps, 1 second each in order (a video's first second), or for a track
-    # effect (Doppler, Welcome, Black Eyed Peas), its track cut at its cut ends, each cut a random input other than the one before.
-    # The effect's layer overlays the first cuts: cut i filled from the recipe's layer step i; cuts past its steps show none.
+    # The source media as one 30fps MP4, cut and overlaid by the recipe's script (see Effect::Reel): each cut its
+    # media for its frames (a video from its first frame), under the script's track if any, the layer over a cut
+    # filled from the script's values for it.
     # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
     # from the recipe options, a per-media offset.
     def reel
-      media = source_media
-      track = "#{TRACKS}/#{recipe.effect}" unless recipe.effect == "steps"
-      # [media, frames] per cut. Ends are rounded to frames, not durations, so cuts don't drift off the beat.
-      cuts = if track
-        ends = CSV.foreach("#{track}.csv", headers: true).map { (it["end"].to_f * 30).round }
-        ends.zip([ 0, *ends ]).each_with_object([]) { |(stop, start), acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, stop - start ] }
-      else
-        media.map { [ it, 30 ] }
-      end
+      media, script = source_media, recipe.script
+      track, cuts = script.track, script.cuts(media)
       Dir.mktmpdir do |dir|
         paths = media.each_with_index.to_h { |item, i| [ item, File.join(dir, i.to_s).tap { File.binwrite(it, item.file.download) } ] }
-        fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p"
-        steps = recipe.layer ? recipe.layer_steps : []
+        fit = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=#{Effect::Reel::FPS},format=yuv420p"
         # One ffmpeg per cut, then a lossless join: a single graph with an input per cut queues frames for every
         # cut at once and got OOM-killed in production.
         list = File.join(dir, "cuts.txt")
         File.write(list, cuts.each_with_index.map do |(item, frames), i|
           segment = File.join(dir, "cut#{i}.mp4")
           filter = [ "-vf", fit ]
-          if steps[i]
-            png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: steps[i].symbolize_keys)) }
+          if recipe.layer && (values = script.layer_values(recipe.layer_steps, i))
+            png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: values.symbolize_keys)) }
             filter = [ "-i", png, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
           end
           # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
