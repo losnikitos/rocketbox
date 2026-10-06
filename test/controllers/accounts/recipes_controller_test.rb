@@ -46,6 +46,12 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.folder_ids, recipe.output_folder ]
     assert_equal "b.jpg", recipe.example.filename.to_s
 
+    patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "stitch", layer_slug: "caption",
+      layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ] } }
+    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" } ], recipe.reload.layer_steps
+    get recipe_url(recipe, account: @admin.id)
+    assert_select "input[name='recipe[layer_steps][][line2]']", 3
+
     assert_difference -> { Recipe.count }, -1 do
       delete recipe_url(recipe)
     end

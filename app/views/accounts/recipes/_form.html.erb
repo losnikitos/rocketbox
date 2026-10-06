@@ -93,6 +93,20 @@
               <%= link_to "Preview", layer_path(recipe.layer), class: "shrink-0 text-sm text-ink-600 underline hover:text-ink-900" %>
             <% end %>
           </div>
+          <% if recipe.layer %>
+            <%# One row per cut it overlays, plus a blank one to add the next; blank rows are dropped on save. %>
+            <div class="hidden space-y-2 group-has-[[value=stitch]:checked]/recipe:block">
+              <% (recipe.layer_steps + [ {} ]).each_with_index do |step, i| %>
+                <div class="flex items-center gap-2">
+                  <span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span>
+                  <% recipe.layer.fields.each do |field| %>
+                    <%= text_field_tag "recipe[layer_steps][][#{field.name}]", step[field.name.to_s], id: nil, placeholder: field.label,
+                          "aria-label": "Cut #{i + 1} #{field.label}", class: "#{tw_input_classes} min-w-0" %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
         <% end %>
         <%= tag.button name: "refresh_inputs", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "recipe_inputs" } %>
       </turbo-frame>
@@ -124,7 +138,8 @@
             <% end %>
           </div>
           <% shown_when = { "default" => "group-has-[[value=default]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
-                           "welcome" => "group-has-[[value=welcome]:checked]/effect:block" } %>
+                           "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
+                           "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block" } %>
           <% Recipe::EFFECTS.each do |effect, (_, description)| %>
             <p class="mt-2 hidden text-sm text-ink-600 <%= shown_when[effect] %>"><%= description %></p>
           <% end %>
