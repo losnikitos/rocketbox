@@ -34,6 +34,7 @@ class RecipeRun < ApplicationRecord
   after_update_commit -> {
     broadcast_update_to [ generated_media.user, :generations ], target: "generations", partial: "layouts/app/generations", locals: { user: generated_media.user }
   }, if: :saved_change_to_status?
+  after_update_commit :broadcast_refresh, if: :saved_change_to_status?
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
