@@ -28,7 +28,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(recipe)}" do
       assert_select "img[alt='a.jpg']"
       assert_select "a[href=?]", recipe_path(recipe, account: @admin.id), text: "Team collage"
-      assert_select "[popover] a[href^='/app/recipes/#{recipe.id}?'][data-turbo-method=delete]"
+      assert_select "[popover] a[href^='/app/recipes/#{recipe.slug}?'][data-turbo-method=delete]"
     end
 
     get recipe_url(recipe, account: @admin.id)

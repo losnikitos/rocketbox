@@ -35,6 +35,15 @@ class RecipeTest < ActiveSupport::TestCase
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
   end
 
+  test "slug comes from the name once, is never numeric, and finds the recipe" do
+    assert_equal "collage", @recipe.slug
+    @recipe.update!(name: "Renamed")
+    assert_equal [ "collage", @recipe ], [ @recipe.slug, Recipe.find("collage") ]
+    numeric = Recipe.create!(name: "2", body: "x")
+    assert_equal [ "recipe-2", numeric ], [ numeric.slug, Recipe.find("recipe-2") ]
+    assert_equal "strizhka-i-boroda", Recipe.create!(name: "Стрижка и борода", body: "x").slug
+  end
+
   test "run! rejects photos from another folder or order, and another account's photos" do
     inbox = photo("inbox.jpg", :customer)
     stranger = photo("stranger.jpg", :photobank_customer, user: users(:admin_user))
@@ -68,7 +77,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ [ "Compose a collage.\n\nWarmer.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
     assert_equal [ "complete", 0.04, "Compose a collage.\n\nWarmer." ], [ run.reload.status, run.cost, run.prompt ]
     assert_equal "jpeg-bytes", media.reload.file.download
-    assert_equal "#{@recipe.name.parameterize(separator: "_")}_#{run.id}.jpg", media.file.filename.to_s
+    assert_equal "#{@recipe.slug.underscore}_#{run.id}.jpg", media.file.filename.to_s
   end
 
   test "a video recipe animates its one input into a video" do

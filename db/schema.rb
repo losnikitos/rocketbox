@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_110000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -217,10 +217,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.json "options", default: {}, null: false
     t.integer "output_folder_id", null: false
     t.string "shot_group"
+    t.string "slug", null: false
     t.integer "style_id"
     t.boolean "takes_review", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
+    t.index ["slug"], name: "index_recipes_on_slug", unique: true
     t.index ["style_id"], name: "index_recipes_on_style_id"
   end
 

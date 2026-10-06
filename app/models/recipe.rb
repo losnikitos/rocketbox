@@ -11,7 +11,11 @@
 # ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
 class Recipe < ApplicationRecord
+  extend FriendlyId
   include GenerationOptions
+
+  # Set from the name once and survives renames.
+  friendly_id :name, use: %i[slugged finders]
 
   # Label and icon per kind.
   KINDS = {
@@ -63,6 +67,9 @@ class Recipe < ApplicationRecord
   scope :ordered, -> { order(:name) }
 
   def self.groups = where.not(group: nil).distinct.order(:group).pluck(:group)
+
+  # A numeric slug would be found as an id.
+  def normalize_friendly_id(text) = super.then { it.match?(/\A\d+\z/) ? "recipe-#{it}" : it }
 
   def ai? = generate_image? || generate_video?
 

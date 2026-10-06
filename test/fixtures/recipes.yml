@@ -1,5 +1,6 @@
 cinematic:
   name: Cinematic shop reel
+  slug: cinematic-shop-reel
   kind: generate_video
   body: Slow cinematic push-in on the shop.
   output_folder: photobank_interior
@@ -8,6 +9,7 @@ cinematic:
 
 before_after:
   name: Before → after energy
+  slug: before-after-energy
   kind: generate_video
   body: Energetic before and after reveal.
   output_folder: photobank_misc

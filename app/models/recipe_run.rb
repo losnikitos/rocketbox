@@ -86,7 +86,7 @@ class RecipeRun < ApplicationRecord
   private
 
     # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
-    def filename(ext) = "#{recipe.name.parameterize(separator: "_").presence || "recipe"}_#{id}.#{ext}"
+    def filename(ext) = "#{recipe.slug.underscore}_#{id}.#{ext}"
 
     # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for the Doppler effect,
     # the Doppler track cut on its beat, each cut a random input other than the one before.
