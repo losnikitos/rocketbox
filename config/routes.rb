@@ -64,7 +64,9 @@ Rails.application.routes.draw do
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end
-      resources :recipes, except: :edit
+      resources :recipes, except: :edit do
+        patch :rename_group, on: :collection
+      end
       resources :features, only: %i[index show update] do
         post :generate, on: :member
       end

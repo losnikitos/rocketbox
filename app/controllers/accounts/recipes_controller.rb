@@ -60,6 +60,11 @@ module Accounts
       redirect_to recipes_path, notice: "Recipe removed."
     end
 
+    def rename_group
+      Recipe.where(group: params.expect(:from)).update_all(group: Recipe.normalize_value_for(:group, params.expect(:to)))
+      redirect_to recipes_path
+    end
+
     private
 
       def set_recipe

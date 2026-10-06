@@ -103,7 +103,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_includes Recipe.groups, "Promo"
 
     get recipes_url(account: @admin.id)
-    assert_select "section[data-move-to=Promo]", text: /Promo/ do
+    assert_select "section[data-move-to=Promo]" do
+      assert_select "form[action=?] input[name=to][value=Promo]", rename_group_recipes_path(account: @admin.id)
       assert_select "##{dom_id(reel)} a[draggable=true][data-move-url=?]", recipe_path(reel, account: @admin.id)
     end
     assert_select "section[data-move-to='']", text: /Ungrouped/
@@ -111,6 +112,16 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     patch recipe_url(reel), params: { recipe: { group: "" } }
     assert_nil reel.reload.group
+  end
+
+  test "admin renames a group; every recipe in it moves to the new name" do
+    @admin = sign_in_as(users(:admin_user))
+    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "stitch", inputs: [ input(:photobank_interior) ], group: "Promo") }
+    other.update!(group: "Other")
+
+    patch rename_group_recipes_url(account: @admin.id), params: { from: "Promo", to: " Sale " }
+    assert_redirected_to recipes_url(account: @admin.id)
+    assert_equal %w[Sale Sale Other], [ a, b, other ].map { it.reload.group }
   end
 
   class RunTest < ActionDispatch::IntegrationTest

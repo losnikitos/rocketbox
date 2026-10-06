@@ -17,8 +17,14 @@
     <% (names + [ nil ]).each do |name| %>
       <% recipes = by_group.fetch(name, []) %>
       <%= tag.section class: drop_css, data: { move_to: name.to_s }, "aria-label": name || "Ungrouped" do %>
-        <% if names.any? %>
-          <h2 class="mb-3 text-sm font-semibold text-ink-900"><%= name || "Ungrouped" %></h2>
+        <% if name %>
+          <%= form_with url: rename_group_recipes_path, method: :patch, class: "mb-3" do %>
+            <%= hidden_field_tag :from, name, id: nil %>
+            <h2><%= text_field_tag :to, name, id: nil, required: true, "aria-label": "Group name",
+                  class: "-mx-2 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 text-sm font-semibold text-ink-900 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %></h2>
+          <% end %>
+        <% elsif names.any? %>
+          <h2 class="mb-3 text-sm font-semibold text-ink-900">Ungrouped</h2>
         <% end %>
         <% if recipes.any? %>
           <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
