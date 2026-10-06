@@ -57,15 +57,15 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     get new_recipe_url(account: @admin.id)
     assert_select "input[type=radio][name='recipe[kind]'][value=generate_image][checked]"
     assert_equal %w[generate_image generate_video stitch], css_select("input[name='recipe[kind]']").map { it["value"] }
-    assert_select "turbo-frame#generation_options input[name='recipe[options][model]'][value='gpt-image-2.5-flare'][checked]"
-    assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("input[name='recipe[options][model]']").map { it["value"] }
+    assert_select "turbo-frame#generation_options input[type=hidden][name='recipe[options][model]'][value='gpt-image-2.5-flare']"
+    assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("turbo-frame#generation_options button[data-pick-target=option]").map { it["value"] }
     assert_select "input[type=checkbox][name='recipe[takes_style]']"
     assert_select "select[name='recipe[shot_group]'][disabled]"
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_recipe_path(account: @admin.id)
     assert_select "button[name=commit]", count: 0
 
     get new_recipe_url(account: @admin.id, recipe: { kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
-    assert_select "input[name='recipe[options][model]'][value='grok-imagine-video-1.5'][checked]"
+    assert_select "input[type=hidden][name='recipe[options][model]'][value='grok-imagine-video-1.5']"
     assert_select "select[name='recipe[options][aspect_ratio]'] option[selected]", text: "9:16"
     assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
 
@@ -145,8 +145,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "[role=group][aria-label='Input 1'] button[aria-current=true]", text: /Inbox \/ Interior/ do
         assert_select "svg.text-emerald-500"
       end
-      assert_select "input[name='recipe[options][model]'][value='grok-imagine-video-1.5'][checked]"
-      assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("input[name='recipe[options][model]']").map { it["value"] }
+      assert_select "input[type=hidden][name='recipe[options][model]'][value='grok-imagine-video-1.5']"
+      assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("turbo-frame#generation_options button[data-pick-target=option]").map { it["value"] }
       assert_select "a[href='/admin/models']", text: "Manage models"
       assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
       assert_select "[name='recipe[options][quality]']", count: 0
@@ -197,7 +197,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       get recipe_url(recipe, account: @admin.id, recipe: { body: "Warmer.", options: { model: "gpt-image-2" } })
       assert_response :success
       assert_select "textarea[name='recipe[body]']", text: "Warmer."
-      assert_select "input[name='recipe[options][model]'][value='gpt-image-2'][checked]"
+      assert_select "input[type=hidden][name='recipe[options][model]'][value='gpt-image-2']"
       assert_select "input[type=radio][name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
       assert_select "input[type=radio][name='recipe[options][resolution]'][value='2k'][checked]"
       assert_equal %w[1K 2K 4K], css_select("input[name='recipe[options][resolution]']").map { it.parent.text.strip }
