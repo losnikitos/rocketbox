@@ -39,6 +39,14 @@
     <li class="mt-2">
       <% folder_counts = Current.account.library_media.group(:folder_id).count %>
       <ul aria-label="Folder tree">
+        <li>
+          <%= link_to recent_path,
+                class: "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-3 pl-3 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
+                aria: { current: ("page" if section == :recent) } do %>
+            <%= heroicon "clock", variant: :micro, options: { class: "size-4 shrink-0 text-ink-400", "aria-hidden": true } %>
+            <span class="truncate">Recent</span>
+          <% end %>
+        </li>
         <% Folder.roots.ordered.includes(:children).each do |root| %>
           <li>
             <details class="group" <%= "open" if current_folder&.root == root %>>

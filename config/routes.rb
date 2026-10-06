@@ -27,7 +27,7 @@ Rails.application.routes.draw do
 
   # Customer portal at /app (landing page stays at /)
   scope :app do
-    get "/", to: redirect(path: "/app/overview"), as: :app
+    get "/", to: redirect(path: "/app/recent"), as: :app
 
     resources :library_media, only: %i[create update destroy], path: "library/media" do
       member do
@@ -57,6 +57,7 @@ Rails.application.routes.draw do
 
     scope module: :accounts do
       get "overview", to: "overview#show", as: :overview
+      get "recent", to: "recent#show", as: :recent
       get "calendar", to: "calendar#show", as: :calendar
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show

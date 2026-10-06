@@ -6,6 +6,8 @@ module AppHelper
     case controller_path
     when "accounts/overview"
       [ :overview, "Overview", [] ]
+    when "accounts/recent"
+      [ :recent, "Recent", [] ]
     when "accounts/folders", "accounts/library"
       [ :folders, (@folder || @media&.folder)&.name || "Media", [] ]
     when "accounts/posts"

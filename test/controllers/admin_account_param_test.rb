@@ -11,7 +11,7 @@ class AdminAccountParamTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_folders_url("inbox", account: admin.id)
 
     get app_url(account: customer.id)
-    assert_redirected_to overview_url(account: customer.id)
+    assert_redirected_to recent_url(account: customer.id)
 
     get business_url(account: customer.id)
     assert_response :success

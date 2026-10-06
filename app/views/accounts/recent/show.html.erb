@@ -1,0 +1,16 @@
+<% if turbo_frame_request? %>
+  <%= turbo_frame_tag "recent-#{params[:before]}", class: "contents", target: "_top" do %>
+    <%= render "batch" %>
+  <% end %>
+<% else %>
+  <% content_for(:title, "Recent — Rocketbox") %>
+  <% if @library_media.any? %>
+    <div class="@container">
+      <ul aria-label="Recent media" class="grid grid-cols-2 gap-3 @lg:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6">
+        <%= render "batch" %>
+      </ul>
+    </div>
+  <% else %>
+    <p class="text-sm text-ink-600">No media yet. Photos and videos you send show up here.</p>
+  <% end %>
+<% end %>
