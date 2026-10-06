@@ -1,6 +1,6 @@
 <%# locals: (name:, selected:, label:, roots: Folder.roots) %>
 <%# Folder dropdown: the closed state mirrors the picked option's first child. %>
-<% roots = roots.ordered.includes(:children).to_a %>
+<% roots = roots.in_order_of(:slug, %w[photobank inbox], filter: false).ordered.includes(:children).to_a %>
 <% selected = roots.flat_map { [ it, *it.children ] }.find { it.id.to_s == selected.to_s } %>
 <% counts = Current.account.library_media.group(:folder_id).count %>
 <% chip = ->(folder) do
