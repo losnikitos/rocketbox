@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Accounts
-  # A recipe's page edits it inline and runs it: one library media per input (and a style and a shot, if it takes them).
+  # A recipe's page edits it inline and runs it: one library media per input (and a shot or a review, if it takes one).
+  # A feature recipe's run composes a Story draft.
   # Update's `commit` picks the action: "save", "run" (the form as given, for this run only) or "save_run".
   # `media_ids[i]` preselects input i, e.g. from a media page.
   class RecipesController < ApplicationController
@@ -47,8 +48,13 @@ module Accounts
 
       set_picks
       media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
-      run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), style: @styles&.find_by(id: params[:style_id]))
-      redirect_to helpers.library_item_path(run.generated_media)
+      if @recipe.feature?
+        post = @recipe.compose!(Current.account, media: media.first, review: @reviews&.find_by(id: params[:review_id]))
+        redirect_to instagram_post_path(post), notice: "Composing #{@recipe.name}…"
+      else
+        run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), user: Current.account)
+        redirect_to helpers.library_item_path(run.generated_media)
+      end
     rescue ActiveRecord::RecordInvalid => e
       e.record.errors.full_messages.each { @recipe.errors.add(:base, it) } unless e.record == @recipe
       set_picks
@@ -76,12 +82,17 @@ module Accounts
         library = Current.account.library_media.with_attached_file.order(created_at: :desc)
         @slots = @recipe.slots.map { |folder| [ folder, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
         @shots = Shot.where(group: @recipe.shot_group).ordered.with_attached_examples if @recipe.shot_group
-        @styles = Style.ordered.with_attached_examples if @recipe.takes_style?
-        @made = library.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id }).includes(:recipe_run) if @recipe.persisted?
+        # ponytail: picks any 5-star review, used or not. Upgrade = skip reviews the recipe's posts already show, once posts are scheduled.
+        @reviews = Current.account.reviews.postable.order(created_at: :desc) if @recipe.takes_review?
+        return unless @recipe.persisted?
+
+        @made = library.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id }).includes(:recipe_run)
+        @posts = Current.account.smm_posts.where(recipe: @recipe).includes(smm_slides: { media_attachment: :blob }).recent if @recipe.feature?
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :takes_style, :output_folder_id, :example, inputs: [ %i[folder_id] ], options: {} ])
+        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :takes_review, :layer_slug, :output_folder_id, :example,
+          inputs: [ %i[folder_id] ], options: {} ])
       end
 
       # The refreshes resubmit the form as a GET; the example waits for the save.

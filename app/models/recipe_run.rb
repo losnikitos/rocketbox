@@ -43,10 +43,10 @@ class RecipeRun < ApplicationRecord
   # In slot order; also before save.
   def source_media = inputs.map(&:library_media)
 
-  # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or style doesn't fit or an option isn't available.
-  def start!
-    first = source_media.first
-    build_generated_media(user: first&.user, kind: recipe.generate_image? ? "photo" : "video", folder: recipe.output_folder)
+  # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
+  # or an option isn't available.
+  def start!(user)
+    build_generated_media(user:, kind: recipe.generate_image? ? "photo" : "video", folder: recipe.output_folder)
     self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") unless recipe.stitch?
     save!
     GenerateJob.perform_later(self)
@@ -66,7 +66,7 @@ class RecipeRun < ApplicationRecord
       result = RubyLLM.animate(prompt, with: images.first, **args)
       file = { io: StringIO.new(result.to_blob), filename: "recipe.mp4", content_type: "video/mp4" }
     else
-      result = RubyLLM.paint(prompt, with: images, **args)
+      result = RubyLLM.paint(prompt, with: images.presence, **args)
       self.cost = result.cost.total
       file = { io: StringIO.new(result.to_blob), filename: "recipe.jpg", content_type: "image/jpeg" }
     end
@@ -120,10 +120,10 @@ class RecipeRun < ApplicationRecord
 
     def media_fit_recipe
       media = source_media
-      fits = media.size == recipe.inputs.size && media.all? && media.uniq.size == media.size && media.map(&:user_id).uniq.size == 1 &&
+      fits = media.size == recipe.inputs.size && media.all? && media.uniq.size == media.size &&
+        media.all? { it.user_id == generated_media&.user_id } &&
         media.zip(recipe.inputs).all? { |item, slot| item.folder_id == slot["folder_id"] && recipe.takes?(item) }
       errors.add(:base, "Pick a different matching photo for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
-      errors.add(:base, "Pick a style.") unless style.present? == recipe.takes_style?
     end
 end

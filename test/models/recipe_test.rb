@@ -11,11 +11,13 @@ class RecipeTest < ActiveSupport::TestCase
     @customer = photo("customer.jpg", :photobank_customer)
     @original_paint = RubyLLM.method(:paint)
     @original_animate = RubyLLM.method(:animate)
+    @original_screenshot = Layer.method(:screenshot)
   end
 
   teardown do
     RubyLLM.define_singleton_method(:paint, @original_paint)
     RubyLLM.define_singleton_method(:animate, @original_animate)
+    Layer.define_singleton_method(:screenshot, @original_screenshot)
   end
 
   test "inputs drop blank folders and need a known folder; output goes to photobank; a video takes one input" do
@@ -23,7 +25,8 @@ class RecipeTest < ActiveSupport::TestCase
     assert Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
-    assert_not Recipe.new(name: "x", body: "x", inputs: []).valid?
+    assert Recipe.new(name: "x", body: "x", inputs: []).valid?, "text-to-image"
+    assert_not Recipe.new(name: "x", kind: "stitch", inputs: []).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
     assert Recipe.new(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
@@ -114,7 +117,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 9.6, probe.lines.last.to_f, 0.1
   end
 
-  test "a recipe with a shot group and a style needs both, and paints the shot and style after the recipe body" do
+  test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
@@ -122,19 +125,48 @@ class RecipeTest < ActiveSupport::TestCase
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
     @recipe = Recipe.find(@recipe.id)
-    @recipe.update!(shot_group: "Daily", takes_style: true)
+    @recipe.update!(shot_group: "Daily", style:)
     shot = Shot.create!(name: "Empty Chair", body: "The empty chair.", group: "Daily")
     other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, style:) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot: other, style:) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot:) }
-    run = @recipe.run!(media:, shot:, style:)
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:) }
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot: other) }
+    run = @recipe.run!(media:, shot:)
     run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
-    assert_equal prompts.first, run.reload.prompt
+    assert_equal [ prompts.first, style ], [ run.reload.prompt, run.style ]
+  end
+
+  test "a gen image recipe without media paints from the prompt alone for the given user" do
+    images = []
+    RubyLLM.define_singleton_method(:paint) do |_prompt, with:, **|
+      images << with
+      RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
+    end
+    run = Recipe.create!(name: "Poster", body: "A poster.").run!(media: [], user: @user)
+    run.run!
+
+    assert_equal [ [ nil ], "complete", @user ], [ images, run.reload.status, run.generated_media.user ]
+  end
+
+  test "switching type clears the inputs the new type doesn't take" do
+    style = Style.create!(name: "Film", body: "35mm grain.")
+    @recipe.update!(kind: "feature", style:, shot_group: "Daily", takes_review: true, layer_slug: "review", inputs: [ input(:photobank_interior) ])
+    assert_equal [ nil, nil, true, "review" ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review, @recipe.layer_slug ]
+
+    @recipe.update!(kind: "generate_image", style:, shot_group: "Daily")
+    assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review, @recipe.layer_slug ]
+  end
+
+  test "a feature needs a layer and one photo input" do
+    assert Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: [ input(:ready) ]).valid?
+    assert_not Recipe.new(name: "x", kind: "feature", inputs: [ input(:ready) ]).valid?
+    assert_not Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: []).valid?
+    two = Recipe.new(name: "x", kind: "feature", layer_slug: "daily", inputs: [ input(:ready), input(:ready) ])
+    assert_not two.valid?
+    assert_includes two.errors.full_messages, "Inputs must be a single photo to make a post"
   end
 
   test "run! records a failure" do
@@ -162,9 +194,55 @@ class RecipeTest < ActiveSupport::TestCase
       video.ai_options)
   end
 
+  test "a feature composes a story draft and renders its layer for tomorrow over the photo" do
+    feature = Recipe.create!(name: "Fully booked", kind: "feature", layer_slug: "fully-booked", inputs: [ input(:ready) ])
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
+      file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
+    rendered = stub_screenshot
+
+    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(@user, media: @interior) }
+    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(users(:admin_user), media: photo) }
+    post = feature.compose!(@user, media: photo)
+    post.generate!
+
+    html, size = rendered.sole
+    assert_equal [ 1080, 1920 ], size
+    assert_includes html, "background-image: url(data:image/jpeg;base64,"
+    assert_includes html, Date.tomorrow.strftime("%a, %b %-d")
+    assert_equal [ "ready", "story", feature, [ photo ] ], [ post.reload.status, post.format, post.recipe, post.library_media.to_a ]
+    assert_equal [ "png-bytes" ], post.smm_slides.map { it.media.download }
+  end
+
+  test "a feature taking a review needs one and renders it on its layer" do
+    feature = Recipe.create!(name: "Reviews", kind: "feature", layer_slug: "review", takes_review: true, inputs: [ input(:ready) ])
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
+      file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
+    review = @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.",
+      avatar: { io: file_fixture("logo.png").open, filename: "dana.png", content_type: "image/png" })
+    @user.reviews.create!(source: "google", customer_name: "Meh", rating: 4, body: "Fine.")
+    rendered = stub_screenshot
+
+    assert_equal [ review ], @user.reviews.postable.to_a
+    assert_raises(ActiveRecord::RecordInvalid) { feature.compose!(@user, media: photo) }
+    post = feature.compose!(@user, media: photo, review:)
+    post.generate!
+
+    html, = rendered.sole
+    assert_equal [ "ready", review ], [ post.reload.status, post.review ]
+    assert_includes html, "Best fade in town."
+    assert_includes html, "Dana K."
+    assert_includes html, %(src="data:image/jpeg;base64,)
+  end
+
   private
 
     def input(folder) = { "folder_id" => folders(folder).id }
+
+    def stub_screenshot
+      rendered = []
+      Layer.define_singleton_method(:screenshot) { |html, size:| rendered << [ html, size ] and "png-bytes" }
+      rendered
+    end
 
     def photo(filename, folder, user: @user)
       LibraryMedia.create!(kind: "photo", folder: folders(folder), user:,

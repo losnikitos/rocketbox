@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_090000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -83,19 +83,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
-  end
-
-  create_table "feature_settings", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "enabled", default: false, null: false
-    t.string "feature_slug", null: false
-    t.string "layer_slug"
-    t.integer "recipe_id"
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["recipe_id"], name: "index_feature_settings_on_recipe_id"
-    t.index ["user_id", "feature_slug"], name: "index_feature_settings_on_user_id_and_feature_slug", unique: true
-    t.index ["user_id"], name: "index_feature_settings_on_user_id"
   end
 
   create_table "folders", force: :cascade do |t|
@@ -223,13 +210,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
     t.string "group"
     t.json "inputs", default: [], null: false
     t.string "kind", default: "generate_image", null: false
+    t.string "layer_slug"
     t.string "name", null: false
     t.json "options", default: {}, null: false
     t.integer "output_folder_id", null: false
     t.string "shot_group"
-    t.boolean "takes_style", default: false, null: false
+    t.integer "style_id"
+    t.boolean "takes_review", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
+    t.index ["style_id"], name: "index_recipes_on_style_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -377,15 +367,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
     t.text "caption"
     t.datetime "created_at", null: false
     t.text "error_message"
-    t.string "feature_slug"
     t.string "format", default: "reel", null: false
     t.datetime "published_at"
     t.string "reaction"
     t.text "reaction_comment"
+    t.integer "recipe_id"
     t.integer "review_id"
     t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["recipe_id"], name: "index_smm_posts_on_recipe_id"
     t.index ["review_id"], name: "index_smm_posts_on_review_id"
     t.index ["status"], name: "index_smm_posts_on_status"
     t.index ["user_id", "created_at"], name: "index_smm_posts_on_user_id_and_created_at"
@@ -464,8 +455,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "crawls", "links"
-  add_foreign_key "feature_settings", "recipes", on_delete: :nullify
-  add_foreign_key "feature_settings", "users"
   add_foreign_key "folders", "folders", column: "parent_id"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "folders"
@@ -480,11 +469,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_231000) do
   add_foreign_key "recipe_runs", "shots", on_delete: :nullify
   add_foreign_key "recipe_runs", "styles", on_delete: :nullify
   add_foreign_key "recipes", "folders", column: "output_folder_id"
+  add_foreign_key "recipes", "styles", on_delete: :nullify
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "smm_post_media_items", "library_media"
   add_foreign_key "smm_post_media_items", "smm_posts"
+  add_foreign_key "smm_posts", "recipes", on_delete: :nullify
   add_foreign_key "smm_posts", "reviews", on_delete: :nullify
   add_foreign_key "smm_posts", "users"
   add_foreign_key "smm_slides", "smm_posts"

@@ -19,7 +19,7 @@ class LayersControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Sun, Oct 4"
 
     get canvas_layer_url("fully-booked", account: @admin.id, date: "nope")
-    assert_includes response.body, Date.current.strftime("%a, %b %-d")
+    assert_includes response.body, Date.tomorrow.strftime("%a, %b %-d")
   end
 
   test "color fields accept only hex colors" do
