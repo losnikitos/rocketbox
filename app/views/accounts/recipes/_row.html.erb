@@ -1,4 +1,4 @@
-<%# locals: (recipe:, path:, folder: true) %>
+<%# locals: (recipe:, path:, folder: true, arrow: "arrow-right") %>
 <%= link_to path, class: "flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
   <% if recipe.example.attached? %>
     <%= render "accounts/recipes/example", example: recipe.example, css: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
@@ -9,7 +9,7 @@
     <span class="block truncate text-sm font-semibold text-ink-900"><%= recipe.name %></span>
     <% if folder %>
       <span class="flex items-center gap-1">
-        <%= heroicon "arrow-right", variant: :micro, options: { class: "size-3.5 shrink-0 text-ink-500", role: "img", "aria-label": "Outputs to" } %>
+        <%= heroicon arrow, variant: :micro, options: { class: "size-3.5 shrink-0 text-ink-500", role: "img", "aria-label": "Outputs to" } %>
         <%= render "accounts/recipes/slot", folder: recipe.output_folder %>
       </span>
     <% end %>
