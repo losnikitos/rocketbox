@@ -12,8 +12,8 @@ class RecipeRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
-  # Per stitch effect besides default, `<effect>.wav` is its track and `<effect>.csv` its cut ends in seconds.
-  TRACKS = Rails.root.join("lib/stitch").to_s
+  # Per reel effect besides steps, `<effect>.wav` is its track and `<effect>.csv` its cut ends in seconds.
+  TRACKS = Rails.root.join("lib/tracks").to_s
 
   belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
@@ -48,17 +48,17 @@ class RecipeRun < ApplicationRecord
   # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
   # or an option isn't available.
   def start!(user)
-    build_generated_media(user:, kind: recipe.video? || recipe.stitch? || layer_over_video? ? "video" : "photo", folder: recipe.output_folder)
+    build_generated_media(user:, kind: recipe.video? || recipe.reel? || layer_over_video? ? "video" : "photo", folder: recipe.output_folder)
     self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") if recipe.ai?
     save!
     GenerateJob.perform_later(self)
     self
   end
 
-  # One AI call on the source media, a stitch of them, or a feature's layer over the first.
+  # One AI call on the source media, a reel of them, or an overlay effect's layer over the first.
   def run!
     unless recipe.ai?
-      file = if recipe.stitch? then { io: StringIO.new(stitch), filename: filename("mp4"), content_type: "video/mp4" }
+      file = if recipe.reel? then { io: StringIO.new(reel), filename: filename("mp4"), content_type: "video/mp4" }
       elsif layer_over_video? then { io: StringIO.new(layer_video), filename: filename("mp4"), content_type: "video/mp4" }
       else { io: StringIO.new(layer_png), filename: filename("png"), content_type: "image/png" }
       end
@@ -88,14 +88,14 @@ class RecipeRun < ApplicationRecord
     # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
     def filename(ext) = "#{recipe.slug.underscore}_#{id}.#{ext}"
 
-    # The source media as one 30fps MP4: 1 second each in order (a video's first second), or for a track effect
-    # (Doppler, Welcome, Black Eyed Peas), its track cut at its cut ends, each cut a random input other than the one before.
-    # A layer overlays the first cuts: cut i filled from the recipe's layer step i; cuts past its steps show none.
+    # The source media as one 30fps MP4: for Steps, 1 second each in order (a video's first second), or for a track
+    # effect (Doppler, Welcome, Black Eyed Peas), its track cut at its cut ends, each cut a random input other than the one before.
+    # The effect's layer overlays the first cuts: cut i filled from the recipe's layer step i; cuts past its steps show none.
     # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
     # from the recipe options, a per-media offset.
-    def stitch
+    def reel
       media = source_media
-      track = "#{TRACKS}/#{recipe.effect}" unless recipe.effect == "default"
+      track = "#{TRACKS}/#{recipe.effect}" unless recipe.effect == "steps"
       # [media, frames] per cut. Ends are rounded to frames, not durations, so cuts don't drift off the beat.
       cuts = if track
         ends = CSV.foreach("#{track}.csv", headers: true).map { (it["end"].to_f * 30).round }
@@ -129,7 +129,7 @@ class RecipeRun < ApplicationRecord
       end
     end
 
-    def layer_over_video? = recipe.feature? && source_media.first&.video?
+    def layer_over_video? = recipe.overlay? && source_media.first&.video?
 
     # PNG bytes: the recipe's layer over the first source media, cropped to the layer's size, filled from `values`
     # (the review's, if any). Transparent behind the layer when `over_photo` is false.

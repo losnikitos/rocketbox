@@ -67,6 +67,7 @@ Rails.application.routes.draw do
       end
       resources :recipes, except: :edit do
         patch :rename_group, on: :collection
+        get "tracks/:effect", action: :track, on: :collection, as: :track
       end
       resources :styles, except: :show
       resources :links, only: %i[index create show destroy] do

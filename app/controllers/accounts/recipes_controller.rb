@@ -65,6 +65,14 @@ module Accounts
       redirect_to recipes_path
     end
 
+    # A reel effect's track, previewed on the form.
+    def track
+      path = "#{RecipeRun::TRACKS}/#{params[:effect]}.wav"
+      return head :not_found unless Recipe::EFFECTS.key?(params[:effect]) && File.exist?(path)
+
+      send_file path, type: "audio/wav", disposition: "inline"
+    end
+
     private
 
       def set_recipe
@@ -84,7 +92,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :takes_review, :layer_slug, :output_folder_id, :example,
+        params.expect(recipe: [ :name, :group, :kind, :effect, :body, :shot_group, :style_id, :output_folder_id, :example,
           inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 
