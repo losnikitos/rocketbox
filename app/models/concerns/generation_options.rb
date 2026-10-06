@@ -7,9 +7,10 @@ module GenerationOptions
   extend ActiveSupport::Concern
 
   # Allowed values per provider and request option. Omitted options use the provider's default.
+  # Aspect ratios are our own short list (what the shapes picker draws), not everything a provider takes.
   IMAGE_OPTIONS = {
     "xai" => {
-      "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3 2:1 1:2 19.5:9 9:19.5 20:9 9:20 21:9 5:2],
+      "aspect_ratio" => %w[9:16 1:1 4:3 16:9],
       "resolution" => %w[1k 2k],
       "quality" => %w[low medium] # grok-imagine-image-2.0 only
     },
@@ -19,7 +20,7 @@ module GenerationOptions
       "quality" => %w[low medium high]
     },
     "gemini" => {
-      "aspect_ratio" => %w[1:1 2:3 3:2 3:4 4:3 4:5 5:4 9:16 16:9 21:9],
+      "aspect_ratio" => %w[9:16 4:5 1:1 4:3 16:9],
       "resolution" => %w[1k 2k 4k]
     }
   }.freeze
@@ -34,7 +35,7 @@ module GenerationOptions
   }.freeze
   VIDEO_OPTIONS = {
     "xai" => {
-      "aspect_ratio" => %w[1:1 16:9 9:16 4:3 3:4 3:2 2:3],
+      "aspect_ratio" => %w[9:16 1:1 4:3 16:9],
       "resolution" => %w[480p 720p 1080p], # 1080p on grok-imagine-video-1.5 only
       "duration" => (1..15).map(&:to_s)
     },

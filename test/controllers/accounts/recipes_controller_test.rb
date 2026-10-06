@@ -66,7 +66,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     get new_recipe_url(account: @admin.id, recipe: { kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
     assert_select "input[type=hidden][name='recipe[options][model]'][value='grok-imagine-video-1.5']"
-    assert_select "select[name='recipe[options][aspect_ratio]'] option[selected]", text: "9:16"
+    assert_select "input[type=radio][name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
     assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
 
     post recipes_url, params: { recipe: { name: "Square", body: "p", output_folder_id: folders(:ready).id, inputs: [ input(:photobank_interior) ],
@@ -205,7 +205,8 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "select[name='recipe[options][aspect_ratio]']", count: 0
 
       get recipe_url(recipe, account: @admin.id, recipe: { options: { model: "grok-imagine-image-2.0", aspect_ratio: "4:5", resolution: "4k", quality: "high" } })
-      assert_select "input[name='recipe[options][aspect_ratio]']", count: 0
+      assert_equal %w[9:16 1:1 4:3 16:9], css_select("input[name='recipe[options][aspect_ratio]']").map { it["value"] }
+      assert_select "input[name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
       assert_select "input[name='recipe[options][resolution]'][value='2k'][checked]"
       assert_select "input[name='recipe[options][resolution]'][value='4k']", count: 0
       assert_select "input[name='recipe[options][quality]'][value=''][checked]"
