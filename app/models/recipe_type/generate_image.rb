@@ -2,7 +2,7 @@
 
 # An image from the prompt and the source media, if any.
 class RecipeType::GenerateImage < RecipeType::Generation
-  def self.label = "Gen image"
+  def self.label = "Image"
 
   def self.inputs_optional? = true
 
