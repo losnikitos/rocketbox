@@ -15,7 +15,7 @@
        ]
      end
    end %>
-<div data-controller="pick" class="group min-w-0 flex-1">
+<div data-controller="pick" data-pick-wide-value="true" class="group min-w-0 flex-1">
   <%= hidden_field_tag name, selected&.id, id: nil, data: { pick_target: "input" } %>
   <template data-pick-target="placeholder"><span class="text-ink-500">Choose folder</span></template>
   <button type="button" data-pick-target="trigger" aria-label="<%= label %>"
@@ -35,16 +35,22 @@
     <% roots.each_with_index do |root, index| %>
       <% if index.positive? %><div data-pick-target="separator" class="mx-2 my-1 h-px bg-ink-900/10" aria-hidden="true"></div><% end %>
       <% [ root, *root.children ].each do |folder| %>
-        <%= tag.button type: "button", value: folder.id, aria: { current: ("true" if folder == selected) },
-              data: { pick_target: "option", action: "pick#pick" },
-              class: "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" do %>
-          <%= chip.(folder) %>
-          <span class="ml-auto flex shrink-0 gap-0.5" aria-hidden="true">
-            <% previews[folder.id].to_a.select { it.file.representable? }.each do |media| %>
-              <%= image_tag media.file.representation(resize_to_fill: [ 48, 72 ]), alt: "", loading: "lazy", class: "aspect-2/3 h-7 rounded-sm bg-ink-900/5 object-cover" %>
-            <% end %>
-          </span>
-        <% end %>
+        <div class="flex items-center rounded-lg hover:bg-ink-900/5 has-[[aria-current=true]]:bg-rocket/10 has-[[hidden]]:hidden">
+          <%= tag.button type: "button", value: folder.id, aria: { current: ("true" if folder == selected) },
+                data: { pick_target: "option", action: "pick#pick" },
+                class: "flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none" do %>
+            <%= chip.(folder) %>
+            <span class="ml-auto flex shrink-0 gap-0.5" aria-hidden="true">
+              <% previews[folder.id].to_a.select { it.file.representable? }.each do |media| %>
+                <%= image_tag media.file.representation(resize_to_fill: [ 48, 72 ]), alt: "", loading: "lazy", class: "aspect-2/3 h-7 rounded-sm bg-ink-900/5 object-cover" %>
+              <% end %>
+            </span>
+          <% end %>
+          <%= link_to folder_path(folder), target: "_blank", title: "Open in new tab", aria: { label: "Open #{folder.path}" },
+                class: "mr-1 shrink-0 rounded-md p-1.5 text-ink-400 hover:bg-ink-900/5 hover:text-ink-900 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none" do %>
+            <%= heroicon "arrow-top-right-on-square", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          <% end %>
+        </div>
       <% end %>
     <% end %>
   </div>

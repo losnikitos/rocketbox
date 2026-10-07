@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -94,6 +94,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_130000) do
     t.datetime "updated_at", null: false
     t.index ["parent_id", "slug"], name: "index_folders_on_parent_id_and_slug", unique: true
     t.index ["parent_id"], name: "index_folders_on_parent_id"
+  end
+
+  create_table "friendly_id_slugs", force: :cascade do |t|
+    t.datetime "created_at"
+    t.string "scope"
+    t.string "slug", null: false
+    t.integer "sluggable_id", null: false
+    t.string "sluggable_type"
+    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
+    t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
   create_table "incoming_messages", force: :cascade do |t|

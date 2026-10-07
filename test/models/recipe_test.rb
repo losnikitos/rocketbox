@@ -42,10 +42,10 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal 8, recipe.media_count
   end
 
-  test "slug comes from the name once, is never numeric, and finds the recipe" do
+  test "slug follows the name, is never numeric, and old slugs still find the recipe" do
     assert_equal "collage", @recipe.slug
     @recipe.update!(name: "Renamed")
-    assert_equal [ "collage", @recipe ], [ @recipe.slug, Recipe.find("collage") ]
+    assert_equal [ "renamed", @recipe, @recipe ], [ @recipe.slug, Recipe.find("renamed"), Recipe.find("collage") ]
     numeric = Recipe.create!(name: "2", body: "x", inputs: [ input(:interior) ])
     assert_equal [ "recipe-2", numeric ], [ numeric.slug, Recipe.find("recipe-2") ]
     assert_equal "strizhka-i-boroda", Recipe.create!(name: "Стрижка и борода", body: "x", inputs: [ input(:interior) ]).slug

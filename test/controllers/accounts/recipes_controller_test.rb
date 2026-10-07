@@ -135,6 +135,24 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_nil reel.reload.recipe_folder
   end
 
+  test "the header autosaves just the name and group; the old slug still finds the recipe" do
+    @admin = sign_in_as(users(:admin_user))
+    reel = Recipe.create!(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior) ])
+
+    get recipe_url(reel, account: @admin.id)
+    assert_select "form#recipe_form[data-controller=autosave]"
+    assert_select "input[name='recipe[name]'][data-action='change->autosave#queue']"
+    assert_select "input[name='recipe[folder_name]'][data-action='change->autosave#queue']"
+
+    patch recipe_url(reel), params: { recipe: { name: "Promo reel", folder_name: "Promo", kind: "welcome" } }, headers: { "X-Autosave" => "1" }
+    assert_response :ok
+    assert_equal [ "Promo reel", "promo-reel", "Promo", "steps" ], reel.reload.then { [ it.name, it.slug, it.folder_name, it.kind ] }
+
+    patch recipe_url("reel"), params: { recipe: { name: "" } }, headers: { "X-Autosave" => "1" }
+    assert_response :unprocessable_entity
+    assert_equal "Name can't be blank", response.parsed_body["error"]
+  end
+
   test "admin renames a folder; its recipes follow and the slug stays" do
     @admin = sign_in_as(users(:admin_user))
     a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "steps", inputs: [ input(:photobank_interior) ], folder_name: "Promo") }

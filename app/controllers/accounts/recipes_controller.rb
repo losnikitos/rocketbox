@@ -3,7 +3,7 @@
 module Accounts
   # A recipe's page edits it inline and runs it: each input's count of library media from its folder (and a shot or a
   # review, if it takes one). Update's `commit` picks the action: "save", "run" (the form as given, for this run only)
-  # or "save_run". `media_ids[]` are the picked media, in order; on the page they're preselected, e.g. from a media page.
+  # or "save_run"; an autosave saves just the name and group, leaving the form's other edits unsaved. `media_ids[]` are the picked media, in order; on the page they're preselected, e.g. from a media page.
   class RecipesController < ApplicationController
     layout "app"
 
@@ -40,6 +40,10 @@ module Accounts
     end
 
     def update
+      if autosave_request?
+        return @recipe.update(recipe_params.slice(:name, :folder_name)) ? head(:ok) : render_autosave_error(@recipe)
+      end
+
       adhoc = params[:commit] == "run"
       @recipe.assign_attributes(adhoc ? recipe_params.except(:example) : recipe_params)
       adhoc ? @recipe.validate!(:run) : @recipe.save!

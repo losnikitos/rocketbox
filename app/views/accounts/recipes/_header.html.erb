@@ -13,13 +13,15 @@
     </nav>
     <div class="min-w-0">
       <% inline = "-mx-2 block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
-      <%= f.text_field :folder_name, list: "recipe_folders", placeholder: "Ungrouped", "aria-label": "Folder", class: "#{inline} py-0.5 text-sm font-medium text-ink-500" %>
+      <%# On change, not input: each save makes a group or a slug. %>
+      <% autosave = { action: "change->autosave#queue" } if recipe.persisted? %>
+      <%= f.text_field :folder_name, list: "recipe_folders", placeholder: "Ungrouped", "aria-label": "Folder", data: autosave, class: "#{inline} py-0.5 text-sm font-medium text-ink-500" %>
       <datalist id="recipe_folders">
         <% RecipeFolder.ordered.pluck(:name).each do |name| %>
           <option value="<%= name %>"></option>
         <% end %>
       </datalist>
-      <h1><%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Recipe name", "aria-label": "Name", class: "#{inline} py-0.5 text-2xl font-semibold text-ink-900" %></h1>
+      <h1><%= f.text_field :name, required: true, autofocus: recipe.new_record?, placeholder: "Recipe name", "aria-label": "Name", data: autosave, class: "#{inline} py-0.5 text-2xl font-semibold text-ink-900" %></h1>
     </div>
   </div>
   <%= render "shared/admin_links/recipe", recipe: recipe if recipe.persisted? %>
