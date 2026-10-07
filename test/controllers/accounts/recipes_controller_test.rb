@@ -94,13 +94,20 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Aspect ratio 2:1 isn't available/
   end
 
-  test "index lists recipes newest first" do
+  test "index lists recipes recently edited first, grouped by day" do
     @admin = sign_in_as(users(:admin_user))
+    old = Recipe.create!(name: "Old", kind: "steps", inputs: [ input(:photobank_interior) ], updated_at: 3.days.ago)
     reel = Recipe.create!(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
 
     get recipes_url(account: @admin.id)
     assert_equal dom_id(reel), css_select("main li[id^='recipe_']").first["id"]
+    assert_select "main section h2", text: "Today"
+    assert_select "main section h2", text: ApplicationController.helpers.upload_day_label(3.days.ago.to_date)
     assert_select "nav[aria-label='Secondary']", count: 0
+
+    old.touch
+    get recipes_url(account: @admin.id)
+    assert_equal dom_id(old), css_select("main li[id^='recipe_']").first["id"]
   end
 
   test "admin drops a recipe into a new folder; the index and the sidebar list it" do
@@ -116,17 +123,15 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "Promo", "promo" ], [ promo.name, promo.slug ]
 
     get recipes_url(account: @admin.id)
-    assert_select "section[data-move-to=Promo]" do
-      assert_select "form[action=?] input[name=name][value=Promo]", folder_recipes_path(promo, account: @admin.id)
-      assert_select "##{dom_id(reel)} a[draggable=true][data-move-url=?]", recipe_path(reel, account: @admin.id)
-    end
-    assert_select "section[data-move-to='']", text: /Ungrouped/
+    assert_select "##{dom_id(reel)} a[draggable=true][data-move-url=?]", recipe_path(reel, account: @admin.id)
     assert_select "form input[name='recipe[folder_name]'][data-drag-move-target=value]"
-    assert_select "details:not([open]) ul[aria-label='Recipe folders'] a[href=?]", folder_recipes_path(promo, account: @admin.id)
+    assert_select "details[open] ul[aria-label='Recipe folders'] a[href=?][data-move-to=Promo]", folder_recipes_path(promo, account: @admin.id)
+    assert_select "[aria-label='Folder tree'] a[data-move-to]", count: 0
 
     get folder_recipes_url(promo, account: @admin.id)
+    assert_select "main form[action=?] input[name=name][value=Promo]", folder_recipes_path(promo, account: @admin.id)
     assert_select "main section", 1
-    assert_select "details[open] ul[aria-label='Recipe folders'] a[aria-current=page][href=?]", folder_recipes_path(promo, account: @admin.id)
+    assert_select "details[open] ul[aria-label='Recipe folders'] a[aria-current=page][href=?]:not([data-move-to])", folder_recipes_path(promo, account: @admin.id)
 
     get recipe_url(reel, account: @admin.id)
     assert_select "details[open] ul[aria-label='Recipe folders'] a[aria-current=page]", text: /Promo/

@@ -72,7 +72,7 @@
           <% current_recipe_folder_id = @recipe_folder&.id || @recipe&.recipe_folder_id_was %>
           <% recipe_counts = Recipe.group(:recipe_folder_id).count %>
           <li>
-            <details class="group" <%= "open" if current_recipe_folder_id %>>
+            <details class="group" <%= "open" if section == :recipes || current_recipe_folder_id %>>
               <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
                 <%= link_to recipes_path,
                       class: "inline-flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
@@ -86,8 +86,9 @@
                 <% RecipeFolder.ordered.each do |folder| %>
                   <li>
                     <%= link_to folder_recipes_path(folder),
-                          class: "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-3 pl-9 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
-                          aria: { current: ("page" if folder.id == current_recipe_folder_id) } do %>
+                          class: "flex min-w-0 flex-1 items-center gap-2 rounded-xl py-1.5 pr-3 pl-9 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900 data-drop-over:bg-rocket/10 data-drop-over:outline-2 data-drop-over:outline-rocket",
+                          aria: { current: ("page" if folder.id == current_recipe_folder_id) },
+                          data: { move_to: (folder.name if section == :recipes && folder.id != current_recipe_folder_id) } do %>
                       <%= heroicon "folder", variant: :micro, options: { class: "size-4 shrink-0 text-ink-400", "aria-hidden": true } %>
                       <span class="truncate"><%= folder.name %></span>
                       <span class="-ml-1 shrink-0 text-[10px] tabular-nums text-ink-300"><%= recipe_counts[folder.id] %></span>

@@ -34,7 +34,13 @@
         <% end %>
       </nav>
     <% end %>
-    <div class="relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-2 md:flex-1 md:@container-size">
+    <% if (movable = Current.user&.admin?) %>
+      <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
+        <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "value" } %>
+      <% end %>
+    <% end %>
+    <%= tag.div class: "relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-2 md:flex-1 md:@container-size",
+          draggable: ("true" if movable), data: { move_url: (library_media_path(@media) if movable) } do %>
       <% if blob&.image? %>
         <button type="button" popovertarget="hero-media" aria-label="View full size"
                 class="cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
@@ -48,7 +54,7 @@
       <% else %>
         <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain" %>
       <% end %>
-    </div>
+    <% end %>
   </div>
 
   <% if @siblings.size > 1 %>
@@ -150,6 +156,11 @@
           </ul>
         <% end %>
       </div>
+      <%= link_to new_recipe_path(recipe: { inputs: [ { folder_id: @media.folder_id, tag_id: @media.tags.ordered.first&.id } ] }, media_ids: [ @media.id ]),
+            class: "rb-btn-ghost-on-light mt-2 gap-1.5 px-3.5 py-1.5 text-sm" do %>
+        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        New recipe
+      <% end %>
     </details>
   <% end %>
 

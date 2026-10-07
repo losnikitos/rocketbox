@@ -23,6 +23,7 @@ Don't use the `pricing` column on the model row. It is per token, missing for ma
 
 - **Gemini (images and Veo):** the [pricing page](https://ai.google.dev/gemini-api/docs/pricing) lists a per-image price for each resolution and a per-second price for video. Read the 2K figure directly.
 - **OpenAI:** token rates are identical across `gpt-image-2` and `gpt-image-2.5-*`, so they say nothing about cost per image. Use the token calculator in the [image generation guide](https://developers.openai.com/api/docs/guides/image-generation) at our 9:16 2K size (1440×2560). Cost per image is output tokens × $30 per million. For example, `high` is 7,370 tokens ($0.221) on `gpt-image-2` and 1,843 tokens ($0.055) on 2.5.
+- **xAI:** the [pricing page](https://docs.x.ai/developers/pricing) lists per-second video prices by resolution. Read the 720p row, not the headline 480p price.
 - **Token-billed video (Gemini Omni):** use the provider's per-second equivalent at 720p.
 
 ### Reference points (Oct 2026)
@@ -36,6 +37,7 @@ Don't use the `pricing` column on the model row. It is per token, missing for ma
 | `gemini-3-pro-image` | $0.134 / 2K image | £££ |
 | `gpt-image-2` | $0.221 / 2K high | £££ |
 | `veo-3.1-lite-generate-preview` | $0.05 / s | £ |
+| `grok-imagine-video` | $0.07 / s | £ |
 | `veo-3.1-fast-generate-preview`, `gemini-omni-1.1-flash` | $0.10 / s | ££ |
 | `veo-3.1-generate-preview` | $0.40 / s | £££ |
 
