@@ -261,6 +261,24 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_equal [ other, third ], RecipeRun.last.source_media
     end
 
+    test "a tagged input only offers media with its tag; output tags save" do
+      tagged = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @admin, tags: [ tags(:before) ],
+        file: { io: StringIO.new("img"), filename: "t.jpg", content_type: "image/jpeg" })
+      recipe = Recipe.create!(name: "Tagged", body: "p", inputs: [ { "folder_id" => folders(:interior).id, "tag_id" => tags(:before).id } ])
+
+      get recipe_url(recipe, account: @admin.id)
+      assert_select "input[type=hidden][name='recipe[inputs][][tag_id]'][value=?]", tags(:before).id.to_s
+      assert_select "button[aria-label='Input 1 tag']", text: /before/
+      assert_select "input[name='media_ids[]']", count: 1
+      assert_select "input[name='media_ids[]'][value=?]", tagged.id.to_s
+
+      patch recipe_url(recipe), params: { commit: "save", recipe: { output_tag_ids: [ "", tags(:after).id ] } }
+      assert_equal [ tags(:after).id ], recipe.reload.output_tag_ids
+      get recipe_url(recipe, account: @admin.id)
+      assert_select "input[type=checkbox][name='recipe[output_tag_ids][]'][value=?][checked]", tags(:after).id.to_s
+      assert_select "button[aria-label='Output tags']", text: /after/
+    end
+
     test "changing an input's folder refreshes its media" do
       recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", inputs: [ { "folder_id" => folders(:exterior).id } ])
 

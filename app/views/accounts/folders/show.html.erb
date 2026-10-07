@@ -132,6 +132,9 @@
                   <% end %>
                 </span>
                 <span class="<%= name_css %>"><span class="truncate"><%= name %></span></span>
+                <% if media.tags.any? %>
+                  <span class="mt-1 flex flex-wrap justify-center gap-1"><%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %></span>
+                <% end %>
               <% end %>
               <div class="<%= tile_menu_css %>"><%= render "shared/admin_links/library_media", library_media: media, links: { move: true }, move_targets: %></div>
             <% end %>

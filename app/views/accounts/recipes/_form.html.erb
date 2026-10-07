@@ -14,16 +14,24 @@
   <% end %>
 
   <% example = capture do %>
-    <label class="shrink-0">
-      <span class="sr-only">Example</span>
-      <span class="relative flex aspect-2/3 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-ink-900/15 text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
-        <%= heroicon "photo", options: { class: "size-6", "aria-hidden": true } %>
-        <% saved = recipe.example.persisted? %>
-        <%= tag.img src: (url_for(recipe.example) if saved), hidden: !saved, alt: "", class: "absolute inset-0 size-full object-cover" %>
-        <%= f.file_field :example, accept: "image/*", class: "sr-only",
-              onchange: "const img = this.previousElementSibling; if (this.files[0]) { img.src = URL.createObjectURL(this.files[0]); img.hidden = false }" %>
-      </span>
-    </label>
+    <% saved = recipe.example.persisted? %>
+    <div class="group relative shrink-0">
+      <label class="block">
+        <span class="sr-only">Example</span>
+        <span class="relative flex aspect-2/3 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-ink-900/15 text-ink-400 transition hover:border-rocket/50 hover:text-rocket has-focus-visible:border-rocket has-focus-visible:text-rocket">
+          <%= heroicon "photo", options: { class: "size-6", "aria-hidden": true } %>
+          <%= tag.img src: (url_for(recipe.example) if saved), hidden: !saved, alt: "", class: "absolute inset-0 size-full object-cover" %>
+          <%= f.file_field :example, accept: "image/*", class: "sr-only",
+                onchange: "const img = this.previousElementSibling; if (this.files[0]) { img.src = URL.createObjectURL(this.files[0]); img.hidden = false }" %>
+        </span>
+      </label>
+      <% if saved %>
+        <%# A link, as a button_to would nest a form in the recipe's. %>
+        <%= link_to heroicon("trash", variant: :mini, options: { class: "size-4", "aria-hidden": true }), example_recipe_path(recipe),
+              data: { turbo_method: :delete }, "aria-label": "Remove example",
+              class: "absolute right-2 bottom-2 rounded-lg bg-white/90 p-1.5 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 hover:bg-white hover:text-signal-red focus-visible:opacity-100" %>
+      <% end %>
+    </div>
   <% end %>
   <%= render "accounts/recipes/header", recipe:, f:, example: %>
 
@@ -38,11 +46,11 @@
         <% on = ->(key, value) { value.present? || params.dig(:on, key).present? } %>
         <%= render "accounts/recipes/input_section", title: "Media", icon: "photo", chip: "border-sky-300 bg-sky-50 text-sky-600", toggle: false do %>
           <div id="recipe_input_list" class="space-y-4">
-            <% (@slots.presence || [ [ nil, 1, [] ] ]).each_with_index do |(folder, count, photos), index| %>
-              <%= render "accounts/recipes/input", folder:, count:, photos:, index: %>
+            <% (@slots.presence || [ [ nil, nil, 1, [] ] ]).each_with_index do |(folder, tag, count, photos), index| %>
+              <%= render "accounts/recipes/input", folder:, tag:, count:, photos:, index: %>
             <% end %>
           </div>
-          <template id="recipe_input_template"><%= render "accounts/recipes/input", folder: nil, count: 1, photos: [], index: nil %></template>
+          <template id="recipe_input_template"><%= render "accounts/recipes/input", folder: nil, tag: nil, count: 1, photos: [], index: nil %></template>
           <button type="button" class="inline-flex cursor-pointer items-center gap-1 text-xs text-ink-600 underline underline-offset-2 hover:text-ink-900"
                   onclick="const rows = document.getElementById('recipe_input_list');
                            rows.append(document.getElementById('recipe_input_template').content.cloneNode(true)); rows.lastElementChild.querySelector('button').focus()">
@@ -183,6 +191,17 @@
             <%= render "shared/folder_pick", name: "recipe[output_folder_id]", selected: recipe.output_folder_id || Folder.ready.id,
                   label: "Output folder", roots: Folder.roots.where(slug: "photobank") %>
           </div>
+        </div>
+
+        <div>
+          <p class="<%= tw_label_classes %>">Tags</p>
+          <% if Tag.exists? %>
+            <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+              <%= render "shared/tag_pick", name: "recipe[output_tag_ids][]", selected: recipe.output_tag_ids, label: "Output tags", multiple: true %>
+            </div>
+          <% else %>
+            <p class="mt-1 text-sm text-ink-600">No tags yet. <%= link_to "Add some", admin_tags_path, class: "underline hover:text-ink-900" %></p>
+          <% end %>
         </div>
 
         <% if recipe.persisted? %>

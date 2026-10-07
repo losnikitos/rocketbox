@@ -15,7 +15,7 @@ module Accounts
       if @folder
         @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
-          .includes(recipe_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
+          .includes(:tags, recipe_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
           .order(created_at: :desc)
         @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
         recipes = Recipe.with_attached_example.includes(:output_folder).ordered.to_a

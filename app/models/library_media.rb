@@ -3,6 +3,7 @@
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :folder
+  has_and_belongs_to_many :tags
   before_validation(on: :create) { self.folder ||= Folder.inbox }
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
@@ -54,11 +55,11 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
   end
 
-  # Recipes with an input from this media's folder.
+  # Recipes with an input this media can fill.
   def recipes
     return [] unless story_image?
 
-    Recipe.with_attached_example.ordered.select { it.folder_ids.include?(folder_id) }
+    Recipe.with_attached_example.ordered.select { |recipe| recipe.inputs.any? { Recipe.takes_input?(it, self) } }
   end
 
   def extraction_status

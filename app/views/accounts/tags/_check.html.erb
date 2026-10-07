@@ -1,0 +1,6 @@
+<%# locals: (tag:, name:, checked:) %>
+<%# A tag pill that toggles a `name[]` checkbox. %>
+<label class="group/tag cursor-pointer rounded-full has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+  <%= check_box_tag name, tag.id, checked, id: nil, class: "sr-only" %>
+  <%= render "accounts/tags/tag", tag:, css: "text-ink-500 transition hover:border-ink-900/30 group-has-checked/tag:border-rocket group-has-checked/tag:bg-rocket/10 group-has-checked/tag:text-ink-900" %>
+</label>

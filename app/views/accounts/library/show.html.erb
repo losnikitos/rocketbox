@@ -83,6 +83,29 @@
   </div>
 
   <aside id="details" class="flex w-full shrink-0 flex-col gap-6 md:w-96 lg:w-108">
+    <% if (tags = Tag.ordered.to_a).any? %>
+      <section aria-label="Tags" class="flex flex-wrap items-center gap-1.5">
+        <% @media.tags.sort_by(&:name).each do |tag| %>
+          <%= render "accounts/tags/tag", tag: %>
+        <% end %>
+        <button type="button" popovertarget="media-tags" style="anchor-name: --media-tags" aria-label="Edit tags"
+                class="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs font-medium text-ink-500 transition hover:border-ink-900/40 hover:text-ink-900 focus-visible:ring-2 focus-visible:ring-rocket/30">
+          <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+          <%= "Tag" if @media.tags.empty? %>
+        </button>
+        <%= form_with url: library_media_path(@media), method: :patch, id: "media-tags", popover: true, style: "position-anchor: --media-tags",
+              onchange: "this.requestSubmit()",
+              class: "inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-w-xs rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg" do %>
+          <%= hidden_field_tag "library_media[tag_ids][]", "", id: nil %>
+          <div class="flex flex-wrap gap-1.5">
+            <% tags.each do |tag| %>
+              <%= render "accounts/tags/check", tag:, name: "library_media[tag_ids][]", checked: @media.tags.include?(tag) %>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+
     <% if (run = @media.recipe_run) %>
       <details open class="group">
         <summary class="flex cursor-pointer items-center gap-2">

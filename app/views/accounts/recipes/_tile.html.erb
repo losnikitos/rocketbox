@@ -1,5 +1,5 @@
 <%# locals: (recipe:, made:) %>
-<% slides = [ recipe.example.attachment, *made ].compact.first(5) %>
+<% slides = [ recipe.example.attachment || recipe.type&.cover, *made ].compact.first(5) %>
 <% covered = slides.any? %>
 <li id="<%= dom_id(recipe) %>" class="group relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
     data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
@@ -7,6 +7,8 @@
     <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
       <% if slide.is_a?(LibraryMedia) %>
         <%= render "accounts/library/file", media: slide, css: "size-full object-cover" %>
+      <% elsif slide.is_a?(String) %>
+        <%= image_tag slide, alt: "", class: "size-full object-cover" %>
       <% else %>
         <%= render "accounts/recipes/example", example: slide, css: "size-full object-cover" %>
       <% end %>

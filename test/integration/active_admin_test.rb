@@ -111,6 +111,24 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/app/recipes/#{recipe.slug}']"
   end
 
+  test "admin manages tags and tags media" do
+    admin = sign_in_as(users(:admin_user))
+    recipes(:cinematic).update!(output_tag_ids: [ tags(:after).id ])
+    post "/admin/tags", params: { tag: { name: "#Fresh" } }, headers: @ua
+    assert_equal "fresh", Tag.last.name
+    get "/admin/tags", headers: @ua
+    assert_response :success
+    assert_select "td.col-recipes a", text: recipes(:cinematic).name
+    get "/admin/recipes/#{recipes(:cinematic).slug}", headers: @ua
+    assert_select "td", text: "after"
+
+    media = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
+    get "/admin/library_media/#{media.id}/edit", headers: @ua
+    assert_response :success
+    patch "/admin/library_media/#{media.id}", params: { library_media: { tag_ids: [ "", tags(:before).id ] } }, headers: @ua
+    assert_equal [ tags(:before) ], media.reload.tags.to_a
+  end
+
   test "admin can refresh models" do
     sign_in_as(users(:admin_user))
     with_model_refresh_stub(nil) do
