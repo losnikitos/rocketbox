@@ -143,7 +143,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
   test "upload dropped onto a group attaches to its source" do
     user = sign_in_as(users(:lazaro_nixon))
-    source = user.library_media.create!(kind: "photo", folder: folders(:photobank_interior))
+    source = user.library_media.create!(kind: "photo", folder: folders(:inbox))
 
     post library_media_index_url, params: { folder_id: folders(:photobank_interior).id, source_id: source.id, files: [ fixture_file_upload("logo.png", "image/png") ] }
 
