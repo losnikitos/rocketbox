@@ -4,6 +4,7 @@ ActiveAdmin.register Recipe do
   config.sort_order = "name_asc"
 
   includes :output_folder, :style, :recipe_folder
+  remove_filter :slugs
 
   index do
     id_column

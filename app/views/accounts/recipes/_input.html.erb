@@ -6,27 +6,20 @@
 <div role="group" aria-label="<%= label %>" class="group/input space-y-2"
      onchange="['hidden', 'number'].includes(event.target.type) && this.closest('form').requestSubmit(this.closest('form').elements.refresh_inputs)">
   <div class="flex items-center gap-2">
-    <% if index %><span class="text-sm font-medium text-ink-700"><%= index + 1 %>.</span><% end %>
     <div class="flex min-w-0 flex-1 items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
       <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: folder&.id, label: "#{label} folder", padding: "py-3" %>
       <% if Tag.exists? %>
         <%= render "shared/tag_pick", name: "recipe[inputs][][tag_id]", selected: tag&.id, label: "#{label} tag", padding: "py-3",
-              css: "w-36 shrink-0 self-stretch border-l border-ink-900/10" %>
+              css: "min-w-0 flex-1 self-stretch border-l border-ink-900/10" %>
       <% end %>
-      <% if folder %>
-        <%= link_to folder_path(folder), target: "_blank", aria: { label: "Open #{folder.path}" },
-              class: "shrink-0 rounded-md p-1.5 text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
-          <%= heroicon "arrow-top-right-on-square", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-        <% end %>
-      <% end %>
-      <button type="button" aria-label="Remove <%= label.downcase %>" class="mr-1 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
-              onclick="const form = this.form; this.closest('[role=group]').remove(); form.requestSubmit(form.elements.refresh_inputs)">
-        <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-      </button>
     </div>
     <span class="text-lg font-semibold text-ink-400" aria-hidden="true">×</span>
     <%= number_field_tag "recipe[inputs][][count]", count, min: 1, id: nil, "aria-label": "#{label} count", title: "How many to take",
           class: "w-16 shrink-0 self-stretch rounded-lg border border-ink-900/15 bg-white px-2 text-lg font-semibold text-ink-900 tabular-nums focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+    <button type="button" aria-label="Remove <%= label.downcase %>" class="shrink-0 cursor-pointer rounded-md p-1.5 text-ink-400 transition group-only/input:hidden hover:bg-ink-900/5 hover:text-ink-900"
+            onclick="const form = this.form; this.closest('[role=group]').remove(); form.requestSubmit(form.elements.refresh_inputs)">
+      <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    </button>
   </div>
   <% if folder && photos.any? %>
     <% wanted = Array(params[:media_ids]).grep(String) %>

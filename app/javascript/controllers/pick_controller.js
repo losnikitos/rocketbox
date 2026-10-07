@@ -4,15 +4,17 @@ let count = 0
 
 // Searchable dropdown: a hidden input, a trigger mirroring the picked option, options in a popover.
 // With `multiple`, options are labels holding a checkbox and the trigger mirrors every checked one; the popover stays open.
+// With `wide`, the popover anchors to the picker's parent (the bordered row it sits in) instead of the trigger.
 // Anchors are wired here, not by id, so a cloned picker (another recipe input) gets its own popover.
 export default class extends Controller {
   static targets = ["input", "trigger", "preview", "popover", "option", "placeholder", "search", "separator"]
-  static values = { multiple: Boolean }
+  static values = { multiple: Boolean, wide: Boolean }
 
   connect() {
     const anchor = `--pick-${++count}`
     this.triggerTarget.popoverTargetElement = this.popoverTarget
-    this.triggerTarget.style.anchorName = anchor
+    const anchored = this.wideValue ? this.element.parentElement : this.triggerTarget
+    anchored.style.anchorName = anchor
     this.popoverTarget.style.positionAnchor = anchor
     this.show()
   }

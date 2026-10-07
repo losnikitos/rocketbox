@@ -17,8 +17,8 @@ class Recipe < ApplicationRecord
   extend FriendlyId
   include GenerationOptions
 
-  # Set from the name once and survives renames.
-  friendly_id :name, use: %i[slugged finders]
+  # Follows the name; old slugs still find it, so an open page keeps working after a rename.
+  friendly_id :name, use: %i[slugged finders history]
 
   # Runs outlive their recipe.
   has_many :runs, class_name: "RecipeRun", dependent: :nullify
@@ -67,6 +67,8 @@ class Recipe < ApplicationRecord
 
   # A numeric slug would be found as an id.
   def normalize_friendly_id(text) = super.then { it.match?(/\A\d+\z/) ? "recipe-#{it}" : it }
+
+  def should_generate_new_friendly_id? = name_changed? || super
 
   def folder_name = recipe_folder&.name
 

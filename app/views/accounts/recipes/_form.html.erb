@@ -2,7 +2,7 @@
 <% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
 <% refresh_url = recipe.persisted? ? recipe_path(recipe) : new_recipe_path %>
-<%= form_with model: recipe, id: "recipe_form", multipart: true, class: "@container space-y-6" do |f| %>
+<%= form_with model: recipe, id: "recipe_form", multipart: true, class: "@container space-y-6", data: ({ controller: "autosave" } if recipe.persisted?) do |f| %>
   <% if recipe.errors.any? %>
     <div class="<%= tw_alert_error_classes %>" role="alert">
       <ul class="list-inside list-disc">
@@ -45,7 +45,7 @@
         <% refresh = "this.form.requestSubmit(this.form.elements.refresh_inputs)" %>
         <% on = ->(key, value) { value.present? || params.dig(:on, key).present? } %>
         <%= render "accounts/recipes/input_section", title: "Media", icon: "photo", chip: "border-sky-300 bg-sky-50 text-sky-600", toggle: false do %>
-          <div id="recipe_input_list" class="space-y-4">
+          <div id="recipe_input_list" class="divide-y divide-ink-900/10 *:py-4 *:first:pt-0 *:last:pb-0">
             <% (@slots.presence || [ [ nil, nil, 1, [] ] ]).each_with_index do |(folder, tag, count, photos), index| %>
               <%= render "accounts/recipes/input", folder:, tag:, count:, photos:, index: %>
             <% end %>
