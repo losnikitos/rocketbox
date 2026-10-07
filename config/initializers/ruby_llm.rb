@@ -12,6 +12,12 @@ RubyLLM::Protocols::Gemini::Videos.module_eval do
   private def render_video_image(image) = { bytesBase64Encoded: image.encoded, mimeType: image.mime_type }
 end
 
+# ponytail: ruby_llm 2.0.0 only sends `gemini-*-image` ids to generateContent, so `gemini-nano-banana-2.1` would hit
+# Imagen's `predict`; drop on a gem fix.
+RubyLLM::Protocols::Gemini::Images.module_eval do
+  private def gemini_image_model?(model) = model_id(model).downcase.match?(/nano-?banana|\Agemini-.*-image/)
+end
+
 # RubyLLM's AR classes inherit from ::ActiveRecord::Base, so they miss the
 # ransack allowlist on ApplicationRecord (needed by Active Admin filters).
 Rails.application.config.to_prepare do
