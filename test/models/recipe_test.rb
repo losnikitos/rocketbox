@@ -169,6 +169,10 @@ class RecipeTest < ActiveSupport::TestCase
     RecipeType.all.select { it.reel? && it.track }.each { assert it.dir.join("beats.csv").exist?, it.slug }
   end
 
+  test "every type has its cover" do
+    RecipeType.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
+  end
+
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
