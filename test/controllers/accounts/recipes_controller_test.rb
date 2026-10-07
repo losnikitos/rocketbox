@@ -184,7 +184,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
         end
       end
       run = @media.source_runs.sole
-      assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
+      assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id), text: /Generating/
       assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
       assert_equal [ "Make it snow.", "Make it snow." ], [ @recipe.reload.body, run.prompt ]
       assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, @recipe.options)
@@ -200,7 +200,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       patch recipe_url(@recipe), params: { commit: "run", media_ids: { 0 => @media.id },
         recipe: { body: "Make it snow.", options: { model: "grok-imagine-video", duration: "5" } } }
       run = @media.source_runs.sole
-      assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
+      assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id)
       assert_equal [ "Make it snow.", { "model" => "grok-imagine-video", "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "5" } ], [ run.prompt, run.options ]
       assert_equal [ "Slow cinematic push-in on the shop.", {} ], [ @recipe.reload.body, @recipe.options ]
 
@@ -303,7 +303,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
         end
       end
       run = recipe.runs.sole
-      assert_redirected_to library_item_url(run.generated_media, account: @admin.id)
+      assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id)
       assert_equal [ review, [ ready ], folders(:ready) ], [ run.review, run.source_media, run.generated_media.folder ]
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: { 0 => ready.id }, recipe: { kind: "daily" } }

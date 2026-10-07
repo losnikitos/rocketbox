@@ -12,9 +12,8 @@
         </span>
         <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
       </button>
-      <button type="button" data-action="media-pick#random" class="rb-btn-ghost-on-light shrink-0 gap-1.5 px-3 py-1.5">
+      <button type="button" data-action="media-pick#random" aria-label="Random" title="Random" class="rb-btn-ghost-on-light shrink-0 p-2">
         <%= heroicon "arrow-path", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-        Random
       </button>
     </div>
     <div id="<%= popover_id %>" popover data-media-pick-target="popover" style="position-anchor: --<%= popover_id %>"

@@ -44,7 +44,7 @@ class LibraryMediaController < ApplicationController
 
   def destroy
     media = Current.account.library_media.find(params[:id]).destroy!
-    redirect_to helpers.folder_path(media.folder), notice: "Media deleted."
+    redirect_back_or_to helpers.folder_path(media.folder), notice: "Media deleted."
   rescue ActiveRecord::RecordNotFound
     redirect_to helpers.folder_path(Folder.inbox), alert: "Media not found."
   end

@@ -125,6 +125,11 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to library_folders_url("photobank", "interior")
   end
 
+  test "delete returns to the page it was clicked from" do
+    delete library_media_url(@media), headers: { "HTTP_REFERER" => recipes_url }
+    assert_redirected_to recipes_url
+  end
+
   test "converts HEIC uploads to JPEG" do
     user = sign_in_as(users(:lazaro_nixon))
 
