@@ -12,7 +12,7 @@ module Accounts
 
     def index
       @recipe_folder = RecipeFolder.find(params[:folder]) if params[:folder]
-      @recipes = (@recipe_folder&.recipes || Recipe).with_attached_example.order(created_at: :desc)
+      @recipes = (@recipe_folder&.recipes || Recipe).with_attached_example.order(updated_at: :desc)
       # ponytail: loads every generation of the listed recipes to show a few each. Upgrade = a per-recipe window limit.
       @made = Current.account.library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipes.map(&:id) })
         .with_attached_file.includes(:recipe_run).order(created_at: :desc).group_by { it.recipe_run.recipe_id }

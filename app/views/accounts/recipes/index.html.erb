@@ -7,43 +7,30 @@
 <% end %>
 
 <% if @recipes.any? || @recipe_folder %>
-  <% by_folder = @recipes.group_by(&:recipe_folder_id) %>
-  <% folders = @recipe_folder ? [ @recipe_folder ] : RecipeFolder.ordered.to_a %>
-  <% drop_css = "rounded-xl data-drop-over:outline-2 data-drop-over:outline-offset-4 data-drop-over:outline-rocket" %>
   <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
     <%= hidden_field_tag "recipe[folder_name]", nil, id: nil, data: { drag_move_target: "value" } %>
   <% end %>
-  <div class="space-y-8">
-    <% (@recipe_folder ? folders : folders + [ nil ]).each do |folder| %>
-      <% recipes = by_folder.fetch(folder&.id, []) %>
-      <%= tag.section class: drop_css, data: { move_to: folder&.name.to_s }, "aria-label": folder&.name || "Ungrouped" do %>
-        <% if folder %>
-          <%= form_with url: folder_recipes_path(folder), method: :patch, class: "mb-3" do %>
-            <h2><%= text_field_tag :name, folder.name, id: nil, required: true, "aria-label": "Folder name",
-                  class: "-mx-2 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 text-sm font-semibold text-ink-900 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %></h2>
-          <% end %>
-        <% elsif folders.any? %>
-          <h2 class="mb-3 text-sm font-semibold text-ink-900">Ungrouped</h2>
-        <% end %>
-        <% if recipes.any? %>
-          <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 min-[1800px]:grid-cols-10">
-            <% recipes.each do |recipe| %>
-              <%= render "tile", recipe:, made: @made.fetch(recipe.id, []) %>
-            <% end %>
-          </ul>
-        <% else %>
-          <p class="rounded-xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-500"><%= folder ? "No recipes in this folder yet." : "Drop a recipe here to ungroup it." %></p>
-        <% end %>
-      <% end %>
+  <% if @recipe_folder %>
+    <%= form_with url: folder_recipes_path(@recipe_folder), method: :patch, class: "mb-6" do %>
+      <h2><%= text_field_tag :name, @recipe_folder.name, id: nil, required: true, "aria-label": "Folder name",
+            class: "-mx-2 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 text-lg font-semibold text-ink-900 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %></h2>
     <% end %>
-    <% unless @recipe_folder %>
-      <div class="<%= drop_css %> flex items-center justify-center gap-1.5 border border-dashed border-ink-900/20 p-6 text-sm text-ink-500"
-           data-move-to="" data-move-prompt="Folder name">
-        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-        Drop a recipe here to start a new folder
-      </div>
+  <% end %>
+  <div class="space-y-8">
+    <% @recipes.group_by { it.updated_at.to_date }.each do |day, recipes| %>
+      <section>
+        <h2 class="mb-3 text-sm font-semibold text-ink-900"><%= upload_day_label(day) %></h2>
+        <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 min-[1800px]:grid-cols-10">
+          <% recipes.each do |recipe| %>
+            <%= render "tile", recipe:, made: @made.fetch(recipe.id, []) %>
+          <% end %>
+        </ul>
+      </section>
     <% end %>
   </div>
+  <% if @recipes.none? %>
+    <p class="rounded-xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-500">No recipes in this folder yet. Drag one onto it in the sidebar.</p>
+  <% end %>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
     Add a recipe — a prompt that turns library media into new photos or videos.
