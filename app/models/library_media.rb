@@ -50,11 +50,11 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
   end
 
-  # Recipes with an input slot this media fits.
+  # Recipes with an input from this media's folder.
   def recipes
     return [] unless story_image?
 
-    Recipe.with_attached_example.ordered.select { it.slot_for(self) }
+    Recipe.with_attached_example.ordered.select { it.folder_ids.include?(folder_id) }
   end
 
   def extraction_status

@@ -33,7 +33,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     failed.update!(status: "failed", error: "content policy")
 
     get library_item_url(source)
-    assert_select "#apply_recipe a:not([data-turbo-frame])[href=?]", recipe_path(recipes(:cinematic), media_ids: { 0 => source.id }), text: /Cinematic shop reel/
+    assert_select "#apply_recipe a:not([data-turbo-frame])[href=?]", recipe_path(recipes(:cinematic), media_ids: [ source.id ]), text: /Cinematic shop reel/
     assert_select "a[href^=?]", recipe_path(recipes(:before_after)), count: 0
     assert_select "turbo-frame", count: 0
     assert_select "nav[aria-label=Versions] a", 3 do |links|

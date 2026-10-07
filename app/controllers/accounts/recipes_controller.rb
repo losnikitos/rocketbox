@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module Accounts
-  # A recipe's page edits it inline and runs it: one library media per input (and a shot or a review, if it takes one).
-  # Update's `commit` picks the action: "save", "run" (the form as given, for this run only) or "save_run".
-  # `media_ids[i]` preselects input i, e.g. from a media page.
+  # A recipe's page edits it inline and runs it: each input's count of library media from its folder (and a shot or a
+  # review, if it takes one). Update's `commit` picks the action: "save", "run" (the form as given, for this run only)
+  # or "save_run". `media_ids[]` are the picked media, in order; on the page they're preselected, e.g. from a media page.
   class RecipesController < ApplicationController
     layout "app"
 
@@ -47,7 +47,9 @@ module Accounts
       return redirect_back_or_to recipe_path(@recipe), notice: "Recipe saved." unless adhoc || params[:commit] == "save_run"
 
       set_picks
-      media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
+      ids = Array(params[:media_ids]).grep(String).map(&:to_i)
+      found = Current.account.library_media.where(id: ids).index_by(&:id)
+      media = ids.filter_map { found[it] }
       run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), review: @reviews&.find_by(id: params[:review_id]), user: Current.account)
       render turbo_stream: [
         turbo_stream.prepend("recipe_made", partial: "accounts/recipes/made", locals: { media: run.generated_media }),
@@ -90,7 +92,7 @@ module Accounts
       # What a run picks from, per the recipe as given.
       def set_picks
         library = Current.account.library_media.with_attached_file.order(created_at: :desc)
-        @slots = @recipe.slots.map { |folder| [ folder, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
+        @slots = @recipe.slots.map { |folder, count| [ folder, count, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
         @shots = Shot.where(group: @recipe.shot_group).ordered.with_attached_examples if @recipe.shot_group
         # ponytail: picks any 5-star review, used or not. Upgrade = skip reviews the recipe's posts already show, once posts are scheduled.
         @reviews = Current.account.reviews.postable.order(created_at: :desc) if @recipe.takes_review?
@@ -101,7 +103,7 @@ module Accounts
 
       def recipe_params
         params.expect(recipe: [ :name, :folder_name, :kind, :body, :shot_group, :style_id, :output_folder_id, :example,
-          inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
+          inputs: [ %i[folder_id count] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 
       # The refreshes resubmit the form as a GET; the example waits for the save.

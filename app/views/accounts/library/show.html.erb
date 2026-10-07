@@ -123,7 +123,7 @@
           <% else %>
             <ul class="flex flex-col gap-0.5">
               <% recipes.each do |recipe| %>
-                <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe, media_ids: { recipe.slot_for(@media) => @media.id }) %></li>
+                <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe, media_ids: [ @media.id ]) %></li>
               <% end %>
             </ul>
           <% end %>
