@@ -198,7 +198,7 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do
     assert_equal [ "fully-booked-color", "Overlay · Fully booked" ], Recipe.new(kind: "fully_booked").then { [ it.layer.slug, it.type_label ] }
-    assert_nil Recipe.new(kind: "doppler").layer
+    assert_nil Recipe.new(kind: "steps").layer
     assert Recipe.new(name: "x", kind: "daily", inputs: [ input(:ready) ]).valid?
     assert_not Recipe.new(name: "x", kind: "scripted", inputs: [ input(:ready) ]).valid?
     assert_not Recipe.new(name: "x", kind: "nope", inputs: [ input(:ready) ]).valid?

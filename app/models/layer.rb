@@ -55,6 +55,9 @@ class Layer
     new(slug: "caption", name: "Caption", size: [ 1080, 1920 ], fields: [
       Field.new(:line1, "Line 1 (serif)", :text, "The"),
       Field.new(:line2, "Line 2 (sans)", :text, "results")
+    ]),
+    new(slug: "text", name: "Text", size: [ 1080, 1920 ], fields: [
+      Field.new(:text, "Text", :text, "The salon")
     ])
   ].freeze
 

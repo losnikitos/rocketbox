@@ -9,4 +9,6 @@ class Reels::Azzurro < RecipeType::Scripted
 
   # mr_azzurro's reel.
   def self.source_url = "https://www.instagram.com/reel/DV6iiG6jOVc/"
+
+  def self.layer = Layer.find("text")
 end
