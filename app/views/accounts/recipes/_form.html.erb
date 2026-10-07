@@ -138,19 +138,33 @@
           <% if type&.description %>
             <p class="text-sm text-ink-600"><%= type.description %></p>
           <% end %>
-          <% if (layer = type&.layer) %>
-            <div class="relative w-24 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
-                 style="aspect-ratio: <%= layer.size.join(" / ") %>">
-              <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
-              <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
+          <% layer, original = type&.layer, type.try(:original) %>
+          <% if layer || original %>
+            <div class="grid grid-cols-2 gap-3">
+              <% if layer %>
+                <div>
+                  <p class="<%= tw_label_classes %>">Layer</p>
+                  <div class="relative overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
+                       style="aspect-ratio: <%= layer.size.join(" / ") %>">
+                    <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+                    <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
+                  </div>
+                </div>
+              <% end %>
+              <% if original %>
+                <div>
+                  <p class="<%= tw_label_classes %>">Original</p>
+                  <%= tag.video controls: true, preload: "metadata", src: original_recipes_path(type.slug), "aria-label": "Original reel",
+                        class: "aspect-9/16 w-full rounded-lg bg-ink-900" %>
+                </div>
+              <% end %>
             </div>
           <% end %>
-          <% if type.try(:original) %>
-            <%= tag.video controls: true, preload: "metadata", src: original_recipes_path(type.slug), "aria-label": "Original reel",
-                  class: "aspect-9/16 w-40 rounded-lg bg-ink-900" %>
-          <% end %>
           <% if type.try(:source_url) %>
-            <%= link_to "Original on Instagram", type.source_url, target: "_blank", rel: "noopener", class: "block text-sm text-ink-600 underline hover:text-ink-900" %>
+            <%= link_to type.source_url, target: "_blank", rel: "noopener", class: "inline-flex items-center gap-1.5 text-sm text-ink-600 underline hover:text-ink-900" do %>
+              <%= image_tag "brands/instagram.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+              Instagram
+            <% end %>
           <% end %>
         </div>
         <% if recipe.ai? %>
