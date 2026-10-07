@@ -13,7 +13,7 @@
         <% chip = ->(model) do
              tag.span class: "flex min-w-0 flex-1 items-center justify-between gap-3" do
                safe_join [
-                 tag.span(model.model_id, class: "truncate"),
+                 tag.span(model.name, class: "truncate"),
                  (tag.span(role: "img", aria: { label: "Price #{"£" * model.price_band}" }, title: "£" * model.price_band, class: "inline-flex shrink-0") do
                    safe_join 3.times.map { |i| heroicon "currency-pound", variant: :micro, options: { class: "size-4 #{i < model.price_band ? "text-ink-700" : "text-ink-900/15"}" } }
                  end if model.price_band)
