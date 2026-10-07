@@ -37,8 +37,8 @@ class Recipe < ApplicationRecord
     Array(inputs).select { it["folder_id"].present? }.group_by { it["folder_id"].to_i }
       .map { |id, rows| { "folder_id" => id, "count" => rows.sum { [ it["count"].to_i, 1 ].max } } }
   end
-  # Blank values fall back to the layer's defaults; an all-blank step is dropped.
-  normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank }.reject(&:empty?) }
+  # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
+  normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
   # nil takes no shot.
   normalizes :shot_group, with: ->(value) { value.strip.presence }
 

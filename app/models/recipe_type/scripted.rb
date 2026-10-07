@@ -25,8 +25,8 @@ class RecipeType::Scripted < RecipeType
 
   def self.track = dir.join("#{slug}.wav").then { it if it.exist? }
 
-  # How many layer steps the form offers; nil is one per cut, open-ended.
-  def self.max_steps = nil
+  # How many layer steps the form shows: one is used over every cut, more are one per cut.
+  def self.steps = 1
 
   def file
     media, track = source_media, self.class.track
@@ -40,7 +40,7 @@ class RecipeType::Scripted < RecipeType
         segment = File.join(dir, "cut#{i}.mp4")
         filter = [ "-vf", fit ]
         if self.class.layer && (values = layer_values(i))
-          png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: values.symbolize_keys)) }
+          png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: values.symbolize_keys.merge(step: i))) }
           filter = [ "-i", png, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
         end
         # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
@@ -64,5 +64,5 @@ class RecipeType::Scripted < RecipeType
   end
 
   # The layer values over cut `i`, from the recipe's layer steps, or nil for no layer.
-  def layer_values(i) = recipe.layer_steps[i]
+  def layer_values(i) = recipe.layer_steps[self.class.steps == 1 ? 0 : i].presence
 end

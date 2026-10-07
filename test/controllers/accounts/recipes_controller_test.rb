@@ -48,9 +48,9 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "black_eyed_peas",
       layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ] } }
-    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" } ], recipe.reload.layer_steps
+    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" }, {} ], recipe.reload.layer_steps
     get recipe_url(recipe, account: @admin.id)
-    assert_select "input[name='recipe[layer_steps][][line2]']", 3
+    assert_select "input[name='recipe[layer_steps][][line2]']", 5
 
     assert_difference -> { Recipe.count }, -1 do
       delete recipe_url(recipe)

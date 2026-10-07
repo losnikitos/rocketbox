@@ -8,8 +8,6 @@ class Reels::Welcome < RecipeType::Scripted
 
   def self.layer = Layer.find("welcome")
 
-  def self.max_steps = 1
-
-  # Its one layer step's four lines appear one per cut over the first four cuts.
-  def layer_values(i) = (recipe.layer_steps.first.to_h.merge("lines" => (i + 1).to_s) if i < 4)
+  # Its layer reveals a line per cut, so it's over just the first four.
+  def layer_values(i) = (super if i < 4)
 end
