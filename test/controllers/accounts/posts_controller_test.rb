@@ -52,7 +52,7 @@ class Accounts::PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='true']", instagram_posts_path, text: "All"
     assert_select "nav[aria-label='Secondary'] a[href=?][aria-selected='false']", instagram_posts_path(kind: "posts"), text: "Posts"
     assert_select "a[href=?]", instagram_post_path(post_record)
-    assert_select "a[href=?] video[muted][preload=metadata]:not([controls])", instagram_post_path(post_record)
+    assert_select "a[href=?] img[src*='/representations/']", instagram_post_path(post_record)
     assert_select "a[href=?] span", instagram_post_path(post_record), text: "ready"
     assert_select "section h3", "Today"
 

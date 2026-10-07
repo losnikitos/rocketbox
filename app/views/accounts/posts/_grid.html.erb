@@ -9,11 +9,7 @@
             <%= link_to instagram_post_path(post), class: "relative block" do %>
               <% slide = post.smm_slides.find { it.media.attached? } %>
               <% if slide&.video? %>
-                <%= video_tag url_for(slide.media),
-                      muted: true,
-                      preload: "metadata",
-                      playsinline: true,
-                      class: "aspect-2/3 w-full rounded-lg bg-ink-900/5 object-cover" %>
+                <%= image_tag slide.media.representation(:thumb), alt: "", class: "aspect-2/3 w-full rounded-lg bg-ink-900/5 object-cover" %>
               <% elsif slide %>
                 <%= image_tag url_for(slide.media), alt: "", class: "aspect-2/3 w-full rounded-lg object-cover" %>
               <% elsif (cover = post.library_media.find { |m| m.file.attached? }) %>

@@ -46,7 +46,8 @@ class RecipeRun < ApplicationRecord
   # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
   # or an option isn't available.
   def start!(user)
-    build_generated_media(user:, kind: recipe.video? || recipe.reel? || layer_over_video? ? "video" : "photo", folder: recipe.output_folder)
+    build_generated_media(user:, kind: recipe.video? || recipe.reel? || layer_over_video? ? "video" : "photo", folder: recipe.output_folder,
+      tags: recipe.output_tags.to_a)
     self.prompt = [ recipe.body, shot&.body, style&.body ].compact_blank.join("\n\n") if recipe.ai?
     save!
     GenerateJob.perform_later(self)
@@ -69,7 +70,7 @@ class RecipeRun < ApplicationRecord
     def media_fit_recipe
       media = source_media
       fits = media.all? && media.uniq.size == media.size && media.all? { it.user_id == generated_media&.user_id && recipe.takes?(it) } &&
-        media.map(&:folder_id).tally == recipe.inputs.to_h { [ it["folder_id"], it["count"] ] }
+        recipe.fills_inputs?(media)
       errors.add(:base, "Pick the right number of media for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
       errors.add(:base, "Pick a review.") unless review.present? == recipe.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)

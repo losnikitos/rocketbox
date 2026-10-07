@@ -8,7 +8,7 @@ module Accounts
     layout "app"
 
     before_action :authenticate_admin!
-    before_action :set_recipe, only: %i[show update destroy]
+    before_action :set_recipe, only: %i[show update destroy destroy_example]
 
     def index
       @recipe_folder = RecipeFolder.find(params[:folder]) if params[:folder]
@@ -66,6 +66,11 @@ module Accounts
       redirect_to recipes_path, notice: "Recipe removed."
     end
 
+    def destroy_example
+      @recipe.example.purge
+      redirect_to recipe_path(@recipe), status: :see_other
+    end
+
     def rename_folder
       folder = RecipeFolder.find(params[:folder])
       if folder.update(name: params.expect(:name))
@@ -92,7 +97,11 @@ module Accounts
       # What a run picks from, per the recipe as given.
       def set_picks
         library = Current.account.library_media.with_attached_file.order(created_at: :desc)
-        @slots = @recipe.slots.map { |folder, count| [ folder, count, folder ? library.where(folder:).select { @recipe.takes?(it) } : [] ] }
+        @slots = @recipe.slots.zip(@recipe.inputs).map do |(folder, tag, count), input|
+          media = folder ? library.where(folder:) : library.none
+          media = media.joins(:tags).where(tags: { id: input["tag_id"] }) if input["tag_id"]
+          [ folder, tag, count, media.select { @recipe.takes?(it) } ]
+        end
         @shots = Shot.where(group: @recipe.shot_group).ordered.with_attached_examples if @recipe.shot_group
         # ponytail: picks any 5-star review, used or not. Upgrade = skip reviews the recipe's posts already show, once posts are scheduled.
         @reviews = Current.account.reviews.postable.order(created_at: :desc) if @recipe.takes_review?
@@ -103,7 +112,7 @@ module Accounts
 
       def recipe_params
         params.expect(recipe: [ :name, :folder_name, :kind, :body, :shot_group, :style_id, :output_folder_id, :example,
-          inputs: [ %i[folder_id count] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
+          output_tag_ids: [], inputs: [ %i[folder_id tag_id count] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 
       # The refreshes resubmit the form as a GET; the example waits for the save.

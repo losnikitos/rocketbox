@@ -22,6 +22,8 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, the default recipe output. Every media is in exactly one folder; recipe inputs and outputs point at folders.
 
+**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`).
+
 ```mermaid
 flowchart LR
  Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Scripted[Scripted recipes] --> Stories[/Stories/]

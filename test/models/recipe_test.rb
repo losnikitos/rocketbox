@@ -66,6 +66,27 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ @customer, @interior, interior ], @recipe.run!(media: [ @customer, @interior, interior ]).source_media
   end
 
+  test "a tagged input takes only media with its tag, in any order; output tags land on what it makes" do
+    before, after = tags(:before), tags(:after)
+    assert_equal "new-tag", Tag.create!(name: " #New-Tag ").name
+    plain, other = photo("plain.jpg", :photobank_interior), photo("other.jpg", :photobank_interior)
+    @interior.tags << before
+    @recipe.update!(inputs: [ input(:photobank_interior), input(:photobank_interior).merge("tag_id" => before.id.to_s) ], output_tag_ids: [ after.id.to_s, "" ])
+    assert_equal [ input(:photobank_interior), input(:photobank_interior).merge("tag_id" => before.id) ], @recipe.inputs
+    assert_equal [ after.id ], @recipe.output_tag_ids
+
+    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ plain, other ]) }
+    run = @recipe.run!(media: [ @interior, plain ])
+    assert_equal [ after ], run.generated_media.tags.to_a
+
+    tagged_only = Recipe.create!(name: "Tagged", body: "x", inputs: [ input(:photobank_interior).merge("tag_id" => before.id) ])
+    assert_includes @interior.recipes, tagged_only
+    assert_not_includes plain.recipes, tagged_only
+
+    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior).merge("tag_id" => 0) ]).valid?
+    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ], output_tag_ids: [ 0 ]).valid?
+  end
+
   test "run! paints every input in order with the recipe as given, unsaved edits included, into the output folder" do
     calls = []
     RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|

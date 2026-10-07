@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 # How media is made from library media, plus an example image.
-# `inputs` lists the folders it takes media from in order as { "folder_id", "count" }, one per folder (two staff photos
-# is one input with count 2). A run sees the picked media as one flat list.
+# `inputs` lists the folders it takes media from in order as { "folder_id", "tag_id", "count" }, one per folder and tag
+# (two staff photos is one input with count 2); a blank tag takes any media in the folder. A run sees the picked media
+# as one flat list.
 # `kind` is how, the slug of its `type` (see RecipeType), which fixes its layer: a Generation is one AI call making an
 # image or a video; an Overlay lays its layer over one photo or video, as the same; a Scripted type cuts the inputs
 # (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see RecipeType::Scripted).
-# Results land in `output_folder`.
+# Results land in `output_folder`, tagged with `output_tag_ids`.
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
 # pick (the review type).
-# ponytail: slots are a JSON array, so deleting a folder leaves a recipe slot pointing at nothing
-# (the recipe then fails validation on edit). Upgrade = a recipe_slots join table with a foreign key.
+# ponytail: slots and output tags are JSON arrays, so deleting a folder or tag leaves the recipe pointing at nothing
+# (the recipe then fails validation on edit). Upgrade = recipe_slots and recipe_output_tags join tables with foreign keys.
 class Recipe < ApplicationRecord
   extend FriendlyId
   include GenerationOptions
@@ -32,11 +33,12 @@ class Recipe < ApplicationRecord
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
-  # Inputs from one folder merge, their counts summed.
+  # Inputs from one folder with one tag merge, their counts summed.
   normalizes :inputs, with: ->(inputs) do
-    Array(inputs).select { it["folder_id"].present? }.group_by { it["folder_id"].to_i }
-      .map { |id, rows| { "folder_id" => id, "count" => rows.sum { [ it["count"].to_i, 1 ].max } } }
+    Array(inputs).select { it["folder_id"].present? }.group_by { [ it["folder_id"].to_i, it["tag_id"].presence&.to_i ] }
+      .map { |(folder_id, tag_id), rows| { "folder_id" => folder_id, "tag_id" => tag_id, "count" => rows.sum { [ it["count"].to_i, 1 ].max } }.compact }
   end
+  normalizes :output_tag_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
   # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
   # nil takes no shot.
@@ -52,6 +54,9 @@ class Recipe < ApplicationRecord
   validates :body, presence: true, if: :ai?
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
+    tag_ids = inputs.filter_map { it["tag_id"] }.uniq
+    errors.add(:inputs, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.size
+    errors.add(:output_tag_ids, "include an unknown tag") unless Tag.where(id: output_tag_ids).count == output_tag_ids.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || overlay?) && media_count > 1
   end
@@ -79,13 +84,29 @@ class Recipe < ApplicationRecord
 
   def folder_ids = inputs.map { it["folder_id"] }
 
+  def output_tags = Tag.where(id: output_tag_ids).ordered
+
   # How many media a run takes, across inputs.
   def media_count = inputs.sum { it["count"] }
 
-  # [folder, count] per input; the folder is nil once deleted.
+  # [folder, tag, count] per input; the tag is nil for any media, the folder and tag nil once deleted.
   def slots
     folders = Folder.includes(:parent).where(id: folder_ids).index_by(&:id)
-    inputs.map { [ folders[it["folder_id"]], it["count"] ] }
+    tags = Tag.where(id: inputs.filter_map { it["tag_id"] }).index_by(&:id)
+    inputs.map { [ folders[it["folder_id"]], tags[it["tag_id"]], it["count"] ] }
+  end
+
+  # Whether `media` can fill this input: it's in the input's folder and, if the input has a tag, has it.
+  def self.takes_input?(input, media) = media.folder_id == input["folder_id"] && (input["tag_id"].nil? || media.tag_ids.include?(input["tag_id"]))
+
+  # Whether `media`, in any order, fill every input's count exactly.
+  # ponytail: greedy, tagged inputs first, so it can reject a valid pick when two tagged inputs share a folder and
+  # one media has both tags. Upgrade = bipartite matching.
+  def fills_inputs?(media)
+    left = media.dup
+    inputs.sort_by { it["tag_id"] ? 0 : 1 }.all? do |input|
+      input["count"].times.all? { (index = left.index { self.class.takes_input?(input, it) }) && left.delete_at(index) }
+    end && left.empty?
   end
 
   # `media` are the inputs' counts from their folders; `shot` is from the recipe's shot group, `review` for the review type.

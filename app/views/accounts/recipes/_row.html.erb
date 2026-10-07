@@ -2,6 +2,8 @@
 <%= link_to path, class: "flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
   <% if recipe.example.attached? %>
     <%= render "accounts/recipes/example", example: recipe.example, css: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
+  <% elsif recipe.type %>
+    <%= image_tag recipe.type.cover, alt: "", class: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
   <% else %>
     <span class="aspect-2/3 w-12 shrink-0 rounded-md bg-ink-900/5" aria-hidden="true"></span>
   <% end %>

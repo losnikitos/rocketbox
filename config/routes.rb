@@ -69,6 +69,7 @@ Rails.application.routes.draw do
         get "folders/:folder", action: :index, on: :collection, as: :folder
         patch "folders/:folder", action: :rename_folder, on: :collection
         get "originals/:kind", action: :original, on: :collection, as: :original
+        delete :example, action: :destroy_example, on: :member
       end
       resources :styles, except: :show
       resources :links, only: %i[index create show destroy] do

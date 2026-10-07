@@ -3,6 +3,7 @@
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :folder
+  has_and_belongs_to_many :tags
   before_validation(on: :create) { self.folder ||= Folder.inbox }
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
@@ -14,7 +15,9 @@ class LibraryMedia < ApplicationRecord
   has_many :generated_media, through: :source_runs
   # The run that made this media; it has a status and an error.
   has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
-  has_one_attached :file
+  has_one_attached :file do |file|
+    file.variant :thumb, resize_to_limit: [ 720, 720 ], preprocessed: :video?
+  end
   has_one_attached :extracted_logo
 
   # Extracted business-card field => User column.
@@ -54,11 +57,11 @@ class LibraryMedia < ApplicationRecord
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
   end
 
-  # Recipes with an input from this media's folder.
+  # Recipes with an input this media can fill.
   def recipes
     return [] unless story_image?
 
-    Recipe.with_attached_example.ordered.select { it.folder_ids.include?(folder_id) }
+    Recipe.with_attached_example.ordered.select { |recipe| recipe.inputs.any? { Recipe.takes_input?(it, self) } }
   end
 
   def extraction_status

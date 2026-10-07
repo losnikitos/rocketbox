@@ -78,7 +78,7 @@ module ApplicationHelper
       safe_join(attachments.map do |attachment|
         link_to url_for(attachment), target: "_blank", rel: "noopener" do
           if attachment.image? then image_tag(url_for(attachment), style: thumb)
-          elsif attachment.video? then video_tag(url_for(attachment), muted: true, preload: "metadata", style: thumb)
+          elsif attachment.video? then image_tag(attachment.representation(resize_to_limit: [ 720, 720 ]), style: thumb)
           else attachment.filename.to_s
           end
         end

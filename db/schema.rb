@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_130000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -133,6 +133,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.index ["whatsapp_media_id"], name: "index_library_media_on_whatsapp_media_id", unique: true
   end
 
+  create_table "library_media_tags", id: false, force: :cascade do |t|
+    t.integer "library_media_id", null: false
+    t.integer "tag_id", null: false
+    t.index ["library_media_id", "tag_id"], name: "index_library_media_tags_on_library_media_id_and_tag_id", unique: true
+    t.index ["tag_id"], name: "index_library_media_tags_on_tag_id"
+  end
+
   create_table "links", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "source", default: "app", null: false
@@ -222,6 +229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.string "name", null: false
     t.json "options", default: {}, null: false
     t.integer "output_folder_id", null: false
+    t.json "output_tag_ids", default: [], null: false
     t.integer "recipe_folder_id"
     t.string "shot_group"
     t.string "slug", null: false
@@ -429,6 +437,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.index ["crawl_id"], name: "index_suggestions_on_crawl_id"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "address"
     t.string "brand_voice"
@@ -466,6 +481,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "library_media", "folders"
   add_foreign_key "library_media", "users"
+  add_foreign_key "library_media_tags", "library_media", on_delete: :cascade
+  add_foreign_key "library_media_tags", "tags", on_delete: :cascade
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"

@@ -1,7 +1,7 @@
-<%# locals: (folder:, count:, photos:, index:) %>
-<%# One input: a folder, how many media a run takes from it, then those media. Picking a folder, changing the count or
-    removing the row refreshes the inputs; the last row stays. `index` is nil for a row just added, until that refresh.
-    Media already in `media_ids[]` stay picked, the rest of the count is random. %>
+<%# locals: (folder:, tag:, count:, photos:, index:) %>
+<%# One input: a folder, optionally only its media with `tag`, how many media a run takes from it, then those media.
+    Picking a folder or tag, changing the count or removing the row refreshes the inputs; the last row stays. `index` is
+    nil for a row just added, until that refresh. Media already in `media_ids[]` stay picked, the rest of the count is random. %>
 <% label = index ? "Input #{index + 1}" : "New input" %>
 <div role="group" aria-label="<%= label %>" class="group/input space-y-2"
      onchange="['hidden', 'number'].includes(event.target.type) && this.closest('form').requestSubmit(this.closest('form').elements.refresh_inputs)">
@@ -9,6 +9,10 @@
     <% if index %><span class="text-sm font-medium text-ink-700"><%= index + 1 %>.</span><% end %>
     <div class="flex min-w-0 flex-1 items-center rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
       <%= render "shared/folder_pick", name: "recipe[inputs][][folder_id]", selected: folder&.id, label: "#{label} folder", padding: "py-3" %>
+      <% if Tag.exists? %>
+        <%= render "shared/tag_pick", name: "recipe[inputs][][tag_id]", selected: tag&.id, label: "#{label} tag", padding: "py-3",
+              css: "w-36 shrink-0 self-stretch border-l border-ink-900/10" %>
+      <% end %>
       <% if folder %>
         <%= link_to folder_path(folder), target: "_blank", aria: { label: "Open #{folder.path}" },
               class: "shrink-0 rounded-md p-1.5 text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
@@ -41,7 +45,7 @@
         <%= heroicon "chevron-down", options: { class: "size-5 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
       </button>
       <% if photos.size < count %>
-        <p class="text-sm text-signal-red">Only <%= photos.size %> in <%= folder.name %>, a run takes <%= count %>.</p>
+        <p class="text-sm text-signal-red">Only <%= photos.size %> in <%= folder.name %><%= " with ##{tag.name}" if tag %>, a run takes <%= count %>.</p>
       <% end %>
       <div id="<%= popover_id %>" popover data-media-pick-target="popover"
            style="position-anchor: --<%= popover_id %>"
@@ -73,7 +77,7 @@
     </div>
   <% elsif folder %>
     <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-      No media in <%= render "accounts/recipes/slot", folder: %>.
+      No media in <%= render "accounts/recipes/slot", folder: %><% if tag %> with <%= render "accounts/tags/tag", tag: %><% end %>.
       <%= link_to "Add some", folder_path(folder), class: "underline hover:text-ink-900" %>
     </p>
   <% end %>

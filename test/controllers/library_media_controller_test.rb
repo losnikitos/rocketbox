@@ -63,6 +63,20 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?
   end
 
+  test "sets and clears tags, shown as #name pills on the media page" do
+    patch library_media_url(@media), params: { library_media: { tag_ids: [ "", tags(:before).id ] } }
+    assert_equal "Tags updated.", flash[:notice]
+    assert_equal [ tags(:before) ], @media.reload.tags.to_a
+
+    get library_item_url(@media, account: @admin.id)
+    assert_select "aside button[aria-label=Tags] [data-pick-target=preview] > span > span", text: "before" do
+      assert_select "svg.text-orange-500"
+    end
+
+    patch library_media_url(@media), params: { library_media: { tag_ids: [ "" ] } }
+    assert_empty @media.reload.tags
+  end
+
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
     @media.update!(folder: folders(:business_card), extracted_info: {
