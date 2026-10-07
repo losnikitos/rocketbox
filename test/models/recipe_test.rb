@@ -122,7 +122,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  { "doppler" => 9.6, "welcome" => 8.1, "black_eyed_peas" => 7.0, "azzurro" => 6.4 }.each do |kind, length|
+  { "doppler" => 9.6, "welcome" => 8.1, "black_eyed_peas" => 7.0, "azzurro" => 6.4, "gm_visuals" => 10.2 }.each do |kind, length|
     test "a #{kind} recipe lays its track under its cuts" do
       recipe = Recipe.create!(name: kind, kind:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
       media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
@@ -137,6 +137,24 @@ class RecipeTest < ActiveSupport::TestCase
       assert_equal %w[video audio], probe.lines.map(&:strip).grep(/\A[a-z]+\z/)
       assert_in_delta length, probe.lines.last.to_f, 0.1
     end
+  end
+
+  test "gm_visuals speed-ramps videos shorter than their cuts without coming up short" do
+    recipe = Recipe.create!(name: "GM", kind: "gm_visuals", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    Dir.mktmpdir do |dir|
+      clip = File.join(dir, "clip.mp4")
+      system("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=1", "-pix_fmt", "yuv420p", clip, exception: true)
+      [ @interior, @customer ].each { it.update!(kind: "video", file: { io: StringIO.new(File.binread(clip)), filename: "clip.mp4", content_type: "video/mp4" }) }
+    end
+    run = recipe.run!(media: [ @interior, @customer ])
+
+    run.run!
+
+    assert_equal "complete", run.reload.status, run.error
+    frames = run.generated_media.reload.file.open do
+      Open3.capture2("ffprobe", "-v", "error", "-count_frames", "-select_streams", "v", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", it.path).first.to_i
+    end
+    assert_equal (10.194 * 30).round, frames
   end
 
   test "a reel overlays its first cuts with its type's layer, each filled from its own step" do
@@ -167,6 +185,10 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "every scripted type with a track has its cut ends" do
     RecipeType.all.select { it.reel? && it.track }.each { assert it.dir.join("beats.csv").exist?, it.slug }
+  end
+
+  test "every type has its cover" do
+    RecipeType.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do

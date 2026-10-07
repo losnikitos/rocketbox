@@ -8,7 +8,7 @@ class RecipeType
   def self.all = [
     GenerateImage, GenerateVideo,
     FullyBooked, Daily, Review, Calendar,
-    Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro
+    Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 
   def self.find(slug) = all.find { it.slug == slug }

@@ -38,10 +38,11 @@ class RecipeType::Scripted < RecipeType
       list = File.join(dir, "cuts.txt")
       File.write(list, cuts.each_with_index.map do |(item, frames), i|
         segment = File.join(dir, "cut#{i}.mp4")
-        filter = [ "-vf", fit ]
+        cut_fit = [ (retime(item, frames) if item.video?), fit ].compact.join(",")
+        filter = [ "-vf", cut_fit ]
         if self.class.layer && (values = layer_values(i))
           png = File.join(dir, "layer#{i}.png").tap { File.binwrite(it, layer_png(over_photo: false, values: values.symbolize_keys.merge(step: i))) }
-          filter = [ "-i", png, "-filter_complex", "[0:v]#{fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
+          filter = [ "-i", png, "-filter_complex", "[0:v]#{cut_fit}[bg];[bg][1:v]overlay,format=yuv420p" ]
         end
         # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
         # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
@@ -65,4 +66,7 @@ class RecipeType::Scripted < RecipeType
 
   # The layer values over cut `i`, from the recipe's layer steps, or nil for no layer.
   def layer_values(i) = recipe.layer_steps[self.class.steps == 1 ? 0 : i].presence
+
+  # An ffmpeg filter retiming video `item` over a cut of `frames`, run before it's fitted, or nil to play it as is.
+  def retime(item, frames) = nil
 end
