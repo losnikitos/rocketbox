@@ -3,6 +3,9 @@
 <% roots = roots.in_order_of(:slug, %w[photobank inbox], filter: false).ordered.includes(:children).to_a %>
 <% selected = roots.flat_map { [ it, *it.children ] }.find { it.id.to_s == selected.to_s } %>
 <% counts = Current.account.library_media.group(:folder_id).count %>
+<% ranked = Current.account.library_media.joins(:file_attachment)
+     .select("library_media.*, ROW_NUMBER() OVER (PARTITION BY folder_id ORDER BY library_media.created_at DESC) AS position") %>
+<% previews = LibraryMedia.from(ranked, :library_media).where("position <= 5").order(created_at: :desc).with_attached_file.group_by(&:folder_id) %>
 <% chip = ->(folder) do
      tag.span class: "flex min-w-0 items-center gap-1.5" do
        safe_join [
@@ -23,7 +26,7 @@
     <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
   </button>
   <div popover data-pick-target="popover" data-action="toggle->pick#opened"
-       class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 min-w-60 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+       class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] min-w-60 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
     <div class="sticky -top-1 z-10 -mx-1 -mt-1 mb-1 border-b border-ink-900/10 bg-white p-1">
       <input type="search" placeholder="Search folders" aria-label="Search folders" autocomplete="off"
              data-pick-target="search" data-action="input->pick#filter keydown.enter->pick#pickFirst"
@@ -32,9 +35,16 @@
     <% roots.each_with_index do |root, index| %>
       <% if index.positive? %><div data-pick-target="separator" class="mx-2 my-1 h-px bg-ink-900/10" aria-hidden="true"></div><% end %>
       <% [ root, *root.children ].each do |folder| %>
-        <%= tag.button chip.(folder), type: "button", value: folder.id, aria: { current: ("true" if folder == selected) },
+        <%= tag.button type: "button", value: folder.id, aria: { current: ("true" if folder == selected) },
               data: { pick_target: "option", action: "pick#pick" },
-              class: "flex w-full cursor-pointer rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" %>
+              class: "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" do %>
+          <%= chip.(folder) %>
+          <span class="ml-auto flex shrink-0 gap-0.5" aria-hidden="true">
+            <% previews[folder.id].to_a.select { it.file.representable? }.each do |media| %>
+              <%= image_tag media.file.representation(resize_to_fill: [ 48, 72 ]), alt: "", loading: "lazy", class: "aspect-2/3 h-7 rounded-sm bg-ink-900/5 object-cover" %>
+            <% end %>
+          </span>
+        <% end %>
       <% end %>
     <% end %>
   </div>
