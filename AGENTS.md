@@ -67,5 +67,8 @@ How the app is deployed and operated in production.
 ### [PROMPTS.md](./docs/PROMPTS.md)
 LLM prompts: content `Recipe` rows at `/app/recipes`; service prompts are constants in code.
 
+### [PRICE_BANDS.md](./docs/PRICE_BANDS.md)
+How AI models get their £ / ££ / £££ price band: per-image and per-second cost estimates.
+
 ### [ICONS.md](./docs/ICONS.md)
 Heroicons: `heroicon "name"` — no variant or size unless needed.

@@ -19,6 +19,9 @@ class RecipeType
 
   def self.description = nil
 
+  # A 2:3 image picturing the type, 400x600: a scripted type's original's first frame, an overlay's layer over a gradient.
+  def self.cover = "recipe_types/#{slug}.jpg"
+
   def self.layer = nil
 
   def self.ai? = false
