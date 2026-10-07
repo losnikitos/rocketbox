@@ -49,8 +49,7 @@ class Layer
       Field.new(:line1, "Line 1", :text, "Welcome"),
       Field.new(:line2, "Line 2", :text, "To"),
       Field.new(:line3, "Line 3", :text, "Wick Lane"),
-      Field.new(:line4, "Line 4", :text, "Barbershop"),
-      Field.new(:lines, "Lines shown", :text, "4")
+      Field.new(:line4, "Line 4", :text, "Barbershop")
     ]),
     new(slug: "caption", name: "Caption", size: [ 1080, 1920 ], fields: [
       Field.new(:line1, "Line 1 (serif)", :text, "The"),
@@ -78,7 +77,8 @@ class Layer
 
   def template = "accounts/layers/templates/#{slug.underscore}"
 
+  # The fields' values, plus `step`: which cut of a reel it's over (nil elsewhere), for layers that change across cuts.
   def values(params = {})
-    fields.to_h { [ it.name, it.value(params[it.name]) ] }
+    fields.to_h { [ it.name, it.value(params[it.name]) ] }.merge(step: Integer(params[:step], exception: false))
   end
 end

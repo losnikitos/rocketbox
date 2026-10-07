@@ -39,8 +39,8 @@ class LayersControllerTest < ActionDispatch::IntegrationTest
     assert_select "img", 0
   end
 
-  test "welcome shows its first lines and keeps the rest's space" do
-    get canvas_layer_url("welcome", account: @admin.id, lines: "2")
+  test "welcome shows a line per step and keeps the rest's space" do
+    get canvas_layer_url("welcome", account: @admin.id, step: "1")
     assert_select "span.block:not(.invisible)", text: /\A(Welcome|To)\z/, count: 2
     assert_select "span.invisible", text: /\A(Wick Lane|Barbershop)\z/, count: 2
   end

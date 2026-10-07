@@ -143,7 +143,7 @@ class RecipeTest < ActiveSupport::TestCase
     recipe = Recipe.create!(name: "Black eyed peas", kind: "black_eyed_peas",
       inputs: [ input(:photobank_interior), input(:photobank_customer) ],
       layer_steps: [ { "line2" => "coffee" }, { "line1" => "", "line2" => "" }, { "line1" => "Our", "line2" => "tools" }, { "line2" => "" } ])
-    assert_equal [ { "line2" => "coffee" }, { "line1" => "Our", "line2" => "tools" } ], recipe.layer_steps
+    assert_equal [ { "line2" => "coffee" }, {}, { "line1" => "Our", "line2" => "tools" }, {} ], recipe.layer_steps
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
@@ -156,9 +156,13 @@ class RecipeTest < ActiveSupport::TestCase
     assert htmls.none? { it.include?("background-image: url(") }
   end
 
-  test "welcome reveals its one step's lines one per cut over the first four cuts" do
-    steps = [ { "line1" => "Hi", "lines" => "4" }, { "line1" => "ignored" } ]
-    assert_equal [ *(1..4).map { { "line1" => "Hi", "lines" => it.to_s } }, nil ], (0..4).map { Reels::Welcome.new(RecipeRun.new(recipe: Recipe.new(layer_steps: steps))).layer_values(it) }
+  test "welcome lays its one step over just the first four cuts" do
+    steps = [ { "line1" => "Hi" }, { "line1" => "ignored" } ]
+    assert_equal [ *[ { "line1" => "Hi" } ] * 4, nil ], (0..4).map { Reels::Welcome.new(RecipeRun.new(recipe: Recipe.new(layer_steps: steps))).layer_values(it) }
+  end
+
+  test "a one-step reel lays its step over every cut" do
+    assert_equal [ { "text" => "Hi" } ] * 3, [ 0, 7, 30 ].map { Reels::Doppler.new(RecipeRun.new(recipe: Recipe.new(layer_steps: [ { "text" => "Hi" } ]))).layer_values(it) }
   end
 
   test "every scripted type with a track has its cut ends" do

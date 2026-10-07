@@ -10,4 +10,6 @@ class Reels::BlackEyedPeas < RecipeType::Scripted
   def self.source_url = "https://www.instagram.com/reels/audio/27554386410835342/"
 
   def self.layer = Layer.find("caption")
+
+  def self.steps = 5
 end
