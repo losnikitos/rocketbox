@@ -69,7 +69,7 @@ class Recipe < ApplicationRecord
 
   def type = RecipeType.find(kind)
 
-  # "Generation · Gen image", or "Overlay · Fully booked".
+  # "Generation · Image", or "Overlay · Fully booked".
   def type_label = type&.then { "#{it.group.label} · #{it.label}" }
 
   def takes?(media) = media.story_image? || (!ai? && media.video?)

@@ -38,6 +38,7 @@ flowchart LR
 ## Dev
 - Local: http://localhost:3003 (`bin/dev`)
 - Tunnel (public webhooks): https://dev.rocketbox.plus (`make tunnel`)
+- Don't use the browser to test changes unless the user explicitly asks.
 
 **No backwards compatibility.** The service is new and still in the making — no active users yet. Prefer deleting and reshaping over redirects, aliases, or dual-path support.
 

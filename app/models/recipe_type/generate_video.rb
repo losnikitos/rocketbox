@@ -2,7 +2,7 @@
 
 # A video animating its one source photo.
 class RecipeType::GenerateVideo < RecipeType::Generation
-  def self.label = "Gen video"
+  def self.label = "Video"
 
   def self.video? = true
 
