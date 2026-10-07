@@ -83,28 +83,35 @@
   </div>
 
   <aside id="details" class="flex w-full shrink-0 flex-col gap-6 md:w-96 lg:w-108">
-    <% if (tags = Tag.ordered.to_a).any? %>
-      <section aria-label="Tags" class="flex flex-wrap items-center gap-1.5">
-        <% @media.tags.sort_by(&:name).each do |tag| %>
-          <%= render "accounts/tags/tag", tag: %>
+    <details open class="group">
+      <summary class="flex cursor-pointer items-center gap-2">
+        <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
+        <h2 class="font-semibold text-ink-900">Media</h2>
+      </summary>
+      <div class="mt-3 space-y-6 rounded-2xl border border-ink-900/10 bg-white p-6">
+        <% if Tag.exists? %>
+          <%= form_with url: library_media_path(@media), method: :patch,
+                onchange: "event.target.type == 'checkbox' && this.requestSubmit()",
+                class: "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" do %>
+            <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
+          <% end %>
         <% end %>
-        <button type="button" popovertarget="media-tags" style="anchor-name: --media-tags" aria-label="Edit tags"
-                class="inline-flex cursor-pointer items-center gap-0.5 rounded-full border border-dashed border-ink-900/20 px-2 py-0.5 text-xs font-medium text-ink-500 transition hover:border-ink-900/40 hover:text-ink-900 focus-visible:ring-2 focus-visible:ring-rocket/30">
-          <%= heroicon "plus", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
-          <%= "Tag" if @media.tags.empty? %>
-        </button>
-        <%= form_with url: library_media_path(@media), method: :patch, id: "media-tags", popover: true, style: "position-anchor: --media-tags",
-              onchange: "this.requestSubmit()",
-              class: "inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-w-xs rounded-xl border border-ink-900/15 bg-white p-2 shadow-lg" do %>
-          <%= hidden_field_tag "library_media[tag_ids][]", "", id: nil %>
-          <div class="flex flex-wrap gap-1.5">
-            <% tags.each do |tag| %>
-              <%= render "accounts/tags/check", tag:, name: "library_media[tag_ids][]", checked: @media.tags.include?(tag) %>
+        <div class="flex flex-wrap gap-2">
+          <% if blob %>
+            <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+              <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              Download
             <% end %>
-          </div>
-        <% end %>
-      </section>
-    <% end %>
+          <% end %>
+          <%= button_to library_media_path(@media), method: :delete,
+                form: { data: { turbo_confirm: "Delete this media? Posts made from it stay." } },
+                class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
+            <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+            Delete
+          <% end %>
+        </div>
+      </div>
+    </details>
 
     <% if (run = @media.recipe_run) %>
       <details open class="group">
@@ -167,7 +174,7 @@
         <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
         <h2 class="font-semibold text-ink-900">Details</h2>
       </summary>
-      <div class="mt-3 space-y-6 rounded-2xl border border-ink-900/10 bg-white p-6">
+      <div class="mt-3 rounded-2xl border border-ink-900/10 bg-white p-6">
         <dl class="space-y-3 text-sm">
           <% [
                [ "Type", @media.kind.humanize ],
@@ -186,20 +193,6 @@
             </div>
           <% end %>
         </dl>
-        <div class="flex flex-wrap gap-2">
-          <% if blob %>
-            <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
-              <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-              Download
-            <% end %>
-          <% end %>
-          <%= button_to library_media_path(@media), method: :delete,
-                form: { data: { turbo_confirm: "Delete this media? Posts made from it stay." } },
-                class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
-            <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-            Delete
-          <% end %>
-        </div>
       </div>
     </details>
   </aside>

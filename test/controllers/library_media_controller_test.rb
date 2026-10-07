@@ -69,7 +69,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ tags(:before) ], @media.reload.tags.to_a
 
     get library_item_url(@media, account: @admin.id)
-    assert_select "aside section[aria-label=Tags] > span", text: "before" do
+    assert_select "aside button[aria-label=Tags] [data-pick-target=preview] > span > span", text: "before" do
       assert_select "svg.text-orange-500"
     end
 
