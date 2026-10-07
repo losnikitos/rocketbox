@@ -34,8 +34,6 @@ class RecipeType
 
   def self.takes_review? = false
 
-  def self.inputs_optional? = false
-
   attr_reader :run
 
   delegate :recipe, :source_media, to: :run

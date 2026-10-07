@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# How media is made from library media, one per input slot, plus an example image.
-# `inputs` lists the slots in order as { "folder_id" } and may repeat one (two staff photos).
+# How media is made from library media, plus an example image.
+# `inputs` lists the folders it takes media from in order as { "folder_id", "count" }, one per folder (two staff photos
+# is one input with count 2). A run sees the picked media as one flat list.
 # `kind` is how, the slug of its `type` (see RecipeType), which fixes its layer: a Generation is one AI call making an
 # image or a video; an Overlay lays its layer over one photo or video, as the same; a Scripted type cuts the inputs
 # (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see RecipeType::Scripted).
@@ -31,8 +32,10 @@ class Recipe < ApplicationRecord
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
+  # Inputs from one folder merge, their counts summed.
   normalizes :inputs, with: ->(inputs) do
-    Array(inputs).filter_map { { "folder_id" => it["folder_id"].to_i } if it["folder_id"].present? }
+    Array(inputs).select { it["folder_id"].present? }.group_by { it["folder_id"].to_i }
+      .map { |id, rows| { "folder_id" => id, "count" => rows.sum { [ it["count"].to_i, 1 ].max } } }
   end
   # Blank values fall back to the layer's defaults; an all-blank step is dropped.
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank }.reject(&:empty?) }
@@ -45,12 +48,12 @@ class Recipe < ApplicationRecord
   end
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { RecipeType.all.map(&:slug) } }
-  validates :inputs, presence: true, unless: -> { type&.inputs_optional? }
+  validates :inputs, presence: true
   validates :body, presence: true, if: :ai?
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
-    errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || overlay?) && inputs.size > 1
+    errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || overlay?) && media_count > 1
   end
   # A run of unsaved edits: its job reloads the recipe, so it would run the saved type and layer steps.
   validate(on: :run) { errors.add(:base, "Save to change the type.") if kind_changed? || layer_steps_changed? }
@@ -76,16 +79,16 @@ class Recipe < ApplicationRecord
 
   def folder_ids = inputs.map { it["folder_id"] }
 
-  # The folder per slot; nil once deleted.
+  # How many media a run takes, across inputs.
+  def media_count = inputs.sum { it["count"] }
+
+  # [folder, count] per input; the folder is nil once deleted.
   def slots
     folders = Folder.includes(:parent).where(id: folder_ids).index_by(&:id)
-    folder_ids.map { folders[it] }
+    inputs.map { [ folders[it["folder_id"]], it["count"] ] }
   end
 
-  # The index of the first slot the media fits, or nil.
-  def slot_for(media) = folder_ids.index(media.folder_id)
-
-  # `media` fill the slots in order; `shot` is from the recipe's shot group, `review` for the review type.
+  # `media` are the inputs' counts from their folders; `shot` is from the recipe's shot group, `review` for the review type.
   # `user` owns the result. Runs the recipe as it is in memory, unsaved edits included (see RecipeRun#start!).
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or review doesn't fit or an option isn't available.
   def run!(media:, shot: nil, review: nil, user: media.first&.user)

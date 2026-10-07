@@ -1,5 +1,5 @@
-<%# locals: (name:, selected:, label:, roots: Folder.roots) %>
-<%# Folder dropdown: the closed state mirrors the picked option's first child. %>
+<%# locals: (name:, selected:, label:, roots: Folder.roots, padding: "py-1.5") %>
+<%# Folder dropdown: the closed state mirrors the picked option's first child. `padding` sets the trigger's height. %>
 <% roots = roots.in_order_of(:slug, %w[photobank inbox], filter: false).ordered.includes(:children).to_a %>
 <% selected = roots.flat_map { [ it, *it.children ] }.find { it.id.to_s == selected.to_s } %>
 <% counts = Current.account.library_media.group(:folder_id).count %>
@@ -19,7 +19,7 @@
   <%= hidden_field_tag name, selected&.id, id: nil, data: { pick_target: "input" } %>
   <template data-pick-target="placeholder"><span class="text-ink-500">Choose folder</span></template>
   <button type="button" data-pick-target="trigger" aria-label="<%= label %>"
-          class="flex w-full min-w-0 cursor-pointer items-center gap-1 py-1.5 pr-2 pl-2.5 text-left text-sm focus:outline-none">
+          class="flex w-full min-w-0 cursor-pointer items-center gap-1 <%= padding %> pr-2 pl-2.5 text-left text-sm focus:outline-none">
     <span data-pick-target="preview" class="flex min-h-5.5 min-w-0 flex-1 items-center">
       <% if selected %><%= chip.(selected) %><% else %><span class="text-ink-500">Choose folder</span><% end %>
     </span>

@@ -25,7 +25,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
-    assert Recipe.new(name: "x", body: "x", inputs: []).valid?, "text-to-image"
+    assert_not Recipe.new(name: "x", body: "x", inputs: []).valid?
     assert_not Recipe.new(name: "x", kind: "steps", inputs: []).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
@@ -33,27 +33,37 @@ class RecipeTest < ActiveSupport::TestCase
     video = Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
     assert_not video.valid?
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
+    assert_not Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior, 2) ]).valid?
+  end
+
+  test "inputs from one folder merge, their counts summed; a missing count is 1" do
+    recipe = Recipe.new(inputs: [ { "folder_id" => folders(:interior).id.to_s }, input(:customer, 5), input(:interior, 2) ])
+    assert_equal [ input(:interior, 3), input(:customer, 5) ], recipe.inputs
+    assert_equal 8, recipe.media_count
   end
 
   test "slug comes from the name once, is never numeric, and finds the recipe" do
     assert_equal "collage", @recipe.slug
     @recipe.update!(name: "Renamed")
     assert_equal [ "collage", @recipe ], [ @recipe.slug, Recipe.find("collage") ]
-    numeric = Recipe.create!(name: "2", body: "x")
+    numeric = Recipe.create!(name: "2", body: "x", inputs: [ input(:interior) ])
     assert_equal [ "recipe-2", numeric ], [ numeric.slug, Recipe.find("recipe-2") ]
-    assert_equal "strizhka-i-boroda", Recipe.create!(name: "Стрижка и борода", body: "x").slug
+    assert_equal "strizhka-i-boroda", Recipe.create!(name: "Стрижка и борода", body: "x", inputs: [ input(:interior) ]).slug
   end
 
-  test "run! rejects photos from another folder or order, and another account's photos" do
+  test "run! takes each input's count from its folder, in any order, and rejects other folders, duplicates and another account's photos" do
     inbox = photo("inbox.jpg", :customer)
     stranger = photo("stranger.jpg", :photobank_customer, user: users(:admin_user))
+    @recipe.update!(inputs: [ input(:photobank_interior, 2), input(:photobank_customer) ])
+    interior = photo("interior2.jpg", :photobank_interior)
 
     assert_no_difference -> { LibraryMedia.count } do
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, inbox ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @customer, @interior ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, stranger ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, interior, inbox ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, @customer ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, @interior, @customer ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, interior, stranger ]) }
     end
+    assert_equal [ @customer, @interior, interior ], @recipe.run!(media: [ @customer, @interior, interior ]).source_media
   end
 
   test "run! paints every input in order with the recipe as given, unsaved edits included, into the output folder" do
@@ -177,18 +187,6 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ prompts.first, style ], [ run.reload.prompt, run.style ]
   end
 
-  test "a gen image recipe without media paints from the prompt alone for the given user" do
-    images = []
-    RubyLLM.define_singleton_method(:paint) do |_prompt, with:, **|
-      images << with
-      RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
-    end
-    run = Recipe.create!(name: "Poster", body: "A poster.").run!(media: [], user: @user)
-    run.run!
-
-    assert_equal [ [ nil ], "complete", @user ], [ images, run.reload.status, run.generated_media.user ]
-  end
-
   test "switching type clears the inputs the new type doesn't take" do
     style = Style.create!(name: "Film", body: "35mm grain.")
     @recipe.update!(kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
@@ -304,7 +302,7 @@ class RecipeTest < ActiveSupport::TestCase
 
   private
 
-    def input(folder) = { "folder_id" => folders(folder).id }
+    def input(folder, count = 1) = { "folder_id" => folders(folder).id, "count" => count }
 
     def stub_screenshot
       rendered = []

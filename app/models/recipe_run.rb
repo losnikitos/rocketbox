@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A recipe applied to library media, one per recipe input. The result lands in the recipe's output folder, created
+# A recipe applied to library media, each recipe input's count from its folder. The result lands in the recipe's output folder, created
 # up front so a running or failed run already has a page; GenerateJob attaches its file once the recipe's type makes it.
 # A run without a recipe records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the recipe's (see GenerationOptions).
@@ -40,7 +40,7 @@ class RecipeRun < ApplicationRecord
 
   def inherited_options = recipe&.options
 
-  # In slot order; also before save.
+  # In the order picked; also before save.
   def source_media = inputs.map(&:library_media)
 
   # `user` owns the result. Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot doesn't fit
@@ -68,9 +68,9 @@ class RecipeRun < ApplicationRecord
 
     def media_fit_recipe
       media = source_media
-      fits = media.size == recipe.inputs.size && media.all? && media.all? { it.user_id == generated_media&.user_id } &&
-        media.zip(recipe.inputs).all? { |item, slot| item.folder_id == slot["folder_id"] && recipe.takes?(item) }
-      errors.add(:base, "Pick a matching photo for every input.") unless fits
+      fits = media.all? && media.uniq.size == media.size && media.all? { it.user_id == generated_media&.user_id && recipe.takes?(it) } &&
+        media.map(&:folder_id).tally == recipe.inputs.to_h { [ it["folder_id"], it["count"] ] }
+      errors.add(:base, "Pick the right number of media for every input.") unless fits
       errors.add(:base, "Pick a shot from the recipe's shot group.") unless shot&.group == recipe.shot_group
       errors.add(:base, "Pick a review.") unless review.present? == recipe.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end

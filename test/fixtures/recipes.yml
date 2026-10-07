@@ -6,6 +6,7 @@ cinematic:
   output_folder: photobank_interior
   inputs:
     - folder_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
+      count: 1
 
 before_after:
   name: Before → after energy
@@ -15,3 +16,4 @@ before_after:
   output_folder: photobank_misc
   inputs:
     - folder_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>
+      count: 1
