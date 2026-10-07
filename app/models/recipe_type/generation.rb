@@ -1,0 +1,17 @@
+# frozen_string_literal: true
+
+# One AI call on the source media, prompted by the run's prompt, with the run's options.
+class RecipeType::Generation < RecipeType
+  def self.label = "Generation"
+
+  def self.ai? = true
+
+  private
+
+    def images = source_media.map { it.file.blob }
+
+    def ai_args
+      opts = run.ai_options
+      { model: opts[:model], provider: opts[:provider], provider_options: opts.except(:provider, :model) }
+    end
+end

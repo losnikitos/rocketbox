@@ -8,7 +8,7 @@ class Accounts::OverviewControllerTest < ActionDispatch::IntegrationTest
     style = Style.create!(name: "Moody", body: "Low key light.")
     recipe = Recipe.create!(name: "Portrait", kind: "generate_image", body: "p", style:,
       inputs: [ { "folder_id" => folders(:customer).id }, { "folder_id" => folders(:customer).id } ], output_folder: folders(:ready))
-    feature = Recipe.create!(name: "Fully booked", kind: "scripted", effect: "fully-booked", inputs: [ { "folder_id" => folders(:ready).id } ],
+    feature = Recipe.create!(name: "Fully booked", kind: "fully_booked", inputs: [ { "folder_id" => folders(:ready).id } ],
       output_folder: folders(:photobank_logo))
 
     get overview_url(account: admin.id)
