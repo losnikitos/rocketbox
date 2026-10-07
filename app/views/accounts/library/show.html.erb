@@ -16,13 +16,21 @@
 
 <div class="flex flex-col gap-6 md:flex-row">
   <% if @versions.size > 1 %>
-    <nav aria-label="Versions" class="-mt-1 flex shrink-0 gap-2 overflow-x-auto p-1 md:flex-col md:overflow-y-auto">
-      <% @versions.each_with_index do |media, index| %>
-        <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
-              class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-          <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-16 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
-          <% if index.zero? %><span class="block pt-1 text-center text-xs text-ink-500">Original</span><% end %>
-        <% end %>
+    <% original, *generations = @versions %>
+    <% groups = { "Original" => [ original ] }.merge(generations.sort_by(&:created_at).reverse.group_by { upload_day_label(it.created_at.to_date) }) %>
+    <nav aria-label="Versions" class="-mt-1 flex shrink-0 gap-4 overflow-x-auto p-1 md:flex-col md:overflow-y-auto">
+      <% groups.each do |label, items| %>
+        <section class="shrink-0">
+          <h3 class="mb-1.5 text-xs text-ink-500"><%= label %></h3>
+          <div class="flex gap-2 md:grid md:grid-cols-2">
+            <% items.each do |media| %>
+              <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
+                    class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-16 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
+              <% end %>
+            <% end %>
+          </div>
+        </section>
       <% end %>
     </nav>
   <% end %>

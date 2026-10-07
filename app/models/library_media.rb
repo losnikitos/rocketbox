@@ -35,8 +35,12 @@ class LibraryMedia < ApplicationRecord
   def business_card? = folder.slug == "business-card"
   def ready? = folder.slug == "ready" && folder.parent&.slug == "photobank"
 
-  # The media this one is a version of.
-  def original = recipe_run&.source_media&.first || self
+  # The media this one is ultimately a version of.
+  def original = recipe_run&.source_media&.first&.original || self
+
+  # This media and every version made from it, each followed by its own versions.
+  # ponytail: one query per node; fine for shallow trees, switch to a recursive CTE if chains get long
+  def lineage = [ self, *generated_media.with_attached_file.includes(:recipe_run).order(:created_at).flat_map(&:lineage) ]
 
   def story_image?
     return false unless file.attached?

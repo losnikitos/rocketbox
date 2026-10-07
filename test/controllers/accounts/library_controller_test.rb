@@ -37,7 +37,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href^=?]", recipe_path(recipes(:before_after)), count: 0
     assert_select "turbo-frame", count: 0
     assert_select "nav[aria-label=Versions] a", 3 do |links|
-      assert_equal [ library_item_path(source), library_item_path(generated), library_item_path(failed.generated_media) ], links.map { it["href"] }
+      assert_equal [ library_item_path(source), library_item_path(failed.generated_media), library_item_path(generated) ], links.map { it["href"] }
       assert_equal "page", links.first["aria-current"]
     end
     assert_select "nav[aria-label=Versions] a[href=?]", library_item_path(failed.generated_media), text: /Generation failed/
@@ -47,7 +47,8 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "#recipe-run-heading + span", count: 0
     assert_select "label #compare-original"
     assert_select "button[popovertarget=hero-media][title='View full size']"
-    assert_select "nav[aria-label=Versions] a[href=?]", library_item_path(source), text: /Original/
+    assert_select "nav[aria-label=Versions] section:first-child:has(h3:contains('Original')) a[href=?]", library_item_path(source)
+    assert_select "nav[aria-label=Versions] h3", text: "Today"
     assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_item_path(generated)
     assert_select "#recipe-run-heading", text: "Generation"
     assert_select "aside a[href=?]", library_item_path(source), count: 0
@@ -56,6 +57,16 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "details:has(#recipe-run-heading) p", text: "content policy"
     assert_select "details:has(#recipe-run-heading) a[href=?]", recipe_path(recipes(:cinematic)), text: /Cinematic shop reel/
     assert_select "details:has(#recipe-run-heading) tr", text: /Model\s*\S+/
+
+    grandchild = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user, created_at: 2.days.ago)
+    RecipeRun.create!(generated_media: grandchild, status: "complete", inputs: [ RecipeRunInput.new(library_media: generated) ])
+    get library_item_url(grandchild)
+    assert_select "nav[aria-label=Versions] a" do |links|
+      assert_equal [ source, failed.generated_media, generated, grandchild ].map { library_item_path(it) }, links.map { it["href"] }
+    end
+    assert_select "nav[aria-label=Versions] h3" do |headings|
+      assert_equal [ "Original", "Today", ApplicationController.helpers.upload_day_label(2.days.ago.to_date) ], headings.map(&:text)
+    end
   end
 
   test "show strips other media of the same folder" do
