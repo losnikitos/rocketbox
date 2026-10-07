@@ -33,7 +33,7 @@
         <%= render "layouts/app/primary_nav", section: section %>
       </aside>
 
-      <div class="flex min-w-0 flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 sm:pl-2">
+      <div class="flex min-w-0 flex-1 flex-col px-3 py-3 sm:px-4 sm:py-4 sm:pl-2 <%= "md:h-screen" if content_for?(:fit) %>">
         <header class="flex flex-wrap items-center gap-3 px-1 pt-2 <%= tabs.any? ? "pb-3" : "pb-0" %> sm:px-2">
           <label for="app-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
             Menu
@@ -48,13 +48,17 @@
           <%= render "layouts/app/secondary_nav", tabs: tabs %>
         <% end %>
 
-        <div class="mt-3 flex min-h-0 flex-1 gap-3">
-          <main class="<%= "rb-surface-raised p-5 sm:p-6 lg:p-8" unless content_for?(:bare) %> min-w-0 flex-1 transition-colors data-[dragging]:bg-rocket/5 data-[dragging]:ring-2 data-[dragging]:ring-inset data-[dragging]:ring-rocket">
+        <% if content_for?(:breadcrumbs) %>
+          <div class="mt-2 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-2"><%= yield :breadcrumbs %></div>
+        <% end %>
+
+        <div class="mt-3 flex min-h-0 flex-1 gap-3 <%= "max-md:flex-col" if content_for?(:aside) %>">
+          <main class="<%= "rb-surface-raised #{content_for?(:fit) ? "p-3 sm:p-4 md:p-0" : "p-5 sm:p-6 lg:p-8"}" unless content_for?(:bare) %> <%= "md:flex md:min-h-0 md:flex-col" if content_for?(:fit) %> min-w-0 flex-1 transition-colors data-[dragging]:bg-rocket/5 data-[dragging]:ring-2 data-[dragging]:ring-inset data-[dragging]:ring-rocket">
             <%= yield %>
           </main>
 
           <% if content_for?(:aside) %>
-            <aside class="w-56 shrink-0 max-lg:hidden">
+            <aside class="flex shrink-0 flex-col gap-3 md:w-96 md:overflow-y-auto lg:w-108">
               <%= yield :aside %>
             </aside>
           <% end %>

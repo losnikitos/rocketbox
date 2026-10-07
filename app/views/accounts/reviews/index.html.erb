@@ -43,7 +43,7 @@
                 <% review.media.each do |file| %>
                   <%= link_to url_for(file), target: "_blank", rel: "noopener", class: "block" do %>
                     <% if file.video? %>
-                      <%= video_tag url_for(file), muted: true, playsinline: true, preload: "metadata", class: "size-20 rounded-lg bg-ink-900/5 object-cover" %>
+                      <%= image_tag file.representation(resize_to_limit: [ 720, 720 ]), alt: "Video from #{review.customer_name}", class: "size-20 rounded-lg bg-ink-900/5 object-cover" %>
                     <% else %>
                       <%= image_tag url_for(file), alt: "Photo from #{review.customer_name}", class: "size-20 rounded-lg object-cover" %>
                     <% end %>

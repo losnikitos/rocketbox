@@ -15,7 +15,9 @@ class LibraryMedia < ApplicationRecord
   has_many :generated_media, through: :source_runs
   # The run that made this media; it has a status and an error.
   has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
-  has_one_attached :file
+  has_one_attached :file do |file|
+    file.variant :thumb, resize_to_limit: [ 720, 720 ], preprocessed: :video?
+  end
   has_one_attached :extracted_logo
 
   # Extracted business-card field => User column.

@@ -1,4 +1,5 @@
 <% content_for(:title, "#{@media.kind.humanize} — #{@media.folder.path} — Rocketbox") %>
+<% content_for(:fit, "true") %>
 <% blob = @media.file.blob if @media.file.attached? %>
 <% sources = @media.recipe_run&.source_media.to_a if blob %>
 <% source = sources.first if sources&.one? && sources.first.file.attached? %>
@@ -6,44 +7,44 @@
   <%= turbo_stream_from run %>
 <% end %>
 
-<div class="mb-4 flex items-center justify-between gap-2">
+<% content_for(:breadcrumbs) do %>
   <%= link_to folder_path(@media.folder), class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
     <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
     <%= @media.folder.path %>
   <% end %>
   <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
-</div>
+<% end %>
 
-<div class="flex flex-col gap-6 md:flex-row">
-  <% if @versions.size > 1 %>
-    <% original, *generations = @versions %>
-    <% groups = { "Original" => [ original ] }.merge(generations.sort_by(&:created_at).reverse.group_by { upload_day_label(it.created_at.to_date) }) %>
-    <nav aria-label="Versions" class="-mt-1 flex shrink-0 gap-4 overflow-x-auto p-1 md:flex-col md:overflow-y-auto">
-      <% groups.each do |label, items| %>
-        <section class="shrink-0">
-          <h3 class="mb-1.5 text-xs text-ink-500"><%= label %></h3>
-          <div class="flex gap-2 md:grid md:grid-cols-2">
-            <% items.each do |media| %>
-              <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
-                    class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-                <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-16 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
+<div class="group flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
+  <div class="flex flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0">
+    <% if @versions.size > 1 %>
+      <% original, *generations = @versions %>
+      <% groups = { "Original" => [ original ] }.merge(generations.sort_by(&:created_at).reverse.group_by { upload_day_label(it.created_at.to_date) }) %>
+      <nav aria-label="Versions" class="-mt-1 flex shrink-0 gap-4 overflow-x-auto p-1 md:mt-0 md:flex-col md:overflow-y-auto md:border-r md:border-ink-900/10 md:p-3">
+        <% groups.each do |label, items| %>
+          <section class="shrink-0">
+            <h3 class="mb-1.5 text-xs text-ink-500"><%= label %></h3>
+            <div class="flex gap-2 md:grid md:grid-cols-2">
+              <% items.each do |media| %>
+                <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
+                      class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                  <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-16 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
+                <% end %>
               <% end %>
-            <% end %>
-          </div>
-        </section>
-      <% end %>
-    </nav>
-  <% end %>
-  <div class="group flex min-w-0 flex-1 flex-col gap-4">
-    <div class="relative flex items-center justify-center rounded-lg bg-white md:h-[70vh]">
+            </div>
+          </section>
+        <% end %>
+      </nav>
+    <% end %>
+    <div class="relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-4 md:flex-1 md:@container-size">
       <% if blob&.image? %>
         <% after = "group-has-[#compare-original:checked]:hidden" if source %>
         <% before = "hidden group-has-[#compare-original:checked]:block" %>
         <% if source %>
           <label class="relative cursor-pointer rounded-lg has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
             <%= check_box_tag "compare", "original", false, id: "compare-original", class: "peer sr-only", aria: { label: "Show original" } %>
-            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain #{after}" %>
-            <%= render "accounts/library/file", media: source, css: "max-h-[70vh] max-w-full rounded-lg object-contain #{before}" %>
+            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain #{after}" %>
+            <%= render "accounts/library/file", media: source, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain #{before}" %>
             <span class="pointer-events-none absolute left-2 top-2 hidden rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white peer-checked:block">Original</span>
           </label>
           <button type="button" popovertarget="hero-media" aria-label="View full size" title="View full size"
@@ -53,7 +54,7 @@
         <% else %>
           <button type="button" popovertarget="hero-media" aria-label="View full size"
                   class="cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
-            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain" %>
           </button>
         <% end %>
         <div id="hero-media" popover class="size-full bg-black/90 p-4">
@@ -63,137 +64,137 @@
           </button>
         </div>
       <% else %>
-        <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] max-w-full rounded-lg object-contain" %>
+        <%= render "accounts/library/file", media: @media, controls: true, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain" %>
       <% end %>
     </div>
-
-    <% if @siblings.size > 1 %>
-      <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.folder.name %> media"
-           class="relative flex gap-2 overflow-x-auto p-1" data-controller="center-current">
-        <% @siblings.each do |media| %>
-          <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
-                class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-            <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 h-20 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
-          <% end %>
-        <% end %>
-      </nav>
-    <% end %>
-
-    <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
   </div>
 
-  <aside id="details" class="flex w-full shrink-0 flex-col gap-6 md:w-96 lg:w-108">
-    <details open class="group">
-      <summary class="flex cursor-pointer items-center gap-2">
-        <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
-        <h2 class="font-semibold text-ink-900">Media</h2>
-      </summary>
-      <div class="mt-3 space-y-6 rounded-2xl border border-ink-900/10 bg-white p-6">
-        <% if Tag.exists? %>
-          <%= form_with url: library_media_path(@media), method: :patch,
-                onchange: "event.target.type == 'checkbox' && this.requestSubmit()",
-                class: "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" do %>
-            <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
+  <% if @siblings.size > 1 %>
+    <nav aria-label="<%= @media.recipe_run&.recipe&.name || @media.folder.name %> media"
+         class="relative flex shrink-0 gap-2 overflow-x-auto p-1 md:border-t md:border-ink-900/10 md:px-4 md:py-3" data-controller="center-current">
+      <% @siblings.each do |media| %>
+        <%= link_to library_item_path(media), aria: { current: ("page" if media == @media) },
+              class: "group shrink-0 rounded-md ring-2 ring-transparent aria-[current=page]:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+          <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 h-20 rounded-md object-cover group-aria-[current=page]:outline-2 group-aria-[current=page]:-outline-offset-2 group-aria-[current=page]:outline-white" %>
+        <% end %>
+      <% end %>
+    </nav>
+  <% end %>
+</div>
+
+<% content_for(:aside) do %>
+  <details open class="group rb-surface-raised p-4">
+    <summary class="flex cursor-pointer items-center gap-2">
+      <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
+      <h2 class="text-sm font-semibold text-ink-900">Media</h2>
+    </summary>
+    <div class="mt-3 space-y-4">
+      <% if Tag.exists? %>
+        <%= form_with url: library_media_path(@media), method: :patch,
+              onchange: "event.target.type == 'checkbox' && this.requestSubmit()",
+              class: "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" do %>
+          <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
+        <% end %>
+      <% end %>
+      <div class="flex flex-wrap gap-2">
+        <% if blob %>
+          <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+            <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+            Download
           <% end %>
         <% end %>
-        <div class="flex flex-wrap gap-2">
-          <% if blob %>
-            <%= link_to rails_blob_path(@media.file, disposition: "attachment"), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
-              <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-              Download
-            <% end %>
-          <% end %>
-          <%= button_to library_media_path(@media), method: :delete,
-                form: { data: { turbo_confirm: "Delete this media? Posts made from it stay." } },
-                class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
-            <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-            Delete
-          <% end %>
-        </div>
+        <%= button_to library_media_path(@media), method: :delete,
+              form: { data: { turbo_confirm: "Delete this media? Posts made from it stay." } },
+              class: "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5" do %>
+          <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          Delete
+        <% end %>
       </div>
-    </details>
+    </div>
+  </details>
 
-    <% if (run = @media.recipe_run) %>
-      <details open class="group">
-        <summary class="flex cursor-pointer items-center gap-2">
-          <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
-          <h2 id="recipe-run-heading" class="font-semibold text-ink-900">Generation</h2>
-          <% unless run.complete? %>
-            <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
-          <% end %>
-          <div class="ml-auto"><%= render "shared/admin_links/recipe_run", recipe_run: run %></div>
-        </summary>
-        <% if run.error.present? || run.recipe || run.prompt.present? %>
-          <div class="mt-3 space-y-4 rounded-2xl border border-ink-900/10 bg-white p-6">
-            <% if run.error.present? %>
-              <p class="text-sm text-signal-red"><%= run.error %></p>
-            <% end %>
-            <% if run.recipe %>
-              <div class="-mx-2"><%= render "accounts/recipes/row", recipe: run.recipe, path: recipe_path(run.recipe), folder: false %></div>
-            <% end %>
-            <% if run.recipe ? run.recipe.ai? : run.prompt.present? %>
-              <%= render "accounts/recipe_runs/options", record: run, rows: [
-                    [ "Recipe", ("Deleted" unless run.recipe) ],
-                    [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]
-                  ] %>
-            <% end %>
-            <% if run.prompt.present? %>
-              <div>
-                <label for="recipe-run-prompt" class="text-sm text-ink-500">Prompt</label>
-                <textarea id="recipe-run-prompt" readonly rows="6"
-                          class="mt-1 block w-full resize-y rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-700"><%= run.prompt %></textarea>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
+  <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
 
-    <% if @media.story_image? %>
-      <details id="apply_recipe" open class="group">
-        <summary class="flex cursor-pointer items-center gap-2">
-          <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
-          <h2 class="font-semibold text-ink-900">Apply recipe</h2>
-        </summary>
-        <div class="mt-3 rounded-2xl border border-ink-900/10 bg-white p-4">
-          <% if (recipes = @media.recipes).empty? %>
-            <p class="text-sm text-ink-600">No recipes take media from <%= @media.folder.path %> yet.</p>
-          <% else %>
-            <ul class="flex flex-col gap-0.5">
-              <% recipes.each do |recipe| %>
-                <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe, media_ids: [ @media.id ]) %></li>
-              <% end %>
-            </ul>
-          <% end %>
-        </div>
-      </details>
-    <% end %>
-
-    <details class="group">
+  <% if (run = @media.recipe_run) %>
+    <details open class="group rb-surface-raised p-4">
       <summary class="flex cursor-pointer items-center gap-2">
         <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
-        <h2 class="font-semibold text-ink-900">Details</h2>
+        <h2 id="recipe-run-heading" class="text-sm font-semibold text-ink-900">Generation</h2>
+        <% unless run.complete? %>
+          <span class="rounded-full bg-ink-900/5 px-2 py-0.5 text-xs font-medium capitalize text-ink-700"><%= run.status %></span>
+        <% end %>
+        <div class="ml-auto"><%= render "shared/admin_links/recipe_run", recipe_run: run %></div>
       </summary>
-      <div class="mt-3 rounded-2xl border border-ink-900/10 bg-white p-6">
-        <dl class="space-y-3 text-sm">
-          <% [
-               [ "Type", @media.kind.humanize ],
-               [ "Source", @media.recipe_run ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
-               [ "Uploaded", l(@media.created_at, format: :long) ],
-               [ "File name", blob&.filename ],
-               [ "Format", blob&.content_type ],
-               [ "Size", blob && number_to_human_size(blob.byte_size) ],
-               [ "Dimensions", blob&.metadata&.values_at("width", "height")&.compact&.join(" × ").presence ],
-               [ "Duration", blob&.metadata&.dig("duration")&.then { |s| "#{s.round(1)} s" } ]
-             ].each do |label, value| %>
-            <% next if value.blank? %>
+      <% if run.error.present? || run.recipe || run.prompt.present? %>
+        <div class="mt-3 space-y-3">
+          <% if run.error.present? %>
+            <p class="text-sm text-signal-red"><%= run.error %></p>
+          <% end %>
+          <% if run.recipe %>
+            <div class="-mx-2"><%= render "accounts/recipes/row", recipe: run.recipe, path: recipe_path(run.recipe), folder: false %></div>
+          <% end %>
+          <% if run.recipe ? run.recipe.ai? : run.prompt.present? %>
+            <%= render "accounts/recipe_runs/options", record: run, rows: [
+                  [ "Recipe", ("Deleted" unless run.recipe) ],
+                  [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]
+                ] %>
+          <% end %>
+          <% if run.prompt.present? %>
             <div>
-              <dt class="text-ink-500"><%= label %></dt>
-              <dd class="mt-0.5 break-all text-ink-900"><%= value %></dd>
+              <label for="recipe-run-prompt" class="text-sm text-ink-500">Prompt</label>
+              <textarea id="recipe-run-prompt" readonly rows="6"
+                        class="mt-1 block w-full resize-y rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-700"><%= run.prompt %></textarea>
             </div>
           <% end %>
-        </dl>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% if @media.story_image? %>
+    <details id="apply_recipe" open class="group rb-surface-raised p-4">
+      <summary class="flex cursor-pointer items-center gap-2">
+        <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
+        <h2 class="text-sm font-semibold text-ink-900">Apply recipe</h2>
+      </summary>
+      <div class="-mx-2 mt-2">
+        <% if (recipes = @media.recipes).empty? %>
+          <p class="p-2 text-sm text-ink-600">No recipes take media from <%= @media.folder.path %> yet.</p>
+        <% else %>
+          <ul class="flex flex-col gap-0.5">
+            <% recipes.each do |recipe| %>
+              <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe, media_ids: [ @media.id ]) %></li>
+            <% end %>
+          </ul>
+        <% end %>
       </div>
     </details>
-  </aside>
-</div>
+  <% end %>
+
+  <details class="group rb-surface-raised p-4">
+    <summary class="flex cursor-pointer items-center gap-2">
+      <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 text-ink-500 transition group-open:rotate-90", "aria-hidden": true } %>
+      <h2 class="text-sm font-semibold text-ink-900">Details</h2>
+    </summary>
+    <div class="mt-3">
+      <dl class="space-y-2 text-sm">
+        <% [
+             [ "Type", @media.kind.humanize ],
+             [ "Source", @media.recipe_run ? "Generated" : @media.telegram_file_id ? "Telegram" : @media.whatsapp_media_id ? "WhatsApp" : "Upload" ],
+             [ "Uploaded", l(@media.created_at, format: :long) ],
+             [ "File name", blob&.filename ],
+             [ "Format", blob&.content_type ],
+             [ "Size", blob && number_to_human_size(blob.byte_size) ],
+             [ "Dimensions", blob&.metadata&.values_at("width", "height")&.compact&.join(" × ").presence ],
+             [ "Duration", blob&.metadata&.dig("duration")&.then { |s| "#{s.round(1)} s" } ]
+           ].each do |label, value| %>
+          <% next if value.blank? %>
+          <div>
+            <dt class="text-ink-500"><%= label %></dt>
+            <dd class="mt-0.5 break-all text-ink-900"><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+  </details>
+<% end %>

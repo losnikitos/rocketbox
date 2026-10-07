@@ -52,7 +52,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     get "/admin/incoming_messages", headers: @ua
     assert_response :success
     assert_select "td.col-media img[src*='pic.jpg']"
-    assert_select "td.col-media video[src*='clip.mp4']"
+    assert_select "td.col-media a[href*='clip.mp4'] img[src*='/representations/']"
   end
 
   test "user page shows incoming and outgoing messages in order" do
