@@ -2,9 +2,7 @@
 <% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
 <% island_title = "scroll-m-24 text-base font-semibold text-ink-900" %>
 <% refresh_url = recipe.persisted? ? recipe_path(recipe) : new_recipe_path %>
-<%= form_with model: recipe, id: "recipe_form", multipart: true, class: "group/recipe @container space-y-6" do |f| %>
-  <% ai_only = "group-has-[[value=scripted]:checked]/recipe:hidden" %>
-  <% scripted_only = "hidden group-has-[[value=scripted]:checked]/recipe:block" %>
+<%= form_with model: recipe, id: "recipe_form", multipart: true, class: "@container space-y-6" do |f| %>
   <% if recipe.errors.any? %>
     <div class="<%= tw_alert_error_classes %>" role="alert">
       <ul class="list-inside list-disc">
@@ -29,6 +27,8 @@
   <% end %>
   <%= render "accounts/recipes/header", recipe:, f:, example: %>
 
+  <%# A type change reloads all three sections, which follow the type. %>
+  <turbo-frame id="recipe_body" target="_top" class="block">
   <div class="grid items-start gap-6 @4xl:grid-cols-3">
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
@@ -53,29 +53,31 @@
           </button>
         <% end %>
 
-        <%= render "accounts/recipes/input_section", title: "Style", icon: "swatch", chip: "border-violet-300 bg-violet-50 text-violet-600", key: :style,
-              enabled: on.(:style, recipe.style_id), blank: "recipe[style_id]", css: ai_only do %>
-          <% if (styles = Style.ordered.pluck(:name, :id)).any? %>
-            <%= f.select :style_id, styles, {}, "aria-label": "Style", class: tw_input_classes %>
-          <% else %>
-            <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
-              No styles yet. <%= link_to "Add some", styles_path, class: "underline hover:text-ink-900" %>
-            </p>
+        <% if recipe.ai? %>
+          <%= render "accounts/recipes/input_section", title: "Style", icon: "swatch", chip: "border-violet-300 bg-violet-50 text-violet-600", key: :style,
+                enabled: on.(:style, recipe.style_id), blank: "recipe[style_id]" do %>
+            <% if (styles = Style.ordered.pluck(:name, :id)).any? %>
+              <%= f.select :style_id, styles, {}, "aria-label": "Style", class: tw_input_classes %>
+            <% else %>
+              <p class="rounded-lg bg-ink-900/5 px-3 py-2 text-sm text-ink-600">
+                No styles yet. <%= link_to "Add some", styles_path, class: "underline hover:text-ink-900" %>
+              </p>
+            <% end %>
           <% end %>
-        <% end %>
 
-        <%= render "accounts/recipes/input_section", title: "Shot", icon: "camera", chip: "border-amber-300 bg-amber-50 text-amber-600", key: :shot,
-              enabled: on.(:shot, recipe.shot_group), blank: "recipe[shot_group]", css: ai_only do %>
-          <%= f.select :shot_group, Shot.groups, {}, "aria-label": "Shot group", onchange: refresh, class: tw_input_classes %>
-          <% if @shots %>
-            <%= render "accounts/recipe_runs/pick", name: :shot_id, label: "Shot", items: @shots,
-                  selected: @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample,
-                  empty: safe_join([ "No #{recipe.shot_group} shots yet. ", link_to("Add some", shots_path(group: recipe.shot_group), class: "underline hover:text-ink-900") ]) %>
+          <%= render "accounts/recipes/input_section", title: "Shot", icon: "camera", chip: "border-amber-300 bg-amber-50 text-amber-600", key: :shot,
+                enabled: on.(:shot, recipe.shot_group), blank: "recipe[shot_group]" do %>
+            <%= f.select :shot_group, Shot.groups, {}, "aria-label": "Shot group", onchange: refresh, class: tw_input_classes %>
+            <% if @shots %>
+              <%= render "accounts/recipe_runs/pick", name: :shot_id, label: "Shot", items: @shots,
+                    selected: @shots.find { it.id.to_s == params[:shot_id] } || @shots.sample,
+                    empty: safe_join([ "No #{recipe.shot_group} shots yet. ", link_to("Add some", shots_path(group: recipe.shot_group), class: "underline hover:text-ink-900") ]) %>
+            <% end %>
           <% end %>
         <% end %>
 
         <% if @reviews %>
-          <%= render "accounts/recipes/input_section", title: "Review", icon: "star", chip: "border-yellow-300 bg-yellow-50 text-yellow-600", toggle: false, css: scripted_only do %>
+          <%= render "accounts/recipes/input_section", title: "Review", icon: "star", chip: "border-yellow-300 bg-yellow-50 text-yellow-600", toggle: false do %>
             <%= render "accounts/recipe_runs/pick", name: :review_id, label: "Review", items: @reviews, option: "accounts/recipe_runs/review_option",
                   selected: @reviews.find { it.id.to_s == params[:review_id] } || @reviews.sample,
                   empty: safe_join([ "No 5-star reviews with text yet. ", link_to("See reviews", reviews_path, class: "underline hover:text-ink-900") ]) %>
@@ -83,14 +85,14 @@
         <% end %>
 
         <% if (layer = recipe.layer) %>
-          <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", toggle: false, css: scripted_only do %>
+          <%= render "accounts/recipes/input_section", title: "Layer", icon: "square-3-stack-3d", chip: "border-rose-300 bg-rose-50 text-rose-600", toggle: false do %>
             <div class="flex items-center justify-between gap-3 text-sm text-ink-900">
               <%= layer.name %>
               <%= link_to "Preview", layer_path(layer), class: "shrink-0 text-ink-600 underline hover:text-ink-900" %>
             </div>
             <% if recipe.reel? %>
-              <%# One row per step, plus a blank one to add the next up to the script's limit; blank rows are dropped on save. %>
-              <% max = recipe.script.max_steps %>
+              <%# One row per step, plus a blank one to add the next up to the type's limit; blank rows are dropped on save. %>
+              <% max = recipe.type.max_steps %>
               <div class="space-y-2">
                 <% (recipe.layer_steps + [ {} ]).first(max || recipe.layer_steps.size + 1).each_with_index do |step, i| %>
                   <div class="flex items-center gap-2">
@@ -112,53 +114,36 @@
     <section class="space-y-2">
       <h2 id="processing" class="<%= island_title %>"><a href="#processing" class="hover:underline">Processing</a></h2>
       <div class="<%= island %>">
-        <fieldset>
-          <legend class="<%= tw_label_classes %>">Type</legend>
-          <div class="<%= tw_segments_classes %>">
-            <% Recipe::KINDS.each do |kind, (label, icon)| %>
-              <label class="<%= tw_segment_classes %> flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ink-900 before:inset-y-2">
-                <%= f.radio_button :kind, kind, class: "sr-only", onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
-                <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-        <div class="group/effect <%= scripted_only %> space-y-2">
-          <%= f.label :effect, class: tw_label_classes %>
-          <%# A pick refreshes the inputs, which follow its layer. %>
-          <% overlays, reels = Effect.all.partition(&:overlay?).map { |effects| effects.map { [ it.label, it.slug ] } } %>
-          <%= f.select :effect, { "Overlays" => overlays, "Reels" => reels }, {},
-                onchange: "this.form.requestSubmit(this.form.elements.refresh_inputs)", class: tw_input_classes %>
-          <% shown_when = { "fully-booked" => "group-has-[[value=fully-booked]:checked]/effect:block", "daily" => "group-has-[[value=daily]:checked]/effect:block",
-                           "review" => "group-has-[[value=review]:checked]/effect:block", "calendar" => "group-has-[[value=calendar]:checked]/effect:block",
-                           "steps" => "group-has-[[value=steps]:checked]/effect:block", "doppler" => "group-has-[[value=doppler]:checked]/effect:block",
-                           "welcome" => "group-has-[[value=welcome]:checked]/effect:block",
-                           "black-eyed-peas" => "group-has-[[value=black-eyed-peas]:checked]/effect:block",
-                           "azzurro" => "group-has-[[value=azzurro]:checked]/effect:block" } %>
-          <% Effect.all.each do |effect| %>
-            <div class="hidden space-y-3 <%= shown_when[effect.slug] %>">
-              <p class="text-sm text-ink-600"><%= effect.description %></p>
-              <% if (layer = effect.layer) %>
-                <div class="relative w-24 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
-                     style="aspect-ratio: <%= layer.size.join(" / ") %>">
-                  <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
-                  <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
-                </div>
-              <% end %>
-              <% if effect.track %>
-                <%= tag.audio controls: true, preload: "none", src: track_recipes_path(effect.slug), "aria-label": "Track", class: "w-full" %>
-              <% end %>
+        <% type = recipe.type %>
+        <div class="space-y-3">
+          <%= f.label :kind, "Type", class: tw_label_classes %>
+          <%= f.select :kind, RecipeType.all.group_by(&:group).to_h { |group, types| [ group.label, types.map { [ it.label, it.slug ] } ] }, {},
+                onchange: "this.form.requestSubmit(this.form.elements.refresh_type)", class: tw_input_classes %>
+          <% if type&.description %>
+            <p class="text-sm text-ink-600"><%= type.description %></p>
+          <% end %>
+          <% if (layer = type&.layer) %>
+            <div class="relative w-24 overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
+                 style="aspect-ratio: <%= layer.size.join(" / ") %>">
+              <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+              <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
             </div>
           <% end %>
+          <% if type.try(:original) %>
+            <%= tag.video controls: true, preload: "metadata", src: original_recipes_path(type.slug), "aria-label": "Original reel",
+                  class: "aspect-9/16 w-40 rounded-lg bg-ink-900" %>
+          <% end %>
+          <% if type.try(:source_url) %>
+            <%= link_to "Original on Instagram", type.source_url, target: "_blank", rel: "noopener", class: "block text-sm text-ink-600 underline hover:text-ink-900" %>
+          <% end %>
         </div>
-        <div class="<%= ai_only %>">
-          <%= f.label :body, "Prompt", class: tw_label_classes %>
-          <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
-        </div>
-        <div class="<%= ai_only %>">
+        <% if recipe.ai? %>
+          <div>
+            <%= f.label :body, "Prompt", class: tw_label_classes %>
+            <%= f.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
+          </div>
           <%= render "shared/generation_options", record: recipe, scope: "recipe", refresh_url: %>
-        </div>
+        <% end %>
       </div>
     </section>
 
@@ -209,6 +194,8 @@
       </div>
     </section>
   </div>
+  <%= tag.button name: "refresh_type", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "recipe_body" } %>
+  </turbo-frame>
 
   <% if recipe.persisted? %>
     <div class="flex justify-end">

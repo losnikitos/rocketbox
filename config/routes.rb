@@ -68,7 +68,7 @@ Rails.application.routes.draw do
       resources :recipes, except: :edit do
         get "folders/:folder", action: :index, on: :collection, as: :folder
         patch "folders/:folder", action: :rename_folder, on: :collection
-        get "tracks/:effect", action: :track, on: :collection, as: :track
+        get "originals/:kind", action: :original, on: :collection, as: :original
       end
       resources :styles, except: :show
       resources :links, only: %i[index create show destroy] do

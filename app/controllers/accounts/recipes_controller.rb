@@ -70,12 +70,12 @@ module Accounts
       end
     end
 
-    # A reel effect's track, previewed on the form.
-    def track
-      track = Effect.find(params[:effect])&.track
-      return head :not_found unless track
+    # The reel a scripted type is cut from, previewed on the form.
+    def original
+      original = RecipeType.find(params[:kind]).try(:original)
+      return head :not_found unless original
 
-      send_file "#{track}.wav", type: "audio/wav", disposition: "inline"
+      send_file original, type: "video/mp4", disposition: "inline"
     end
 
     private
@@ -97,7 +97,7 @@ module Accounts
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :folder_name, :kind, :effect, :body, :shot_group, :style_id, :output_folder_id, :example,
+        params.expect(recipe: [ :name, :folder_name, :kind, :body, :shot_group, :style_id, :output_folder_id, :example,
           inputs: [ %i[folder_id] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 

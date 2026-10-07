@@ -93,7 +93,7 @@
             <% if run.recipe %>
               <div class="-mx-2"><%= render "accounts/recipes/row", recipe: run.recipe, path: recipe_path(run.recipe), folder: false %></div>
             <% end %>
-            <% if (run.recipe || run.prompt.present?) && !run.recipe&.scripted? %>
+            <% if run.recipe ? run.recipe.ai? : run.prompt.present? %>
               <%= render "accounts/recipe_runs/options", record: run, rows: [
                     [ "Recipe", ("Deleted" unless run.recipe) ],
                     [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]

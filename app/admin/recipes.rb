@@ -22,8 +22,7 @@ ActiveAdmin.register Recipe do
       row :name
       row :slug
       row(:edit) { link_to "Open in app", recipe_path(it) }
-      row :kind
-      row :effect
+      row :type_label
       row :recipe_folder
       row(:inputs) { safe_join(it.slots.map { |folder| folder ? auto_link(folder) : "missing" }, ", ") }
       row :output_folder

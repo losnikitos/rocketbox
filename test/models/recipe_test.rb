@@ -26,7 +26,7 @@ class RecipeTest < ActiveSupport::TestCase
 
     assert_not Recipe.new(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
     assert Recipe.new(name: "x", body: "x", inputs: []).valid?, "text-to-image"
-    assert_not Recipe.new(name: "x", kind: "scripted", effect: "steps", inputs: []).valid?
+    assert_not Recipe.new(name: "x", kind: "steps", inputs: []).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
     assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
     assert Recipe.new(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
@@ -98,7 +98,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a steps recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
-    recipe = Recipe.create!(name: "Reel", kind: "scripted", effect: "steps", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    recipe = Recipe.create!(name: "Reel", kind: "steps", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
     assert_nil recipe.shot_group
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     run = recipe.run!(media:)
@@ -112,9 +112,9 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 2.0, duration, 0.1
   end
 
-  { "doppler" => 9.6, "welcome" => 8.1, "black-eyed-peas" => 7.0, "azzurro" => 6.4 }.each do |effect, length|
-    test "a #{effect} recipe lays its track under its cuts" do
-      recipe = Recipe.create!(name: effect, kind: "scripted", effect:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+  { "doppler" => 9.6, "welcome" => 8.1, "black_eyed_peas" => 7.0, "azzurro" => 6.4 }.each do |kind, length|
+    test "a #{kind} recipe lays its track under its cuts" do
+      recipe = Recipe.create!(name: kind, kind:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
       media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
       run = recipe.run!(media:)
 
@@ -129,8 +129,8 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
-  test "a reel overlays its first cuts with its effect's layer, each filled from its own step" do
-    recipe = Recipe.create!(name: "Black eyed peas", kind: "scripted", effect: "black-eyed-peas",
+  test "a reel overlays its first cuts with its type's layer, each filled from its own step" do
+    recipe = Recipe.create!(name: "Black eyed peas", kind: "black_eyed_peas",
       inputs: [ input(:photobank_interior), input(:photobank_customer) ],
       layer_steps: [ { "line2" => "coffee" }, { "line1" => "", "line2" => "" }, { "line1" => "Our", "line2" => "tools" }, { "line2" => "" } ])
     assert_equal [ { "line2" => "coffee" }, { "line1" => "Our", "line2" => "tools" } ], recipe.layer_steps
@@ -148,7 +148,11 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "welcome reveals its one step's lines one per cut over the first four cuts" do
     steps = [ { "line1" => "Hi", "lines" => "4" }, { "line1" => "ignored" } ]
-    assert_equal [ *(1..4).map { { "line1" => "Hi", "lines" => it.to_s } }, nil ], (0..4).map { Effect.find("welcome").layer_values(steps, it) }
+    assert_equal [ *(1..4).map { { "line1" => "Hi", "lines" => it.to_s } }, nil ], (0..4).map { Reels::Welcome.new(RecipeRun.new(recipe: Recipe.new(layer_steps: steps))).layer_values(it) }
+  end
+
+  test "every scripted type with a track has its cut ends" do
+    RecipeType.all.select { it.reel? && it.track }.each { assert it.dir.join("beats.csv").exist?, it.slug }
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
@@ -187,24 +191,24 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "switching type clears the inputs the new type doesn't take" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @recipe.update!(kind: "scripted", effect: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    @recipe.update!(kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
     assert_equal [ nil, nil, true, "review" ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer.slug ]
 
     @recipe.update!(kind: "generate_image", style:, shot_group: "Daily")
-    assert_equal [ style, "Daily", nil, false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.effect, @recipe.takes_review?, @recipe.layer ]
+    assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer ]
   end
 
-  test "a scripted recipe needs an effect, which fixes its layer; an overlay takes one input" do
-    assert_equal [ "fully-booked-color", "Scripted · Fully booked" ], Recipe.new(kind: "scripted", effect: "fully-booked").then { [ it.layer.slug, it.type_label ] }
-    assert_nil Recipe.new(kind: "scripted", effect: "doppler").layer
-    assert Recipe.new(name: "x", kind: "scripted", effect: "daily", inputs: [ input(:ready) ]).valid?
+  test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do
+    assert_equal [ "fully-booked-color", "Overlay · Fully booked" ], Recipe.new(kind: "fully_booked").then { [ it.layer.slug, it.type_label ] }
+    assert_nil Recipe.new(kind: "doppler").layer
+    assert Recipe.new(name: "x", kind: "daily", inputs: [ input(:ready) ]).valid?
     assert_not Recipe.new(name: "x", kind: "scripted", inputs: [ input(:ready) ]).valid?
-    assert_not Recipe.new(name: "x", kind: "scripted", effect: "nope", inputs: [ input(:ready) ]).valid?
-    assert_not Recipe.new(name: "x", kind: "scripted", effect: "daily", inputs: []).valid?
-    two = Recipe.new(name: "x", kind: "scripted", effect: "daily", inputs: [ input(:ready), input(:ready) ])
+    assert_not Recipe.new(name: "x", kind: "nope", inputs: [ input(:ready) ]).valid?
+    assert_not Recipe.new(name: "x", kind: "daily", inputs: []).valid?
+    two = Recipe.new(name: "x", kind: "daily", inputs: [ input(:ready), input(:ready) ])
     assert_not two.valid?
     assert_includes two.errors.full_messages, "Inputs must be a single photo or video to make a story"
-    assert Recipe.new(name: "x", kind: "scripted", effect: "welcome", inputs: [ input(:ready), input(:ready) ]).valid?
+    assert Recipe.new(name: "x", kind: "welcome", inputs: [ input(:ready), input(:ready) ]).valid?
   end
 
   test "run! records a failure" do
@@ -233,7 +237,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "an overlay renders its layer for today over the photo into its output folder" do
-    feature = Recipe.create!(name: "Fully booked", kind: "scripted", effect: "fully-booked", inputs: [ input(:ready) ],
+    feature = Recipe.create!(name: "Fully booked", kind: "fully_booked", inputs: [ input(:ready) ],
       output_folder: folders(:photobank_logo))
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
@@ -254,7 +258,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "an overlay over a video lays its transparent layer over the video, as a video" do
-    feature = Recipe.create!(name: "Daily", kind: "scripted", effect: "daily", inputs: [ input(:ready) ])
+    feature = Recipe.create!(name: "Daily", kind: "daily", inputs: [ input(:ready) ])
     clip = Tempfile.new([ "clip", ".mp4" ])
     Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-pix_fmt", "yuv420p", clip.path)
     video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user,
@@ -277,7 +281,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a review recipe needs a review and renders it on its layer" do
-    feature = Recipe.create!(name: "Reviews", kind: "scripted", effect: "review", inputs: [ input(:ready) ])
+    feature = Recipe.create!(name: "Reviews", kind: "review", inputs: [ input(:ready) ])
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     review = @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.",
