@@ -12,11 +12,17 @@ export default class extends Controller {
     if (event.target.type === "radio") this.popoverTarget.hidePopover()
   }
 
-  // Checks `max` random options, unchecked ones first.
-  random() {
+  // Checks `max` random options, unchecked ones first; a `kind` param keeps to options of that `data-kind`.
+  random({ params: { kind } = {} }) {
     const shuffle = (options) => options.map((o) => [Math.random(), o]).sort(([a], [b]) => a - b).map(([, o]) => o)
-    const picks = [...shuffle(this.optionTargets.filter((o) => !o.checked)), ...shuffle(this.checked)].slice(0, this.maxValue)
+    const pool = this.optionTargets.filter((o) => !kind || o.dataset.kind === kind)
+    const picks = [...shuffle(pool.filter((o) => !o.checked)), ...shuffle(pool.filter((o) => o.checked))].slice(0, this.maxValue)
     this.optionTargets.forEach((option) => { option.checked = picks.includes(option) })
+    this.show()
+  }
+
+  none() {
+    this.optionTargets.forEach((option) => { option.checked = false })
     this.show()
   }
 
