@@ -202,20 +202,10 @@
               <%= link_to "View all", folder_path(recipe.output_folder, recipe: recipe.id), class: "text-sm text-ink-600 underline hover:text-ink-900" %>
             <% end %>
           </div>
-          <% tile = "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
-          <% if @made.any? %>
-            <ul class="grid grid-cols-3 gap-3">
-              <% @made.limit(24).each do |media| %>
-                <li class="min-w-0">
-                  <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" }, class: tile do %>
-                    <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover" %>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
-          <% else %>
-            <p class="text-sm text-ink-500">Nothing made yet.</p>
-          <% end %>
+          <ul id="recipe_made" class="peer grid grid-cols-3 gap-3">
+            <%= render partial: "accounts/recipes/made", collection: @made.limit(24), as: :media %>
+          </ul>
+          <p class="text-sm text-ink-500 peer-has-[li]:hidden">Nothing made yet.</p>
         <% else %>
           <%= f.button "Save", class: "rb-btn-primary w-full px-3.5 py-2" %>
         <% end %>

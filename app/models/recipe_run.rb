@@ -29,6 +29,8 @@ class RecipeRun < ApplicationRecord
 
   after_update_commit -> {
     broadcast_update_to [ generated_media.user, :generations ], target: "generations", partial: "layouts/app/generations", locals: { user: generated_media.user }
+    broadcast_replace_to [ generated_media.user, :generations ], target: ActionView::RecordIdentifier.dom_id(generated_media, :made),
+      partial: "accounts/recipes/made", locals: { media: generated_media }
   }, if: :saved_change_to_status?
   after_update_commit :broadcast_refresh, if: :saved_change_to_status?
 

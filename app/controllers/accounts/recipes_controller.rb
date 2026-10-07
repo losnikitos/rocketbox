@@ -49,7 +49,10 @@ module Accounts
       set_picks
       media = @slots.each_index.map { |index| Current.account.library_media.find_by(id: params.dig(:media_ids, index.to_s)) }.compact
       run = @recipe.run!(media:, shot: @shots&.find_by(id: params[:shot_id]), review: @reviews&.find_by(id: params[:review_id]), user: Current.account)
-      redirect_to helpers.library_item_path(run.generated_media)
+      render turbo_stream: [
+        turbo_stream.prepend("recipe_made", partial: "accounts/recipes/made", locals: { media: run.generated_media }),
+        turbo_stream.update("generations", partial: "layouts/app/generations", locals: { user: Current.account })
+      ]
     rescue ActiveRecord::RecordInvalid => e
       e.record.errors.full_messages.each { @recipe.errors.add(:base, it) } unless e.record == @recipe
       set_picks
