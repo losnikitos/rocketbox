@@ -145,6 +145,11 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to recipes_url
   end
 
+  test "delete from the media's own page goes to its folder" do
+    delete library_media_url(@media), headers: { "HTTP_REFERER" => library_item_url(@media, account: @admin.id) }
+    assert_redirected_to library_folders_url("inbox", account: @admin.id)
+  end
+
   test "converts HEIC uploads to JPEG" do
     user = sign_in_as(users(:lazaro_nixon))
 
