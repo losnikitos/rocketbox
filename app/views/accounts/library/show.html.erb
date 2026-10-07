@@ -1,8 +1,6 @@
 <% content_for(:title, "#{@media.kind.humanize} — #{@media.folder.path} — Rocketbox") %>
 <% content_for(:fit, "true") %>
 <% blob = @media.file.blob if @media.file.attached? %>
-<% sources = @media.recipe_run&.source_media.to_a if blob %>
-<% source = sources.first if sources&.one? && sources.first.file.attached? %>
 <% [ @media, *@versions, *@siblings ].filter_map(&:recipe_run).select(&:running?).uniq.each do |run| %>
   <%= turbo_stream_from run %>
 <% end %>
@@ -15,7 +13,7 @@
   <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
 <% end %>
 
-<div class="group flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
+<div class="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
   <div class="flex flex-col gap-6 md:min-h-0 md:flex-1 md:flex-row md:gap-0">
     <% if @versions.size > 1 %>
       <% original, *generations = @versions %>
@@ -36,31 +34,15 @@
         <% end %>
       </nav>
     <% end %>
-    <div class="relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-4 md:flex-1 md:@container-size">
+    <div class="relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-2 md:flex-1 md:@container-size">
       <% if blob&.image? %>
-        <% after = "group-has-[#compare-original:checked]:hidden" if source %>
-        <% before = "hidden group-has-[#compare-original:checked]:block" %>
-        <% if source %>
-          <label class="relative cursor-pointer rounded-lg has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-            <%= check_box_tag "compare", "original", false, id: "compare-original", class: "peer sr-only", aria: { label: "Show original" } %>
-            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain #{after}" %>
-            <%= render "accounts/library/file", media: source, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain #{before}" %>
-            <span class="pointer-events-none absolute left-2 top-2 hidden rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white peer-checked:block">Original</span>
-          </label>
-          <button type="button" popovertarget="hero-media" aria-label="View full size" title="View full size"
-                  class="absolute right-2 top-2 cursor-pointer rounded-full bg-white/90 p-2 text-ink-600 shadow-sm transition hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket">
-            <%= heroicon "arrows-pointing-out", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-          </button>
-        <% else %>
-          <button type="button" popovertarget="hero-media" aria-label="View full size"
-                  class="cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
-            <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain" %>
-          </button>
-        <% end %>
+        <button type="button" popovertarget="hero-media" aria-label="View full size"
+                class="cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
+          <%= render "accounts/library/file", media: @media, css: "max-h-[70vh] md:max-h-[100cqh] max-w-full rounded-lg object-contain" %>
+        </button>
         <div id="hero-media" popover class="size-full bg-black/90 p-4">
           <button type="button" popovertarget="hero-media" popovertargetaction="hide" aria-label="Close" class="flex size-full cursor-zoom-out items-center justify-center">
-            <%= render "accounts/library/file", media: @media, css: "max-h-full max-w-full #{after}" %>
-            <%= render "accounts/library/file", media: source, css: "max-h-full max-w-full #{before}" if source %>
+            <%= render "accounts/library/file", media: @media, css: "max-h-full max-w-full" %>
           </button>
         </div>
       <% else %>
@@ -91,7 +73,7 @@
     <div class="mt-3 space-y-4">
       <% if Tag.exists? %>
         <%= form_with url: library_media_path(@media), method: :patch,
-              onchange: "event.target.type == 'checkbox' && this.requestSubmit()",
+              html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" },
               class: "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" do %>
           <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
         <% end %>

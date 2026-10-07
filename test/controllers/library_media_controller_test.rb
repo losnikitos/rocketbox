@@ -65,10 +65,11 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
   test "sets and clears tags, shown as #name pills on the media page" do
     patch library_media_url(@media), params: { library_media: { tag_ids: [ "", tags(:before).id ] } }
-    assert_equal "Tags updated.", flash[:notice]
+    assert_response :no_content
     assert_equal [ tags(:before) ], @media.reload.tags.to_a
 
     get library_item_url(@media, account: @admin.id)
+    assert_select "aside form[onchange*=requestSubmit] button[aria-label=Tags]"
     assert_select "aside button[aria-label=Tags] [data-pick-target=preview] > span > span", text: "before" do
       assert_select "svg.text-orange-500"
     end

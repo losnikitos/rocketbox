@@ -121,6 +121,9 @@
                 <% generated = media.generated_media.select { it.file.attached? }.sort_by(&:created_at).reverse %>
                 <span class="relative block">
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover", play: true %>
+                  <% if media.tags.any? %>
+                    <span class="absolute top-1.5 left-1.5 right-10 flex flex-wrap gap-1"><%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %></span>
+                  <% end %>
                   <% if generated.any? %>
                     <span class="absolute inset-x-1.5 bottom-1.5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-hidden="true">
                       <% generated.first(5).each do |version| %>
@@ -132,9 +135,6 @@
                   <% end %>
                 </span>
                 <span class="<%= name_css %>"><span class="truncate"><%= name %></span></span>
-                <% if media.tags.any? %>
-                  <span class="mt-1 flex flex-wrap justify-center gap-1"><%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %></span>
-                <% end %>
               <% end %>
               <div class="<%= tile_menu_css %>"><%= render "shared/admin_links/library_media", library_media: media, links: { move: true }, move_targets: %></div>
             <% end %>

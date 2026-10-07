@@ -18,7 +18,9 @@ class LibraryMediaController < ApplicationController
   def update
     media = Current.account.library_media.find(params[:id])
     if media.update(params.expect(library_media: [ :folder_id, tag_ids: [] ]))
-      redirect_back_or_to helpers.library_item_path(media), notice: media.saved_change_to_folder_id? ? "Moved to #{media.folder.path}." : "Tags updated."
+      return head :no_content unless media.saved_change_to_folder_id?
+
+      redirect_back_or_to helpers.library_item_path(media), notice: "Moved to #{media.folder.path}."
     else
       redirect_back_or_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
