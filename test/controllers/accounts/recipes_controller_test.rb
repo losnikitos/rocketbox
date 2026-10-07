@@ -189,7 +189,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
       assert_equal [ "Make it snow.", "Make it snow." ], [ @recipe.reload.body, run.prompt ]
       assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, @recipe.options)
-      assert_equal({ model: "grok-imagine-video", aspect_ratio: "9:16", resolution: "480p", duration: 5, provider: :xai }, run.ai_options)
+      assert_equal({ model: "grok-imagine-video", aspect_ratio: "9:16", resolution: "480p", duration: 5, generate_audio: false, provider: :xai }, run.ai_options)
       assert_equal "running", run.status
 
       get recipe_url(@recipe, account: @admin.id)

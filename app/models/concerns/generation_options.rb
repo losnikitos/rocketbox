@@ -90,6 +90,8 @@ module GenerationOptions
       opts[:size] = OPENAI_SIZES.dig(opts.delete(:aspect_ratio), opts.delete(:resolution))
       opts[:output_format] = "jpeg"
     end
+    # Gemini's Veo rejects generateAudio, so only xAI can be asked for a silent video.
+    opts[:generate_audio] = false if video? && provider == "xai"
     opts = gemini_options(opts) if provider == "gemini"
     opts.compact.merge(provider: provider.to_sym)
   end
