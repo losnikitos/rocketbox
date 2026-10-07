@@ -4,7 +4,7 @@ class LibraryMediaController < ApplicationController
   def create
     files = Array(params[:files]).select { |f| f.respond_to?(:content_type) }
     source = Current.account.library_media.find(params[:source_id]) if params[:source_id].present?
-    folder = source&.folder || Folder.find_by(id: params[:folder_id]) || Folder.inbox
+    folder = Folder.find_by(id: params[:folder_id]) || Folder.inbox
     uploaded = files.filter_map { |file| store_upload!(file, folder, source) }
     back = helpers.folder_path(folder)
 

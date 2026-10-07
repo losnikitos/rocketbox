@@ -29,7 +29,7 @@
 
   <%# A type change reloads all three sections, which follow the type. %>
   <turbo-frame id="recipe_body" target="_top" class="block">
-  <div class="grid items-start gap-6 @4xl:grid-cols-3">
+  <div class="grid grid-cols-1 items-start gap-6 @xl:grid-cols-2 @xl:grid-rows-[auto_1fr] @4xl:grid-cols-3 @4xl:grid-rows-none">
     <section class="space-y-2">
       <h2 id="input" class="<%= island_title %>"><a href="#input" class="hover:underline">Input</a></h2>
       <%# A folder, toggle or group change reloads just this frame through the hidden refresh button. %>
@@ -110,7 +110,7 @@
       </turbo-frame>
     </section>
 
-    <section class="space-y-2">
+    <section class="space-y-2 @xl:row-span-2 @4xl:row-span-1">
       <h2 id="processing" class="<%= island_title %>"><a href="#processing" class="hover:underline">Processing</a></h2>
       <div class="<%= island %>">
         <% type = recipe.type %>
