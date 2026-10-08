@@ -147,16 +147,12 @@
                   data: { action: "input->workflow#filter" }, class: search %>
           </label>
           <div class="<%= tiles %>">
-            <% Transformation.order(updated_at: :desc).each do |transformation| %>
-              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_id]", value: transformation.id, draggable: "true",
-                    title: transformation.body.presence || transformation.name, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                <%= image_tag transformation.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
-                <span class="line-clamp-2"><%= transformation.name %></span>
+            <% Transformation::Type.all.each do |type| %>
+              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_attributes][kind]", value: type.slug, draggable: "true",
+                    title: type.description || type.label, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                <%= image_tag type.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
+                <span class="line-clamp-2"><%= type.label %></span>
               <% end %>
-            <% end %>
-            <%= render layout: "accounts/transformations/new_menu", locals: { id: "palette-new-transformation-menu", trigger_class: "#{tile} cursor-pointer border-dashed text-ink-600" } do %>
-              <%= heroicon "plus", options: { class: "size-7", "aria-hidden": true } %>
-              New transformation
             <% end %>
           </div>
         </div>

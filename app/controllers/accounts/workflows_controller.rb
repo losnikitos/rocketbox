@@ -65,7 +65,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :transformation_id, :tag_id, :x, :y, :_destroy ] ],
+        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :tag_id, :x, :y, :_destroy, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
       end
 

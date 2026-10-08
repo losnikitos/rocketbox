@@ -8,7 +8,7 @@
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
 # pick (the review type).
-# Shared: many recipes can point at one, so editing it changes them all.
+# A recipe's is shared by the recipes pointing at it, so editing it changes them all; a workflow step owns its own.
 class Transformation < ApplicationRecord
   include GenerationOptions
 
@@ -35,7 +35,8 @@ class Transformation < ApplicationRecord
   end
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
-  validates :body, presence: true, if: :ai?
+  # A workflow step's is made blank from its type; its runs need a prompt (see TransformationRun).
+  validates :body, presence: true, if: :ai?, on: :update
   # The type is picked once, on create.
   validate { errors.add(:kind, "can't be changed") if persisted? && kind_changed? }
   # A run of unsaved edits: its job reloads the transformation, so it would run the saved layer steps.

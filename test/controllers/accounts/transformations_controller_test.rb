@@ -22,7 +22,6 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     post transformations_url, params: { transformation: { name: "", kind: "generate_image", body: "" } }
     assert_response :unprocessable_entity
     assert_select "li", text: "Name can't be blank"
-    assert_select "li", text: "Body can't be blank"
 
     post transformations_url, params: { transformation: { name: "Collage", kind: "generate_image", body: "Collage" } }
     transformation = Transformation.last
@@ -43,6 +42,9 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
 
     patch transformation_url(transformation, account: admin.id), params: { transformation: { name: "Team collage", body: "Team collage" } }
     assert_equal [ "Team collage", "Team collage" ], transformation.reload.then { [ it.name, it.body ] }
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { body: "" } }
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Body can't be blank"
     patch transformation_url(transformation, account: admin.id), params: { transformation: { kind: "generate_video" } }
     assert_response :unprocessable_entity
     assert_select "li", text: "Kind can't be changed"

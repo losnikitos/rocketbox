@@ -83,6 +83,7 @@ class TransformationRun < ApplicationRecord
         media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) } && (recipe.nil? || recipe.fills_inputs?(media))
       errors.add(:base, "Pick the right number of media for every input.") unless fits
       errors.add(:base, "Pick a shot from the shot group.") unless shot&.group == transformation.shot_group
+      errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
       errors.add(:base, "Pick a review.") unless review.present? == transformation.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end
 end

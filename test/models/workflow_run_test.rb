@@ -31,4 +31,18 @@ class WorkflowRunTest < ActiveSupport::TestCase
     end
     assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
   end
+
+  test "a step dropped blank from an AI type doesn't start until it has a prompt" do
+    user = users(:lazaro_nixon)
+    user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Blank")
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation_attributes: { kind: "generate_image" })
+    workflow.edges.create!(from: folder, to: step)
+    run = workflow.draft_run
+
+    run.start!(folder, user)
+    assert_equal "#{Transformation::GenerateImage.label}: Add a prompt.", run.reload.error
+    assert_empty run.step_runs
+  end
 end

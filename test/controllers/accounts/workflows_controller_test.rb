@@ -21,14 +21,18 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id)
     assert_select "button[form=workflow_add][name=?][value=?]", "workflow[nodes_attributes][0][folder_id]", folders(:ready).id.to_s
-    assert_select "button[form=workflow_add][name=?][value=?]", "workflow[nodes_attributes][0][transformation_id]", transformations(:cinematic).id.to_s
+    assert_select "button[form=workflow_add][name=?][value=smart_crop]", "workflow[nodes_attributes][0][transformation_attributes][kind]", text: "Smart crop"
 
     add = ->(attributes) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => attributes } } } }
     add.(folder_id: folders(:interior).id, x: 60, y: 80)
-    add.(transformation_id: transformations(:cinematic).id, x: 300, y: 80)
+    assert_difference -> { Transformation.count } do
+      add.(transformation_attributes: { kind: "generate_video" }, x: 300, y: 80)
+    end
     add.(folder_id: folders(:ready).id, x: 540, y: 80)
     input, step, output = workflow.nodes.reload.to_a
     assert_equal [ false, true, false ], [ input, step, output ].map(&:step?)
+    assert_not_equal transformations(:cinematic), step.transformation
+    assert_equal [ "generate_video", Transformation::GenerateVideo.label ], step.transformation.then { [ it.kind, it.name ] }
 
     connect = ->(from, to) { patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { from_id: from.id, to_id: to.id } } } } }
     connect.(input, step)
@@ -51,7 +55,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end
-    assert_select "turbo-frame#inspector turbo-frame#transformation[src^=?]", transformation_path(transformations(:cinematic))
+    assert_select "turbo-frame#inspector turbo-frame#transformation[src^=?]", transformation_path(step.transformation)
 
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
     get workflow_url(workflow, account: admin.id, node: input.id)
@@ -64,8 +68,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector ul[aria-label=Media] a", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] a[href^=?]", library_item_path(tagged)
 
-    get transformation_url(transformations(:cinematic), account: admin.id), headers: { "Turbo-Frame" => "transformation" }
+    get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
+    assert_select "nav[aria-label=Breadcrumb]", 0
+    assert_select "a[data-turbo-method=delete]", 0
 
     move = ->(edge, from, to) { patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge.id, from_id: from.id, to_id: to.id } } } } }
     move.(edge_in, input, output)
@@ -83,9 +89,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ edge_in ], workflow.edges.reload.to_a
 
     assert_not folders(:interior).destroy
-    assert_not transformations(:cinematic).destroy
+    assert_not step.transformation.destroy
 
-    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, _destroy: 1 } } } }
+    assert_difference -> { Transformation.count }, -1 do
+      patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, _destroy: 1 } } } }
+    end
     assert_equal [ input, output ], workflow.nodes.reload.to_a
     assert_equal 0, workflow.edges.count
 
