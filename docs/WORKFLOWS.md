@@ -16,7 +16,7 @@ Where we stand:
 
 ## Graph
 
-- Each step owns its transformation (never a recipe's), made blank from the type dropped from the palette and deleted with the step.
+- Each step owns its transformation (never a recipe's), made blank from the type added from + Add and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
 - A folder node can hold only its media with a tag, and gives its newest N (Newest, 1 by default).
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
@@ -24,27 +24,27 @@ Where we stand:
 
 ## Editing
 
-- Drag folders and transformation types in from the bottom palette (each tab has its own search), and a selected folder's media from the inspector.
+- Drag (or click) folders and transformation types in from the + Add popover over the canvas, its tabs Folders (with a search) and the types' groups: Generation, Transform, Overlay and Reels; and a selected folder's media from the inspector.
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
 - A selected folder's inspector sets how many of its newest media it gives (Newest).
-- Click a node to open the inspector on the right (remove, and a step's transformation settings), or a connection to remove it or drag its ends to other nodes.
+- Click a node to open the inspector on the right: first what it did in the selected run (see Running), then its settings (remove, a folder's tag filter and Newest, a step's transformation settings). Click a connection to remove it or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
 ## Running
 
-Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
-- A play button on a start folder or media replays the selected run (the latest from Edit), keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
+There's no separate run mode: the canvas always shows a run ([model](/app/models/workflow_run.rb)), the one selected in the bottom panel (`?run=`), else the latest.
+- A play button on a start folder or media replays the selected run, keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
-- A selected start folder's inspector shows its media, those play takes checked (its newest N); checking others picks them for this run only (`WorkflowRun#picks`), and Newest N, or unchecking them all, goes back.
+- A selected start folder's inspector shows its media (draggable onto the canvas like any folder's), those play takes checked (its newest N); checking others picks them for this run only (`WorkflowRun#picks`), and Newest N, or unchecking them all, goes back.
 - A run is a draft until it's first played (from a start node or a step); then it's started and its picks are locked, though replays and step reruns still go, taking them. The run header shows its status: Draft, then failed, running or complete as its step runs.
 - The start node's media (a folder's newest N, or what's picked for the run) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none).
 - Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and each connection shows what last went along it as a thumbnail on its middle (a step's output, or the media a step took from a folder or media), opening in a lightbox on click.
-- The bottom panel lists the step runs with their inputs, output, status and time; the inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) instead of its edit controls.
-- New run adds a blank run (Run N), the run dropdown switches between runs, and a run with no step still running can be deleted (its media stay in the library).
-- Switching between Edit and Run, or between runs, keeps the selected node or connection.
+- The bottom panel lists the runs, newest first, one row per run with its status and the media it started from and ended with; its chevron expands it to its step runs with their inputs, output, status and time. Clicking a row selects that run, highlighted. The inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) above its settings.
+- New run in the panel adds a blank run (Run N), and a run with no step still running can be deleted from its row's admin menu (its media stay in the library).
+- Switching runs keeps the selected node or connection.
 
 ## Vocabulary
 

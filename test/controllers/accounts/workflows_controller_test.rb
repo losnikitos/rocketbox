@@ -51,7 +51,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
+      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false } ] }.to_json
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end
@@ -59,14 +59,14 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
     get workflow_url(workflow, account: admin.id, node: input.id)
-    assert_select "turbo-frame#inspector ul[aria-label=Media] a[href^=?]", library_item_path(media)
+    assert_select "turbo-frame#inspector section[aria-label=Picks] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
 
     tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
     patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: input.id, tag_id: tags(:before).id } } } }
     assert_equal "#{folders(:interior).path} #before", input.reload.label
     get workflow_url(workflow, account: admin.id, node: input.id)
-    assert_select "turbo-frame#inspector ul[aria-label=Media] a", 1
-    assert_select "turbo-frame#inspector ul[aria-label=Media] a[href^=?]", library_item_path(tagged)
+    assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
+    assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
 
     get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
@@ -106,7 +106,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflows_url(account: admin.id)
   end
 
-  test "play on a start folder runs the latest run from its newest media and run mode lists the steps" do
+  test "play on a start folder runs the latest run from its newest media and the selected run lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
@@ -116,23 +116,23 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
-    assert_select "a[data-id=?] button[form=workflow_play]", step.id.to_s, count: 0
+    assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "[aria-label=Palette]"
+    assert_select "#workflow_palette [role=tab]", 5
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
     assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
 
     follow_redirect!
-    assert_select "nav[aria-label=Runs] a[aria-current=page]", /Run 1/
+    assert_select "section[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
-    assert_select "section[aria-label='Run steps'] tbody tr", 1 do
+    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
     end
-    assert_select "[aria-label=Palette]", 0
+    assert_select "#workflow_palette", 1
     assert_select "a[href^=?]", admin_workflow_run_path(run)
     get admin_workflow_run_url(run)
     assert_response :success
@@ -143,11 +143,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "dl[aria-label=Stats] dd", text: "Running"
       assert_select "section[aria-label=Inputs] button[popovertarget=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
-      assert_select "button", text: "Remove from workflow", count: 0
+      assert_select "dl[aria-label=Stats] ~ section[aria-label=Settings] button", text: "Remove from workflow"
     end
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] fieldset[disabled] input[name='media_ids[]'][value=?][checked]", media.id.to_s
+    assert_select "turbo-frame#inspector section[aria-label=Picks] input[name='media_ids[]'][value=?][checked][disabled]", media.id.to_s
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
     patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
     assert_empty run.reload.picks
@@ -155,7 +155,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     draft = workflow.runs.create!
     get workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
     assert_select "span", text: "Draft"
-    assert_select "turbo-frame#inspector section[aria-label=Picks] fieldset[disabled]", 0
+    assert_select "turbo-frame#inspector section[aria-label=Picks] input[disabled]", 0
     assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
     patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
     assert_redirected_to workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
@@ -234,10 +234,19 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
-    assert_select "nav[aria-label=Runs] a", 2 do |links|
-      assert_equal [ workflow_path(workflow, run: second.id), workflow_path(workflow, run: first.id) ], links.map { it["href"] }
+    assert_select "section[aria-label=Runs] details", 2 do |rows|
+      assert_equal [ dom_id(second), dom_id(first) ], rows.map { it["id"] }
     end
-    assert_select "nav[aria-label=Runs] a[aria-current=page][href=?]", workflow_path(workflow, run: second.id)
+    assert_select "section[aria-label=Runs] details[open]", 0
+    assert_select "section[aria-label=Runs] a[aria-current=page]", 1
+    assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "section[aria-label=Runs] details", 2
+    assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
+    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(first), count: 1
+    assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, second)
+    assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, first), count: 0
 
     post run_workflow_url(workflow, account: admin.id, run: second.id), params: { node_id: folder.id }
     assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)

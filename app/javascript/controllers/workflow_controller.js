@@ -3,7 +3,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), copies a node Alt-dragged
 // to the drop point (flow:copied), submits the arrows drawn between them or moved to other nodes (flow:linked), and adds
-// palette items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
+// + Add items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
   static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
   static values = { url: String }
@@ -45,7 +45,7 @@ export default class extends Controller {
     this.removeTarget.click()
   }
 
-  // Mode and run links keep the selected node or connection, which the inspector frame puts in the page's URL.
+  // Run links keep the selected node or connection, which the inspector frame puts in the page's URL.
   keep({ currentTarget: link }) {
     link.href = this.kept(link.href)
   }
@@ -70,12 +70,14 @@ export default class extends Controller {
       .forEach(item => item.hidden = !`${item.textContent} ${item.title}`.toLowerCase().includes(query))
   }
 
-  // Palette items are their own add buttons; a folder's media in the inspector holds one.
+  // + Add items are their own add buttons; a folder's media in the inspector holds one. The + Add popover closes to free
+  // the canvas, a frame later: hiding the dragged item during dragstart cancels the drag.
   pick(event) {
     const item = event.currentTarget
     this.picked = item.form ? item : item.querySelector("[form='workflow_add']")
     event.dataTransfer.setData("text/plain", this.picked.textContent.trim())
     event.dataTransfer.effectAllowed = "copy"
+    requestAnimationFrame(() => item.closest("[popover]")?.hidePopover())
   }
 
   unpick() {

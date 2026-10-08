@@ -11,7 +11,7 @@ require "csv"
 class Transformation::Scripted < Transformation::Type
   FPS = 30
 
-  def self.label = "Scripted"
+  def self.label = "Reels"
 
   def self.reel? = true
 

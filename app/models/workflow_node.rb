@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # A workflow's folder, media or transformation step, placed at x, y (its centre) on the canvas. A step owns its
-# transformation, made from a type dropped from the palette, named after it, and deleted with the step.
+# transformation, made from a type added from + Add, named after it, and deleted with the step.
 # A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
 # A folder with a tag holds only its media with that tag, and gives its `newest` media. A media is a source that always
 # gives that one media.

@@ -71,7 +71,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     get new_recipe_url(account: @admin.id)
     assert_select "select[name='recipe[transformation_attributes][kind]'] option[value=generate_image][selected]"
-    assert_equal %w[Generation Overlay Edit Scripted], css_select("select[name='recipe[transformation_attributes][kind]'] optgroup").map { it["label"] }
+    assert_equal %w[Generation Transform Overlay Reels], css_select("select[name='recipe[transformation_attributes][kind]'] optgroup").map { it["label"] }
     assert_equal Transformation::Type.all.map(&:slug), css_select("select[name='recipe[transformation_attributes][kind]'] option").map { it["value"] }
     assert_select "button[name=refresh_type][formmethod=get][data-turbo-frame=recipe_body]"
     assert_select "turbo-frame#generation_options input[type=hidden][name='recipe[transformation_attributes][options][model]'][value='gpt-image-2.5-flare']"
