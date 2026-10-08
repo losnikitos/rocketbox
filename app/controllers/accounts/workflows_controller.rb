@@ -101,9 +101,11 @@ module Accounts
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.library_media ? :media : :folder
+          step_run = @step_runs&.find { it.workflow_node_id == node.id }
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run&.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
-                       kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id }, play: @start_nodes.include?(node) } ]
+                       kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id }, play: @start_nodes.include?(node),
+                       status: step_run&.status, error: step_run&.error } ]
         end
         @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
       end

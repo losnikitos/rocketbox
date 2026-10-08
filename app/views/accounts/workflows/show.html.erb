@@ -19,7 +19,7 @@
 
 <% mode = "rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
 <% pill = "rounded-full border border-ink-900/15 px-3 py-1 text-xs font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:border-ink-900 aria-[current=page]:text-ink-900" %>
-<% thumb = "aspect-2/3 w-10 rounded-md object-cover" %>
+<% thumb = "h-15 w-auto rounded-md" %>
 <% status_pill = { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
 <% took = ->(step_run) { step_run.duration ? "#{number_with_precision(step_run.duration, precision: 1)} s" : "…" } %>
@@ -212,7 +212,7 @@
           <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
             <h3 class="text-xs text-ink-500"><%= label %></h3>
             <% if media.any? %>
-              <%= render "media", media:, css: "aspect-2/3 w-24 rounded-lg object-cover" %>
+              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
             <% else %>
               <p class="text-sm text-ink-500">None in this run.</p>
             <% end %>

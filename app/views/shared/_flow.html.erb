@@ -4,6 +4,7 @@
 <%# selected node; linkable adds a port to drag arrows from (flow:linked). A :step is a card with its type's cover left of its label and kind %>
 <%# (its type label) and an input port on the left per arrow in (inputs, at least one). A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
 <%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked). %>
+<%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
 <%# play adds a play button on the node's left that submits the page's #workflow_play form with node_id. %>
 <div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.to_json %>"
      data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember
@@ -23,12 +24,21 @@
                     action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
             class: "#{"group" if n[:path]} absolute flex #{{ recipe: "w-52", step: "w-56" }.fetch(n[:shape], "w-28")} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% if n[:shape] == :step %>
-          <span class="flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left group-hover:border-ink-900/20 group-hover:bg-stone-50 group-aria-[current=true]:border-rocket group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
+          <span class="relative flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left group-hover:border-ink-900/20 group-hover:bg-stone-50 group-aria-[current=true]:border-rocket group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
             <%= image_tag n[:cover], alt: "", draggable: "false", class: "aspect-2/3 w-14 shrink-0 rounded-lg object-cover" %>
             <span class="flex min-w-0 flex-1 flex-col gap-1">
               <span class="line-clamp-3 break-words" title="<%= n[:label] %>"><%= n[:label] %></span>
               <span class="truncate text-xs font-normal text-ink-500"><%= n[:kind] %></span>
             </span>
+            <% if n[:status] %>
+              <% label, icon, css = { "running" => [ "Working", "arrow-path", "bg-signal-yellow [&_svg]:animate-spin" ],
+                                      "complete" => [ "Complete", "check", "bg-signal-green" ],
+                                      "failed" => [ "Failed", "x-mark", "bg-signal-red" ] }.fetch(n[:status]) %>
+              <span role="img" aria-label="<%= label %>" title="<%= [ label, n[:error] ].compact.join(": ") %>"
+                    class="absolute -top-2.5 -right-2.5 flex size-6 items-center justify-center rounded-full text-white shadow-sm ring-2 ring-white <%= css %>">
+                <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+              </span>
+            <% end %>
           </span>
           <%# Arrows in attach to these, top to bottom in their sources' order (flow_controller). %>
           <span class="absolute inset-y-0 -left-2 flex flex-col justify-evenly" aria-hidden="true">

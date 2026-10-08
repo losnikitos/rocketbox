@@ -109,6 +109,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play]", step.id.to_s, count: 0
+    assert_select "a[data-id] [role=img]", 0
     assert_select "[aria-label=Palette]"
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
@@ -117,6 +118,8 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "nav[aria-label=Runs] a[aria-current=page]", "Draft"
+    assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
+    assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
     assert_select "section[aria-label='Run steps'] tbody tr", 1 do
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
