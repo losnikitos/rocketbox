@@ -2,7 +2,7 @@
 
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
-  # update. `?node=` selects a node for the inspector.
+  # update. `?node=` or `?edge=` selects a node or connection for the inspector.
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -57,7 +57,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :transformation_id, :x, :y, :_destroy ] ],
+        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :transformation_id, :tag_id, :x, :y, :_destroy ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
       end
 
@@ -66,12 +66,19 @@ module Accounts
         @graph_nodes = @workflow.nodes.select(&:persisted?)
         @graph_edges = @workflow.edges.select(&:persisted?)
         @selected = @graph_nodes.find { it.id == params[:node].to_i }
+        @selected_edge = @graph_edges.find { it.id == params[:edge].to_i }
+        if @selected&.folder
+          @folder_media = Current.account.library_media.where(folder: @selected.folder).with_attached_file
+            .includes(:transformation_run).order(created_at: :desc)
+          @folder_media = @folder_media.where(id: @selected.tag.library_media) if @selected.tag
+        end
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" unless node.step?
-          [ node.id, { label: node.label, icon:, path: workflow_path(@workflow, node: node.id), frame: "inspector", current: node == @selected,
-                       linkable: true, x: node.x, y: node.y, shape: node.step? ? :recipe : :folder, color: node.folder&.color } ]
+          [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, path: workflow_path(@workflow, node: node.id), frame: "inspector", current: node == @selected,
+                       linkable: true, x: node.x, y: node.y, shape: node.step? ? :step : :folder, color: node.folder&.color,
+                       kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id } } ]
         end
-        @edges = @graph_edges.map { [ it.from_id, it.to_id ] }
+        @edges = @graph_edges.map { [ it.from_id, it.to_id, { path: workflow_path(@workflow, edge: it.id), frame: "inspector", current: it == @selected_edge } ] }
       end
   end
 end

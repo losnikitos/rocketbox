@@ -5,6 +5,7 @@ ActiveAdmin.register Transformation do
 
   index do
     id_column
+    column :name
     column :type_label
     column(:recipes) { safe_join(it.recipes.map { auto_link(it) }, ", ") }
     column :style
@@ -17,6 +18,7 @@ ActiveAdmin.register Transformation do
   show do
     attributes_table do
       row :id
+      row :name
       row :type_label
       row(:edit) { link_to "Open in app", transformation_path(it) }
       row(:recipes) { safe_join(it.recipes.map { auto_link(it) }, ", ") }

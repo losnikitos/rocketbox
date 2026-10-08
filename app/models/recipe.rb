@@ -25,6 +25,8 @@ class Recipe < ApplicationRecord
   # After the given attributes, so a nested transformation fills its options for its own kind.
   after_initialize(if: :new_record?) { build_transformation unless transformation }
   before_validation(on: :create) { self.output_folder ||= Folder.ready }
+  # The recipe form doesn't name its transformation.
+  before_validation { transformation.name = name if transformation.name.blank? }
 
   delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, :type, :type_label, :takes?, :style, :shot_group, to: :transformation
 

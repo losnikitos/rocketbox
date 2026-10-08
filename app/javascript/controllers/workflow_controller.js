@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), submits the arrows drawn
 // between them (flow:linked), and adds palette items dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "from", "to"]
+  static targets = ["add", "x", "y", "connect", "from", "to", "tab"]
   static values = { url: String }
 
   async move({ detail: { id, x, y } }) {
@@ -20,6 +20,13 @@ export default class extends Controller {
     this.fromTarget.value = from
     this.toTarget.value = to
     this.connectTarget.requestSubmit()
+  }
+
+  tab({ currentTarget }) {
+    this.tabTargets.forEach(tab => {
+      tab.setAttribute("aria-selected", tab === currentTarget)
+      document.getElementById(tab.getAttribute("aria-controls")).hidden = tab !== currentTarget
+    })
   }
 
   pick(event) {

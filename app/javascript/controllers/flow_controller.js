@@ -1,7 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 import dagre from "@dagrejs/dagre"
 
-// Lays out the node targets left to right and draws the edges ([from id, to id]) as curved arrows.
+// Lays out the node targets left to right and draws the edges ([from id, to id, { path, frame, current }]) as curved
+// arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
 // centre) and the canvas pinch-zoomed; zoom and scroll survive reloads of the page.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids.
@@ -14,13 +16,16 @@ export default class extends Controller {
     const g = this.graph = new dagre.graphlib.Graph()
     g.setGraph({ rankdir: "LR", nodesep: 24, ranksep: 72, marginx: 4, marginy: 4 })
     g.setDefaultEdgeLabel(() => ({}))
-    // Edges attach at the middle of the node's first child (a folder's icon, a recipe's whole box), not the label below.
+    // Edges attach at the middle of the node's first child (a folder's icon, a recipe's whole box), not the label below,
+    // or, coming in, at its [data-flow-input] ports if it has them.
     this.nodeTargets.forEach(el => {
       const anchor = el.firstElementChild.offsetHeight / 2, handle = el.querySelector("[data-flow-handle]")
       if (handle) handle.style.top = `${anchor}px`
-      g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor })
+      // Ports sit in a column flush with the node's top.
+      const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
+      g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
     })
-    this.edgesValue.forEach(([from, to]) => g.setEdge(from, to))
+    this.edgesValue.forEach(([from, to, edge]) => g.setEdge(from, to, { ...edge }))
     dagre.layout(g)
 
     g.nodes().forEach(id => {
@@ -103,8 +108,23 @@ export default class extends Controller {
   // A drag ends in a click on the node's link; don't follow it. A real click selects the node.
   click(event) {
     if (this.dragged) event.preventDefault()
-    else this.nodeTargets.forEach(el => el === event.currentTarget ? el.setAttribute("aria-current", "true") : el.removeAttribute("aria-current"))
+    else this.select(event.currentTarget)
     this.dragged = false
+  }
+
+  pick(event) {
+    const hit = event.target.closest("[data-v]")
+    if (!hit) return
+    const edge = { v: hit.dataset.v, w: hit.dataset.w }, { path, frame } = this.graph.edge(edge)
+    this.select(null, edge)
+    Turbo.visit(path, { frame, action: "advance" })
+  }
+
+  // Marks one node element or edge ({ v, w }) as the selected one.
+  select(node, edge) {
+    this.nodeTargets.forEach(el => el === node ? el.setAttribute("aria-current", "true") : el.removeAttribute("aria-current"))
+    this.graph.edges().forEach(e => this.graph.edge(e).current = e.v === edge?.v && e.w === edge?.w)
+    this.draw()
   }
 
   link(event) {
@@ -145,13 +165,17 @@ export default class extends Controller {
   draw() {
     const g = this.graph
     this.edgesTarget.innerHTML = g.edges().map(e => {
-      const source = g.node(e.v), target = g.node(e.w), from = anchor(source, 1), to = anchor(target, -1)
+      // Edges in take the target's ports top to bottom in their sources' order, so they don't cross.
+      const port = g.inEdges(e.w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(e.v)
+      const source = g.node(e.v), target = g.node(e.w), from = anchor(source, 1), to = anchor(target, -1, target.inputs[port])
       // dagre doubles the ranks to fit edge labels: keep only the bends at node ranks. Dragging a node drops its edges' bends.
       const via = source.moved || target.moved ? [] : g.edge(e).points.slice(1, -1).filter((_, i) => i % 2)
       // It routes through node centres; lift the bends to icon height, blending from source to target.
       const lift = t => (from.y - source.y) * (1 - t) + (to.y - target.y) * t
       const points = [from, ...via.map((p, i) => ({ x: p.x, y: p.y + lift((i + 1) / (via.length + 1)) })), to]
-      return `<path d="${curve(points)}" />`
+      const d = curve(points), { path, current } = g.edge(e), line = `<path d="${d}" class="${current ? "stroke-rocket" : path ? "group-hover:stroke-ink-900/50" : ""}" />`
+      // A wide invisible stroke makes the thin dashed line easy to click.
+      return path ? `<g data-v="${e.v}" data-w="${e.w}" class="group cursor-pointer"><path d="${d}" stroke="transparent" stroke-width="12" stroke-dasharray="none" />${line}</g>` : line
     }).join("")
   }
 }
@@ -161,9 +185,9 @@ function place({ el, x, y, width, height }) {
   el.style.top = `${y - height / 2}px`
 }
 
-// Where edges attach on a node's right (side 1) or left (side -1) side.
-function anchor(node, side) {
-  return { x: node.x + side * node.width / 2, y: node.y - node.height / 2 + node.anchor }
+// Where edges attach on a node's right (side 1) or left (side -1) side, `offset` down from its top.
+function anchor(node, side, offset = node.anchor) {
+  return { x: node.x + side * node.width / 2, y: node.y - node.height / 2 + offset }
 }
 
 // Bézier segments through the points, horizontal at each one, so a left-to-right flow never overshoots.

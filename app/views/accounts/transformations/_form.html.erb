@@ -7,7 +7,7 @@
     <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
       <%= link_to "Transformations", transformations_path, class: "underline underline-offset-2 hover:text-ink-900" %>
       <span class="mx-1">/</span>
-      <span aria-current="page"><%= transformation.new_record? ? "New transformation" : "##{transformation.id}" %></span>
+      <span aria-current="page"><%= transformation.new_record? ? "New transformation" : transformation.name_in_database %></span>
     </nav>
     <%= render "shared/admin_links/transformation", transformation: transformation if transformation.persisted? %>
   </header>
@@ -22,6 +22,11 @@
         </ul>
       </div>
     <% end %>
+
+    <div class="max-w-md">
+      <%= f.label :name, class: tw_label_classes %>
+      <%= f.text_field :name, required: true, class: tw_input_classes %>
+    </div>
 
     <%# A type change reloads the body, which follows the type. %>
     <turbo-frame id="transformation_body" target="_top" class="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-2">

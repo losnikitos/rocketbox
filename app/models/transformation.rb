@@ -19,7 +19,7 @@ class Transformation < ApplicationRecord
   # Editing it edits its recipes, which the index lists recently edited first.
   after_update { recipes.touch_all }
 
-  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, to: :type, allow_nil: true
+  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
@@ -32,6 +32,7 @@ class Transformation < ApplicationRecord
     self.shot_group, self.style = nil, nil unless ai?
     self.layer_steps = [] unless reel? && layer
   end
+  validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
   validates :body, presence: true, if: :ai?
   # A run of unsaved edits: its job reloads the transformation, so it would run the saved type and layer steps.

@@ -1,4 +1,4 @@
-<% content_for(:title, "Transformation ##{@transformation.id} — Rocketbox") %>
+<% content_for(:title, "#{@transformation.name_in_database} — Rocketbox") %>
 
 <%# A workflow's inspector loads the form in a frame; its links leave the frame, the form stays in it. %>
 <% if turbo_frame_request_id == "transformation" %>

@@ -55,7 +55,7 @@ module Accounts
       end
 
       def transformation_params
-        params.expect(transformation: [ :kind, :body, :shot_group, :style_id, layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
+        params.expect(transformation: [ :name, :kind, :body, :shot_group, :style_id, layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
       end
 
       def draft_params = params[:transformation] ? transformation_params : {}

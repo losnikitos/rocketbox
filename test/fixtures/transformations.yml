@@ -1,7 +1,9 @@
 cinematic:
+  name: Cinematic push-in
   kind: generate_video
   body: Slow cinematic push-in on the shop.
 
 before_after:
+  name: Before and after
   kind: generate_video
   body: Energetic before and after reveal.

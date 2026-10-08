@@ -45,12 +45,33 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ 320, 140 ], step.reload.then { [ it.x, it.y ] }
 
     get workflow_url(workflow, account: admin.id, node: step.id)
-    assert_select "[data-controller=flow][data-flow-edges-value=?]", [ [ input.id, step.id ], [ step.id, output.id ] ].to_json
-    assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s
+    edge_in, edge_out = workflow.edges.order(:id).to_a
+    assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
+      { path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
+    assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
+      assert_select "[data-flow-input]", 1
+    end
     assert_select "turbo-frame#inspector turbo-frame#transformation[src^=?]", transformation_path(transformations(:cinematic))
+
+    media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
+    get workflow_url(workflow, account: admin.id, node: input.id)
+    assert_select "turbo-frame#inspector ul[aria-label=Media] a[href^=?]", library_item_path(media)
+
+    tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: input.id, tag_id: tags(:before).id } } } }
+    assert_equal "#{folders(:interior).path} #before", input.reload.label
+    get workflow_url(workflow, account: admin.id, node: input.id)
+    assert_select "turbo-frame#inspector ul[aria-label=Media] a", 1
+    assert_select "turbo-frame#inspector ul[aria-label=Media] a[href^=?]", library_item_path(tagged)
 
     get transformation_url(transformations(:cinematic), account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
+
+    get workflow_url(workflow, account: admin.id, edge: edge_out.id)
+    assert_select "turbo-frame#inspector h2", "#{step.label} → #{output.label}"
+    assert_select "turbo-frame#inspector button", "Remove connection"
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge_out.id, _destroy: 1 } } } }
+    assert_equal [ edge_in ], workflow.edges.reload.to_a
 
     assert_not folders(:interior).destroy
     assert_not transformations(:cinematic).destroy
