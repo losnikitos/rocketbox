@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
-# feeding the step outputs media. Played from a start folder, whose newest media feeds the steps downstream; a step run
+# feeding the step outputs media. Played from a start folder or media, whose (newest) media feeds the steps downstream; a step run
 # starts the steps its step feeds when it completes. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the steps whose inputs or transformation changed and the steps after them;
 # `rerun!` forces a step anyway, e.g. once its type's code changed. A step that can't start leaves its reason in
@@ -10,7 +10,7 @@ class WorkflowRun < ApplicationRecord
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
 
-  # `node` is a start folder; `user` owns what the step runs make.
+  # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)
     update!(error: nil)
     advance!(node, user)

@@ -118,7 +118,7 @@
             </tbody>
           </table>
         <% elsif !@run.error %>
-          <p class="flex h-full items-center justify-center p-6 text-center text-sm text-ink-500">Press play on a start folder to run the workflow.</p>
+          <p class="flex h-full items-center justify-center p-6 text-center text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
         <% end %>
       </section>
     <% else %>
@@ -294,7 +294,7 @@
         connection's ends can be dragged to other nodes.
       </p>
       <p class="text-sm text-ink-500">
-        Press play on a start folder to run its newest media through the steps it feeds. Run shows each step's inputs,
+        Press play on a start folder or media to run that media (a folder's newest) through the steps it feeds. Run shows each step's inputs,
         output and time.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },

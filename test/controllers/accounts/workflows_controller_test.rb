@@ -154,6 +154,21 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "running" ], run.step_runs.reload.map(&:status)
   end
 
+  test "play on a media node runs the draft from that media" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Play media")
+    media = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    source = workflow.nodes.create!(library_media: media)
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+    workflow.edges.create!(from: source, to: step)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", source.id.to_s, source.id.to_s
+
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: source.id } }
+    assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
+  end
+
   test "alt-dragging a step copies it with its own transformation and no connections" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Copy")

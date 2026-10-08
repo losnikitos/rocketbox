@@ -3,7 +3,7 @@
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
-  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder (run) replays the draft run from it;
+  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the draft run from it;
   # run again on a step reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
@@ -105,8 +105,8 @@ module Accounts
                 .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
           end
         end
-        # Start folders feed steps and nothing feeds them.
-        @start_nodes = @graph_nodes.select { |node| node.folder && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }
+        # Start folders and media feed steps and nothing feeds them.
+        @start_nodes = @graph_nodes.select { |node| !node.step? && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.library_media ? :media : :folder
