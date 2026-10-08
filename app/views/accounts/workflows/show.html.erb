@@ -94,6 +94,7 @@
                 <th class="px-3 py-2 font-medium">Inputs</th>
                 <th class="px-3 py-2 font-medium">Output</th>
                 <th class="px-3 py-2 text-right font-medium">Time</th>
+                <th class="w-0 px-3 py-2"><span class="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-ink-900/10">
@@ -113,6 +114,7 @@
                     <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
                   <% end %>
                   <td class="px-3 py-2 text-right text-ink-600 tabular-nums"><%= took.(step_run) %></td>
+                  <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
                 </tr>
               <% end %>
             </tbody>

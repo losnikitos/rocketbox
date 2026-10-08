@@ -154,6 +154,31 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "running" ], run.step_runs.reload.map(&:status)
   end
 
+  test "play on a step whose feeding steps are complete in the run starts it there" do
+    admin = sign_in_as(users(:admin_user))
+    admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Step play")
+    folder, generate, crop, again = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) },
+      *2.times.map { { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") } } ].map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: folder, to: generate)
+    run = workflow.draft_run
+    run.start!(folder, admin)
+    made = run.step_runs.sole
+    made.generated_media.file.attach(io: StringIO.new("mp4"), filename: "a.mp4", content_type: "video/mp4")
+    made.update!(status: "complete")
+    [ [ generate, crop ], [ crop, again ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+
+    get workflow_url(workflow, account: admin.id, run: run.id)
+    assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run from here']", crop.id.to_s, crop.id.to_s
+    assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: crop.id } }
+    assert_equal [ made.generated_media ], run.step_runs.find_by!(workflow_node: crop).source_media
+    follow_redirect!
+    assert_select "a[data-id=?] button[form=workflow_play]", crop.id.to_s, count: 0
+    assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+  end
+
   test "play on a media node runs the draft from that media" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play media")
