@@ -32,6 +32,11 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ first, second ], run.step_runs.reload
 
     second.update!(status: "complete")
+    output.update!(folder: folders(:photobank_misc), tag: nil)
+    WorkflowRun.find(run.id).start!(folder, user)
+    assert_equal [ first, second ], run.step_runs.reload
+    assert_equal [ folders(:photobank_misc), [ tags(:after) ] ], second.generated_media.reload.then { [ it.folder, it.tags.to_a ] }
+
     crop.transformation.touch
     run.start!(folder, user)
     assert_equal [ first, crop ], run.step_runs.reload.then { [ it.first, it.last.workflow_node ] }

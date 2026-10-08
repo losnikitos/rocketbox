@@ -36,12 +36,16 @@ class WorkflowRun < ApplicationRecord
     end
 
     # Stale step runs go first, with the ones after them, so no step starts from a stale result. Then a step whose step
-    # run stands moves on to the steps after it once complete, and a step without one starts once its inputs all give media.
+    # run stands moves its result to the step's output folder, should that have changed, and on to the steps after it
+    # once complete; a step without one starts once its inputs all give media.
     def run_steps(steps, user)
       with_lock do
         steps.each { |step| step_runs.find_by(workflow_node: step)&.then { drop(it) unless stands?(it, inputs_of(step, user)) } }
         steps.each do |step|
-          if (run = step_runs.find_by(workflow_node: step)) then advance!(step, user) if run.complete?
+          if (run = step_runs.find_by(workflow_node: step))
+            output = output_of_step(step)
+            run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | [ output&.tag ].compact)
+            advance!(step, user) if run.complete?
           elsif (media = inputs_of(step, user)).all? then start_step(step, media, user)
           end
         end
@@ -50,7 +54,7 @@ class WorkflowRun < ApplicationRecord
 
     # A step run stands while it hasn't failed, took what the step's inputs give now, and its transformation wasn't
     # saved since it started.
-    # ponytail: a style's or shot's text, a newly postable review or a changed output folder don't count; rerun! covers them.
+    # ponytail: a style's or shot's text or a newly postable review don't count; rerun! covers them.
     def stands?(run, media) = !run.failed? && run.source_media == media && run.created_at >= run.transformation.updated_at
 
     # Its result goes, and before it the step runs that took it, as their inputs go with it.
@@ -73,10 +77,12 @@ class WorkflowRun < ApplicationRecord
       end
     end
 
+    def output_of_step(step) = edges.find { it.from_id == step.id && !it.to.step? }&.to
+
     # The result lands in the step's first output folder (with its tag), else Ready. A shot is picked at random.
     def start_step(step, media, user)
       transformation = step.transformation
-      output = edges.find { it.from_id == step.id && !it.to.step? }&.to
+      output = output_of_step(step)
       transformation.run!(media:, user:, folder: output&.folder || Folder.ready, tags: [ output&.tag ].compact,
         shot: (Shot.where(group: transformation.shot_group).sample if transformation.shot_group),
         review: (user.reviews.postable.last if transformation.takes_review?), workflow_run: self, workflow_node: step)
