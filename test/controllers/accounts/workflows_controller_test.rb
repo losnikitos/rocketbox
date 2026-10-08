@@ -156,7 +156,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
   test "play on a step whose feeding steps are complete in the run starts it there" do
     admin = sign_in_as(users(:admin_user))
-    admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    photo = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
     workflow = Workflow.create!(name: "Step play")
     folder, generate, crop, again = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) },
       *2.times.map { { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") } } ].map { workflow.nodes.create!(it) }
@@ -171,6 +171,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run from here']", crop.id.to_s, crop.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, generate.id.to_s, dom_id(photo, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
 
