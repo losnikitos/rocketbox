@@ -218,15 +218,46 @@
         <% elsif node.step? %>
           <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
         <% end %>
-        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
-          <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
-            <h3 class="text-xs text-ink-500"><%= label %></h3>
-            <% if media.any? %>
-              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+        <% if node.folder && @start_nodes.include?(node) %>
+          <section aria-label="Picks" class="space-y-2 border-t border-ink-900/10 pt-4">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-xs text-ink-500">Play takes</h3>
+              <% if @run.picks.key?(node.id.to_s) %>
+                <%= button_to "Newest #{node.newest}", workflow_run_path(@workflow, @run), method: :patch, params: { node_id: node.id }, form: { data: top },
+                      title: "Take its newest media again", class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
+              <% end %>
+            </div>
+            <% if @folder_media.any? %>
+              <% picked = @run.picked(node, Current.account) %>
+              <%= form_with url: workflow_run_path(@workflow, @run), method: :patch, data: top, html: { onchange: "this.requestSubmit()" } do %>
+                <%= hidden_field_tag :node_id, node.id, id: nil %>
+                <div class="grid grid-cols-3 gap-2">
+                  <% @folder_media.each do |media| %>
+                    <label class="group/option relative block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                      <%= check_box_tag "media_ids[]", media.id, picked.include?(media), id: nil, class: "sr-only" %>
+                      <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
+                      <span class="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-black/20 text-transparent shadow-sm group-has-checked/option:border-rocket group-has-checked/option:bg-rocket group-has-checked/option:text-white" aria-hidden="true">
+                        <%= heroicon "check", variant: :micro, options: { class: "size-3.5" } %>
+                      </span>
+                    </label>
+                  <% end %>
+                </div>
+              <% end %>
             <% else %>
-              <p class="text-sm text-ink-500">None in this run.</p>
+              <p class="text-sm text-ink-500"><%= node.tag ? "No media in this folder has that tag." : "This folder is empty." %></p>
             <% end %>
           </section>
+        <% else %>
+          <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
+            <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
+              <h3 class="text-xs text-ink-500"><%= label %></h3>
+              <% if media.any? %>
+                <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+              <% else %>
+                <p class="text-sm text-ink-500">None in this run.</p>
+              <% end %>
+            </section>
+          <% end %>
         <% end %>
       <% else %>
         <div class="flex flex-wrap items-center gap-2">
@@ -312,7 +343,8 @@
         connection's ends can be dragged to other nodes.
       </p>
       <p class="text-sm text-ink-500">
-        Press play on a start folder or media to run that media (a folder's newest N, set when it's selected) through the steps it feeds: a
+        Press play on a start folder or media to run that media (a folder's newest N, set when it's selected, or in Run the media picked
+        for that run) through the steps it feeds: a
         reel takes them all at once, in its inputs' order, any other step each in turn. Run shows each step's inputs, output and time.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },

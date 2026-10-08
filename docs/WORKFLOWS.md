@@ -37,7 +37,8 @@ Where we stand:
 Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - A play button on a start folder or media replays the selected run (the latest from Edit), keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
-- The start node's media (a folder's newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
+- A selected start folder's inspector shows its media, those play takes checked (its newest N); checking others picks them for this run only (`WorkflowRun#picks`), and Newest N, or unchecking them all, goes back.
+- The start node's media (a folder's newest N, or what's picked for the run) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none).
 - Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and its last output as a thumbnail on the middle of each connection out of it, opening in a lightbox on click.
 - The bottom panel lists the step runs with their inputs, output, status and time; the inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) instead of its edit controls.

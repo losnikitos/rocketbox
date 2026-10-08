@@ -75,7 +75,7 @@ Rails.application.routes.draw do
       resources :workflows, except: :edit do
         post :run, on: :member
         post :copy, on: :member
-        resources :runs, only: %i[create destroy], controller: "workflow_runs"
+        resources :runs, only: %i[create update destroy], controller: "workflow_runs"
       end
       resources :styles, except: :show
       resources :tags, only: :create

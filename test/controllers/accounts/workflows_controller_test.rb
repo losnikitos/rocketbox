@@ -143,9 +143,17 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_select "turbo-frame#inspector section[aria-label=Inputs] p", "None in this run."
-    assert_select "turbo-frame#inspector section[aria-label=Outputs] button[popovertarget=?]", dom_id(media, :quick_view)
+    assert_select "turbo-frame#inspector section[aria-label=Picks] input[name='media_ids[]'][value=?][checked]", media.id.to_s
+    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
+
+    patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
+    assert_equal({ folder.id.to_s => [ media.id ] }, run.reload.picks)
+    follow_redirect!
+    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1"
+    patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id }
+    assert_empty run.reload.picks
 
     run.step_runs.sole.update!(status: "complete")
     get workflow_url(workflow, account: admin.id, run: run.id)
