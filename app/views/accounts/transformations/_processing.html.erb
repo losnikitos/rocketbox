@@ -67,5 +67,7 @@
     <%= tf.label :body, "Prompt", class: tw_label_classes %>
     <%= tf.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
   </div>
+<% end %>
+<% if transformation.ai? || type&.options %>
   <%= render "shared/generation_options", record: transformation, scope:, refresh_url: %>
 <% end %>

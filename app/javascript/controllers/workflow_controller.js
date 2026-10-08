@@ -8,14 +8,14 @@ export default class extends Controller {
   static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
   static values = { url: String }
 
-  async move({ detail: { id, x, y } }) {
+  async move({ detail: { nodes } }) {
     const body = new FormData()
-    Object.entries({ id, x, y }).forEach(([key, value]) => body.append(`workflow[nodes_attributes][0][${key}]`, value))
+    nodes.forEach((node, i) => Object.entries(node).forEach(([key, value]) => body.append(`workflow[nodes_attributes][${i}][${key}]`, value)))
     const response = await fetch(this.urlValue, {
       method: "PATCH", body,
       headers: { Accept: "application/json", "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content }
     }).catch(() => null)
-    if (!response?.ok) alert("Couldn't save where the node was moved. Reload and try again.")
+    if (!response?.ok) alert("Couldn't save where the nodes were moved. Reload and try again.")
   }
 
   clear() {

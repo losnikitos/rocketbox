@@ -18,6 +18,10 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     get new_transformation_url(account: admin.id, transformation: { kind: "generate_image" })
     assert_select "input[type=hidden][name='transformation[kind]'][value=generate_image]"
     assert_select "select[name='transformation[kind]']", count: 0
+    get new_transformation_url(account: admin.id, transformation: { kind: "zoom" })
+    assert_select "input[type=radio][name='transformation[options][zoom]'][value=in][checked]"
+    assert_select "select[name='transformation[options][duration]'] option", count: 5
+    assert_select "[name='transformation[options][model]']", count: 0
 
     post transformations_url, params: { transformation: { name: "", kind: "generate_image", body: "" } }
     assert_response :unprocessable_entity

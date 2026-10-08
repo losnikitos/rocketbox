@@ -9,9 +9,9 @@
 <%# play (a start node's, or a :step's whose inputs are complete; or a run :step's rerun) adds a play button on the node's top-left corner that submits the page's #workflow_play form with node_id. %>
 <div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.to_json %>"
      data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember
-                  pointerdown->flow#pan pointermove->flow#slide pointerup->flow#stop pointercancel->flow#stop">
+                  pointerdown->flow#lasso pointermove->flow#sweep pointerup->flow#stop pointercancel->flow#stop">
   <%# Laid out by flow_controller; hidden until the nodes are placed. %>
-  <div class="invisible relative cursor-grab select-none active:cursor-grabbing" data-flow-target="canvas">
+  <div class="invisible relative select-none" data-flow-target="canvas">
     <svg class="absolute inset-0 size-full overflow-visible" aria-hidden="true">
       <pattern id="flow-dots" width="20" height="20" patternUnits="userSpaceOnUse">
         <circle cx="10" cy="10" r="1" class="fill-ink-900/20" />
@@ -19,7 +19,7 @@
       <rect width="100%" height="100%" fill="url(#flow-dots)" class="pointer-events-none" />
       <g data-flow-target="edges" data-action="click->flow#pick" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
     </svg>
-    <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from panning or deselecting. %>
+    <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from starting a selection or deselecting. %>
     <% edges.each do |from, to, _| %>
       <% next unless (media = nodes.dig(from, :output)) %>
       <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="View output" title="View output"
@@ -112,6 +112,8 @@
     <% end %>
     <%# The selected edge's draggable ends, above the nodes' ports (flow_controller). %>
     <div data-flow-target="ends" class="pointer-events-none absolute inset-0"></div>
+    <%# The selection rectangle (flow_controller). %>
+    <div data-flow-target="marquee" hidden class="pointer-events-none absolute rounded-sm border border-rocket bg-rocket/10"></div>
   </div>
 </div>
 <%# Outside the canvas, so its zoom and the flow's clicks leave them be. %>

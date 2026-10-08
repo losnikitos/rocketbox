@@ -45,7 +45,7 @@ class Recipe < ApplicationRecord
     errors.add(:inputs, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.size
     errors.add(:output_tag_ids, "include an unknown tag") unless Tag.where(id: output_tag_ids).count == output_tag_ids.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
-    errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || single?) && media_count > 1
+    errors.add(:inputs, single? ? "must be a single photo or video to make a story" : "must be a single photo to make a video") if (video? || single?) && media_count > 1
   end
 
   scope :ordered, -> { order(:name) }

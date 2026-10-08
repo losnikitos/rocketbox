@@ -5,14 +5,14 @@ import dagre from "@dagrejs/dagre"
 // Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
 // arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
-// centre, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or dragged to pan; zoom and scroll
-// survive reloads of the page.
+// centres, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or scrolled to pan; zoom and scroll
+// survive reloads of the page. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too. Into a node with slots
 // (ports with data-slot) it carries the slot of the port under the pointer, else the first one free. Output targets (with
 // data-v and data-w) sit on the middle of their edge.
 export default class extends Controller {
-  static targets = ["canvas", "node", "edges", "ends", "output"]
+  static targets = ["canvas", "node", "edges", "ends", "output", "marquee"]
   static values = { edges: Array }
 
   connect() {
@@ -78,54 +78,70 @@ export default class extends Controller {
   }
 
   get key() { return `flow:${location.pathname}` }
-  // A press on the empty canvas (not a node, an edge or the scrollbars) drags the view around.
-  pan(event) {
+  // A press on the empty canvas (not a node, an edge or the scrollbars) drags a selection rectangle, which clears the
+  // selection first (flow:cleared).
+  lasso(event) {
     if (event.button !== 0 || !this.canvasTarget.contains(event.target) || event.target.closest("[data-flow-target~='node'], [data-v]")) return
     this.dragged = false
-    this.panning = { x: event.clientX, y: event.clientY, moved: false }
     this.element.setPointerCapture(event.pointerId)
+    if (this.selected) {
+      this.select(null)
+      this.dispatch("cleared")
+    }
+    this.marquee = { start: this.point(event), moved: false }
   }
 
-  slide(event) {
-    const p = this.panning
-    if (!p) return
-    const dx = event.clientX - p.x, dy = event.clientY - p.y
-    if (!p.moved && Math.hypot(dx, dy) < 4) return
-    p.moved = true
-    this.element.scrollLeft -= dx
-    this.element.scrollTop -= dy
-    p.x = event.clientX
-    p.y = event.clientY
+  // Selects the nodes the rectangle from the press to the pointer touches.
+  sweep(event) {
+    const m = this.marquee
+    if (!m) return
+    const a = m.start, b = this.point(event)
+    if (!m.moved && Math.hypot(b.x - a.x, b.y - a.y) * this.scale < 4) return
+    m.moved = true
+    const left = Math.min(a.x, b.x), top = Math.min(a.y, b.y), right = Math.max(a.x, b.x), bottom = Math.max(a.y, b.y)
+    Object.assign(this.marqueeTarget.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px`, zIndex: (this.z || 0) + 1 })
+    this.marqueeTarget.hidden = false
+    this.nodeTargets.forEach(el => {
+      const { x, y, width, height } = this.graph.node(el.dataset.id)
+      mark(el, x + width / 2 > left && x - width / 2 < right && y + height / 2 > top && y - height / 2 < bottom)
+    })
   }
 
-  // A pan ends in a click on the canvas; don't clear the selection.
+  // A selection rectangle ends in a click on the canvas; don't clear the selection.
   stop() {
-    if (!this.panning) return
-    this.dragged = this.panning.moved
-    this.panning = null
+    if (!this.marquee) return
+    this.dragged = this.marquee.moved
+    this.marquee = null
+    this.marqueeTarget.hidden = true
   }
 
-  // With Alt held a copy of the node is dragged away instead, the node staying put.
+  // A selected node drags every selected node along. With Alt held a copy of the node is dragged away instead, the node
+  // staying put.
   grab(event) {
     if (event.button !== 0) return
     const el = event.currentTarget, id = el.dataset.id, node = this.graph.node(id), copy = event.altKey
+    const nodes = copy ? [{ ...node, el: ghost(el) }]
+      : el.hasAttribute("aria-current") ? this.nodeTargets.filter(it => it.hasAttribute("aria-current")).map(it => this.graph.node(it.dataset.id)) : [node]
     this.dragged = false
-    this.dragging = { id, node: copy ? { ...node, el: ghost(el) } : node, copy, x: event.clientX, y: event.clientY, moved: false }
+    this.dragging = { id, nodes, copy, x: event.clientX, y: event.clientY, moved: false }
     el.setPointerCapture(event.pointerId)
-    this.dragging.node.el.style.zIndex = this.z = (this.z || 0) + 1
+    nodes.forEach(n => n.el.style.zIndex = this.z = (this.z || 0) + 1)
   }
 
+  // The nodes move together, stopping as one at the canvas's top and left edges.
   drag(event) {
     const d = this.dragging
     if (!d) return
-    const dx = event.clientX - d.x, dy = event.clientY - d.y
-    if (!d.moved && Math.hypot(dx, dy) < 4) return
-    d.moved = d.node.moved = true
-    d.node.x = Math.max(d.node.width / 2, d.node.x + dx / this.scale)
-    d.node.y = Math.max(d.node.height / 2, d.node.y + dy / this.scale)
+    if (!d.moved && Math.hypot(event.clientX - d.x, event.clientY - d.y) < 4) return
+    d.moved = true
+    const dx = Math.max((event.clientX - d.x) / this.scale, ...d.nodes.map(n => n.width / 2 - n.x))
+    const dy = Math.max((event.clientY - d.y) / this.scale, ...d.nodes.map(n => n.height / 2 - n.y))
+    d.nodes.forEach(n => {
+      Object.assign(n, { x: n.x + dx, y: n.y + dy, moved: true })
+      place(n)
+    })
     d.x = event.clientX
     d.y = event.clientY
-    place(d.node)
     this.resize()
     this.draw()
   }
@@ -135,8 +151,11 @@ export default class extends Controller {
     if (!d) return
     this.dragged = d.moved
     this.dragging = null
-    if (d.copy && !d.moved) d.node.el.remove()
-    if (d.moved) this.dispatch(d.copy ? "copied" : "moved", { detail: { id: d.id, x: Math.round(d.node.x), y: Math.round(d.node.y) } })
+    if (d.copy && !d.moved) d.nodes[0].el.remove()
+    if (!d.moved) return
+    const at = d.nodes.map(n => ({ id: n.el.dataset.id, x: Math.round(n.x), y: Math.round(n.y) }))
+    if (d.copy) this.dispatch("copied", { detail: { ...at[0], id: d.id } })
+    else this.dispatch("moved", { detail: { nodes: at } })
   }
 
   // A drag ends in a click on the node's link; don't follow it. A real click selects the node.
@@ -158,15 +177,18 @@ export default class extends Controller {
   clear(event) {
     const dragged = this.dragged
     this.dragged = false
-    if (dragged || event.target.closest("[data-flow-target~='node'], [data-v]")) return
-    if (!this.element.querySelector("[aria-current]") && !this.graph.edges().some(e => this.graph.edge(e).current)) return
+    if (dragged || !this.selected || event.target.closest("[data-flow-target~='node'], [data-v]")) return
     this.select(null)
     this.dispatch("cleared")
   }
 
+  get selected() {
+    return this.element.querySelector("[aria-current]") || this.graph.edges().some(e => this.graph.edge(e).current)
+  }
+
   // Marks one node element or edge ({ v, w }) as the selected one.
   select(node, edge) {
-    this.nodeTargets.forEach(el => el === node ? el.setAttribute("aria-current", "true") : el.removeAttribute("aria-current"))
+    this.nodeTargets.forEach(el => mark(el, el === node))
     this.graph.edges().forEach(e => this.graph.edge(e).current = e.v === edge?.v && e.w === edge?.w)
     this.draw()
   }
@@ -304,6 +326,10 @@ function ghost(el) {
   ;["id", "data-flow-target", "data-action", "aria-current"].forEach(name => copy.removeAttribute(name))
   el.after(copy)
   return copy
+}
+
+function mark(el, selected) {
+  selected ? el.setAttribute("aria-current", "true") : el.removeAttribute("aria-current")
 }
 
 function place({ el, x, y, width, height }) {

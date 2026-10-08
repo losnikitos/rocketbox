@@ -49,6 +49,8 @@ class TransformationRun < ApplicationRecord
 
   def video? = transformation&.video?
 
+  def type = transformation&.type
+
   # Seconds from start to finish; nil while running.
   def duration = (updated_at - created_at unless running?)
 

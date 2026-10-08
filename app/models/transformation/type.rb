@@ -9,7 +9,7 @@ class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
-    Transformation::SmartCrop,
+    Transformation::SmartCrop, Transformation::Zoom,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 
@@ -39,6 +39,9 @@ class Transformation::Type
   def self.slots = nil
 
   def self.takes_review? = false
+
+  # A non-AI type's own options in place of the model's: allowed values per key, the first the default; nil for none.
+  def self.options = nil
 
   attr_reader :run
 

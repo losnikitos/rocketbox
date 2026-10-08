@@ -25,7 +25,8 @@ Where we stand:
 ## Editing
 
 - Drag folders and transformation types in from the bottom palette (each tab has its own search), and a selected folder's media from the inspector.
-- Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections) or the empty canvas to pan.
+- Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
+- Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
 - A selected folder's inspector sets how many of its newest media it gives (Newest).
 - Click a node to open the inspector on the right (remove, and a step's transformation settings), or a connection to remove it or drag its ends to other nodes.
