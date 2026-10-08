@@ -5,12 +5,22 @@
 # Played from a start folder or media as one of its WorkflowRuns. With `autorun`, each media landing in a start folder
 # starts a run of its own, picked for that folder (n8n's trigger node, passing on the new item).
 class Workflow < ApplicationRecord
+  extend FriendlyId
+
+  # Follows the name; old slugs still find it, so an open page keeps working after a rename.
+  friendly_id :name, use: %i[slugged finders history]
+
   has_many :nodes, -> { order(:id) }, class_name: "WorkflowNode", inverse_of: :workflow, dependent: :destroy
   has_many :edges, -> { order(:id) }, class_name: "WorkflowEdge", inverse_of: :workflow, dependent: :delete_all
   has_many :runs, -> { order(:id) }, class_name: "WorkflowRun", inverse_of: :workflow, dependent: :delete_all
   accepts_nested_attributes_for :nodes, :edges, allow_destroy: true
 
   validates :name, presence: true
+
+  # A numeric slug would be found as an id.
+  def normalize_friendly_id(text) = super.then { it.match?(/\A\d+\z/) ? "workflow-#{it}" : it }
+
+  def should_generate_new_friendly_id? = name_changed? || super
 
   def latest_run = runs.last || runs.create!
 

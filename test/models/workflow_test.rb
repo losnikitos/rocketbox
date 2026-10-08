@@ -28,4 +28,11 @@ class WorkflowTest < ActiveSupport::TestCase
       assert_equal [ run ], workflow.runs.reload
     end
   end
+
+  test "slug follows the name, and an old slug still finds it" do
+    workflow = Workflow.create!(name: "Inbox to ready")
+    assert_equal "inbox-to-ready", workflow.to_param
+    workflow.update!(name: "2026")
+    assert_equal [ "workflow-2026", workflow, workflow ], [ workflow.slug, Workflow.find("inbox-to-ready"), Workflow.find(workflow.id) ]
+  end
 end

@@ -1,6 +1,7 @@
 ActiveAdmin.register Workflow do
   actions :index, :show
 
+  remove_filter :slugs
   filter :name
   filter :created_at
 
@@ -18,6 +19,7 @@ ActiveAdmin.register Workflow do
     attributes_table do
       row :id
       row :name
+      row :slug
       row(:edit) { link_to "Open in app", workflow_path(it) }
       row :created_at
       row :updated_at

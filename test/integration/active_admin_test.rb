@@ -125,11 +125,11 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     workflow.edges.create!(from: folder, to: step)
     workflow.latest_run
 
-    get "/app/workflows/#{workflow.id}?account=#{admin.id}", headers: @ua
-    assert_select "turbo-frame#inspector a[href^='/admin/workflows/#{workflow.id}']"
+    get "/app/workflows/stored?account=#{admin.id}", headers: @ua
+    assert_select "header a[href^='/admin/workflows/stored']"
     get "/admin/workflows", headers: @ua
     assert_response :success
-    get "/admin/workflows/#{workflow.id}", headers: @ua
+    get "/admin/workflows/stored", headers: @ua
     assert_response :success
     assert_select "td", text: "##{folder.id} #{folder.label}"
     assert_select "a[href='/admin/transformations/#{step.transformation_id}']"
