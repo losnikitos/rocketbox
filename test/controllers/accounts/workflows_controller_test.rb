@@ -136,7 +136,14 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     run = workflow.runs.sole
     assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
 
-    follow_redirect!
+    get workflows_url(account: admin.id)
+    assert_select "##{dom_id(workflow)}" do
+      assert_select "p", /1 run\b/
+      assert_select "span", "Running"
+      assert_select "input[type=checkbox][name='workflow[autorun]']:not([checked])"
+    end
+
+    get workflow_url(workflow, account: admin.id, run: run.id)
     assert_select "section[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0

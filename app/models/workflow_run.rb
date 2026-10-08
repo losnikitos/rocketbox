@@ -32,13 +32,13 @@ class WorkflowRun < ApplicationRecord
 
   # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)
-    update!(error: nil, status: "started")
+    update!(error: nil, status: "started", updated_at: Time.current)
     advance!(node, user)
   end
 
   # Drops `step`'s step runs and the ones after them, and starts it from what its inputs give now.
   def rerun!(step, user)
-    update!(error: nil, status: "started")
+    update!(error: nil, status: "started", updated_at: Time.current)
     with_lock { runs_of(step).each { drop(it) } }
     run_steps([ step ], user)
   end

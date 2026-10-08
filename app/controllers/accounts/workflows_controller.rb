@@ -13,7 +13,7 @@ module Accounts
     before_action :set_workflow, only: %i[show update destroy run copy]
 
     def index
-      @workflows = Workflow.includes(:nodes).order(updated_at: :desc)
+      @workflows = Workflow.includes(runs: :step_runs).order(updated_at: :desc)
     end
 
     def new
