@@ -45,13 +45,9 @@ export default class extends Controller {
     this.removeTarget.click()
   }
 
-  // Mode links and the run select keep the selected node or connection, which the inspector frame puts in the page's URL.
+  // Mode and run links keep the selected node or connection, which the inspector frame puts in the page's URL.
   keep({ currentTarget: link }) {
     link.href = this.kept(link.href)
-  }
-
-  switch({ target }) {
-    Turbo.visit(this.kept(target.value))
   }
 
   kept(href) {

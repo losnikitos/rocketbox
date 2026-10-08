@@ -26,6 +26,10 @@ class WorkflowRun < ApplicationRecord
   # Draft until first played; then failed, running or complete, as its step runs (nil while none started).
   def state = draft? ? "draft" : error ? "failed" : TransformationRun.status_of(step_runs)
 
+  # What it was played with and what it ended with: media its step runs took that none made, and made that none took.
+  def inputs = took - made
+  def outputs = made - took
+
   # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)
     update!(error: nil, status: "started")
@@ -52,6 +56,9 @@ class WorkflowRun < ApplicationRecord
   end
 
   private
+
+    def took = step_runs.flat_map(&:source_media).uniq
+    def made = step_runs.filter_map(&:generated_media)
 
     def edges = @edges ||= workflow.edges.includes(:from, :to).to_a
 

@@ -125,7 +125,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
 
     follow_redirect!
-    assert_select "select[aria-label=Run] option[selected]", /\ARun 1 · /
+    assert_select "nav[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
     assert_select "section[aria-label='Run steps'] tbody tr", 1 do
@@ -147,22 +147,28 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] input[name='media_ids[]'][value=?][checked]", media.id.to_s
-    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
+    assert_select "turbo-frame#inspector section[aria-label=Picks] fieldset[disabled] input[name='media_ids[]'][value=?][checked]", media.id.to_s
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
-
     patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
-    assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_equal({ folder.id.to_s => [ media.id ] }, run.reload.picks)
+    assert_empty run.reload.picks
+
+    draft = workflow.runs.create!
+    get workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
+    assert_select "span", text: "Draft"
+    assert_select "turbo-frame#inspector section[aria-label=Picks] fieldset[disabled]", 0
+    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
+    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
+    assert_equal({ folder.id.to_s => [ media.id ] }, draft.reload.picks)
     follow_redirect!
     assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1"
-    patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id }
-    assert_empty run.reload.picks
+    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id }
+    assert_empty draft.reload.picks
 
     run.step_runs.sole.update!(status: "complete")
     get workflow_url(workflow, account: admin.id, run: run.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run again']", step.id.to_s, step.id.to_s
-    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: step.id } }
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id, run: run.id), params: { node_id: step.id } }
     assert_equal [ "running" ], run.step_runs.reload.map(&:status)
   end
 
@@ -208,7 +214,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
   end
 
-  test "new run adds a blank run that play runs, the select switches runs, and a run is deleted once nothing in it is running" do
+  test "new run adds a blank run that play runs, the run picker switches runs, and a run is deleted once nothing in it is running" do
     admin = sign_in_as(users(:admin_user))
     admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
     workflow = Workflow.create!(name: "Runs")
@@ -227,10 +233,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
-    assert_select "select[aria-label=Run] option", 2 do |options|
-      assert_equal [ workflow_path(workflow, run: second.id), workflow_path(workflow, run: first.id) ], options.map { it["value"] }
+    assert_select "nav[aria-label=Runs] a", 2 do |links|
+      assert_equal [ workflow_path(workflow, run: second.id), workflow_path(workflow, run: first.id) ], links.map { it["href"] }
     end
-    assert_select "select[aria-label=Run] option[selected][value=?]", workflow_path(workflow, run: second.id)
+    assert_select "nav[aria-label=Runs] a[aria-current=page][href=?]", workflow_path(workflow, run: second.id)
 
     post run_workflow_url(workflow, account: admin.id, run: second.id), params: { node_id: folder.id }
     assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)

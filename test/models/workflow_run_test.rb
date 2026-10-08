@@ -25,6 +25,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ crop, [ first.generated_media ], folders(:photobank_logo), [ tags(:after) ] ],
       [ second.workflow_node, second.source_media, second.generated_media.folder, second.generated_media.tags.to_a ]
     assert_nil run.reload.error
+    assert_equal [ [ newest ], [ second.generated_media ] ], [ run.inputs, run.outputs ]
 
     assert_no_difference -> { LibraryMedia.count } do
       run.start!(folder, user)
