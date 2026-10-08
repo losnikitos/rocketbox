@@ -122,10 +122,19 @@ module Accounts
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
                        kind: node.transformation&.type_label, inputs: feeds.size, slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
-                       status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?),
-                       output: runs.last&.generated_media&.then { it if it.file.attached? } } ]
+                       status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
-        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, slot: it.slot, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
+        # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media.
+        by_id = @graph_nodes.index_by(&:id)
+        carried = ->(edge) do
+          from = by_id[edge.from_id]
+          media = if from.step? then runs_of.(from).last&.generated_media
+          else runs_of.(by_id[edge.to_id]).last&.source_media&.find { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }
+          end
+          media if media&.file&.attached?
+        end
+        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, slot: it.slot, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector",
+                                                              current: it == @selected_edge, media: carried.(it) } ] }
       end
   end
 end
