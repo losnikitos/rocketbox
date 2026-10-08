@@ -72,6 +72,7 @@ Rails.application.routes.draw do
         delete :example, action: :destroy_example, on: :member
       end
       resources :transformations, except: :edit
+      resources :workflows, except: :edit
       resources :styles, except: :show
       resources :tags, only: :create
       resources :links, only: %i[index create show destroy] do

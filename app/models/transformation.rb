@@ -14,6 +14,7 @@ class Transformation < ApplicationRecord
   # Runs outlive their transformation.
   has_many :runs, class_name: "TransformationRun", dependent: :nullify
   has_many :recipes, dependent: :restrict_with_error
+  has_many :workflow_nodes, dependent: :restrict_with_error
   belongs_to :style, optional: true
   # Editing it edits its recipes, which the index lists recently edited first.
   after_update { recipes.touch_all }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -443,12 +443,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.integer "style_id"
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
+    t.integer "workflow_id"
     t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id", unique: true
     t.index ["recipe_id"], name: "index_transformation_runs_on_recipe_id"
     t.index ["review_id"], name: "index_transformation_runs_on_review_id"
     t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
+    t.index ["workflow_id"], name: "index_transformation_runs_on_workflow_id"
   end
 
   create_table "transformations", force: :cascade do |t|
@@ -492,6 +494,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
     t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
   end
 
+  create_table "workflow_edges", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "from_id", null: false
+    t.integer "to_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "workflow_id", null: false
+    t.index ["from_id", "to_id"], name: "index_workflow_edges_on_from_id_and_to_id", unique: true
+    t.index ["from_id"], name: "index_workflow_edges_on_from_id"
+    t.index ["to_id"], name: "index_workflow_edges_on_to_id"
+    t.index ["workflow_id"], name: "index_workflow_edges_on_workflow_id"
+  end
+
+  create_table "workflow_nodes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "folder_id"
+    t.string "kind", null: false
+    t.integer "transformation_id"
+    t.datetime "updated_at", null: false
+    t.integer "workflow_id", null: false
+    t.index ["folder_id"], name: "index_workflow_nodes_on_folder_id"
+    t.index ["transformation_id"], name: "index_workflow_nodes_on_transformation_id"
+    t.index ["workflow_id"], name: "index_workflow_nodes_on_workflow_id"
+  end
+
+  create_table "workflows", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "chats", "ruby_llm_models"
@@ -525,5 +557,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   add_foreign_key "transformation_runs", "shots", on_delete: :nullify
   add_foreign_key "transformation_runs", "styles", on_delete: :nullify
   add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
+  add_foreign_key "transformation_runs", "workflows", on_delete: :nullify
   add_foreign_key "transformations", "styles", on_delete: :nullify
+  add_foreign_key "workflow_edges", "workflow_nodes", column: "from_id", on_delete: :cascade
+  add_foreign_key "workflow_edges", "workflow_nodes", column: "to_id", on_delete: :cascade
+  add_foreign_key "workflow_edges", "workflows", on_delete: :cascade
+  add_foreign_key "workflow_nodes", "folders"
+  add_foreign_key "workflow_nodes", "transformations"
+  add_foreign_key "workflow_nodes", "workflows", on_delete: :cascade
 end

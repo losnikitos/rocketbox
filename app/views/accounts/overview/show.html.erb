@@ -3,35 +3,5 @@
 <% if @nodes.empty? %>
   <p class="text-sm text-ink-500">No recipes yet.</p>
 <% else %>
-  <div class="h-[calc(100dvh-10rem)] overflow-auto" data-controller="flow" data-flow-edges-value="<%= @edges.to_json %>"
-       data-action="wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive">
-    <%# Laid out by flow_controller; hidden until the nodes are placed. %>
-    <div class="invisible relative" data-flow-target="canvas">
-      <svg class="absolute inset-0 size-full overflow-visible" aria-hidden="true">
-        <g data-flow-target="edges" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
-      </svg>
-      <% @nodes.each do |id, n| %>
-        <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false",
-              data: { flow_target: "node", id:, action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
-              class: "#{"group" if n[:path]} absolute flex #{n[:shape] == :recipe ? "w-52" : "w-28"} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
-          <% if n[:shape] == :recipe %>
-            <span class="w-full truncate rounded-xl border-2 border-ink-900/10 bg-white px-4 py-2.5 group-hover:border-ink-900/20 group-hover:bg-stone-50" title="<%= n[:label] %>"><%= n[:label] %></span>
-          <% else %>
-            <span class="relative block w-24 <%= AppHelper::FOLDER_COLORS[n[:color] || "sky"] %>">
-              <svg viewBox="0 0 96 76" class="w-24 stroke-current" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
-                <path d="M2 10a6 6 0 0 1 6-6h22l8 8h50a6 6 0 0 1 6 6v50a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6z" class="fill-current/25 group-hover:fill-current/40" />
-                <%# The front panel is opaque so the back doesn't tint it. %>
-                <rect x="2" y="20" width="92" height="54" rx="6" fill="white" />
-                <rect x="2" y="20" width="92" height="54" rx="6" class="fill-current/10 group-hover:fill-current/20" />
-              </svg>
-              <span class="absolute inset-x-0 top-5 bottom-0 flex items-center justify-center">
-                <%= heroicon n[:icon], options: { class: "size-7", "aria-hidden": true } %>
-              </span>
-            </span>
-            <span><%= n[:label] %></span>
-          <% end %>
-        <% end %>
-      <% end %>
-    </div>
-  </div>
+  <%= render "shared/flow", nodes: @nodes, edges: @edges %>
 <% end %>

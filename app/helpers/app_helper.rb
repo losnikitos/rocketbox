@@ -68,6 +68,8 @@ module AppHelper
         :separator,
         *Transformation::Type.all.filter_map { |type| [ transformations_path(kind: type.slug), type.label, index && params[:kind] == type.slug, counts[type.slug] ] if counts[type.slug] }
       ] ]
+    when "accounts/workflows"
+      [ :workflows, "Workflows", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

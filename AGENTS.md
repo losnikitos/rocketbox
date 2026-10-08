@@ -24,6 +24,8 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a recipe's processing step (type, prompt, options, style, shot group, layer steps), a shared row reusable outside recipes, edited at `/app/transformations` ([controller](/app/controllers/accounts/transformations_controller.rb)). A recipe is inputs + a transformation + output; every run is a `TransformationRun`, its recipe optional.
 
+**Workflows** ([model](/app/models/workflow.rb), edited at `/app/workflows` ([controller](/app/controllers/accounts/workflows_controller.rb))): a graph of input folder nodes, transformation step nodes (shared transformations) and output folder nodes, joined by edges (input or step to step or output). Drawn with the same flow canvas as the overview; edited with plain add/connect/remove forms. Definition only, nothing runs them yet.
+
 **Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`).
 
 ```mermaid
