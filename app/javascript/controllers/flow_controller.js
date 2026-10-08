@@ -5,7 +5,7 @@ import dagre from "@dagrejs/dagre"
 // Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
 // arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
-// centre, or flow:copied when Alt is held at the drop) and the canvas pinch-zoomed or dragged to pan; zoom and scroll
+// centre, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or dragged to pan; zoom and scroll
 // survive reloads of the page.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
@@ -103,13 +103,14 @@ export default class extends Controller {
     this.panning = null
   }
 
+  // With Alt held a copy of the node is dragged away instead, the node staying put.
   grab(event) {
     if (event.button !== 0) return
-    const id = event.currentTarget.dataset.id
+    const el = event.currentTarget, id = el.dataset.id, node = this.graph.node(id), copy = event.altKey
     this.dragged = false
-    this.dragging = { id, node: this.graph.node(id), x: event.clientX, y: event.clientY, moved: false }
-    event.currentTarget.setPointerCapture(event.pointerId)
-    event.currentTarget.style.zIndex = this.z = (this.z || 0) + 1
+    this.dragging = { id, node: copy ? { ...node, el: ghost(el) } : node, copy, x: event.clientX, y: event.clientY, moved: false }
+    el.setPointerCapture(event.pointerId)
+    this.dragging.node.el.style.zIndex = this.z = (this.z || 0) + 1
   }
 
   drag(event) {
@@ -132,7 +133,8 @@ export default class extends Controller {
     if (!d) return
     this.dragged = d.moved
     this.dragging = null
-    if (d.moved) this.dispatch(event.altKey ? "copied" : "moved", { detail: { id: d.id, x: Math.round(d.node.x), y: Math.round(d.node.y) } })
+    if (d.copy && !d.moved) d.node.el.remove()
+    if (d.moved) this.dispatch(d.copy ? "copied" : "moved", { detail: { id: d.id, x: Math.round(d.node.x), y: Math.round(d.node.y) } })
   }
 
   // A drag ends in a click on the node's link; don't follow it. A real click selects the node.
@@ -279,6 +281,14 @@ export default class extends Controller {
     this.endsTarget.style.zIndex = (this.z || 0) + 1
     this.endsTarget.classList.remove("opacity-0")
   }
+}
+
+// A stand-in for an Alt-dragged node's copy until the page re-renders with the saved one; not a node target.
+function ghost(el) {
+  const copy = el.cloneNode(true)
+  ;["id", "data-flow-target", "data-action", "aria-current"].forEach(name => copy.removeAttribute(name))
+  el.after(copy)
+  return copy
 }
 
 function place({ el, x, y, width, height }) {
