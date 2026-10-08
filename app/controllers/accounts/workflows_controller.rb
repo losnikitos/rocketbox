@@ -3,7 +3,7 @@
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
-  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the
+  # are listed below the canvas, in place of + Add, and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the
   # selected run from it (the latest in edit mode); play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"

@@ -2,14 +2,14 @@
 
 # How a transformation makes its media, picked by the transformation's `kind`, a type's slug. Each type is a class: what
 # it is as class methods (label, description, layer, …), how it makes a run's file as `file` on an instance wrapping the run.
-# Its superclass is its group: Generation (one AI call), Overlay (a layer over one photo or video), Edit (one photo or
-# video edited) or Scripted (the inputs cut into a reel, each type its own folder under reels/). A new type is a
-# subclass plus a line in `all`.
+# Its superclass is its group: Generation (one AI call), Transform (Edit: one photo or video edited), Overlay (a layer
+# over one photo or video) or Reels (Scripted: the inputs cut into a reel, each type its own folder under reels/). A new
+# type is a subclass plus a line in `all`, whose order is the groups' order.
 class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo,
-    Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Transformation::SmartCrop, Transformation::Zoom,
+    Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 

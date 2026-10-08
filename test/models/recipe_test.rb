@@ -331,7 +331,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "smart crop takes one photo or video and makes the same, 9:16 at 1080x1920 around its subject" do
-    assert_equal "Edit · Smart crop", Transformation.new(kind: "smart_crop").type_label
+    assert_equal "Transform · Smart crop", Transformation.new(kind: "smart_crop").type_label
     assert_not new_recipe(name: "x", kind: "smart_crop", inputs: [ input(:ready), input(:ready) ]).valid?
     crop = Transformation.create!(name: "Smart crop", kind: "smart_crop")
     # A red box on the left of a black frame: the middle 9:16 is all black.

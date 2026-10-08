@@ -118,7 +118,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play]", step.id.to_s, count: 0
     assert_select "a[data-id] [role=img]", 0
-    assert_select "[aria-label=Palette]"
+    assert_select "#workflow_palette [role=tab]", 5
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
@@ -132,7 +132,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
     end
-    assert_select "[aria-label=Palette]", 0
+    assert_select "#workflow_palette", 0
     assert_select "a[href^=?]", admin_workflow_run_path(run)
     get admin_workflow_run_url(run)
     assert_response :success

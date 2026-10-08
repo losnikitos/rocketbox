@@ -16,7 +16,7 @@ Where we stand:
 
 ## Graph
 
-- Each step owns its transformation (never a recipe's), made blank from the type dropped from the palette and deleted with the step.
+- Each step owns its transformation (never a recipe's), made blank from the type added from + Add and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
 - A folder node can hold only its media with a tag, and gives its newest N (Newest, 1 by default).
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
@@ -24,7 +24,7 @@ Where we stand:
 
 ## Editing
 
-- Drag folders and transformation types in from the bottom palette (each tab has its own search), and a selected folder's media from the inspector.
+- Drag (or click) folders and transformation types in from the + Add popover over the canvas, its tabs Folders (with a search) and the types' groups: Generation, Transform, Overlay and Reels; and a selected folder's media from the inspector.
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
