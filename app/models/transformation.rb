@@ -47,6 +47,20 @@ class Transformation < ApplicationRecord
   # "Generation · Image", or "Overlay · Fully booked".
   def type_label = type&.then { "#{it.group.label} · #{it.label}" }
 
+  # "Grok Imagine Video · 9:16 · 720p · 8 s", or "Zoom in · 3 s"; the type label for a type without options.
+  def options_label
+    return type_label unless ai? || type&.options
+    option_choices.keys.filter_map do |key|
+      next if (value = options[key]).blank?
+      case key
+      when "model" then models.find { it.model_id == value }&.name || value
+      when "duration" then "#{value} s"
+      when "zoom" then "Zoom #{value}"
+      else value
+      end
+    end.join(" · ").presence || type_label
+  end
+
   def takes?(media) = media.story_image? || (!ai? && media.video?)
 
   # `media` are the run's source media, in order; the result lands in `folder` with `tags`. `shot` is from the shot

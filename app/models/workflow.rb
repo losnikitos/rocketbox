@@ -35,7 +35,7 @@ class Workflow < ApplicationRecord
   # ponytail: one run per media, and a loop across workflows (A feeds B feeds A) isn't caught.
   def self.autorun!(media)
     where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).find_each do |workflow|
-      workflow.start_nodes.select { it.folder_id == media.folder_id && (!it.tag_id || media.tag_ids.include?(it.tag_id)) }.each do |node|
+      workflow.start_nodes.select { it.folder_id == media.folder_id && (it.tags.ids - media.tag_ids).empty? }.each do |node|
         workflow.runs.create!(picks: { node.id.to_s => [ media.id ] }).start!(node, media.user)
       end
     end

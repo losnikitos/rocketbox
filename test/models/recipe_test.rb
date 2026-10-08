@@ -34,6 +34,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_not video.valid?
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
     assert_not new_recipe(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior, 2) ]).valid?
+    assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
   end
 
   test "inputs from one folder merge, their counts summed; a missing count is 1" do
@@ -332,6 +333,7 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "smart crop takes one photo or video and makes the same, 9:16 at 1080x1920 around its subject" do
     assert_equal "Transform · Smart crop", Transformation.new(kind: "smart_crop").type_label
+    assert_equal "Transform · Smart crop", Transformation.new(kind: "smart_crop").options_label
     assert_not new_recipe(name: "x", kind: "smart_crop", inputs: [ input(:ready), input(:ready) ]).valid?
     crop = Transformation.create!(name: "Smart crop", kind: "smart_crop")
     # A red box on the left of a black frame: the middle 9:16 is all black.
@@ -363,6 +365,7 @@ class RecipeTest < ActiveSupport::TestCase
   test "zoom makes a 9:16 video of its duration zooming on the center of one photo or video, a video's sound kept" do
     zoom = Transformation.create!(name: "Zoom", kind: "zoom")
     assert_equal({ "zoom" => "in", "duration" => "1" }, zoom.options)
+    assert_equal "Zoom in · 1 s", zoom.options_label
     assert_not zoom.update(options: { "zoom" => "in", "duration" => "9" })
     zoom.reload
     # A red box in the middle of a black frame: it grows as the zoom goes in.

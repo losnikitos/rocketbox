@@ -136,6 +136,28 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_select "td", text: "Run 1"
   end
 
+  test "admin edits a workflow's name and autorun" do
+    sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Stored")
+
+    get "/admin/workflows/stored/edit", headers: @ua
+    assert_response :success
+    patch "/admin/workflows/stored", params: { workflow: { name: "Renamed", autorun: "1" } }, headers: @ua
+    assert_redirected_to "/admin/workflows/renamed"
+    assert_equal [ "Renamed", true ], workflow.reload.values_at(:name, :autorun)
+  end
+
+  test "admin edits a workflow run's name, status and error" do
+    sign_in_as(users(:admin_user))
+    run = Workflow.create!(name: "Stored").runs.create!(status: "started", error: "Boom")
+
+    get "/admin/workflow_runs/#{run.id}/edit", headers: @ua
+    assert_response :success
+    patch "/admin/workflow_runs/#{run.id}", params: { workflow_run: { name: "Retry", status: "draft", error: "" } }, headers: @ua
+    assert_redirected_to "/admin/workflow_runs/#{run.id}"
+    assert_equal [ "Retry", "draft", nil ], run.reload.values_at(:name, :status, :error)
+  end
+
   test "admin manages tags and tags media" do
     admin = sign_in_as(users(:admin_user))
     recipes(:cinematic).update!(output_tag_ids: [ tags(:after).id ])

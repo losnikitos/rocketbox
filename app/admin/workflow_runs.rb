@@ -1,16 +1,19 @@
 ActiveAdmin.register WorkflowRun do
-  actions :index, :show
+  actions :index, :show, :edit, :update
+  permit_params :name, :status, :error
 
   includes :workflow
 
   filter :workflow
   filter :name
+  filter :status, as: :select, collection: WorkflowRun::STATUSES
   filter :created_at
 
   index do
     id_column
     column :workflow
     column :name
+    column :status
     column :error
     column :created_at
     actions
@@ -21,6 +24,7 @@ ActiveAdmin.register WorkflowRun do
       row :id
       row :workflow
       row :name
+      row :status
       row(:open) { |run| link_to "Open in app", workflow_path(run.workflow, run: run.id) }
       row :picks
       row :error
@@ -39,5 +43,14 @@ ActiveAdmin.register WorkflowRun do
         column :created_at
       end
     end
+  end
+
+  form do |f|
+    f.inputs do
+      f.input :name
+      f.input :status, as: :select, collection: WorkflowRun::STATUSES, include_blank: false, hint: "Draft unlocks its picks"
+      f.input :error
+    end
+    f.actions
   end
 end
