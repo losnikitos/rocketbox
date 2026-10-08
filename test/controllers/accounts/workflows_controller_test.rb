@@ -133,6 +133,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
     end
     assert_select "[aria-label=Palette]", 0
+    assert_select "a[href^=?]", admin_workflow_run_path(run)
+    get admin_workflow_run_url(run)
+    assert_response :success
+    assert_select "a[href^=?]", admin_transformation_run_path(run.step_runs.sole)
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: step.id)
     assert_select "turbo-frame#inspector" do

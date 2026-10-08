@@ -46,6 +46,7 @@
               class: "cursor-pointer rounded-lg p-1.5 text-ink-500 transition hover:bg-signal-red/10 hover:text-signal-red disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-500" do %>
           <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
         <% end %>
+        <%= render "shared/admin_links/workflow_run", workflow_run: @run %>
       <% end %>
     </div>
 
