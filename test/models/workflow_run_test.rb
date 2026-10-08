@@ -94,10 +94,12 @@ class WorkflowRunTest < ActiveSupport::TestCase
     step = workflow.nodes.create!(transformation: transformations(:cinematic))
     workflow.edges.create!(from: folder, to: step)
     run = workflow.latest_run
+    assert_equal "draft", run.state
 
     run.update!(picks: { folder.id.to_s => [ older.id ] })
     run.start!(folder, user)
     assert_equal [ [ older ] ], run.step_runs.map(&:source_media)
+    assert_equal [ "started", "running" ], [ run.status, run.state ]
 
     run.update!(picks: {})
     run.start!(folder, user)

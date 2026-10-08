@@ -19,7 +19,7 @@
 
 <% mode = "rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
 <% thumb = "h-15 w-auto rounded-md" %>
-<% status_pill = { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
+<% status_pill = { "draft" => "bg-ink-900/5 text-ink-600", "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
 <%# How long one or several step runs took: the slowest, once none is running. %>
 <% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
@@ -38,6 +38,9 @@
         <%= select_tag nil, options_for_select(@workflow.runs.reverse.map { [ "#{it.name} · #{l(it.created_at, format: :short)}", workflow_path(@workflow, run: it.id) ] },
               workflow_path(@workflow, run: @run.id)), id: nil, aria: { label: "Run" }, data: { action: "workflow#switch" },
               class: "rounded-lg border border-ink-900/15 bg-white py-1 pr-8 pl-2.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+        <% if (state = @run.state) %>
+          <span title="<%= "Its picks are locked" unless @run.draft? %>" class="<%= status_pill[state] %> ml-1"><%= state.humanize %></span>
+        <% end %>
         <%= button_to workflow_runs_path(@workflow), title: "New run", class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> New run
         <% end %>
@@ -222,8 +225,8 @@
         <% if node.folder && @start_nodes.include?(node) %>
           <section aria-label="Picks" class="space-y-2 border-t border-ink-900/10 pt-4">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="text-xs text-ink-500">Play takes</h3>
-              <% if @run.picks.key?(node.id.to_s) %>
+              <h3 class="text-xs text-ink-500"><%= @run.draft? ? "Play takes" : "Play took (locked once the run started)" %></h3>
+              <% if @run.draft? && @run.picks.key?(node.id.to_s) %>
                 <%= button_to "Newest #{node.newest}", workflow_run_path(@workflow, @run), method: :patch, params: { node_id: node.id }, form: { data: top },
                       title: "Take its newest media again", class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
               <% end %>
@@ -232,9 +235,9 @@
               <% picked = @run.picked(node, Current.account) %>
               <%= form_with url: workflow_run_path(@workflow, @run), method: :patch, data: top, html: { onchange: "this.requestSubmit()" } do %>
                 <%= hidden_field_tag :node_id, node.id, id: nil %>
-                <div class="grid grid-cols-3 gap-2">
+                <fieldset class="grid grid-cols-3 gap-2" <%= "disabled" unless @run.draft? %>>
                   <% @folder_media.each do |media| %>
-                    <label class="group/option relative block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                    <label class="group/option relative block cursor-pointer overflow-hidden has-disabled:cursor-default rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
                       <%= check_box_tag "media_ids[]", media.id, picked.include?(media), id: nil, class: "sr-only" %>
                       <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
                       <span class="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-black/20 text-transparent shadow-sm group-has-checked/option:border-rocket group-has-checked/option:bg-rocket group-has-checked/option:text-white" aria-hidden="true">
@@ -242,7 +245,7 @@
                       </span>
                     </label>
                   <% end %>
-                </div>
+                </fieldset>
               <% end %>
             <% else %>
               <p class="text-sm text-ink-500"><%= node.tag ? "No media in this folder has that tag." : "This folder is empty." %></p>

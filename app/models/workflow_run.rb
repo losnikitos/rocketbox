@@ -8,24 +8,33 @@
 # lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them;
 # `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
-# `error`. A workflow has as many as were added, each named Run N.
+# `error`. A workflow has as many as were added, each named Run N. A run is a draft, its picks editable, until it's first
+# played (from a start node or a step); then it's started and its picks are locked.
 class WorkflowRun < ApplicationRecord
+  STATUSES = %w[draft started].freeze
+
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
+
+  validates :status, inclusion: { in: STATUSES }
 
   before_create { self.name = "Run #{workflow.runs.count + 1}" }
 
   def running? = step_runs.any?(&:running?)
+  def draft? = status == "draft"
+
+  # Draft until first played; then failed, running or complete, as its step runs (nil while none started).
+  def state = draft? ? "draft" : error ? "failed" : TransformationRun.status_of(step_runs)
 
   # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)
-    update!(error: nil)
+    update!(error: nil, status: "started")
     advance!(node, user)
   end
 
   # Drops `step`'s step runs and the ones after them, and starts it from what its inputs give now.
   def rerun!(step, user)
-    update!(error: nil)
+    update!(error: nil, status: "started")
     with_lock { runs_of(step).each { drop(it) } }
     run_steps([ step ], user)
   end
