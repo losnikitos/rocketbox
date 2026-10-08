@@ -1,13 +1,16 @@
 ActiveAdmin.register Workflow do
-  actions :index, :show
+  actions :index, :show, :edit, :update
+  permit_params :name, :autorun
 
   remove_filter :slugs
   filter :name
+  filter :autorun
   filter :created_at
 
   index do
     id_column
     column :name
+    column :autorun
     column("Nodes") { it.nodes.count }
     column("Edges") { it.edges.count }
     column("Runs") { it.runs.count }
@@ -20,6 +23,7 @@ ActiveAdmin.register Workflow do
       row :id
       row :name
       row :slug
+      row :autorun
       row(:edit) { link_to "Open in app", workflow_path(it) }
       row :created_at
       row :updated_at
@@ -57,5 +61,13 @@ ActiveAdmin.register Workflow do
         column :created_at
       end
     end
+  end
+
+  form do |f|
+    f.inputs do
+      f.input :name
+      f.input :autorun, hint: "Start a run for each media landing in a start folder"
+    end
+    f.actions
   end
 end

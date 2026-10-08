@@ -123,7 +123,7 @@ module Accounts
             feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
-                       kind: node.transformation&.type_label, inputs: feeds.size, slots: node.transformation&.slots,
+                       kind: node.transformation&.options_label, inputs: feeds.size, slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end

@@ -17,6 +17,7 @@ class WorkflowRun < ApplicationRecord
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
 
   validates :status, inclusion: { in: STATUSES }
+  normalizes :error, with: -> { it.presence }
 
   before_create { self.name = "Run #{workflow.runs.count + 1}" }
 
