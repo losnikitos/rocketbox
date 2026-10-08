@@ -9,7 +9,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_url
   end
 
-  test "admin builds a workflow on the canvas, rejects a folder to folder edge, moves and removes nodes and deletes it" do
+  test "admin builds a workflow on the canvas, rejects a folder to folder edge, moves edge ends, moves and removes nodes and deletes it" do
     admin = sign_in_as(users(:admin_user))
 
     post workflows_url, params: { workflow: { name: "" } }
@@ -47,7 +47,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
+      { id: it.id, path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end
@@ -66,6 +66,15 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get transformation_url(transformations(:cinematic), account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
+
+    move = ->(edge, from, to) { patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge.id, from_id: from.id, to_id: to.id } } } } }
+    move.(edge_in, input, output)
+    assert_response :unprocessable_entity
+    assert_equal step.id, edge_in.reload.to_id
+    move.(edge_out, step, input)
+    assert_equal [ [ input.id, step.id ], [ step.id, input.id ] ], workflow.edges.reload.map { [ it.from_id, it.to_id ] }
+    assert_equal input.id, edge_out.reload.to_id
+    move.(edge_out, step, output)
 
     get workflow_url(workflow, account: admin.id, edge: edge_out.id)
     assert_select "turbo-frame#inspector h2", "#{step.label} → #{output.label}"

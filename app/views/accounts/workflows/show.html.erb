@@ -15,7 +15,7 @@
 <% end %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= workflow_path(@workflow) %>"
-     data-action="flow:moved->workflow#move flow:linked->workflow#link">
+     data-action="flow:moved->workflow#move flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
   <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
     <% if @workflow.errors.any? %>
       <div class="<%= tw_alert_error_classes %> m-3" role="alert">
@@ -42,6 +42,7 @@
       <%= hidden_field_tag "workflow[nodes_attributes][0][y]", nil, id: nil, data: { workflow_target: "y" } %>
     <% end %>
     <%= form_with model: @workflow, class: "hidden", data: { workflow_target: "connect" } do %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][id]", nil, id: nil, data: { workflow_target: "edge" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
     <% end %>
@@ -90,6 +91,7 @@
         <% end %>
       </header>
       <%= button_to "Remove connection", workflow_path(@workflow), method: :patch, form: { data: top },
+            data: { workflow_target: "remove" }, aria: { keyshortcuts: "Delete" },
             class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5",
             params: { workflow: { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } } } %>
     <% elsif (node = @selected) %>
@@ -109,6 +111,7 @@
                 class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
         <% end %>
         <%= button_to "Remove from workflow", workflow_path(@workflow), method: :patch, form: { data: top },
+              data: { workflow_target: "remove" }, aria: { keyshortcuts: "Delete" },
               class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5",
               params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
       </div>
@@ -152,7 +155,8 @@
       <% end %>
       <p class="text-sm text-ink-500">
         Drag folders and transformations from the palette onto the canvas, or click one to add it. Drag from a node's dot to
-        another node to connect them, and click a node or connection to edit it.
+        another node to connect them, and click a node or connection to edit it, or press Delete to remove it. Click the canvas itself to deselect. A selected
+        connection's ends can be dragged to other nodes.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },
             class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>

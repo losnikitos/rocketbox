@@ -1,9 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), submits the arrows drawn
-// between them (flow:linked), and adds palette items dropped on the canvas there, or clicked, in the middle of the view.
+// between them or moved to other nodes (flow:linked), and adds palette items dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "from", "to", "tab"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "tab", "remove"]
   static values = { url: String }
 
   async move({ detail: { id, x, y } }) {
@@ -16,10 +17,23 @@ export default class extends Controller {
     if (!response?.ok) alert("Couldn't save where the node was moved. Reload and try again.")
   }
 
-  link({ detail: { from, to } }) {
+  clear() {
+    Turbo.visit(this.urlValue, { frame: "inspector", action: "advance" })
+  }
+
+  link({ detail: { id, from, to } }) {
+    this.edgeTarget.value = id ?? ""
     this.fromTarget.value = from
     this.toTarget.value = to
     this.connectTarget.requestSubmit()
+  }
+
+  // Delete (Backspace on a Mac) removes the selected node or connection, unless typing in a field.
+  remove(event) {
+    if (!["Delete", "Backspace"].includes(event.key) || event.repeat || !this.hasRemoveTarget) return
+    if (event.target.isContentEditable || event.target.closest("input, textarea, select")) return
+    event.preventDefault()
+    this.removeTarget.click()
   }
 
   tab({ currentTarget }) {

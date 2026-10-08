@@ -2,13 +2,14 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 import dagre from "@dagrejs/dagre"
 
-// Lays out the node targets left to right and draws the edges ([from id, to id, { path, frame, current }]) as curved
+// Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
 // arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
 // centre) and the canvas pinch-zoomed; zoom and scroll survive reloads of the page.
-// Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids.
+// Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
+// the selected edge (one with an id) onto another node dispatches it with the edge's id too.
 export default class extends Controller {
-  static targets = ["canvas", "node", "edges"]
+  static targets = ["canvas", "node", "edges", "ends"]
   static values = { edges: Array }
 
   connect() {
@@ -120,6 +121,16 @@ export default class extends Controller {
     Turbo.visit(path, { frame, action: "advance" })
   }
 
+  // A click on the canvas itself, not at the end of a drag, clears the selection (flow:cleared).
+  clear(event) {
+    const dragged = this.dragged
+    this.dragged = false
+    if (dragged || event.target.closest("[data-flow-target~='node'], [data-v]")) return
+    if (!this.element.querySelector("[aria-current]") && !this.graph.edges().some(e => this.graph.edge(e).current)) return
+    this.select(null)
+    this.dispatch("cleared")
+  }
+
   // Marks one node element or edge ({ v, w }) as the selected one.
   select(node, edge) {
     this.nodeTargets.forEach(el => el === node ? el.setAttribute("aria-current", "true") : el.removeAttribute("aria-current"))
@@ -127,31 +138,78 @@ export default class extends Controller {
     this.draw()
   }
 
+  // A new arrow out of a node's handle.
   link(event) {
-    if (event.button !== 0) return
     const id = event.currentTarget.closest("[data-flow-target~='node']").dataset.id
-    this.dragged = false
-    this.linking = { id, from: anchor(this.graph.node(id), 1), x: event.clientX, y: event.clientY }
-    event.currentTarget.setPointerCapture(event.pointerId)
+    this.reach(event, { fixed: id, side: 1, start: anchor(this.graph.node(id), 1) })
   }
 
+  // One end of the selected edge, moved to another node while the other end stays.
+  regrab(event) {
+    const { v, w, end } = event.currentTarget.dataset, edge = { v, w }, [from, to] = this.anchors(edge)
+    this.reach(event, end === "to" ? { fixed: v, side: 1, start: from, edge } : { fixed: w, side: -1, start: to, edge })
+  }
+
+  // side 1: the fixed node is the source and the loose end its target; -1 the other way round.
+  reach(event, linking) {
+    if (event.button !== 0) return
+    this.dragged = false
+    this.linking = linking
+    event.currentTarget.setPointerCapture(event.pointerId)
+    // Faded, not redrawn or hidden, so the dragged knob keeps the pointer capture.
+    this.endsTarget.classList.add("opacity-0")
+    this.draw()
+  }
+
+  // The loose end snaps to a node it can attach to, which lights up, or follows the pointer.
   stretch(event) {
     const l = this.linking
     if (!l) return
-    const to = { x: l.from.x + (event.clientX - l.x) / this.scale, y: l.from.y + (event.clientY - l.y) / this.scale }
+    const node = this.droppable(event)
+    this.nodeTargets.forEach(el => el.toggleAttribute("data-flow-drop", el === node?.el))
+    const loose = node ? anchor(node, -l.side) : this.point(event)
     this.draw()
-    this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${curve([l.from, to])}" class="stroke-rocket" />`)
+    this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${curve(l.side > 0 ? [l.start, loose] : [loose, l.start])}" class="stroke-rocket" />`)
   }
 
+  // Dropped on a node it can attach to: flow:linked with both ids, and the edge's id when one was moved. Anywhere else
+  // it snaps back.
   attach(event) {
     const l = this.linking
     if (!l) return
+    const node = this.droppable(event)
     this.linking = null
     // The press ends in a click on the node's link; don't follow it.
     this.dragged = true
+    this.nodeTargets.forEach(el => el.removeAttribute("data-flow-drop"))
     this.draw()
-    const to = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-flow-target~='node']")
-    if (to && this.element.contains(to) && to.dataset.id !== l.id) this.dispatch("linked", { detail: { from: l.id, to: to.dataset.id } })
+    if (!node) return
+    const [from, to] = l.side > 0 ? [l.fixed, node.el.dataset.id] : [node.el.dataset.id, l.fixed]
+    this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to } })
+  }
+
+  // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
+  // end, and not connected that way already.
+  droppable({ clientX, clientY }) {
+    const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
+    if (!el || !this.element.contains(el)) return
+    const g = this.graph, { fixed, side } = this.linking, [v, w] = side > 0 ? [fixed, el.dataset.id] : [el.dataset.id, fixed]
+    if (v === w || g.hasEdge(v, w) || !("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
+    return g.node(el.dataset.id)
+  }
+
+  // The pointer in canvas coordinates.
+  point({ clientX, clientY }) {
+    const box = this.element.getBoundingClientRect()
+    return { x: (this.element.scrollLeft + clientX - box.left) / this.scale, y: (this.element.scrollTop + clientY - box.top) / this.scale }
+  }
+
+  // Where an edge leaves its source and enters its target. Edges in take the target's ports top to bottom in their
+  // sources' order, so they don't cross.
+  anchors({ v, w }) {
+    const g = this.graph, target = g.node(w)
+    const port = g.inEdges(w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(v)
+    return [anchor(g.node(v), 1), anchor(target, -1, target.inputs[port])]
   }
 
   // Fits the canvas to its nodes, and at least to the visible area so anything can be dropped anywhere.
@@ -163,11 +221,9 @@ export default class extends Controller {
   }
 
   draw() {
-    const g = this.graph
-    this.edgesTarget.innerHTML = g.edges().map(e => {
-      // Edges in take the target's ports top to bottom in their sources' order, so they don't cross.
-      const port = g.inEdges(e.w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(e.v)
-      const source = g.node(e.v), target = g.node(e.w), from = anchor(source, 1), to = anchor(target, -1, target.inputs[port])
+    const g = this.graph, moving = this.linking?.edge
+    this.edgesTarget.innerHTML = g.edges().filter(e => !(e.v === moving?.v && e.w === moving?.w)).map(e => {
+      const source = g.node(e.v), target = g.node(e.w), [from, to] = this.anchors(e)
       // dagre doubles the ranks to fit edge labels: keep only the bends at node ranks. Dragging a node drops its edges' bends.
       const via = source.moved || target.moved ? [] : g.edge(e).points.slice(1, -1).filter((_, i) => i % 2)
       // It routes through node centres; lift the bends to icon height, blending from source to target.
@@ -177,6 +233,15 @@ export default class extends Controller {
       // A wide invisible stroke makes the thin dashed line easy to click.
       return path ? `<g data-v="${e.v}" data-w="${e.w}" class="group cursor-pointer"><path d="${d}" stroke="transparent" stroke-width="12" stroke-dasharray="none" />${line}</g>` : line
     }).join("")
+    if (this.linking) return
+    // Knobs on the selected edge's ends, above every node dragged to the front.
+    const selected = g.edges().find(e => g.edge(e).current && g.edge(e).id)
+    this.endsTarget.innerHTML = selected ? this.anchors(selected).map(({ x, y }, i) =>
+      `<span data-v="${selected.v}" data-w="${selected.w}" data-end="${i ? "to" : "from"}" title="Drag to another node" style="left:${x}px;top:${y}px"
+             data-action="pointerdown->flow#regrab:stop pointermove->flow#stretch:stop pointerup->flow#attach:stop pointercancel->flow#attach:stop"
+             class="pointer-events-auto absolute size-4 -translate-1/2 cursor-grab touch-none rounded-full border-2 border-rocket bg-white hover:bg-rocket/10 active:cursor-grabbing"></span>`).join("") : ""
+    this.endsTarget.style.zIndex = (this.z || 0) + 1
+    this.endsTarget.classList.remove("opacity-0")
   }
 }
 

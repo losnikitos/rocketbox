@@ -1,23 +1,27 @@
 <%# locals: (nodes:, edges:, height: "h-[calc(100dvh-10rem)]") %>
-<%# nodes: { id => { label:, icon:, cover:, path:, shape: (:folder, :recipe or :step), color:, x:, y:, frame:, current:, linkable: } }, edges: [[from id, to id, { path:, frame:, current: }], ...] %>
+<%# nodes: { id => { label:, icon:, cover:, path:, shape: (:folder, :recipe or :step), color:, x:, y:, frame:, current:, linkable: } }, edges: [[from id, to id, { id:, path:, frame:, current: }], ...] %>
 <%# Optional: x and y (centre) pin a node instead of laying it out; frame opens path in that turbo frame; current marks the %>
 <%# selected node; linkable adds a port to drag arrows from (flow:linked). A :step is a card with its type's cover left of its label and kind %>
 <%# (its type label) and an input port on the left per arrow in (inputs, at least one). An edge's optional path makes it %>
-<%# clickable, like a node's. %>
+<%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked). %>
 <div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.to_json %>"
-     data-action="wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember">
+     data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember">
   <%# Laid out by flow_controller; hidden until the nodes are placed. %>
   <div class="invisible relative" data-flow-target="canvas">
     <svg class="absolute inset-0 size-full overflow-visible" aria-hidden="true">
+      <pattern id="flow-dots" width="20" height="20" patternUnits="userSpaceOnUse">
+        <circle cx="10" cy="10" r="1" class="fill-ink-900/20" />
+      </pattern>
+      <rect width="100%" height="100%" fill="url(#flow-dots)" class="pointer-events-none" />
       <g data-flow-target="edges" data-action="click->flow#pick" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
     </svg>
     <% nodes.each do |id, n| %>
       <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false", aria: { current: ("true" if n[:current]) },
-            data: { flow_target: "node", id:, x: n[:x], y: n[:y], turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
+            data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
                     action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
             class: "#{"group" if n[:path]} absolute flex #{{ recipe: "w-52", step: "w-56" }.fetch(n[:shape], "w-28")} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% if n[:shape] == :step %>
-          <span class="flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left group-hover:border-ink-900/20 group-hover:bg-stone-50 group-aria-[current=true]:border-rocket">
+          <span class="flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left group-hover:border-ink-900/20 group-hover:bg-stone-50 group-aria-[current=true]:border-rocket group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
             <%= image_tag n[:cover], alt: "", draggable: "false", class: "aspect-2/3 w-14 shrink-0 rounded-lg object-cover" %>
             <span class="flex min-w-0 flex-1 flex-col gap-1">
               <span class="line-clamp-3 break-words" title="<%= n[:label] %>"><%= n[:label] %></span>
@@ -27,7 +31,7 @@
           <%# Arrows in attach to these, top to bottom in their sources' order (flow_controller). %>
           <span class="absolute inset-y-0 -left-2 flex flex-col justify-evenly" aria-hidden="true">
             <% [ n[:inputs].to_i, 1 ].max.times do %>
-              <span data-flow-input class="size-4 rounded-full border-2 border-ink-900/30 bg-white"></span>
+              <span data-flow-input class="size-4 rounded-full border-2 border-ink-900/30 bg-white group-data-[flow-drop]:border-rocket"></span>
             <% end %>
           </span>
         <% elsif n[:shape] == :recipe %>
@@ -35,7 +39,7 @@
         <% else %>
           <span class="relative block w-24 <%= AppHelper::FOLDER_COLORS[n[:color] || "sky"] %>">
             <svg viewBox="0 0 96 76" class="w-24 stroke-current" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
-              <path d="M2 10a6 6 0 0 1 6-6h22l8 8h50a6 6 0 0 1 6 6v50a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6z" class="fill-current/25 group-hover:fill-current/40" />
+              <path d="M2 10a6 6 0 0 1 6-6h22l8 8h50a6 6 0 0 1 6 6v50a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6z" class="fill-current/25 group-hover:fill-current/40 group-data-[flow-drop]:fill-current/50" />
               <%# The front panel is opaque so the back doesn't tint it. %>
               <rect x="2" y="20" width="92" height="54" rx="6" fill="white" />
               <rect x="2" y="20" width="92" height="54" rx="6" class="fill-current/10 group-hover:fill-current/20" />
@@ -44,15 +48,17 @@
               <%= heroicon n[:icon], options: { class: "size-7", "aria-hidden": true } %>
             </span>
           </span>
-          <span class="group-aria-[current=true]:text-rocket"><%= n[:label] %></span>
+          <span class="group-aria-[current=true]:text-rocket group-data-[flow-drop]:text-rocket"><%= n[:label] %></span>
         <% end %>
         <% if n[:linkable] %>
           <%# Placed at the arrows' height by flow_controller. %>
           <span data-flow-handle aria-hidden="true" title="Drag to connect"
                 data-action="pointerdown->flow#link:stop pointermove->flow#stretch:stop pointerup->flow#attach:stop pointercancel->flow#attach:stop"
-                class="absolute -right-2 size-4 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-ink-900/30 bg-white hover:border-rocket hover:bg-rocket/10"></span>
+                class="absolute -right-2 size-4 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-ink-900/30 bg-white hover:border-rocket hover:bg-rocket/10 group-data-[flow-drop]:border-rocket"></span>
         <% end %>
       <% end %>
     <% end %>
+    <%# The selected edge's draggable ends, above the nodes' ports (flow_controller). %>
+    <div data-flow-target="ends" class="pointer-events-none absolute inset-0"></div>
   </div>
 </div>

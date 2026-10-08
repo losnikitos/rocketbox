@@ -78,7 +78,7 @@ module Accounts
                        linkable: true, x: node.x, y: node.y, shape: node.step? ? :step : :folder, color: node.folder&.color,
                        kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id } } ]
         end
-        @edges = @graph_edges.map { [ it.from_id, it.to_id, { path: workflow_path(@workflow, edge: it.id), frame: "inspector", current: it == @selected_edge } ] }
+        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id), frame: "inspector", current: it == @selected_edge } ] }
       end
   end
 end
