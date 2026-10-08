@@ -22,7 +22,9 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, the default recipe output. Every media is in exactly one folder; recipe inputs and outputs point at folders.
 
-**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a recipe's processing step (type, prompt, options, style, shot group, layer steps), a shared row reusable outside recipes. A recipe is inputs + a transformation + output; every run is a `TransformationRun`, its recipe optional.
+**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, shot group, layer steps; a recipe's own takes the recipe's name), a shared row reusable outside recipes, edited at `/app/transformations` ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the "Add transformation" menu (or the new recipe form) and fixed once created. A recipe is inputs + a transformation + output; every run is a `TransformationRun`, its recipe optional.
+
+**Workflows:** our new approach to building the media pipeline — a graph of folder, media and transformation step nodes, edited and run on the overview's flow canvas; inspired by n8n, ComfyUI, Zapier and friends. For now they run in parallel with recipes; recipes may be retired later. See [WORKFLOWS.md](./docs/WORKFLOWS.md).
 
 **Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`).
 
@@ -51,8 +53,12 @@ Prefer built-in scale utilities over arbitrary values (`rounded-[10px]`, `min-w-
 
 ## Vocabulary
 - **Island** — a standalone content panel, usually styled `rounded-2xl border border-ink-900/10 bg-white p-6`.
+- Workflow terms (node, step, edge, run, step run): see [WORKFLOWS.md](./docs/WORKFLOWS.md#vocabulary).
 
 # Documentation Index
+
+### [WORKFLOWS.md](./docs/WORKFLOWS.md)
+Workflow graphs, the canvas editor, runs and step runs; prior art (n8n, ComfyUI, Zapier).
 
 ### [STRIPE.md](./docs/STRIPE.md)
 Payments and billing via Stripe.

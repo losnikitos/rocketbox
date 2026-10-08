@@ -56,12 +56,15 @@ class Transformation::Scripted < Transformation::Type
     end
   end
 
-  # [[media, frames], ...], one per cut, ending at beats.csv's cut ends, each a random input other than the one before.
+  # [[media, frames], ...], one per cut, ending at beats.csv's cut ends, each a random input other than the one before,
+  # or, for a type with slots, the inputs in order, round again once they run out.
   # Ends are rounded to frames, not durations, so cuts don't drift off the beat.
   def cuts
     media = source_media
     ends = CSV.foreach(self.class.dir.join("beats.csv"), headers: true).map { (it["end"].to_f * FPS).round }
-    ends.zip([ 0, *ends ]).each_with_object([]) { |(stop, start), acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, stop - start ] }
+    lengths = ends.zip([ 0, *ends ]).map { |stop, start| stop - start }
+    return lengths.each_with_index.map { |frames, i| [ media[i % media.size], frames ] } if self.class.slots
+    lengths.each_with_object([]) { |frames, acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, frames ] }
   end
 
   # The layer values over cut `i`, from the transformation's layer steps, or nil for no layer.

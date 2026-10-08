@@ -1,0 +1,73 @@
+<%# locals: (tf:, transformation:, scope:, refresh_url:, pick: transformation.new_record?) %>
+<%# The form holds a hidden `refresh_type` button that redraws it for the picked type. A saved type is fixed. %>
+<% type = transformation.type %>
+<div class="space-y-3">
+  <% if pick %>
+    <%= tf.label :kind, "Type", class: tw_label_classes %>
+    <%= tf.select :kind, nil, {}, onchange: "this.form.requestSubmit(this.form.elements.refresh_type)",
+          class: "mt-1 flex w-full items-center gap-2 rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-left text-sm text-ink-900 [appearance:base-select] focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30 [&::picker(select)]:mt-1 [&::picker(select)]:w-lg [&::picker(select)]:rounded-lg [&::picker(select)]:border [&::picker(select)]:border-ink-900/15 [&::picker(select)]:[appearance:base-select]" do %>
+      <button class="min-w-0 flex-1 text-left"><selectedcontent class="flex min-w-0 items-center gap-2"></selectedcontent></button>
+      <% Transformation::Type.all.group_by(&:group).each do |group, types| %>
+        <optgroup label="<%= group.label %>" class="grid grid-cols-4 gap-2 px-2 py-1">
+          <legend class="col-span-full pt-1 text-xs font-semibold text-ink-500"><%= group.label %></legend>
+          <% types.each do |option| %>
+            <%= tag.option value: option.slug, selected: option.slug == transformation.kind,
+                  class: "flex min-w-0 flex-col gap-1 rounded-lg p-1.5 text-sm font-normal text-ink-900 checked:bg-ink-900/5 hover:bg-ink-900/5 focus:bg-ink-900/5 [&::checkmark]:hidden" do %>
+              <%= image_tag option.cover, alt: "", class: "aspect-2/3 w-full shrink-0 rounded-md object-cover in-[selectedcontent]:w-6 in-[selectedcontent]:rounded-sm" %>
+              <span class="truncate font-medium"><%= option.label %></span>
+            <% end %>
+          <% end %>
+        </optgroup>
+      <% end %>
+    <% end %>
+  <% else %>
+    <p class="<%= tw_label_classes %>">Type</p>
+    <% if type %>
+      <p class="mt-1 flex items-center gap-2 text-sm text-ink-900">
+        <%= image_tag type.cover, alt: "", class: "aspect-2/3 w-6 shrink-0 rounded-sm object-cover" %>
+        <%= transformation.type_label %>
+      </p>
+    <% end %>
+    <%= tf.hidden_field :kind if transformation.new_record? %>
+  <% end %>
+  <% if type&.description %>
+    <p class="text-sm text-ink-600"><%= type.description %></p>
+  <% end %>
+  <% layer, original = type&.layer, type.try(:original) %>
+  <% if layer || original %>
+    <div class="grid grid-cols-2 gap-3">
+      <% if layer %>
+        <div>
+          <p class="<%= tw_label_classes %>">Layer</p>
+          <div class="relative overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
+               style="aspect-ratio: <%= layer.size.join(" / ") %>">
+            <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+            <%= link_to layer_path(layer), class: "absolute inset-0" do %><span class="sr-only"><%= layer.name %> layer</span><% end %>
+          </div>
+        </div>
+      <% end %>
+      <% if original %>
+        <div>
+          <p class="<%= tw_label_classes %>">Original</p>
+          <%= tag.video controls: true, preload: "metadata", src: original_recipes_path(type.slug), "aria-label": "Original reel",
+                class: "aspect-9/16 w-full rounded-lg bg-ink-900" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  <% if type.try(:source_url) %>
+    <%= link_to type.source_url, target: "_blank", rel: "noopener", class: "inline-flex items-center gap-1.5 text-sm text-ink-600 underline hover:text-ink-900" do %>
+      <%= image_tag "brands/instagram.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+      Instagram
+    <% end %>
+  <% end %>
+</div>
+<% if transformation.ai? %>
+  <div>
+    <%= tf.label :body, "Prompt", class: tw_label_classes %>
+    <%= tf.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
+  </div>
+<% end %>
+<% if transformation.ai? || type&.options %>
+  <%= render "shared/generation_options", record: transformation, scope:, refresh_url: %>
+<% end %>

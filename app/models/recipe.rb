@@ -25,8 +25,10 @@ class Recipe < ApplicationRecord
   # After the given attributes, so a nested transformation fills its options for its own kind.
   after_initialize(if: :new_record?) { build_transformation unless transformation }
   before_validation(on: :create) { self.output_folder ||= Folder.ready }
+  # The recipe form doesn't name its transformation.
+  before_validation { transformation.name = name if transformation.name.blank? }
 
-  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, :type, :type_label, :takes?, :style, :shot_group, to: :transformation
+  delegate :ai?, :video?, :single?, :reel?, :layer, :takes_review?, :type, :type_label, :takes?, :style, :shot_group, to: :transformation
 
   # Inputs from one folder with one tag merge, their counts summed.
   normalizes :inputs, with: ->(inputs) do
@@ -43,7 +45,7 @@ class Recipe < ApplicationRecord
     errors.add(:inputs, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.size
     errors.add(:output_tag_ids, "include an unknown tag") unless Tag.where(id: output_tag_ids).count == output_tag_ids.size
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
-    errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || overlay?) && media_count > 1
+    errors.add(:inputs, single? ? "must be a single photo or video to make a story" : "must be a single photo to make a video") if (video? || single?) && media_count > 1
   end
 
   scope :ordered, -> { order(:name) }

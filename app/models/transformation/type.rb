@@ -2,12 +2,14 @@
 
 # How a transformation makes its media, picked by the transformation's `kind`, a type's slug. Each type is a class: what
 # it is as class methods (label, description, layer, …), how it makes a run's file as `file` on an instance wrapping the run.
-# Its superclass is its group: Generation (one AI call), Overlay (a layer over one photo or video) or Scripted (the
-# inputs cut into a reel, each type its own folder under reels/). A new type is a subclass plus a line in `all`.
+# Its superclass is its group: Generation (one AI call), Overlay (a layer over one photo or video), Edit (one photo or
+# video edited) or Scripted (the inputs cut into a reel, each type its own folder under reels/). A new type is a
+# subclass plus a line in `all`.
 class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
+    Transformation::SmartCrop, Transformation::Zoom,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 
@@ -28,11 +30,18 @@ class Transformation::Type
 
   def self.video? = false
 
-  def self.overlay? = false
+  # Takes one photo or video and makes the same.
+  def self.single? = false
 
   def self.reel? = false
 
+  # A workflow step's named inputs, in the order their media reach the run (see WorkflowRun), or nil for one open input.
+  def self.slots = nil
+
   def self.takes_review? = false
+
+  # A non-AI type's own options in place of the model's: allowed values per key, the first the default; nil for none.
+  def self.options = nil
 
   attr_reader :run
 

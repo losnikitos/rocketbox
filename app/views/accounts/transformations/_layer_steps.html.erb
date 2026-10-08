@@ -1,0 +1,15 @@
+<%# locals: (transformation:, scope:) %>
+<%# One step is used over every cut, its fields stacked; more are one row per cut. %>
+<% steps = transformation.type.steps %>
+<div class="space-y-2">
+  <% steps.times do |i| %>
+    <% step = transformation.layer_steps[i].to_h %>
+    <div class="<%= steps == 1 ? "space-y-2" : "flex items-center gap-2" %>">
+      <% if steps > 1 %><span class="w-12 shrink-0 text-sm text-ink-600">Cut <%= i + 1 %></span><% end %>
+      <% transformation.layer.fields.each do |field| %>
+        <%= text_field_tag "#{scope}[layer_steps][][#{field.name}]", step[field.name.to_s], id: nil, placeholder: field.label,
+              "aria-label": [ ("Cut #{i + 1}" if steps > 1), field.label ].compact.join(" "), class: "#{tw_input_classes} min-w-0" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -2,7 +2,7 @@
 
 # AI request options in an `options` JSON column: the model (one of `models`, enabled in Active Admin) picks the
 # provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS. New records start from `inherited_options`
-# (a transformation run from its transformation), then the defaults below. Includers define `video?`.
+# (a transformation run from its transformation), then the defaults below. Includers define `video?` and `type`.
 module GenerationOptions
   extend ActiveSupport::Concern
 
@@ -69,13 +69,17 @@ module GenerationOptions
 
   def provider = (models.find { it.model_id == options["model"] } || models.first)&.provider || option_sets.keys.first
 
-  # Every provider's models are offered; the other choices come from the chosen model's provider.
-  def option_choices = { "model" => models.map(&:model_id) }.merge(option_sets[provider])
+  # Every provider's models are offered; the other choices come from the chosen model's provider. A type with its own
+  # options (Transformation::Type.options) offers just those.
+  def option_choices = type&.options || { "model" => models.map(&:model_id) }.merge(option_sets[provider])
 
   # Drops what the chosen model doesn't offer (e.g. after a model or kind switch), then fills the gaps
-  # from the inherited options and the defaults; blank means Auto.
+  # from the inherited options and the defaults; blank means Auto. A type's own options default to their first value.
   def fill_options
     given, inherited = options.to_h, inherited_options.to_h
+    if (own = type&.options)
+      return self.options = own.to_h { |key, values| [ key, [ given[key], inherited[key] ].find { it.in?(values) } || values.first ] }
+    end
     model_ids = models.map(&:model_id)
     self.options = { "model" => [ given["model"], inherited["model"] ].find { it.in?(model_ids) } || model_ids.first }
     choices = option_choices

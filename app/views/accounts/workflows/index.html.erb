@@ -1,0 +1,30 @@
+<% content_for(:title, "Workflows — Rocketbox") %>
+<% content_for :header_actions do %>
+  <%= link_to new_workflow_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Add workflow
+  <% end %>
+<% end %>
+
+<% if @workflows.any? %>
+  <ul class="divide-y divide-ink-900/10 rounded-2xl border border-ink-900/10 bg-white">
+    <% @workflows.each do |workflow| %>
+      <li id="<%= dom_id(workflow) %>" class="relative flex items-center gap-4 p-3 transition hover:bg-ink-900/5">
+        <div class="min-w-0 flex-1 space-y-1">
+          <%= link_to workflow.name, workflow_path(workflow), class: "block truncate text-sm font-semibold text-ink-900 after:absolute after:inset-0" %>
+          <p class="flex flex-wrap gap-x-3 text-xs text-ink-500">
+            <span><%= pluralize(workflow.nodes.count(&:folder_id), "folder") %></span>
+            <% if (media = workflow.nodes.count(&:library_media_id)).positive? %>
+              <span><%= media %> media</span>
+            <% end %>
+            <span><%= pluralize(workflow.nodes.count(&:step?), "step") %></span>
+          </p>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
+    Add a workflow — folders and transformation steps, connected.
+  </div>
+<% end %>

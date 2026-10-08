@@ -8,6 +8,7 @@
          [ "Model", options["model"] ],
          [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
          [ "Size", options["resolution"]&.upcase ],
+         [ "Zoom", options["zoom"]&.capitalize ],
          [ "Duration", options["duration"]&.then { "#{it} s" } ],
          [ "Quality", (options["quality"]&.capitalize || "Auto" unless record.video?) ],
          [ "Cost", record.cost && number_to_currency(record.cost, precision: 3) ]

@@ -1,0 +1,10 @@
+<% content_for(:title, "#{@transformation.name_in_database} — Rocketbox") %>
+
+<%# A workflow's inspector loads the form in a frame; its links leave the frame, the form stays in it. %>
+<% if turbo_frame_request_id == "transformation" %>
+  <%= turbo_frame_tag "transformation", target: "_top" do %>
+    <%= render "form", transformation: @transformation %>
+  <% end %>
+<% else %>
+  <%= render "form", transformation: @transformation %>
+<% end %>

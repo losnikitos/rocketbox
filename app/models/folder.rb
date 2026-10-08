@@ -15,6 +15,7 @@ class Folder < ApplicationRecord
   has_many :children, -> { order(:name) }, class_name: "Folder", foreign_key: :parent_id, inverse_of: :parent, dependent: :restrict_with_error
   has_many :library_media, dependent: :restrict_with_error
   has_many :output_recipes, class_name: "Recipe", foreign_key: :output_folder_id, inverse_of: :output_folder, dependent: :restrict_with_error
+  has_many :workflow_nodes, dependent: :restrict_with_error
 
   enum :color, %w[sky emerald amber rose violet slate].index_by(&:itself), validate: true
 

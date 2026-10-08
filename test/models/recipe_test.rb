@@ -235,13 +235,17 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ prompts.first, style ], [ run.reload.prompt, run.style ]
   end
 
-  test "switching type clears the inputs the new type doesn't take" do
+  test "a type drops the inputs it doesn't take, and is fixed once saved" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @recipe.update!(transformation_attributes: { kind: "review", style:, shot_group: "Daily" }, inputs: [ input(:photobank_interior) ])
-    assert_equal [ nil, nil, true, "review" ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer.slug ]
+    review = create_recipe(name: "Reviews", kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    assert_equal [ nil, nil, true, "review" ], [ review.style, review.shot_group, review.takes_review?, review.layer.slug ]
 
-    @recipe.update!(transformation_attributes: { kind: "generate_image", style:, shot_group: "Daily" })
-    assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer ]
+    image = create_recipe(name: "Collage", kind: "generate_image", body: "x", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    assert_equal [ style, "Daily", false, nil ], [ image.style, image.shot_group, image.takes_review?, image.layer ]
+
+    assert_not review.update(transformation_attributes: { kind: "generate_image" })
+    assert_includes review.errors.full_messages, "Transformation kind can't be changed"
+    assert_equal "review", review.transformation.reload.kind
   end
 
   test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do
@@ -324,6 +328,71 @@ class RecipeTest < ActiveSupport::TestCase
     probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "csv=p=0", it.path).first }
     assert_equal "1080,1920", probe.lines.first.strip
     assert_in_delta 1.0, probe.lines.last.to_f, 0.1
+  end
+
+  test "smart crop takes one photo or video and makes the same, 9:16 at 1080x1920 around its subject" do
+    assert_equal "Edit · Smart crop", Transformation.new(kind: "smart_crop").type_label
+    assert_not new_recipe(name: "x", kind: "smart_crop", inputs: [ input(:ready), input(:ready) ]).valid?
+    crop = Transformation.create!(name: "Smart crop", kind: "smart_crop")
+    # A red box on the left of a black frame: the middle 9:16 is all black.
+    scene = "color=c=black:size=640x360:duration=1:rate=30,drawbox=x=20:y=130:w=100:h=100:color=red:t=fill"
+    clip, still = Tempfile.new([ "clip", ".mp4" ]), Tempfile.new([ "still", ".png" ])
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-f", "lavfi", "-i", "sine=duration=1",
+      "-pix_fmt", "yuv420p", "-shortest", clip.path, exception: true)
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-frames:v", "1", still.path, exception: true)
+    video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user, file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: File.open(still.path), filename: "still.png", content_type: "image/png" })
+
+    [ [ video, "video", "video/mp4", 2 ], [ photo, "photo", "image/jpeg", 1 ] ].each do |source, kind, content_type, streams|
+      run = crop.run!(media: [ source ], folder: folders(:photobank_logo))
+      run.run!
+
+      assert_equal "complete", run.reload.status, run.error
+      media = run.generated_media.reload
+      assert_equal [ kind, content_type ], [ media.kind, media.file.content_type ]
+      probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", it.path).first }
+      assert_equal [ "1080,1920", streams ], [ probe.lines.first.strip, probe.lines.size ]
+      red = media.file.open do |file|
+        frame = kind == "video" ? Open3.capture2("ffmpeg", "-loglevel", "error", "-i", file.path, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-").first : File.binread(file.path)
+        Vips::Image.new_from_buffer(frame, "")[0].avg
+      end
+      assert_operator red, :>, 10, "#{kind} crop missed the red box"
+    end
+  end
+
+  test "zoom makes a 9:16 video of its duration zooming on the center of one photo or video, a video's sound kept" do
+    zoom = Transformation.create!(name: "Zoom", kind: "zoom")
+    assert_equal({ "zoom" => "in", "duration" => "1" }, zoom.options)
+    assert_not zoom.update(options: { "zoom" => "in", "duration" => "9" })
+    zoom.reload
+    # A red box in the middle of a black frame: it grows as the zoom goes in.
+    scene = "color=c=black:size=640x360:duration=3:rate=30,drawbox=x=290:y=150:w=60:h=60:color=red:t=fill"
+    clip, still = Tempfile.new([ "clip", ".mp4" ]), Tempfile.new([ "still", ".png" ])
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-f", "lavfi", "-i", "sine=duration=3",
+      "-pix_fmt", "yuv420p", "-shortest", clip.path, exception: true)
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-frames:v", "1", still.path, exception: true)
+    video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user, file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: File.open(still.path), filename: "still.png", content_type: "image/png" })
+
+    [ [ photo, "in", "1", 1 ], [ video, "out", "2", 2 ] ].each do |source, direction, seconds, streams|
+      zoom.update!(options: { "zoom" => direction, "duration" => seconds })
+      run = zoom.run!(media: [ source ], folder: folders(:photobank_logo))
+      run.run!
+
+      assert_equal "complete", run.reload.status, run.error
+      media = run.generated_media.reload
+      assert_equal [ "video", "video/mp4" ], [ media.kind, media.file.content_type ]
+      probe, (first, last) = media.file.open do |file|
+        [ Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "csv=p=0", file.path).first,
+          [ %w[-ss 0], %w[-sseof -0.1] ].map do |seek|
+            frame = Open3.capture2("ffmpeg", "-loglevel", "error", *seek, "-i", file.path, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-").first
+            Vips::Image.new_from_buffer(frame, "")[0].avg
+          end ]
+      end
+      assert_equal [ "1080,1920", streams ], [ probe.lines.first.strip, probe.lines.size - 1 ]
+      assert_in_delta seconds.to_f, probe.lines.last.to_f, 0.1
+      assert_operator direction == "in" ? last : first, :>, (direction == "in" ? first : last) * 1.5, "zoom #{direction} went the wrong way"
+    end
   end
 
   test "a review recipe needs a review and renders it on its layer" do

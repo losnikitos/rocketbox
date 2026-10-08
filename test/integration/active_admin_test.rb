@@ -117,6 +117,25 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_match recipe.transformation.body, response.body
   end
 
+  test "workflow links to admin, which shows its nodes, edges and runs" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Stored")
+    folder = workflow.nodes.create!(folder: folders(:interior), x: 12, y: 34)
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+    workflow.edges.create!(from: folder, to: step)
+    workflow.draft_run
+
+    get "/app/workflows/#{workflow.id}?account=#{admin.id}", headers: @ua
+    assert_select "turbo-frame#inspector a[href^='/admin/workflows/#{workflow.id}']"
+    get "/admin/workflows", headers: @ua
+    assert_response :success
+    get "/admin/workflows/#{workflow.id}", headers: @ua
+    assert_response :success
+    assert_select "td", text: "##{folder.id} #{folder.label}"
+    assert_select "a[href='/admin/transformations/#{step.transformation_id}']"
+    assert_select "td", text: "Draft"
+  end
+
   test "admin manages tags and tags media" do
     admin = sign_in_as(users(:admin_user))
     recipes(:cinematic).update!(output_tag_ids: [ tags(:after).id ])

@@ -69,14 +69,14 @@
       </fieldset>
       <% next %>
     <% end %>
-    <% if key == "quality" || (key == "resolution" && !record.video?) %>
+    <% if key.in?(%w[quality zoom]) || (key == "resolution" && !record.video?) %>
       <fieldset>
-        <legend class="<%= tw_label_classes %>"><%= key == "quality" ? "Quality" : "Size" %></legend>
+        <legend class="<%= tw_label_classes %>"><%= key == "resolution" ? "Size" : key.humanize %></legend>
         <div class="<%= tw_segments_classes %>">
           <% [ ("" if key == "quality"), *choices ].compact.each do |value| %>
             <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
               <%= radio_button_tag "#{scope}[options][#{key}]", value, record.options[key].to_s == value, class: "sr-only" %>
-              <%= value.blank? ? "Auto" : key == "quality" ? value.capitalize : value.upcase %>
+              <%= value.blank? ? "Auto" : key == "resolution" ? value.upcase : value.capitalize %>
             </label>
           <% end %>
         </div>
@@ -87,7 +87,7 @@
       <%= label_tag field_id(scope, :options, key), key.humanize, class: tw_label_classes %>
       <%= select_tag "#{scope}[options][#{key}]",
             options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, record.options[key]),
-            id: field_id(scope, :options, key), include_blank: "Auto", class: tw_input_classes %>
+            id: field_id(scope, :options, key), include_blank: ("Auto" unless record.type&.options), class: tw_input_classes %>
     </div>
   <% end %>
   <%= tag.button name: "refresh", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "generation_options" } %>

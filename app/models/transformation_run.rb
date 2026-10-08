@@ -2,7 +2,7 @@
 
 # A transformation applied to library media, e.g. each recipe input's count from its folder. The result lands in the
 # given folder, created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. `recipe` is the one it ran for, if any.
+# transformation's type makes it. `recipe` is the one it ran for, if any, or, as a step run, its `workflow_run` and step `workflow_node`.
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
@@ -17,6 +17,8 @@ class TransformationRun < ApplicationRecord
   belongs_to :shot, optional: true
   belongs_to :style, optional: true
   belongs_to :review, optional: true
+  belongs_to :workflow_run, optional: true
+  belongs_to :workflow_node, optional: true
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :transformation_run
   has_many :inputs, -> { order(:position) }, class_name: "TransformationRunInput", inverse_of: :transformation_run, dependent: :delete_all
 
@@ -35,10 +37,22 @@ class TransformationRun < ApplicationRecord
       partial: "accounts/recipes/made", locals: { media: generated_media }
   }, if: :saved_change_to_status?
   after_update_commit :broadcast_refresh, if: :saved_change_to_status?
+  after_update_commit -> {
+    workflow_run.advance!(workflow_node, generated_media.user) if complete? && workflow_node
+    workflow_run.broadcast_refresh_later
+  }, if: -> { workflow_run && saved_change_to_status? }
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
+  # Several runs' status as one: failed if any failed, else running if any is, else complete; nil for none.
+  def self.status_of(runs) = %w[failed running complete].find { |s| runs.any? { it.status == s } }
+
   def video? = transformation&.video?
+
+  def type = transformation&.type
+
+  # Seconds from start to finish; nil while running.
+  def duration = (updated_at - created_at unless running?)
 
   def inherited_options = transformation&.options
 
@@ -48,7 +62,7 @@ class TransformationRun < ApplicationRecord
   # `user` owns the result, made in `folder` with `tags`. Raises ActiveRecord::RecordInvalid when the media don't fit,
   # the shot doesn't fit or an option isn't available.
   def start!(user, folder:, tags: [])
-    build_generated_media(user:, kind: transformation.video? || transformation.reel? || layer_over_video? ? "video" : "photo", folder:, tags:)
+    build_generated_media(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
     self.prompt = [ transformation.body, shot&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
@@ -66,7 +80,7 @@ class TransformationRun < ApplicationRecord
 
   private
 
-    def layer_over_video? = transformation.overlay? && source_media.first&.video?
+    def single_over_video? = transformation.single? && source_media.first&.video?
 
     def media_fit_transformation
       media = source_media
@@ -74,6 +88,7 @@ class TransformationRun < ApplicationRecord
         media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) } && (recipe.nil? || recipe.fills_inputs?(media))
       errors.add(:base, "Pick the right number of media for every input.") unless fits
       errors.add(:base, "Pick a shot from the shot group.") unless shot&.group == transformation.shot_group
+      errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
       errors.add(:base, "Pick a review.") unless review.present? == transformation.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end
 end

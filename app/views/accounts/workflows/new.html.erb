@@ -1,0 +1,26 @@
+<% content_for(:title, "New workflow — Rocketbox") %>
+
+<div class="space-y-4">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Workflows", workflows_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page">New workflow</span>
+  </nav>
+
+  <%= form_with model: @workflow, class: "max-w-md space-y-4" do |f| %>
+    <% if @workflow.errors.any? %>
+      <div class="<%= tw_alert_error_classes %>" role="alert">
+        <ul class="list-inside list-disc">
+          <% @workflow.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div>
+      <%= f.label :name, class: tw_label_classes %>
+      <%= f.text_field :name, required: true, autofocus: true, placeholder: "Inbox to stories", class: tw_input_classes %>
+    </div>
+    <%= f.submit "Add workflow", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
+  <% end %>
+</div>
