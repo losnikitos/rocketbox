@@ -19,7 +19,7 @@
       <%= recipe.name %>
     </span>
     <% unless covered %>
-      <span class="line-clamp-8 px-3 text-xs text-ink-600"><%= recipe.body %></span>
+      <span class="line-clamp-8 px-3 text-xs text-ink-600"><%= recipe.transformation.body %></span>
     <% end %>
   <% end %>
   <div class="absolute top-3 right-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 has-[:popover-open]:opacity-100">

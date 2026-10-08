@@ -38,8 +38,8 @@ class LibraryMediaTest < ActiveSupport::TestCase
   test "generated media are versions of the first input only" do
     user = users(:lazaro_nixon)
     source, extra, result = 3.times.map { LibraryMedia.create!(kind: "photo", user:) }
-    RecipeRun.create!(generated_media: result, status: "complete",
-      inputs: [ RecipeRunInput.new(library_media: source, position: 0), RecipeRunInput.new(library_media: extra, position: 1) ])
+    TransformationRun.create!(generated_media: result, status: "complete",
+      inputs: [ TransformationRunInput.new(library_media: source, position: 0), TransformationRunInput.new(library_media: extra, position: 1) ])
 
     assert_equal [ result ], source.generated_media.to_a
     assert_empty extra.generated_media

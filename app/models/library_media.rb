@@ -8,13 +8,13 @@ class LibraryMedia < ApplicationRecord
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the input rows go.
-  has_many :recipe_run_inputs, dependent: :delete_all
+  has_many :transformation_run_inputs, dependent: :delete_all
   # Versions are the runs this media is the first input of, as in #original; other inputs only fill a slot.
-  has_many :source_inputs, -> { where(position: 0) }, class_name: "RecipeRunInput"
-  has_many :source_runs, through: :source_inputs, source: :recipe_run
+  has_many :source_inputs, -> { where(position: 0) }, class_name: "TransformationRunInput"
+  has_many :source_runs, through: :source_inputs, source: :transformation_run
   has_many :generated_media, through: :source_runs
   # The run that made this media; it has a status and an error.
-  has_one :recipe_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
+  has_one :transformation_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
   has_one_attached :file do |file|
     file.variant :thumb, resize_to_limit: [ 720, 720 ], preprocessed: :video?
   end
@@ -39,11 +39,11 @@ class LibraryMedia < ApplicationRecord
   def ready? = folder.slug == "ready" && folder.parent&.slug == "photobank"
 
   # The media this one is ultimately a version of.
-  def original = recipe_run&.source_media&.first&.original || self
+  def original = transformation_run&.source_media&.first&.original || self
 
   # This media and every version made from it, each followed by its own versions.
   # ponytail: one query per node; fine for shallow trees, switch to a recursive CTE if chains get long
-  def lineage = [ self, *generated_media.with_attached_file.includes(:recipe_run).order(:created_at).flat_map(&:lineage) ]
+  def lineage = [ self, *generated_media.with_attached_file.includes(:transformation_run).order(:created_at).flat_map(&:lineage) ]
 
   def story_image?
     return false unless file.attached?
@@ -61,7 +61,7 @@ class LibraryMedia < ApplicationRecord
   def recipes
     return [] unless story_image?
 
-    Recipe.with_attached_example.ordered.select { |recipe| recipe.inputs.any? { Recipe.takes_input?(it, self) } }
+    Recipe.with_attached_example.includes(:transformation).ordered.select { |recipe| recipe.inputs.any? { Recipe.takes_input?(it, self) } }
   end
 
   def extraction_status

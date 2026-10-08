@@ -1,0 +1,11 @@
+<%# Locals: transformation_run %>
+<% transformation_run = local_assigns[:transformation_run] %>
+<% if Current.user&.admin? && transformation_run.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "transformation-run-admin-links-#{transformation_run.id}", align: local_assigns.fetch(:align, :right) } do %>
+    <%= render "shared/admin_links/item",
+        path: admin_transformation_run_path(transformation_run),
+        label: "Admin",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+  <% end %>
+<% end %>

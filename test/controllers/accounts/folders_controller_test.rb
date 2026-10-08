@@ -60,8 +60,8 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
 
   test "ready filters by recipe" do
     source = photo(folders(:photobank_interior))
-    collage = Recipe.create!(name: "Collage", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
-    poster = Recipe.create!(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+    collage = create_recipe(name: "Collage", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+    poster = create_recipe(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
 
     get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
     assert_select "main a[href=?]", library_item_path(collage.generated_media)

@@ -1,8 +1,7 @@
 cinematic:
   name: Cinematic shop reel
   slug: cinematic-shop-reel
-  kind: generate_video
-  body: Slow cinematic push-in on the shop.
+  transformation: cinematic
   output_folder: photobank_interior
   inputs:
     - folder_id: <%= ActiveRecord::FixtureSet.identify(:interior) %>
@@ -11,8 +10,7 @@ cinematic:
 before_after:
   name: Before → after energy
   slug: before-after-energy
-  kind: generate_video
-  body: Energetic before and after reveal.
+  transformation: before_after
   output_folder: photobank_misc
   inputs:
     - folder_id: <%= ActiveRecord::FixtureSet.identify(:misc) %>

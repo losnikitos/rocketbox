@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # The Graph API can't attach library audio to a reel, so the track is baked into the video.
-class Reels::BlackEyedPeas < RecipeType::Scripted
+class Reels::BlackEyedPeas < Transformation::Scripted
   def self.label = "Black Eyed Peas"
 
   def self.description = "Cuts every bar of its track, five cuts, a random input per cut, never the same one twice in a row."

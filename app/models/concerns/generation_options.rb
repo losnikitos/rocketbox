@@ -2,7 +2,7 @@
 
 # AI request options in an `options` JSON column: the model (one of `models`, enabled in Active Admin) picks the
 # provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS. New records start from `inherited_options`
-# (a recipe run from its recipe), then the defaults below. Includers define `video?`.
+# (a transformation run from its transformation), then the defaults below. Includers define `video?`.
 module GenerationOptions
   extend ActiveSupport::Concern
 

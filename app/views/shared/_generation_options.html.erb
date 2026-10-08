@@ -5,7 +5,7 @@
     <% if key == "model" %>
       <div>
         <div class="flex items-baseline justify-between gap-2">
-          <span id="<%= scope %>_options_model" class="<%= tw_label_classes %>">Model</span>
+          <span id="<%= field_id(scope, :options, :model) %>" class="<%= tw_label_classes %>">Model</span>
           <% if Current.user&.admin? %>
             <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
           <% end %>
@@ -25,7 +25,7 @@
           <%= hidden_field_tag "#{scope}[options][model]", selected&.model_id, id: nil, data: { pick_target: "input" },
                 onchange: "this.form.requestSubmit(this.form.elements.refresh)" %>
           <template data-pick-target="placeholder"><span class="text-ink-500">Choose model</span></template>
-          <button type="button" data-pick-target="trigger" aria-labelledby="<%= scope %>_options_model"
+          <button type="button" data-pick-target="trigger" aria-labelledby="<%= field_id(scope, :options, :model) %>"
                   class="flex w-full min-w-0 cursor-pointer items-center gap-2 py-1.5 pr-2 pl-2.5 text-left text-sm font-medium text-ink-900 focus:outline-none">
             <span data-pick-target="preview" class="flex min-h-5.5 min-w-0 flex-1 items-center">
               <% if selected %><%= chip.(selected) %><% else %><span class="text-ink-500">Choose model</span><% end %>
@@ -84,10 +84,10 @@
       <% next %>
     <% end %>
     <div>
-      <%= label_tag "#{scope}_options_#{key}", key.humanize, class: tw_label_classes %>
+      <%= label_tag field_id(scope, :options, key), key.humanize, class: tw_label_classes %>
       <%= select_tag "#{scope}[options][#{key}]",
             options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, record.options[key]),
-            id: "#{scope}_options_#{key}", include_blank: "Auto", class: tw_input_classes %>
+            id: field_id(scope, :options, key), include_blank: "Auto", class: tw_input_classes %>
     </div>
   <% end %>
   <%= tag.button name: "refresh", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "generation_options" } %>

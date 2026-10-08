@@ -12,15 +12,15 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
   test "admin creates a recipe with inputs and an example; the index previews it and links to its page" do
     @admin = sign_in_as(users(:admin_user))
 
-    post recipes_url, params: { recipe: { name: "Team collage", kind: "audio", body: "p", inputs: [ input(:photobank_interior) ] } }
+    post recipes_url, params: { recipe: recipe_attributes(name: "Team collage", kind: "audio", body: "p", inputs: [ input(:photobank_interior) ]) }
     assert_response :unprocessable_entity
-    assert_select "li", text: "Kind is not included in the list"
+    assert_select "li", text: "Transformation kind is not included in the list"
 
-    post recipes_url, params: { recipe: { name: "Team collage", body: "p", output_folder_id: folders(:ready).id,
-      inputs: [ input(:photobank_interior), input(:customer), { folder_id: "" } ], example: image("a.jpg") } }
+    post recipes_url, params: { recipe: recipe_attributes(name: "Team collage", body: "p", output_folder_id: folders(:ready).id,
+      inputs: [ input(:photobank_interior), input(:customer), { folder_id: "" } ], example: image("a.jpg")) }
     recipe = Recipe.find_by!(name: "Team collage")
     assert_redirected_to recipe_url(recipe, account: @admin.id)
-    assert_equal RecipeType::GenerateImage, recipe.type
+    assert_equal Transformation::GenerateImage, recipe.type
     assert_equal [ { "folder_id" => folders(:photobank_interior).id, "count" => 1 }, { "folder_id" => folders(:customer).id, "count" => 1 } ], recipe.inputs
     assert_equal "a.jpg", recipe.example.filename.to_s
 
@@ -40,17 +40,17 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name='recipe[output_folder_id]'][value=?]", folders(:ready).id.to_s
     assert_select "label:has(input[type=file][name='recipe[example]'][accept='image/*']) img[src*='a.jpg']"
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], example: image("b.jpg") } }
+    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], example: image("b.jpg")) }
     assert_redirected_to recipe_url(recipe, account: @admin.id)
     assert recipe.reload.video?
     assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.folder_ids, recipe.output_folder ]
     assert_equal "b.jpg", recipe.example.filename.to_s
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: { kind: "black_eyed_peas",
-      layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ] } }
-    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" }, {} ], recipe.reload.layer_steps
+    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(kind: "black_eyed_peas",
+      layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ]) }
+    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" }, {} ], recipe.reload.transformation.layer_steps
     get recipe_url(recipe, account: @admin.id)
-    assert_select "input[name='recipe[layer_steps][][line2]']", 5
+    assert_select "input[name='recipe[transformation_attributes][layer_steps][][line2]']", 5
 
     assert_difference -> { Recipe.count }, -1 do
       delete recipe_url(recipe)
@@ -61,11 +61,11 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     @admin = sign_in_as(users(:admin_user))
 
     get new_recipe_url(account: @admin.id)
-    assert_select "select[name='recipe[kind]'] option[value=generate_image][selected]"
-    assert_equal %w[Generation Overlay Scripted], css_select("select[name='recipe[kind]'] optgroup").map { it["label"] }
-    assert_equal RecipeType.all.map(&:slug), css_select("select[name='recipe[kind]'] option").map { it["value"] }
+    assert_select "select[name='recipe[transformation_attributes][kind]'] option[value=generate_image][selected]"
+    assert_equal %w[Generation Overlay Scripted], css_select("select[name='recipe[transformation_attributes][kind]'] optgroup").map { it["label"] }
+    assert_equal Transformation::Type.all.map(&:slug), css_select("select[name='recipe[transformation_attributes][kind]'] option").map { it["value"] }
     assert_select "button[name=refresh_type][formmethod=get][data-turbo-frame=recipe_body]"
-    assert_select "turbo-frame#generation_options input[type=hidden][name='recipe[options][model]'][value='gpt-image-2.5-flare']"
+    assert_select "turbo-frame#generation_options input[type=hidden][name='recipe[transformation_attributes][options][model]'][value='gpt-image-2.5-flare']"
     assert_equal %w[gpt-image-2.5-flare gpt-image-2 grok-imagine-image-2.0], css_select("turbo-frame#generation_options button[data-pick-target=option]").map { it["value"] }
     assert_select "section[aria-label=Media] input[type=checkbox]", count: 0
     assert_select "section[aria-label=Media] fieldset:not([disabled])"
@@ -74,30 +74,30 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[name=refresh][formaction=?][formmethod=get][data-turbo-frame=generation_options]", new_recipe_path(account: @admin.id)
     assert_select "button[name=commit]", count: 0
 
-    get new_recipe_url(account: @admin.id, recipe: { kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" } })
-    assert_select "input[type=hidden][name='recipe[options][model]'][value='grok-imagine-video-1.5']"
-    assert_select "input[type=radio][name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
-    assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
+    get new_recipe_url(account: @admin.id, recipe: recipe_attributes(kind: "generate_video", options: { model: "gpt-image-2", aspect_ratio: "4:5" }))
+    assert_select "input[type=hidden][name='recipe[transformation_attributes][options][model]'][value='grok-imagine-video-1.5']"
+    assert_select "input[type=radio][name='recipe[transformation_attributes][options][aspect_ratio]'][value='9:16'][checked]"
+    assert_select "select[name='recipe[transformation_attributes][options][duration]'] option[selected]", text: "8 s"
 
-    post recipes_url, params: { recipe: { name: "Square", body: "p", output_folder_id: folders(:ready).id, inputs: [ input(:photobank_interior) ],
-      options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "" } } }
+    post recipes_url, params: { recipe: recipe_attributes(name: "Square", body: "p", output_folder_id: folders(:ready).id, inputs: [ input(:photobank_interior) ],
+      options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "" }) }
     recipe = Recipe.find_by!(name: "Square")
-    assert_equal({ "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k" }, recipe.options)
+    assert_equal({ "model" => "gpt-image-2", "aspect_ratio" => "1:1", "resolution" => "4k" }, recipe.transformation.options)
 
     get recipe_url(recipe, account: @admin.id)
-    assert_select "input[name='recipe[options][aspect_ratio]'][value='1:1'][checked]"
+    assert_select "input[name='recipe[transformation_attributes][options][aspect_ratio]'][value='1:1'][checked]"
     assert_select "button[name=refresh][formaction=?]", recipe_path(recipe, account: @admin.id)
     assert_select "button[name=refresh_inputs][formaction=?][data-turbo-frame=recipe_inputs]", recipe_path(recipe, account: @admin.id)
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: { options: { model: "gpt-image-2", aspect_ratio: "2:1" } } }
+    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(options: { model: "gpt-image-2", aspect_ratio: "2:1" }) }
     assert_response :unprocessable_entity
     assert_select "li", text: /Aspect ratio 2:1 isn't available/
   end
 
   test "index lists recipes recently edited first, grouped by day" do
     @admin = sign_in_as(users(:admin_user))
-    old = Recipe.create!(name: "Old", kind: "steps", inputs: [ input(:photobank_interior) ], updated_at: 3.days.ago)
-    reel = Recipe.create!(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
+    old = create_recipe(name: "Old", kind: "steps", inputs: [ input(:photobank_interior) ], updated_at: 3.days.ago)
+    reel = create_recipe(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior), input(:photobank_interior) ])
 
     get recipes_url(account: @admin.id)
     assert_equal dom_id(reel), css_select("main li[id^='recipe_']").first["id"]
@@ -105,14 +105,14 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main section h2", text: ApplicationController.helpers.upload_day_label(3.days.ago.to_date)
     assert_select "nav[aria-label='Secondary']", count: 0
 
-    old.touch
+    old.transformation.update!(kind: "welcome")
     get recipes_url(account: @admin.id)
     assert_equal dom_id(old), css_select("main li[id^='recipe_']").first["id"]
   end
 
   test "admin drops a recipe into a new folder; the index and the sidebar list it" do
     @admin = sign_in_as(users(:admin_user))
-    reel = Recipe.create!(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior) ])
+    reel = create_recipe(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior) ])
 
     get recipe_url(reel, account: @admin.id), params: { recipe: { folder_name: "Draft" } }
     assert_nil RecipeFolder.find_by(name: "Draft"), "a form refresh doesn't make the folder"
@@ -142,16 +142,16 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "the header autosaves just the name and group; the old slug still finds the recipe" do
     @admin = sign_in_as(users(:admin_user))
-    reel = Recipe.create!(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior) ])
+    reel = create_recipe(name: "Reel", kind: "steps", inputs: [ input(:photobank_interior) ])
 
     get recipe_url(reel, account: @admin.id)
     assert_select "form#recipe_form[data-controller=autosave]"
     assert_select "input[name='recipe[name]'][data-action='change->autosave#queue']"
     assert_select "input[name='recipe[folder_name]'][data-action='change->autosave#queue']"
 
-    patch recipe_url(reel), params: { recipe: { name: "Promo reel", folder_name: "Promo", kind: "welcome" } }, headers: { "X-Autosave" => "1" }
+    patch recipe_url(reel), params: { recipe: recipe_attributes(name: "Promo reel", folder_name: "Promo", kind: "welcome") }, headers: { "X-Autosave" => "1" }
     assert_response :ok
-    assert_equal [ "Promo reel", "promo-reel", "Promo", "steps" ], reel.reload.then { [ it.name, it.slug, it.folder_name, it.kind ] }
+    assert_equal [ "Promo reel", "promo-reel", "Promo", "steps" ], reel.reload.then { [ it.name, it.slug, it.folder_name, it.transformation.kind ] }
 
     patch recipe_url("reel"), params: { recipe: { name: "" } }, headers: { "X-Autosave" => "1" }
     assert_response :unprocessable_entity
@@ -160,7 +160,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
   test "admin renames a folder; its recipes follow and the slug stays" do
     @admin = sign_in_as(users(:admin_user))
-    a, b, other = %w[A B C].map { Recipe.create!(name: it, kind: "steps", inputs: [ input(:photobank_interior) ], folder_name: "Promo") }
+    a, b, other = %w[A B C].map { create_recipe(name: it, kind: "steps", inputs: [ input(:photobank_interior) ], folder_name: "Promo") }
     other.update!(folder_name: "Other")
     promo = a.recipe_folder
 
@@ -182,7 +182,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       other = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @admin,
         file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
 
-      assert_no_difference -> { RecipeRun.count } do
+      assert_no_difference -> { TransformationRun.count } do
         get recipe_url(@recipe, media_ids: [ @media.id ], account: @admin.id)
       end
       assert_response :success
@@ -191,27 +191,27 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "[role=group][aria-label='Input 1'] button[aria-current=true]", text: /Inbox \/ Interior/ do
         assert_select "svg.text-emerald-500"
       end
-      assert_select "input[type=hidden][name='recipe[options][model]'][value='grok-imagine-video-1.5']"
+      assert_select "input[type=hidden][name='recipe[transformation_attributes][options][model]'][value='grok-imagine-video-1.5']"
       assert_equal %w[grok-imagine-video-1.5 grok-imagine-video], css_select("turbo-frame#generation_options button[data-pick-target=option]").map { it["value"] }
       assert_select "a[href='/admin/models']", text: "Manage models"
-      assert_select "select[name='recipe[options][duration]'] option[selected]", text: "8 s"
-      assert_select "[name='recipe[options][quality]']", count: 0
-      assert_select "textarea[name='recipe[body]']", text: @recipe.body
+      assert_select "select[name='recipe[transformation_attributes][options][duration]'] option[selected]", text: "8 s"
+      assert_select "[name='recipe[transformation_attributes][options][quality]']", count: 0
+      assert_select "textarea[name='recipe[transformation_attributes][body]']", text: @recipe.transformation.body
       assert_equal [ "Save and Run", "Run", "Save" ], css_select("button[name=commit]").map { it.text.strip }
     end
 
     test "save and run saves the recipe and enqueues the job; the result lands in the recipe output folder" do
-      assert_difference -> { RecipeRun.count } => 1, -> { folders(:photobank_interior).library_media.count } => 1, -> { SmmPost.count } => 0 do
+      assert_difference -> { TransformationRun.count } => 1, -> { folders(:photobank_interior).library_media.count } => 1, -> { SmmPost.count } => 0 do
         assert_enqueued_with(job: GenerateJob) do
           patch recipe_url(@recipe), params: { commit: "save_run", media_ids: [ @media.id ],
-            recipe: { body: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" } } }
+            recipe: recipe_attributes(body: "Make it snow.", options: { model: "grok-imagine-video", aspect_ratio: "", resolution: "480p", duration: "5", quality: "low" }) }
         end
       end
       run = @media.source_runs.sole
       assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id), text: /Generating/
       assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
-      assert_equal [ "Make it snow.", "Make it snow." ], [ @recipe.reload.body, run.prompt ]
-      assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, @recipe.options)
+      assert_equal [ "Make it snow.", "Make it snow." ], [ @recipe.reload.transformation.body, run.prompt ]
+      assert_equal({ "model" => "grok-imagine-video", "resolution" => "480p", "duration" => "5" }, @recipe.transformation.options)
       assert_equal({ model: "grok-imagine-video", aspect_ratio: "9:16", resolution: "480p", duration: 5, generate_audio: false, provider: :xai }, run.ai_options)
       assert_equal "running", run.status
 
@@ -222,14 +222,14 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     test "run sends the edited prompt and options for that run only; a type change needs a save" do
       patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ],
-        recipe: { body: "Make it snow.", options: { model: "grok-imagine-video", duration: "5" } } }
+        recipe: recipe_attributes(body: "Make it snow.", options: { model: "grok-imagine-video", duration: "5" }) }
       run = @media.source_runs.sole
       assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id)
       assert_equal [ "Make it snow.", { "model" => "grok-imagine-video", "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "5" } ], [ run.prompt, run.options ]
-      assert_equal [ "Slow cinematic push-in on the shop.", {} ], [ @recipe.reload.body, @recipe.options ]
+      assert_equal [ "Slow cinematic push-in on the shop.", {} ], [ @recipe.reload.transformation.body, @recipe.transformation.options ]
 
-      assert_no_difference -> { RecipeRun.count } do
-        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: { kind: "generate_image" } }
+      assert_no_difference -> { TransformationRun.count } do
+        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: recipe_attributes(kind: "generate_image") }
       end
       assert_response :unprocessable_entity
       assert_select "[role=alert]", text: /Save to change the type/
@@ -237,28 +237,28 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     end
 
     test "picking an OpenAI model swaps in OpenAI's options and runs on OpenAI" do
-      recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", output_folder: folders(:photobank_interior),
+      recipe = create_recipe(name: "Polish", body: "Polish the shot.", output_folder: folders(:photobank_interior),
         inputs: [ { "folder_id" => folders(:interior).id } ])
 
-      get recipe_url(recipe, account: @admin.id, recipe: { body: "Warmer.", options: { model: "gpt-image-2" } })
+      get recipe_url(recipe, account: @admin.id, recipe: recipe_attributes(body: "Warmer.", options: { model: "gpt-image-2" }))
       assert_response :success
-      assert_select "textarea[name='recipe[body]']", text: "Warmer."
-      assert_select "input[type=hidden][name='recipe[options][model]'][value='gpt-image-2']"
-      assert_select "input[type=radio][name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
-      assert_select "input[type=radio][name='recipe[options][resolution]'][value='2k'][checked]"
-      assert_equal %w[1K 2K 4K], css_select("input[name='recipe[options][resolution]']").map { it.parent.text.strip }
-      assert_select "input[type=radio][name='recipe[options][quality]'][value=''][checked]"
-      assert_select "select[name='recipe[options][aspect_ratio]']", count: 0
+      assert_select "textarea[name='recipe[transformation_attributes][body]']", text: "Warmer."
+      assert_select "input[type=hidden][name='recipe[transformation_attributes][options][model]'][value='gpt-image-2']"
+      assert_select "input[type=radio][name='recipe[transformation_attributes][options][aspect_ratio]'][value='9:16'][checked]"
+      assert_select "input[type=radio][name='recipe[transformation_attributes][options][resolution]'][value='2k'][checked]"
+      assert_equal %w[1K 2K 4K], css_select("input[name='recipe[transformation_attributes][options][resolution]']").map { it.parent.text.strip }
+      assert_select "input[type=radio][name='recipe[transformation_attributes][options][quality]'][value=''][checked]"
+      assert_select "select[name='recipe[transformation_attributes][options][aspect_ratio]']", count: 0
 
-      get recipe_url(recipe, account: @admin.id, recipe: { options: { model: "grok-imagine-image-2.0", aspect_ratio: "4:5", resolution: "4k", quality: "high" } })
-      assert_equal %w[9:16 1:1 4:3 16:9], css_select("input[name='recipe[options][aspect_ratio]']").map { it["value"] }
-      assert_select "input[name='recipe[options][aspect_ratio]'][value='9:16'][checked]"
-      assert_select "input[name='recipe[options][resolution]'][value='2k'][checked]"
-      assert_select "input[name='recipe[options][resolution]'][value='4k']", count: 0
-      assert_select "input[name='recipe[options][quality]'][value=''][checked]"
+      get recipe_url(recipe, account: @admin.id, recipe: recipe_attributes(options: { model: "grok-imagine-image-2.0", aspect_ratio: "4:5", resolution: "4k", quality: "high" }))
+      assert_equal %w[9:16 1:1 4:3 16:9], css_select("input[name='recipe[transformation_attributes][options][aspect_ratio]']").map { it["value"] }
+      assert_select "input[name='recipe[transformation_attributes][options][aspect_ratio]'][value='9:16'][checked]"
+      assert_select "input[name='recipe[transformation_attributes][options][resolution]'][value='2k'][checked]"
+      assert_select "input[name='recipe[transformation_attributes][options][resolution]'][value='4k']", count: 0
+      assert_select "input[name='recipe[transformation_attributes][options][quality]'][value=''][checked]"
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: [ @media.id ],
-        recipe: { options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high" } } }
+        recipe: recipe_attributes(options: { model: "gpt-image-2", aspect_ratio: "1:1", resolution: "4k", quality: "high" }) }
       run = @media.source_runs.sole
       assert_equal({ model: "gpt-image-2", size: "2880x2880", quality: "high", output_format: "jpeg", provider: :openai }, run.ai_options)
     end
@@ -267,7 +267,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       other, third = %w[b.jpg c.jpg].map do |filename|
         LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @admin, file: { io: StringIO.new("img"), filename:, content_type: "image/jpeg" })
       end
-      recipe = Recipe.create!(name: "Pair", body: "Pair them.", output_folder: folders(:photobank_interior),
+      recipe = create_recipe(name: "Pair", body: "Pair them.", output_folder: folders(:photobank_interior),
         inputs: [ { "folder_id" => folders(:interior).id, "count" => 2 } ])
 
       get recipe_url(recipe, media_ids: [ third.id ], account: @admin.id)
@@ -281,13 +281,13 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "input[name='media_ids[]'][checked]", count: 3
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: [ other.id, third.id ], recipe: { name: "Pair" } }
-      assert_equal [ other, third ], RecipeRun.last.source_media
+      assert_equal [ other, third ], TransformationRun.last.source_media
     end
 
     test "a tagged input only offers media with its tag; output tags save" do
       tagged = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @admin, tags: [ tags(:before) ],
         file: { io: StringIO.new("img"), filename: "t.jpg", content_type: "image/jpeg" })
-      recipe = Recipe.create!(name: "Tagged", body: "p", inputs: [ { "folder_id" => folders(:interior).id, "tag_id" => tags(:before).id } ])
+      recipe = create_recipe(name: "Tagged", body: "p", inputs: [ { "folder_id" => folders(:interior).id, "tag_id" => tags(:before).id } ])
 
       get recipe_url(recipe, account: @admin.id)
       assert_select "input[type=hidden][name='recipe[inputs][][tag_id]'][value=?]", tags(:before).id.to_s
@@ -303,7 +303,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     end
 
     test "changing an input's folder refreshes its media" do
-      recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", inputs: [ { "folder_id" => folders(:exterior).id } ])
+      recipe = create_recipe(name: "Polish", body: "Polish the shot.", inputs: [ { "folder_id" => folders(:exterior).id } ])
 
       get recipe_url(recipe, account: @admin.id)
       assert_select "input[name='media_ids[]']", count: 0
@@ -314,40 +314,40 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     test "a recipe's fixed style goes into every run; switching the section off clears it" do
       style = Style.create!(name: "Film", body: "35mm grain.")
-      recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", style:, inputs: [ { "folder_id" => folders(:interior).id } ])
+      recipe = create_recipe(name: "Polish", body: "Polish the shot.", style:, inputs: [ { "folder_id" => folders(:interior).id } ])
 
       get recipe_url(recipe, account: @admin.id)
-      assert_select "section[aria-label=Style] fieldset:not([disabled]) select[name='recipe[style_id]'] option[selected][value=?]", style.id.to_s
+      assert_select "section[aria-label=Style] fieldset:not([disabled]) select[name='recipe[transformation_attributes][style_id]'] option[selected][value=?]", style.id.to_s
 
-      patch recipe_url(recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: { body: "Polish the shot." } }
+      patch recipe_url(recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: recipe_attributes(body: "Polish the shot.") }
       run = @media.source_runs.sole
       assert_equal [ style, "Polish the shot.\n\n35mm grain." ], [ run.style, run.prompt ]
 
-      patch recipe_url(recipe), params: { commit: "save", recipe: { style_id: "" } }
+      patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(style_id: "") }
       assert_nil recipe.reload.style
     end
 
     test "a section switched on before it has a value stays on through the refresh" do
-      recipe = Recipe.create!(name: "Polish", body: "Polish the shot.", inputs: [ { "folder_id" => folders(:interior).id } ])
+      recipe = create_recipe(name: "Polish", body: "Polish the shot.", inputs: [ { "folder_id" => folders(:interior).id } ])
 
-      get recipe_url(recipe, account: @admin.id, on: { shot: 1 }, recipe: { shot_group: "" })
+      get recipe_url(recipe, account: @admin.id, on: { shot: 1 }, recipe: recipe_attributes(shot_group: ""))
       assert_select "section[aria-label=Shot] input[name='on[shot]'][checked]"
-      assert_select "section[aria-label=Shot] fieldset:not([disabled]) select[name='recipe[shot_group]']"
+      assert_select "section[aria-label=Shot] fieldset:not([disabled]) select[name='recipe[transformation_attributes][shot_group]']"
     end
 
     test "a review recipe's run renders the picked photo and review into its output folder" do
       ready = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @admin,
         file: { io: StringIO.new("img"), filename: "ready.jpg", content_type: "image/jpeg" })
       review = @admin.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.")
-      recipe = Recipe.create!(name: "Reviews", kind: "review", inputs: [ { "folder_id" => folders(:ready).id } ])
+      recipe = create_recipe(name: "Reviews", kind: "review", inputs: [ { "folder_id" => folders(:ready).id } ])
 
       get recipe_url(recipe, account: @admin.id)
       assert_select "input[name='media_ids[]'][value=?][checked]", ready.id.to_s
       assert_select "label:has(input[type=radio][name=review_id][value=?][checked])", review.id.to_s, text: /Dana K\.\s+Best fade in town/
       assert_select "section[aria-label=Layer] a[href=?]", layer_path("review", account: @admin.id), text: "Preview"
-      assert_select "select[name='recipe[kind]'] option[value=review][selected]"
+      assert_select "select[name='recipe[transformation_attributes][kind]'] option[value=review][selected]"
 
-      assert_difference -> { RecipeRun.count } => 1, -> { SmmPost.count } => 0 do
+      assert_difference -> { TransformationRun.count } => 1, -> { SmmPost.count } => 0 do
         assert_enqueued_with(job: GenerateJob) do
           patch recipe_url(recipe), params: { commit: "run", media_ids: [ ready.id ], review_id: review.id, recipe: { name: "Reviews" } }
         end
@@ -356,19 +356,19 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "turbo-stream[action=prepend][target=recipe_made] a[href=?]", library_item_path(run.generated_media, account: @admin.id)
       assert_equal [ review, [ ready ], folders(:ready) ], [ run.review, run.source_media, run.generated_media.folder ]
 
-      patch recipe_url(recipe), params: { commit: "run", media_ids: [ ready.id ], recipe: { kind: "daily" } }
+      patch recipe_url(recipe), params: { commit: "run", media_ids: [ ready.id ], recipe: recipe_attributes(kind: "daily") }
       assert_response :unprocessable_entity
       assert_select "[role=alert]", text: /Save to change the type/
     end
 
     test "a scripted type previews its layer and original reel, served to admins only for known types" do
-      get new_recipe_url(account: @admin.id, recipe: { kind: "black_eyed_peas" })
+      get new_recipe_url(account: @admin.id, recipe: recipe_attributes(kind: "black_eyed_peas"))
       assert_select "p", text: /Cuts every bar of its track/
       assert_select "iframe[src=?]", canvas_layer_path("caption", account: @admin.id)
       assert_select "video[src=?]", original_recipes_path("black_eyed_peas", account: @admin.id)
       assert_select "a[href=?]", Reels::BlackEyedPeas.source_url
-      assert_select "textarea[name='recipe[body]']", count: 0
-      get new_recipe_url(account: @admin.id, recipe: { kind: "steps" })
+      assert_select "textarea[name='recipe[transformation_attributes][body]']", count: 0
+      get new_recipe_url(account: @admin.id, recipe: recipe_attributes(kind: "steps"))
       assert_select "video", count: 0
 
       get original_recipes_url("doppler", account: @admin.id)
@@ -381,15 +381,15 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     end
 
     test "rejects options xAI doesn't offer and media that don't fit the input" do
-      assert_difference -> { RecipeRun.count } => 0, -> { LibraryMedia.count } => 0 do
-        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: { options: { model: "grok-imagine-video-1.5", resolution: "8k" } } }
+      assert_difference -> { TransformationRun.count } => 0, -> { LibraryMedia.count } => 0 do
+        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: recipe_attributes(options: { model: "grok-imagine-video-1.5", resolution: "8k" }) }
       end
       assert_response :unprocessable_entity
       assert_select "[role=alert]", text: /Resolution 8k isn't available/
 
       @media.update!(folder: folders(:exterior))
-      assert_no_difference -> { RecipeRun.count } do
-        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: { body: @recipe.body } }
+      assert_no_difference -> { TransformationRun.count } do
+        patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: recipe_attributes(body: @recipe.transformation.body) }
       end
       assert_response :unprocessable_entity
       assert_select "[role=alert]", text: /Pick the right number of media for every input/

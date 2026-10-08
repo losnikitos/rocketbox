@@ -7,8 +7,8 @@ require "csv"
 # Each scripted type is one folder, reels/<slug>: its class, the original reel (<slug>.mp4), its audio (<slug>.wav) and
 # its cut ends in seconds (beats.csv), the last two made from the first by the notebook there (beats.ipynb).
 # ponytail: fixed 9:16 1080x1920, and a video restarts from its first frame in every cut. Upgrade = aspect ratio
-# from the recipe options, a per-media offset.
-class RecipeType::Scripted < RecipeType
+# from the transformation options, a per-media offset.
+class Transformation::Scripted < Transformation::Type
   FPS = 30
 
   def self.label = "Scripted"
@@ -64,8 +64,8 @@ class RecipeType::Scripted < RecipeType
     ends.zip([ 0, *ends ]).each_with_object([]) { |(stop, start), acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, stop - start ] }
   end
 
-  # The layer values over cut `i`, from the recipe's layer steps, or nil for no layer.
-  def layer_values(i) = recipe.layer_steps[self.class.steps == 1 ? 0 : i].presence
+  # The layer values over cut `i`, from the transformation's layer steps, or nil for no layer.
+  def layer_values(i) = transformation.layer_steps[self.class.steps == 1 ? 0 : i].presence
 
   # An ffmpeg filter retiming video `item` over a cut of `frames`, run before it's fitted, or nil to play it as is.
   def retime(item, frames) = nil

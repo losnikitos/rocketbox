@@ -80,7 +80,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_equal "before-after", folders(:photobank).children.find_by!(name: "Before after").slug
   end
 
-  test "recipe run is linked from its media page and opens in admin" do
+  test "transformation run is linked from its media page and opens in admin" do
     admin = sign_in_as(users(:admin_user))
     source = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
@@ -89,11 +89,11 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
 
     get "/app/library/media/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
     assert_response :success
-    assert_select "a[href^='/admin/recipe_runs/#{generation.id}']"
-    get "/admin/recipe_runs/#{generation.id}", headers: @ua
+    assert_select "a[href^='/admin/transformation_runs/#{generation.id}']"
+    get "/admin/transformation_runs/#{generation.id}", headers: @ua
     assert_response :success
     assert_match "content policy", response.body
-    get "/admin/recipe_runs", headers: @ua
+    get "/admin/transformation_runs", headers: @ua
     assert_response :success
   end
 
@@ -109,6 +109,12 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     get "/admin/recipes/#{recipe.slug}", headers: @ua
     assert_response :success
     assert_select "a[href='/app/recipes/#{recipe.slug}']"
+    assert_select "a[href='/admin/transformations/#{recipe.transformation_id}']"
+    get "/admin/transformations", headers: @ua
+    assert_response :success
+    get "/admin/transformations/#{recipe.transformation_id}", headers: @ua
+    assert_response :success
+    assert_match recipe.transformation.body, response.body
   end
 
   test "admin manages tags and tags media" do

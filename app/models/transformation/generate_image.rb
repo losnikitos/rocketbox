@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # An image from the prompt and the source media.
-class RecipeType::GenerateImage < RecipeType::Generation
+class Transformation::GenerateImage < Transformation::Generation
   def self.label = "Image"
 
   def file

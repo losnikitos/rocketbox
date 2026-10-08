@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class RecipeType::Calendar < RecipeType::Overlay
+class Transformation::Calendar < Transformation::Overlay
   def self.label = "Calendar"
 
   def self.description = "Free slots for the next three days, over one photo or video."

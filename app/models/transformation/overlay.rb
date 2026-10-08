@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Lays its layer over one photo or video, as the same.
-class RecipeType::Overlay < RecipeType
+class Transformation::Overlay < Transformation::Type
   def self.label = "Overlay"
 
   def self.overlay? = true

@@ -7,7 +7,7 @@ module Accounts
     PER_PAGE = 20
 
     def show
-      @library_media = Current.account.library_media.with_attached_file.includes(:recipe_run)
+      @library_media = Current.account.library_media.with_attached_file.includes(:transformation_run)
         .order(id: :desc).limit(PER_PAGE)
       @library_media = @library_media.where(id: ...params[:before].to_i) if params[:before].present?
     end

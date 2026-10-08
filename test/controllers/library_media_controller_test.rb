@@ -169,8 +169,8 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
 
     media = user.library_media.order(:id).last
     assert_equal source, media.original
-    assert media.recipe_run.complete?
-    assert_nil media.recipe_run.recipe
+    assert media.transformation_run.complete?
+    assert_nil media.transformation_run.recipe
     assert_equal folders(:photobank_interior), media.folder
     assert_redirected_to library_folders_url("photobank", "interior")
 
