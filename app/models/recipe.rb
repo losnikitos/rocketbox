@@ -1,37 +1,32 @@
 # frozen_string_literal: true
 
-# How media is made from library media, plus an example image.
+# Library media in, a transformation, media out; plus an example image.
 # `inputs` lists the folders it takes media from in order as { "folder_id", "tag_id", "count" }, one per folder and tag
 # (two staff photos is one input with count 2); a blank tag takes any media in the folder. A run sees the picked media
 # as one flat list.
-# `kind` is how, the slug of its `type` (see RecipeType), which fixes its layer: a Generation is one AI call making an
-# image or a video; an Overlay lays its layer over one photo or video, as the same; a Scripted type cuts the inputs
-# (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see RecipeType::Scripted).
+# `transformation` is how its media is made (see Transformation), edited with the recipe.
 # Results land in `output_folder`, tagged with `output_tag_ids`.
-# `options` are the defaults for its AI runs (see GenerationOptions).
-# Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
-# pick (the review type).
 # ponytail: slots and output tags are JSON arrays, so deleting a folder or tag leaves the recipe pointing at nothing
 # (the recipe then fails validation on edit). Upgrade = recipe_slots and recipe_output_tags join tables with foreign keys.
 class Recipe < ApplicationRecord
   extend FriendlyId
-  include GenerationOptions
 
   # Follows the name; old slugs still find it, so an open page keeps working after a rename.
   friendly_id :name, use: %i[slugged finders history]
 
   # Runs outlive their recipe.
-  has_many :runs, class_name: "RecipeRun", dependent: :nullify
+  has_many :runs, class_name: "TransformationRun", dependent: :nullify
   has_one_attached :example
+  belongs_to :transformation
+  accepts_nested_attributes_for :transformation, update_only: true
   belongs_to :output_folder, class_name: "Folder"
-  belongs_to :style, optional: true
   # Where it's listed on the index and in the sidebar; nil is ungrouped.
   belongs_to :recipe_folder, optional: true
+  # After the given attributes, so a nested transformation fills its options for its own kind.
+  after_initialize(if: :new_record?) { build_transformation unless transformation }
   before_validation(on: :create) { self.output_folder ||= Folder.ready }
 
-  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, to: :type, allow_nil: true
-  # Only AI kinds have a prompt.
-  attribute :body, default: ""
+  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, :type, :type_label, :takes?, :style, :shot_group, to: :transformation
 
   # Inputs from one folder with one tag merge, their counts summed.
   normalizes :inputs, with: ->(inputs) do
@@ -39,19 +34,9 @@ class Recipe < ApplicationRecord
       .map { |(folder_id, tag_id), rows| { "folder_id" => folder_id, "tag_id" => tag_id, "count" => rows.sum { [ it["count"].to_i, 1 ].max } }.compact }
   end
   normalizes :output_tag_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
-  # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
-  normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
-  # nil takes no shot.
-  normalizes :shot_group, with: ->(value) { value.strip.presence }
 
-  before_validation do
-    self.shot_group, self.style = nil, nil unless ai?
-    self.layer_steps = [] unless reel? && layer
-  end
   validates :name, presence: true
-  validates :kind, inclusion: { in: -> { RecipeType.all.map(&:slug) } }
   validates :inputs, presence: true
-  validates :body, presence: true, if: :ai?
   validate do
     errors.add(:inputs, "include an unknown folder") unless Folder.where(id: folder_ids).count == folder_ids.uniq.size
     tag_ids = inputs.filter_map { it["tag_id"] }.uniq
@@ -60,8 +45,6 @@ class Recipe < ApplicationRecord
     errors.add(:output_folder, "must be in Photobank") unless output_folder&.root&.slug == "photobank"
     errors.add(:inputs, video? ? "must be a single photo to make a video" : "must be a single photo or video to make a story") if (video? || overlay?) && media_count > 1
   end
-  # A run of unsaved edits: its job reloads the recipe, so it would run the saved type and layer steps.
-  validate(on: :run) { errors.add(:base, "Save to change the type.") if kind_changed? || layer_steps_changed? }
 
   scope :ordered, -> { order(:name) }
 
@@ -76,13 +59,6 @@ class Recipe < ApplicationRecord
   def folder_name=(name)
     self.recipe_folder = name.to_s.strip.presence&.then { RecipeFolder.find_or_initialize_by(name: it) }
   end
-
-  def type = RecipeType.find(kind)
-
-  # "Generation · Image", or "Overlay · Fully booked".
-  def type_label = type&.then { "#{it.group.label} · #{it.label}" }
-
-  def takes?(media) = media.story_image? || (!ai? && media.video?)
 
   def folder_ids = inputs.map { it["folder_id"] }
 
@@ -111,10 +87,10 @@ class Recipe < ApplicationRecord
     end && left.empty?
   end
 
-  # `media` are the inputs' counts from their folders; `shot` is from the recipe's shot group, `review` for the review type.
-  # `user` owns the result. Runs the recipe as it is in memory, unsaved edits included (see RecipeRun#start!).
+  # `media` are the inputs' counts from their folders; `shot` is from the shot group, `review` for the review type.
+  # `user` owns the result. Runs the recipe as it is in memory, unsaved edits included.
   # Raises ActiveRecord::RecordInvalid when the media don't fit the slots, the shot or review doesn't fit or an option isn't available.
   def run!(media:, shot: nil, review: nil, user: media.first&.user)
-    runs.new(shot:, style:, review:, inputs: media.each_with_index.map { |item, position| RecipeRunInput.new(library_media: item, position:) }).start!(user)
+    transformation.run!(media:, shot:, review:, user:, folder: output_folder, tags: output_tags.to_a, recipe: self)
   end
 end

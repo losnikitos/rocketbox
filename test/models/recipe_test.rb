@@ -5,7 +5,7 @@ require "test_helper"
 class RecipeTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @recipe = Recipe.create!(name: "Collage", body: "Compose a collage.",
+    @recipe = create_recipe(name: "Collage", body: "Compose a collage.",
       inputs: [ input(:photobank_interior), { "folder_id" => "" }, input(:photobank_customer) ])
     @interior = photo("interior.jpg", :photobank_interior)
     @customer = photo("customer.jpg", :photobank_customer)
@@ -22,22 +22,22 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "inputs drop blank folders and need a known folder; output goes to photobank; a video takes one input" do
     assert_equal [ input(:photobank_interior), input(:photobank_customer) ], @recipe.inputs
-    assert Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
+    assert new_recipe(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
 
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
-    assert_not Recipe.new(name: "x", body: "x", inputs: []).valid?
-    assert_not Recipe.new(name: "x", kind: "steps", inputs: []).valid?
-    assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
-    assert_not Recipe.new(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
-    assert Recipe.new(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
-    video = Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
+    assert_not new_recipe(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
+    assert_not new_recipe(name: "x", body: "x", inputs: []).valid?
+    assert_not new_recipe(name: "x", kind: "steps", inputs: []).valid?
+    assert_not new_recipe(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
+    assert_not new_recipe(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
+    assert new_recipe(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
+    video = new_recipe(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
     assert_not video.valid?
     assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
-    assert_not Recipe.new(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior, 2) ]).valid?
+    assert_not new_recipe(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior, 2) ]).valid?
   end
 
   test "inputs from one folder merge, their counts summed; a missing count is 1" do
-    recipe = Recipe.new(inputs: [ { "folder_id" => folders(:interior).id.to_s }, input(:customer, 5), input(:interior, 2) ])
+    recipe = new_recipe(inputs: [ { "folder_id" => folders(:interior).id.to_s }, input(:customer, 5), input(:interior, 2) ])
     assert_equal [ input(:interior, 3), input(:customer, 5) ], recipe.inputs
     assert_equal 8, recipe.media_count
   end
@@ -46,9 +46,9 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal "collage", @recipe.slug
     @recipe.update!(name: "Renamed")
     assert_equal [ "renamed", @recipe, @recipe ], [ @recipe.slug, Recipe.find("renamed"), Recipe.find("collage") ]
-    numeric = Recipe.create!(name: "2", body: "x", inputs: [ input(:interior) ])
+    numeric = create_recipe(name: "2", body: "x", inputs: [ input(:interior) ])
     assert_equal [ "recipe-2", numeric ], [ numeric.slug, Recipe.find("recipe-2") ]
-    assert_equal "strizhka-i-boroda", Recipe.create!(name: "Стрижка и борода", body: "x", inputs: [ input(:interior) ]).slug
+    assert_equal "strizhka-i-boroda", create_recipe(name: "Стрижка и борода", body: "x", inputs: [ input(:interior) ]).slug
   end
 
   test "run! takes each input's count from its folder, in any order, and rejects other folders, duplicates and another account's photos" do
@@ -79,12 +79,12 @@ class RecipeTest < ActiveSupport::TestCase
     run = @recipe.run!(media: [ @interior, plain ])
     assert_equal [ after ], run.generated_media.tags.to_a
 
-    tagged_only = Recipe.create!(name: "Tagged", body: "x", inputs: [ input(:photobank_interior).merge("tag_id" => before.id) ])
+    tagged_only = create_recipe(name: "Tagged", body: "x", inputs: [ input(:photobank_interior).merge("tag_id" => before.id) ])
     assert_includes @interior.recipes, tagged_only
     assert_not_includes plain.recipes, tagged_only
 
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior).merge("tag_id" => 0) ]).valid?
-    assert_not Recipe.new(name: "x", body: "x", inputs: [ input(:interior) ], output_tag_ids: [ 0 ]).valid?
+    assert_not new_recipe(name: "x", body: "x", inputs: [ input(:interior).merge("tag_id" => 0) ]).valid?
+    assert_not new_recipe(name: "x", body: "x", inputs: [ input(:interior) ], output_tag_ids: [ 0 ]).valid?
   end
 
   test "run! paints every input in order with the recipe as given, unsaved edits included, into the output folder" do
@@ -93,10 +93,11 @@ class RecipeTest < ActiveSupport::TestCase
       calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 })
     end
-    @recipe.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
-    @recipe.assign_attributes(body: "Compose a collage.\n\nWarmer.", options: @recipe.options.merge("quality" => "low"))
+    transformation = @recipe.transformation
+    transformation.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
+    transformation.assign_attributes(body: "Compose a collage.\n\nWarmer.", options: transformation.options.merge("quality" => "low"))
     run = @recipe.run!(media: [ @interior, @customer ])
-    assert_equal "Compose a collage.", @recipe.reload.body
+    assert_equal "Compose a collage.", transformation.reload.body
     media = run.generated_media
 
     assert_equal [ folders(:ready), @user, "running" ], [ media.folder, media.user, run.status ]
@@ -108,7 +109,7 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ [ "Compose a collage.\n\nWarmer.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
     assert_equal [ "complete", 0.04, "Compose a collage.\n\nWarmer." ], [ run.reload.status, run.cost, run.prompt ]
     assert_equal "jpeg-bytes", media.reload.file.download
-    assert_equal "#{@recipe.slug.underscore}_#{run.id}.jpg", media.file.filename.to_s
+    assert_equal "generate_image_#{run.id}.jpg", media.file.filename.to_s
   end
 
   test "a video recipe animates its one input into a video" do
@@ -129,7 +130,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a steps recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
-    recipe = Recipe.create!(name: "Reel", kind: "steps", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    recipe = create_recipe(name: "Reel", kind: "steps", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
     assert_nil recipe.shot_group
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     run = recipe.run!(media:)
@@ -138,14 +139,14 @@ class RecipeTest < ActiveSupport::TestCase
 
     assert_equal [ "complete", nil ], [ run.reload.status, run.prompt ]
     file = run.generated_media.reload.file
-    assert_equal [ "video", "video/mp4", "reel_#{run.id}.mp4" ], [ run.generated_media.kind, file.content_type, file.filename.to_s ]
+    assert_equal [ "video", "video/mp4", "steps_#{run.id}.mp4" ], [ run.generated_media.kind, file.content_type, file.filename.to_s ]
     duration = file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", it.path).first.to_f }
     assert_in_delta 2.0, duration, 0.1
   end
 
   { "doppler" => 9.6, "welcome" => 8.1, "black_eyed_peas" => 7.0, "azzurro" => 6.4, "gm_visuals" => 10.2 }.each do |kind, length|
     test "a #{kind} recipe lays its track under its cuts" do
-      recipe = Recipe.create!(name: kind, kind:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+      recipe = create_recipe(name: kind, kind:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
       media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
       run = recipe.run!(media:)
 
@@ -161,7 +162,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "gm_visuals speed-ramps videos shorter than their cuts without coming up short" do
-    recipe = Recipe.create!(name: "GM", kind: "gm_visuals", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    recipe = create_recipe(name: "GM", kind: "gm_visuals", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
     Dir.mktmpdir do |dir|
       clip = File.join(dir, "clip.mp4")
       system("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=1", "-pix_fmt", "yuv420p", clip, exception: true)
@@ -179,10 +180,10 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a reel overlays its first cuts with its type's layer, each filled from its own step" do
-    recipe = Recipe.create!(name: "Black eyed peas", kind: "black_eyed_peas",
+    recipe = create_recipe(name: "Black eyed peas", kind: "black_eyed_peas",
       inputs: [ input(:photobank_interior), input(:photobank_customer) ],
       layer_steps: [ { "line2" => "coffee" }, { "line1" => "", "line2" => "" }, { "line1" => "Our", "line2" => "tools" }, { "line2" => "" } ])
-    assert_equal [ { "line2" => "coffee" }, {}, { "line1" => "Our", "line2" => "tools" }, {} ], recipe.layer_steps
+    assert_equal [ { "line2" => "coffee" }, {}, { "line1" => "Our", "line2" => "tools" }, {} ], recipe.transformation.layer_steps
     media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
@@ -197,19 +198,19 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "welcome lays its one step over just the first four cuts" do
     steps = [ { "line1" => "Hi" }, { "line1" => "ignored" } ]
-    assert_equal [ *[ { "line1" => "Hi" } ] * 4, nil ], (0..4).map { Reels::Welcome.new(RecipeRun.new(recipe: Recipe.new(layer_steps: steps))).layer_values(it) }
+    assert_equal [ *[ { "line1" => "Hi" } ] * 4, nil ], (0..4).map { Reels::Welcome.new(TransformationRun.new(transformation: Transformation.new(layer_steps: steps))).layer_values(it) }
   end
 
   test "a one-step reel lays its step over every cut" do
-    assert_equal [ { "text" => "Hi" } ] * 3, [ 0, 7, 30 ].map { Reels::Doppler.new(RecipeRun.new(recipe: Recipe.new(layer_steps: [ { "text" => "Hi" } ]))).layer_values(it) }
+    assert_equal [ { "text" => "Hi" } ] * 3, [ 0, 7, 30 ].map { Reels::Doppler.new(TransformationRun.new(transformation: Transformation.new(layer_steps: [ { "text" => "Hi" } ]))).layer_values(it) }
   end
 
   test "every scripted type with a track has its cut ends" do
-    RecipeType.all.select { it.reel? && it.track }.each { assert it.dir.join("beats.csv").exist?, it.slug }
+    Transformation::Type.all.select { it.reel? && it.track }.each { assert it.dir.join("beats.csv").exist?, it.slug }
   end
 
   test "every type has its cover" do
-    RecipeType.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
+    Transformation::Type.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
   test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
@@ -220,7 +221,7 @@ class RecipeTest < ActiveSupport::TestCase
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
     @recipe = Recipe.find(@recipe.id)
-    @recipe.update!(shot_group: "Daily", style:)
+    @recipe.update!(transformation_attributes: { shot_group: "Daily", style: })
     shot = Shot.create!(name: "Empty Chair", body: "The empty chair.", group: "Daily")
     other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
     media = [ @interior, @customer ]
@@ -236,24 +237,24 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "switching type clears the inputs the new type doesn't take" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @recipe.update!(kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    @recipe.update!(transformation_attributes: { kind: "review", style:, shot_group: "Daily" }, inputs: [ input(:photobank_interior) ])
     assert_equal [ nil, nil, true, "review" ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer.slug ]
 
-    @recipe.update!(kind: "generate_image", style:, shot_group: "Daily")
+    @recipe.update!(transformation_attributes: { kind: "generate_image", style:, shot_group: "Daily" })
     assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer ]
   end
 
   test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do
-    assert_equal [ "fully-booked-color", "Overlay · Fully booked" ], Recipe.new(kind: "fully_booked").then { [ it.layer.slug, it.type_label ] }
-    assert_nil Recipe.new(kind: "steps").layer
-    assert Recipe.new(name: "x", kind: "daily", inputs: [ input(:ready) ]).valid?
-    assert_not Recipe.new(name: "x", kind: "scripted", inputs: [ input(:ready) ]).valid?
-    assert_not Recipe.new(name: "x", kind: "nope", inputs: [ input(:ready) ]).valid?
-    assert_not Recipe.new(name: "x", kind: "daily", inputs: []).valid?
-    two = Recipe.new(name: "x", kind: "daily", inputs: [ input(:ready), input(:ready) ])
+    assert_equal [ "fully-booked-color", "Overlay · Fully booked" ], Transformation.new(kind: "fully_booked").then { [ it.layer.slug, it.type_label ] }
+    assert_nil Transformation.new(kind: "steps").layer
+    assert new_recipe(name: "x", kind: "daily", inputs: [ input(:ready) ]).valid?
+    assert_not new_recipe(name: "x", kind: "scripted", inputs: [ input(:ready) ]).valid?
+    assert_not new_recipe(name: "x", kind: "nope", inputs: [ input(:ready) ]).valid?
+    assert_not new_recipe(name: "x", kind: "daily", inputs: []).valid?
+    two = new_recipe(name: "x", kind: "daily", inputs: [ input(:ready), input(:ready) ])
     assert_not two.valid?
     assert_includes two.errors.full_messages, "Inputs must be a single photo or video to make a story"
-    assert Recipe.new(name: "x", kind: "welcome", inputs: [ input(:ready), input(:ready) ]).valid?
+    assert new_recipe(name: "x", kind: "welcome", inputs: [ input(:ready), input(:ready) ]).valid?
   end
 
   test "run! records a failure" do
@@ -272,17 +273,17 @@ class RecipeTest < ActiveSupport::TestCase
     RubyLLM::ActiveRecord::Model.create!(provider: "gemini", model_id: "veo-3.1-generate-preview", name: "Veo 3.1", enabled: true,
       modalities: { "input" => %w[text image], "output" => %w[video] })
 
-    image = @recipe.runs.new(options: { "model" => "gemini-3-pro-image", "aspect_ratio" => "4:5", "resolution" => "4k" })
+    image = @recipe.transformation.runs.new(options: { "model" => "gemini-3-pro-image", "aspect_ratio" => "4:5", "resolution" => "4k" })
     assert_equal({ model: "gemini-3-pro-image", generationConfig: { imageConfig: { aspectRatio: "4:5", imageSize: "4K" } }, provider: :gemini },
       image.ai_options)
 
-    video = recipes(:cinematic).runs.new(options: { "model" => "veo-3.1-generate-preview", "resolution" => "1080p" })
+    video = recipes(:cinematic).transformation.runs.new(options: { "model" => "veo-3.1-generate-preview", "resolution" => "1080p" })
     assert_equal({ model: "veo-3.1-generate-preview", parameters: { aspectRatio: "9:16", resolution: "1080p", durationSeconds: 8 }, provider: :gemini },
       video.ai_options)
   end
 
   test "an overlay renders its layer for today over the photo into its output folder" do
-    feature = Recipe.create!(name: "Fully booked", kind: "fully_booked", inputs: [ input(:ready) ],
+    feature = create_recipe(name: "Fully booked", kind: "fully_booked", inputs: [ input(:ready) ],
       output_folder: folders(:photobank_logo))
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
@@ -303,7 +304,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "an overlay over a video lays its transparent layer over the video, as a video" do
-    feature = Recipe.create!(name: "Daily", kind: "daily", inputs: [ input(:ready) ])
+    feature = create_recipe(name: "Daily", kind: "daily", inputs: [ input(:ready) ])
     clip = Tempfile.new([ "clip", ".mp4" ])
     Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-pix_fmt", "yuv420p", clip.path)
     video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user,
@@ -326,7 +327,7 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a review recipe needs a review and renders it on its layer" do
-    feature = Recipe.create!(name: "Reviews", kind: "review", inputs: [ input(:ready) ])
+    feature = create_recipe(name: "Reviews", kind: "review", inputs: [ input(:ready) ])
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     review = @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.",
@@ -350,7 +351,6 @@ class RecipeTest < ActiveSupport::TestCase
   private
 
     def input(folder, count = 1) = { "folder_id" => folders(folder).id, "count" => count }
-
     def stub_screenshot
       rendered = []
       Layer.define_singleton_method(:screenshot) { |html, size:| rendered << [ html, size ] and "png-bytes" }

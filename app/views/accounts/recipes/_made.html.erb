@@ -1,5 +1,5 @@
 <%# locals: (media:, **) %>
-<%# RecipeRun broadcasts replace it when the run finishes. %>
+<%# TransformationRun broadcasts replace it when the run finishes. %>
 <li id="<%= dom_id(media, :made) %>" class="group relative min-w-0">
   <%= link_to library_item_path(media), aria: { label: "Open #{media.kind}" },
         class: "block overflow-hidden rounded-lg border border-ink-900/10 transition hover:border-ink-900/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>

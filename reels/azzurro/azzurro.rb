@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Its original audio "Mix": https://www.instagram.com/reels/audio/26474853948777658/
-class Reels::Azzurro < RecipeType::Scripted
+class Reels::Azzurro < Transformation::Scripted
   def self.label = "Azzurro"
 
   def self.description = "Cuts where the Azzurro reel cuts, bursts every few frames between three held shots, under its track, " \

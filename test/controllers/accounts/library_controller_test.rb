@@ -26,10 +26,10 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    RecipeRun.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete", inputs: [ RecipeRunInput.new(library_media: source) ])
+    TransformationRun.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete", inputs: [ TransformationRunInput.new(library_media: source) ])
     failed = recipes(:cinematic).run!(media: [ source ])
     get library_item_url(failed.generated_media)
-    assert_select "#recipe-run-heading + span", text: "running"
+    assert_select "#transformation-run-heading + span", text: "running"
     failed.update!(status: "failed", error: "content policy")
 
     get library_item_url(source)
@@ -44,22 +44,22 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=hero-media] img"
 
     get library_item_url(generated)
-    assert_select "#recipe-run-heading + span", count: 0
+    assert_select "#transformation-run-heading + span", count: 0
     assert_select "label #compare-original"
     assert_select "button[popovertarget=hero-media][title='View full size']"
     assert_select "nav[aria-label=Versions] section:first-child:has(h3:contains('Original')) a[href=?]", library_item_path(source)
     assert_select "nav[aria-label=Versions] h3", text: "Today"
     assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_item_path(generated)
-    assert_select "#recipe-run-heading", text: "Generation"
+    assert_select "#transformation-run-heading", text: "Generation"
     assert_select "aside a[href=?]", library_item_path(source), count: 0
 
     get library_item_url(failed.generated_media)
-    assert_select "details:has(#recipe-run-heading) p", text: "content policy"
-    assert_select "details:has(#recipe-run-heading) a[href=?]", recipe_path(recipes(:cinematic)), text: /Cinematic shop reel/
-    assert_select "details:has(#recipe-run-heading) tr", text: /Model\s*\S+/
+    assert_select "details:has(#transformation-run-heading) p", text: "content policy"
+    assert_select "details:has(#transformation-run-heading) a[href=?]", recipe_path(recipes(:cinematic)), text: /Cinematic shop reel/
+    assert_select "details:has(#transformation-run-heading) tr", text: /Model\s*\S+/
 
     grandchild = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user, created_at: 2.days.ago)
-    RecipeRun.create!(generated_media: grandchild, status: "complete", inputs: [ RecipeRunInput.new(library_media: generated) ])
+    TransformationRun.create!(generated_media: grandchild, status: "complete", inputs: [ TransformationRunInput.new(library_media: generated) ])
     get library_item_url(grandchild)
     assert_select "nav[aria-label=Versions] a" do |links|
       assert_equal [ source, failed.generated_media, generated, grandchild ].map { library_item_path(it) }, links.map { it["href"] }
@@ -90,16 +90,16 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
   test "ready media shows its recipe run; siblings come from the same recipe" do
     source = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user,
       file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
-    recipe = Recipe.create!(name: "Collage", body: "Compose a collage.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ])
+    recipe = create_recipe(name: "Collage", body: "Compose a collage.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ])
     run = recipe.run!(media: [ source ])
     sibling = recipe.run!(media: [ source ])
-    other = Recipe.create!(name: "Poster", body: "Make a poster.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+    other = create_recipe(name: "Poster", body: "Make a poster.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
     assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("photobank", "ready")
-    assert_select "#recipe-run-heading + span", text: "failed"
-    assert_select "details:has(#recipe-run-heading) p", text: "content policy"
+    assert_select "#transformation-run-heading + span", text: "failed"
+    assert_select "details:has(#transformation-run-heading) p", text: "content policy"
     assert_select "nav[aria-label='Collage media']" do
       assert_select "a[href=?]", library_item_path(sibling.generated_media)
       assert_select "a[href=?]", library_item_path(other.generated_media), count: 0

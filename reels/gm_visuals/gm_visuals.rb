@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Reels::GmVisuals < RecipeType::Scripted
+class Reels::GmVisuals < Transformation::Scripted
   # Seconds of video a cut plays per second, on average.
   SPEED = 2.0
   # How much faster the ends of a cut play than its middle, 0 to under 1: 0.75 is 7 times.

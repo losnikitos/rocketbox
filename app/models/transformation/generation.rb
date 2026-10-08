@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # One AI call on the source media, prompted by the run's prompt, with the run's options.
-class RecipeType::Generation < RecipeType
+class Transformation::Generation < Transformation::Type
   def self.label = "Generation"
 
   def self.ai? = true

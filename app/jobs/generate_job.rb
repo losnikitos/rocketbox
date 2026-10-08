@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Runs a RecipeRun.
+# Runs a TransformationRun.
 class GenerateJob < ApplicationJob
   queue_as :default
 

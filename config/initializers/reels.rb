@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Each scripted recipe type is one folder under reels/ (see RecipeType::Scripted): reels/doppler/doppler.rb is
+# Each scripted transformation type is one folder under reels/ (see Transformation::Scripted): reels/doppler/doppler.rb is
 # Reels::Doppler, next to its original reel, track, cut ends and notebook.
 module Reels; end
 

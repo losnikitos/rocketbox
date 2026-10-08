@@ -56,7 +56,7 @@ module AppHelper
       ] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
-    when "accounts/recipes", "accounts/recipe_runs"
+    when "accounts/recipes"
       [ :recipes, "Recipes", [] ]
     when "accounts/styles"
       [ :styles, "Styles", [] ]

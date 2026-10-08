@@ -1,11 +1,11 @@
 ---
 name: reel
-description: Turn an Instagram reel into a scripted recipe type. Download it, find its cuts or beats with the notebook, extract its track, take its first frame as the type's cover, and write the `Reels::<Name>` class. Use when the user drops a reel link or mp4 and asks to analyze it, find its segments, cuts or beats, extract its sound, or add it as a recipe type.
+description: Turn an Instagram reel into a scripted transformation type. Download it, find its cuts or beats with the notebook, extract its track, take its first frame as the type's cover, and write the `Reels::<Name>` class. Use when the user drops a reel link or mp4 and asks to analyze it, find its segments, cuts or beats, extract its sound, or add it as a transformation type.
 ---
 
-# Reel → scripted recipe type
+# Reel → scripted transformation type
 
-A scripted type is one folder, `reels/<slug>/`, autoloaded as `Reels::<Name>` ([reels.rb](/config/initializers/reels.rb)). How it renders is described in [scripted.rb](/app/models/recipe_type/scripted.rb) and [PROMPTS.md](/docs/PROMPTS.md). Read both first, and read the newest `reels/*/<slug>.rb` to copy its style.
+A scripted type is one folder, `reels/<slug>/`, autoloaded as `Reels::<Name>` ([reels.rb](/config/initializers/reels.rb)). How it renders is described in [scripted.rb](/app/models/transformation/scripted.rb) and [PROMPTS.md](/docs/PROMPTS.md). Read both first, and read the newest `reels/*/<slug>.rb` to copy its style.
 
 ```
 reels/<slug>/
@@ -15,7 +15,7 @@ reels/<slug>/
   beats.ipynb   the analysis, saved with its outputs
   segments/     one clip per cut, for checking only
   <slug>.rb     the class
-app/assets/images/recipe_types/<slug>.jpg   cover: the reel's first frame, 400x600
+app/assets/images/transformations/<slug>.jpg   cover: the reel's first frame, 400x600
 ```
 
 ## Steps
@@ -53,20 +53,20 @@ app/assets/images/recipe_types/<slug>.jpg   cover: the reel's first frame, 400x6
    ffmpeg -v error -y -pattern_type glob -i "$tmp/*.png" -vf "tile=9x4:padding=4" /tmp/<slug>_sheet.png
    ```
 
-6. **Cover.** The reel's first frame, center-cropped to 2:3, becomes `RecipeType.cover`, which the Type picker shows. If the first frame is black or a fade, tell the user instead of quietly picking another frame.
+6. **Cover.** The reel's first frame, center-cropped to 2:3, becomes `Transformation::Type.cover`, which the Type picker shows. If the first frame is black or a fade, tell the user instead of quietly picking another frame.
    ```bash
    ffmpeg -y -loglevel error -i reels/<slug>/<slug>.mp4 -frames:v 1 \
-     -vf "scale=400:600:force_original_aspect_ratio=increase,crop=400:600" -q:v 3 app/assets/images/recipe_types/<slug>.jpg
+     -vf "scale=400:600:force_original_aspect_ratio=increase,crop=400:600" -q:v 3 app/assets/images/transformations/<slug>.jpg
    ```
 
-7. **Class** `reels/<slug>/<slug>.rb`, a subclass of `RecipeType::Scripted`:
+7. **Class** `reels/<slug>/<slug>.rb`, a subclass of `Transformation::Scripted`:
    - `label`, plus a `description` in the same voice as the others ("Cuts where the X reel cuts, under its track, a random input per cut, never the same one twice in a row.")
    - `source_url`: the reel or audio link, shown on the form. Note the other one in a comment.
    - `layer`: needed only if the reel has on-screen text. Reuse a layer from [layer.rb](/app/models/layer.rb) (`text`, `caption`, `welcome`). A new look needs a new `Layer::ALL` entry plus a template in `app/views/accounts/layers/templates/`; crop a full-resolution frame to match the font and position.
    - `steps`: how many text rows the form shows. 1 means one text over every cut; N means one row per cut.
    - Override `cuts` or `layer_values(i)` only when the reel's logic differs (see Welcome and Steps).
 
-8. **Register** the class in `RecipeType.all` ([recipe_type.rb](/app/models/recipe_type.rb)), after the other `Reels::` entries.
+8. **Register** the class in `Transformation::Type.all` ([type.rb](/app/models/transformation/type.rb)), after the other `Reels::` entries.
 
 9. **Test and document.** Add `"<slug>" => <video length>` to the track hash in [recipe_test.rb](/test/models/recipe_test.rb), next to `"doppler" => 9.6`. Add the slug to the Scripted list in [PROMPTS.md](/docs/PROMPTS.md). Then run:
    ```bash

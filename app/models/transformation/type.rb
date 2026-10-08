@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-# How a recipe makes its media, picked by the recipe's `kind`, a type's slug. Each type is a class: what it is as class
-# methods (label, description, layer, …), how it makes a run's file as `file` on an instance wrapping the run.
+# How a transformation makes its media, picked by the transformation's `kind`, a type's slug. Each type is a class: what
+# it is as class methods (label, description, layer, …), how it makes a run's file as `file` on an instance wrapping the run.
 # Its superclass is its group: Generation (one AI call), Overlay (a layer over one photo or video) or Scripted (the
 # inputs cut into a reel, each type its own folder under reels/). A new type is a subclass plus a line in `all`.
-class RecipeType
+class Transformation::Type
   def self.all = [
-    GenerateImage, GenerateVideo,
-    FullyBooked, Daily, Review, Calendar,
+    Transformation::GenerateImage, Transformation::GenerateVideo,
+    Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 
@@ -20,7 +20,7 @@ class RecipeType
   def self.description = nil
 
   # A 2:3 image picturing the type, 400x600: a scripted type's original's first frame, an overlay's layer over a gradient.
-  def self.cover = "recipe_types/#{slug}.jpg"
+  def self.cover = "transformations/#{slug}.jpg"
 
   def self.layer = nil
 
@@ -36,7 +36,7 @@ class RecipeType
 
   attr_reader :run
 
-  delegate :recipe, :source_media, to: :run
+  delegate :transformation, :source_media, to: :run
 
   def initialize(run)
     @run = run
@@ -44,8 +44,8 @@ class RecipeType
 
   private
 
-    # `<recipe slug>_<run id>.<ext>`, e.g. brandbook_3.jpg.
-    def attachment(bytes, ext, content_type) = { io: StringIO.new(bytes), filename: "#{recipe.slug.underscore}_#{run.id}.#{ext}", content_type: }
+    # `<kind>_<run id>.<ext>`, e.g. generate_image_3.jpg.
+    def attachment(bytes, ext, content_type) = { io: StringIO.new(bytes), filename: "#{transformation.kind}_#{run.id}.#{ext}", content_type: }
 
     # PNG bytes: the layer over the first source media, cropped to the layer's size, filled from `values`
     # (the run's review's, if any). Transparent behind the layer when `over_photo` is false.

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_100000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -201,54 +201,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
     t.index ["slug"], name: "index_recipe_folders_on_slug", unique: true
   end
 
-  create_table "recipe_run_inputs", force: :cascade do |t|
-    t.integer "library_media_id", null: false
-    t.integer "position", default: 0, null: false
-    t.integer "recipe_run_id", null: false
-    t.index ["library_media_id"], name: "index_recipe_run_inputs_on_library_media_id"
-    t.index ["recipe_run_id", "position"], name: "index_recipe_run_inputs_on_recipe_run_id_and_position", unique: true
-    t.index ["recipe_run_id"], name: "index_recipe_run_inputs_on_recipe_run_id"
-  end
-
-  create_table "recipe_runs", force: :cascade do |t|
-    t.decimal "cost", precision: 10, scale: 6
-    t.datetime "created_at", null: false
-    t.text "error"
-    t.integer "generated_media_id", null: false
-    t.json "options", default: {}, null: false
-    t.text "prompt"
-    t.integer "recipe_id"
-    t.integer "review_id"
-    t.integer "shot_id"
-    t.string "status", default: "running", null: false
-    t.integer "style_id"
-    t.datetime "updated_at", null: false
-    t.index ["generated_media_id"], name: "index_recipe_runs_on_generated_media_id", unique: true
-    t.index ["recipe_id"], name: "index_recipe_runs_on_recipe_id"
-    t.index ["review_id"], name: "index_recipe_runs_on_review_id"
-    t.index ["shot_id"], name: "index_recipe_runs_on_shot_id"
-    t.index ["style_id"], name: "index_recipe_runs_on_style_id"
-  end
-
   create_table "recipes", force: :cascade do |t|
-    t.text "body", null: false
     t.datetime "created_at", null: false
     t.json "inputs", default: [], null: false
-    t.string "kind", default: "generate_image", null: false
-    t.json "layer_steps", default: [], null: false
     t.string "name", null: false
-    t.json "options", default: {}, null: false
     t.integer "output_folder_id", null: false
     t.json "output_tag_ids", default: [], null: false
     t.integer "recipe_folder_id"
-    t.string "shot_group"
     t.string "slug", null: false
-    t.integer "style_id"
+    t.integer "transformation_id", null: false
     t.datetime "updated_at", null: false
     t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
     t.index ["recipe_folder_id"], name: "index_recipes_on_recipe_folder_id"
     t.index ["slug"], name: "index_recipes_on_slug", unique: true
-    t.index ["style_id"], name: "index_recipes_on_style_id"
+    t.index ["transformation_id"], name: "index_recipes_on_transformation_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -454,6 +420,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
+  create_table "transformation_run_inputs", force: :cascade do |t|
+    t.integer "library_media_id", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "transformation_run_id", null: false
+    t.index ["library_media_id"], name: "index_transformation_run_inputs_on_library_media_id"
+    t.index ["transformation_run_id", "position"], name: "idx_on_transformation_run_id_position_5552ff8e6c", unique: true
+    t.index ["transformation_run_id"], name: "index_transformation_run_inputs_on_transformation_run_id"
+  end
+
+  create_table "transformation_runs", force: :cascade do |t|
+    t.decimal "cost", precision: 10, scale: 6
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.integer "generated_media_id", null: false
+    t.json "options", default: {}, null: false
+    t.text "prompt"
+    t.integer "recipe_id"
+    t.integer "review_id"
+    t.integer "shot_id"
+    t.string "status", default: "running", null: false
+    t.integer "style_id"
+    t.integer "transformation_id"
+    t.datetime "updated_at", null: false
+    t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id", unique: true
+    t.index ["recipe_id"], name: "index_transformation_runs_on_recipe_id"
+    t.index ["review_id"], name: "index_transformation_runs_on_review_id"
+    t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
+    t.index ["style_id"], name: "index_transformation_runs_on_style_id"
+    t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
+  end
+
+  create_table "transformations", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "kind", default: "generate_image", null: false
+    t.json "layer_steps", default: [], null: false
+    t.json "options", default: {}, null: false
+    t.string "shot_group"
+    t.integer "style_id"
+    t.datetime "updated_at", null: false
+    t.index ["style_id"], name: "index_transformations_on_style_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "address"
     t.string "brand_voice"
@@ -496,16 +505,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
-  add_foreign_key "recipe_run_inputs", "library_media", on_delete: :cascade
-  add_foreign_key "recipe_run_inputs", "recipe_runs", on_delete: :cascade
-  add_foreign_key "recipe_runs", "library_media", column: "generated_media_id"
-  add_foreign_key "recipe_runs", "recipes", on_delete: :nullify
-  add_foreign_key "recipe_runs", "reviews", on_delete: :nullify
-  add_foreign_key "recipe_runs", "shots", on_delete: :nullify
-  add_foreign_key "recipe_runs", "styles", on_delete: :nullify
   add_foreign_key "recipes", "folders", column: "output_folder_id"
   add_foreign_key "recipes", "recipe_folders"
-  add_foreign_key "recipes", "styles", on_delete: :nullify
+  add_foreign_key "recipes", "transformations"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
@@ -515,4 +517,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_140000) do
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
   add_foreign_key "suggestions", "crawls"
+  add_foreign_key "transformation_run_inputs", "library_media", on_delete: :cascade
+  add_foreign_key "transformation_run_inputs", "transformation_runs", on_delete: :cascade
+  add_foreign_key "transformation_runs", "library_media", column: "generated_media_id"
+  add_foreign_key "transformation_runs", "recipes", on_delete: :nullify
+  add_foreign_key "transformation_runs", "reviews", on_delete: :nullify
+  add_foreign_key "transformation_runs", "shots", on_delete: :nullify
+  add_foreign_key "transformation_runs", "styles", on_delete: :nullify
+  add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
+  add_foreign_key "transformations", "styles", on_delete: :nullify
 end

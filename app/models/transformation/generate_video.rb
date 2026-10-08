@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # A video animating its one source photo.
-class RecipeType::GenerateVideo < RecipeType::Generation
+class Transformation::GenerateVideo < Transformation::Generation
   def self.label = "Video"
 
   def self.video? = true

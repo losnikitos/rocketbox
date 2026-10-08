@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Its layer is filled from a 5-star review each run picks.
-class RecipeType::Review < RecipeType::Overlay
+class Transformation::Review < Transformation::Overlay
   def self.label = "Review"
 
   def self.description = "A 5-star review, over one photo or video."

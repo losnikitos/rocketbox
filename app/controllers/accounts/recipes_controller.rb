@@ -12,10 +12,10 @@ module Accounts
 
     def index
       @recipe_folder = RecipeFolder.find(params[:folder]) if params[:folder]
-      @recipes = (@recipe_folder&.recipes || Recipe).with_attached_example.order(updated_at: :desc)
+      @recipes = (@recipe_folder&.recipes || Recipe).includes(:transformation).with_attached_example.order(updated_at: :desc)
       # ponytail: loads every generation of the listed recipes to show a few each. Upgrade = a per-recipe window limit.
-      @made = Current.account.library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipes.map(&:id) })
-        .with_attached_file.includes(:recipe_run).order(created_at: :desc).group_by { it.recipe_run.recipe_id }
+      @made = Current.account.library_media.joins(:transformation_run).where(transformation_runs: { recipe_id: @recipes.map(&:id) })
+        .with_attached_file.includes(:transformation_run).order(created_at: :desc).group_by { it.transformation_run.recipe_id }
     end
 
     def new
@@ -35,7 +35,7 @@ module Accounts
 
     def show
       @recipe.assign_attributes(draft_params)
-      @recipe.fill_options
+      @recipe.transformation.fill_options
       set_picks
     end
 
@@ -86,7 +86,7 @@ module Accounts
 
     # The reel a scripted type is cut from, previewed on the form.
     def original
-      original = RecipeType.find(params[:kind]).try(:original)
+      original = Transformation::Type.find(params[:kind]).try(:original)
       return head :not_found unless original
 
       send_file original, type: "video/mp4", disposition: "inline"
@@ -111,12 +111,12 @@ module Accounts
         @reviews = Current.account.reviews.postable.order(created_at: :desc) if @recipe.takes_review?
         return unless @recipe.persisted?
 
-        @made = library.joins(:recipe_run).where(recipe_runs: { recipe_id: @recipe.id }).includes(:recipe_run)
+        @made = library.joins(:transformation_run).where(transformation_runs: { recipe_id: @recipe.id }).includes(:transformation_run)
       end
 
       def recipe_params
-        params.expect(recipe: [ :name, :folder_name, :kind, :body, :shot_group, :style_id, :output_folder_id, :example,
-          output_tag_ids: [], inputs: [ %i[folder_id tag_id count] ], layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ])
+        params.expect(recipe: [ :name, :folder_name, :output_folder_id, :example, output_tag_ids: [], inputs: [ %i[folder_id tag_id count] ],
+          transformation_attributes: [ :kind, :body, :shot_group, :style_id, layer_steps: [ Layer::ALL.flat_map { it.fields.map(&:name) }.uniq ], options: {} ] ])
       end
 
       # The refreshes resubmit the form as a GET; the example waits for the save.

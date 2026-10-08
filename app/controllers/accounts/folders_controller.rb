@@ -11,14 +11,14 @@ module Accounts
     # ponytail: @folder_media loads every media in the listed folders just to count them and preview the newest few.
     # Upgrade = a COUNT query plus a per-folder LIMIT (window function) once accounts hold thousands of media.
     def show
-      media = Current.account.library_media.with_attached_file.includes(:recipe_run).order(created_at: :desc)
+      media = Current.account.library_media.with_attached_file.includes(:transformation_run).order(created_at: :desc)
       if @folder
         @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
-          .includes(:tags, recipe_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
+          .includes(:tags, transformation_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
           .order(created_at: :desc)
-        @library_media = @library_media.joins(:recipe_run).where(recipe_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
-        recipes = Recipe.with_attached_example.includes(:output_folder).ordered.to_a
+        @library_media = @library_media.joins(:transformation_run).where(transformation_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
+        recipes = Recipe.with_attached_example.includes(:output_folder, :transformation).ordered.to_a
         @read_recipes = recipes.select { it.folder_ids.include?(@folder.id) }
         @write_recipes = recipes.select { it.output_folder_id == @folder.id }
       else
