@@ -9,7 +9,7 @@ class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
-    Transformation::Crop,
+    Transformation::SmartCrop,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 

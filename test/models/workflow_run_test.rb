@@ -10,7 +10,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     newest = photo.(1.hour.ago)
     workflow = Workflow.create!(name: "Chain")
     folder, generate, crop, output = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) },
-      { transformation: Transformation.create!(name: "Crop", kind: "crop") }, { folder: folders(:photobank_logo), tag: tags(:after) } ]
+      { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") }, { folder: folders(:photobank_logo), tag: tags(:after) } ]
       .map { workflow.nodes.create!(it) }
     [ [ folder, generate ], [ generate, crop ], [ crop, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
     run = workflow.draft_run

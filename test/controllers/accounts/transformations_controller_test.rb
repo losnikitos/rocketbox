@@ -14,7 +14,7 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
 
     get transformations_url(account: admin.id)
     assert_select "button[popovertarget=new-transformation-menu]", text: /Add transformation/
-    assert_select "#new-transformation-menu[popover] a[href=?]", new_transformation_path(account: admin.id, transformation: { kind: "crop" }), text: "Crop"
+    assert_select "#new-transformation-menu[popover] a[href=?]", new_transformation_path(account: admin.id, transformation: { kind: "smart_crop" }), text: "Smart crop"
     get new_transformation_url(account: admin.id, transformation: { kind: "generate_image" })
     assert_select "input[type=hidden][name='transformation[kind]'][value=generate_image]"
     assert_select "select[name='transformation[kind]']", count: 0

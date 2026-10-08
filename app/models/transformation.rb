@@ -2,7 +2,7 @@
 
 # How media is made from given media: a recipe's processing step, and anything else that runs one.
 # `kind` is how, the slug of its `type` (see Transformation::Type), fixed once created, which fixes its layer: a Generation is one AI call
-# making an image or a video; an Overlay lays its layer over one photo or video, as the same; an Edit (e.g. Crop) edits
+# making an image or a video; an Overlay lays its layer over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
 # one photo or video, as the same; a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs (see GenerationOptions).

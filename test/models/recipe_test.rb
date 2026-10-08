@@ -330,15 +330,18 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 1.0, probe.lines.last.to_f, 0.1
   end
 
-  test "crop takes one photo or video and makes the same, its middle 9:16 at 1080x1920" do
-    assert_equal "Edit · Crop", Transformation.new(kind: "crop").type_label
-    assert_not new_recipe(name: "x", kind: "crop", inputs: [ input(:ready), input(:ready) ]).valid?
-    crop = Transformation.create!(name: "Crop", kind: "crop")
-    clip = Tempfile.new([ "clip", ".mp4" ])
-    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-f", "lavfi", "-i", "sine=duration=1",
+  test "smart crop takes one photo or video and makes the same, 9:16 at 1080x1920 around its subject" do
+    assert_equal "Edit · Smart crop", Transformation.new(kind: "smart_crop").type_label
+    assert_not new_recipe(name: "x", kind: "smart_crop", inputs: [ input(:ready), input(:ready) ]).valid?
+    crop = Transformation.create!(name: "Smart crop", kind: "smart_crop")
+    # A red box on the left of a black frame: the middle 9:16 is all black.
+    scene = "color=c=black:size=640x360:duration=1:rate=30,drawbox=x=20:y=130:w=100:h=100:color=red:t=fill"
+    clip, still = Tempfile.new([ "clip", ".mp4" ]), Tempfile.new([ "still", ".png" ])
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-f", "lavfi", "-i", "sine=duration=1",
       "-pix_fmt", "yuv420p", "-shortest", clip.path, exception: true)
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-frames:v", "1", still.path, exception: true)
     video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user, file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
-    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png" })
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: File.open(still.path), filename: "still.png", content_type: "image/png" })
 
     [ [ video, "video", "video/mp4", 2 ], [ photo, "photo", "image/jpeg", 1 ] ].each do |source, kind, content_type, streams|
       run = crop.run!(media: [ source ], folder: folders(:photobank_logo))
@@ -349,6 +352,11 @@ class RecipeTest < ActiveSupport::TestCase
       assert_equal [ kind, content_type ], [ media.kind, media.file.content_type ]
       probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", it.path).first }
       assert_equal [ "1080,1920", streams ], [ probe.lines.first.strip, probe.lines.size ]
+      red = media.file.open do |file|
+        frame = kind == "video" ? Open3.capture2("ffmpeg", "-loglevel", "error", "-i", file.path, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-").first : File.binread(file.path)
+        Vips::Image.new_from_buffer(frame, "")[0].avg
+      end
+      assert_operator red, :>, 10, "#{kind} crop missed the red box"
     end
   end
 
