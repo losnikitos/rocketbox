@@ -4,7 +4,7 @@
 # feeding the step outputs media. Played from a start folder or media, whose (newest) media feeds the steps downstream; a step run
 # starts the steps its step feeds when it completes. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the steps whose inputs or transformation changed and the steps after them;
-# `rerun!` forces a step anyway, e.g. once its type's code changed. A step that can't start leaves its reason in
+# `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
 # `error`. For now each workflow has one, its draft.
 class WorkflowRun < ApplicationRecord
   belongs_to :workflow
@@ -16,7 +16,7 @@ class WorkflowRun < ApplicationRecord
     advance!(node, user)
   end
 
-  # Drops `step`'s step run and the ones after it, and starts it again from what its inputs give now.
+  # Drops `step`'s step run, if any, and the ones after it, and starts it from what its inputs give now.
   def rerun!(step, user)
     update!(error: nil)
     with_lock { step_runs.find_by(workflow_node: step)&.then { drop(it) } }

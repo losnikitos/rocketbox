@@ -4,7 +4,7 @@ module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
   # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the draft run from it;
-  # run again on a step reruns it (see WorkflowRun).
+  # play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -107,14 +107,19 @@ module Accounts
         end
         # Start folders and media feed steps and nothing feeds them.
         @start_nodes = @graph_nodes.select { |node| !node.step? && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }
+        complete = @step_runs.to_a.select(&:complete?).map(&:workflow_node_id)
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.library_media ? :media : :folder
           step_run = @step_runs&.find { it.workflow_node_id == node.id }
+          # In run mode a step not running can start once every step feeding it is complete; folders and media always feed.
+          feeds = @graph_edges.select { it.to_id == node.id }
+          ready = @run && node.step? && !step_run&.running? && feeds.any? &&
+            feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run&.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
-                       kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id }, play: @start_nodes.include?(node),
-                       status: step_run&.status, error: step_run&.error, rerun: (step_run && !step_run.running?) } ]
+                       kind: node.transformation&.type_label, inputs: feeds.size, play: @start_nodes.include?(node) || (ready && !step_run),
+                       status: step_run&.status, error: step_run&.error, rerun: (ready && step_run) } ]
         end
         @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
       end
