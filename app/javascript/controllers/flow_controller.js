@@ -38,7 +38,7 @@ export default class extends Controller {
     })
     const view = JSON.parse(sessionStorage.getItem(this.key) || "null")
     if (view) this.canvasTarget.style.zoom = this.scale = view.scale
-    this.resize()
+    this.resize(view?.left, view?.top)
     this.draw()
     if (view) Object.assign(this.element, { scrollLeft: view.left, scrollTop: view.top })
     this.canvasTarget.classList.remove("invisible")
@@ -64,9 +64,9 @@ export default class extends Controller {
     const x = (this.element.scrollLeft + mx) / this.scale, y = (this.element.scrollTop + my) / this.scale
     this.scale = Math.min(2, Math.max(0.2, scale))
     this.canvasTarget.style.zoom = this.scale
-    this.resize()
-    this.element.scrollLeft = x * this.scale - mx
-    this.element.scrollTop = y * this.scale - my
+    const left = x * this.scale - mx, top = y * this.scale - my
+    this.resize(left, top)
+    Object.assign(this.element, { scrollLeft: left, scrollTop: top })
     this.remember()
   }
 
@@ -242,11 +242,12 @@ export default class extends Controller {
     return [anchor(g.node(v), 1), anchor(target, -1, target.inputs[port])]
   }
 
-  // Fits the canvas to its nodes, and at least to the visible area so anything can be dropped anywhere.
-  resize() {
+  // Fits the canvas to its nodes, and at least to the area visible when scrolled to `left`, `top`, so anything can be
+  // dropped anywhere and the scroll isn't clamped.
+  resize(left = this.element.scrollLeft, top = this.element.scrollTop) {
     const nodes = this.graph.nodes().map(id => this.graph.node(id))
-    const width = Math.max(this.element.clientWidth / this.scale, ...nodes.map(n => n.x + n.width / 2 + 4))
-    const height = Math.max(this.element.clientHeight / this.scale, ...nodes.map(n => n.y + n.height / 2 + 4))
+    const width = Math.max((left + this.element.clientWidth) / this.scale, ...nodes.map(n => n.x + n.width / 2 + 4))
+    const height = Math.max((top + this.element.clientHeight) / this.scale, ...nodes.map(n => n.y + n.height / 2 + 4))
     Object.assign(this.canvasTarget.style, { width: `${width}px`, height: `${height}px` })
   }
 
