@@ -61,7 +61,13 @@ module AppHelper
     when "accounts/styles"
       [ :styles, "Styles", [] ]
     when "accounts/transformations"
-      [ :transformations, "Transformations", [] ]
+      index = action_name == "index"
+      counts = Transformation.group(:kind).count
+      [ :transformations, "Transformations", [
+        [ transformations_path, "All", index && params[:kind].blank?, counts.values.sum ],
+        :separator,
+        *Transformation::Type.all.filter_map { |type| [ transformations_path(kind: type.slug), type.label, index && params[:kind] == type.slug, counts[type.slug] ] if counts[type.slug] }
+      ] ]
     else
       [ nil, "Rocketbox", [] ]
     end

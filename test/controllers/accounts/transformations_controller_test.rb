@@ -41,4 +41,14 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to transformations_url(account: admin.id)
   end
+
+  test "tabs filter transformations by type" do
+    admin = sign_in_as(users(:admin_user))
+    image = Transformation.create!(kind: "generate_image", body: "Collage")
+
+    get transformations_url(account: admin.id, kind: "generate_image")
+    assert_select "##{dom_id(image)}"
+    assert_select "##{dom_id(transformations(:cinematic))}", count: 0
+    assert_select "a[href*='kind=generate_image'][aria-selected=true]"
+  end
 end

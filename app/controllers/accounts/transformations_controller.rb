@@ -10,6 +10,7 @@ module Accounts
 
     def index
       @transformations = Transformation.includes(:style, :recipes).order(updated_at: :desc)
+      @transformations = @transformations.where(kind: params[:kind]) if params[:kind].present?
       @run_counts = TransformationRun.group(:transformation_id).count
     end
 
