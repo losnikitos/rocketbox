@@ -60,6 +60,8 @@ module AppHelper
       [ :recipes, "Recipes", [] ]
     when "accounts/styles"
       [ :styles, "Styles", [] ]
+    when "accounts/transformations"
+      [ :transformations, "Transformations", [] ]
     else
       [ nil, "Rocketbox", [] ]
     end

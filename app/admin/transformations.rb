@@ -18,6 +18,7 @@ ActiveAdmin.register Transformation do
     attributes_table do
       row :id
       row :type_label
+      row(:edit) { link_to "Open in app", transformation_path(it) }
       row(:recipes) { safe_join(it.recipes.map { auto_link(it) }, ", ") }
       row :style
       row :shot_group

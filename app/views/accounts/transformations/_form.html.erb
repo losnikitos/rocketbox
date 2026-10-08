@@ -1,0 +1,82 @@
+<%# locals: (transformation:) %>
+<% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
+<% scope = "transformation" %>
+<% refresh_url = transformation.persisted? ? transformation_path(transformation) : new_transformation_path %>
+<div class="@container space-y-6">
+  <header class="flex items-center justify-between gap-4">
+    <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+      <%= link_to "Transformations", transformations_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+      <span class="mx-1">/</span>
+      <span aria-current="page"><%= transformation.new_record? ? "New transformation" : "##{transformation.id}" %></span>
+    </nav>
+    <%= render "shared/admin_links/transformation", transformation: transformation if transformation.persisted? %>
+  </header>
+
+  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6" do |f| %>
+    <% if transformation.errors.any? %>
+      <div class="<%= tw_alert_error_classes %>" role="alert">
+        <ul class="list-inside list-disc">
+          <% transformation.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# A type change reloads the body, which follows the type. %>
+    <turbo-frame id="transformation_body" target="_top" class="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-2">
+      <section class="<%= island %>">
+        <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url: %>
+      </section>
+
+      <div class="space-y-6">
+        <% if transformation.ai? || (transformation.reel? && transformation.layer) %>
+          <section class="<%= island %>">
+            <% if transformation.ai? %>
+              <div>
+                <%= f.label :style_id, "Style", class: tw_label_classes %>
+                <%= f.select :style_id, Style.ordered.pluck(:name, :id), { include_blank: "None" }, class: tw_input_classes %>
+              </div>
+              <div>
+                <%= f.label :shot_group, "Shot group", class: tw_label_classes %>
+                <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
+              </div>
+            <% end %>
+            <% if transformation.reel? && transformation.layer %>
+              <div>
+                <p class="<%= tw_label_classes %>">Layer · <%= transformation.layer.name %></p>
+                <%= render "accounts/transformations/layer_steps", transformation:, scope: %>
+              </div>
+            <% end %>
+          </section>
+        <% end %>
+
+        <%= f.button "Save", class: "rb-btn-primary w-full px-3.5 py-2" %>
+
+        <% if transformation.persisted? %>
+          <div class="space-y-2">
+            <h2 class="text-sm font-semibold text-ink-900">Used by</h2>
+            <% if (recipes = transformation.recipes.ordered).any? %>
+              <ul class="space-y-1 text-sm">
+                <% recipes.each do |recipe| %>
+                  <li><%= link_to recipe.name, recipe_path(recipe), class: "text-ink-700 underline hover:text-ink-900" %></li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-ink-500">No recipes.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <%= tag.button name: "refresh_type", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "transformation_body" } %>
+    </turbo-frame>
+  <% end %>
+
+  <% if transformation.persisted? %>
+    <div class="flex justify-end">
+      <%= link_to "Delete", transformation_path(transformation), data: { turbo_method: :delete, turbo_confirm: "Delete this transformation?" },
+            class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    </div>
+  <% end %>
+</div>

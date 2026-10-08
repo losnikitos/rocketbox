@@ -33,6 +33,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | SMM post | [`_smm_post`](/app/views/shared/admin_links/_smm_post.html.erb) | Admin, Remove |
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Recipe | [`_recipe`](/app/views/shared/admin_links/_recipe.html.erb) | Admin, Remove |
+| Transformation | [`_transformation`](/app/views/shared/admin_links/_transformation.html.erb) | Admin, Delete |
 | Transformation run | [`_transformation_run`](/app/views/shared/admin_links/_transformation_run.html.erb) | Admin |
 | Tags (library tabs) | [`_tags`](/app/views/shared/admin_links/_tags.html.erb) | Tags |
 

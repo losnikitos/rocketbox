@@ -1,0 +1,45 @@
+<% content_for(:title, "Transformations — Rocketbox") %>
+<% content_for :header_actions do %>
+  <%= link_to new_transformation_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Add transformation
+  <% end %>
+<% end %>
+
+<% if @transformations.any? %>
+  <ul class="divide-y divide-ink-900/10 rounded-2xl border border-ink-900/10 bg-white">
+    <% @transformations.each do |transformation| %>
+      <li id="<%= dom_id(transformation) %>" class="relative flex items-center gap-4 p-3 transition hover:bg-ink-900/5">
+        <% if (type = transformation.type) %>
+          <%= image_tag type.cover, alt: "", class: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
+        <% else %>
+          <span class="aspect-2/3 w-12 shrink-0 rounded-md bg-ink-900/5" aria-hidden="true"></span>
+        <% end %>
+        <div class="min-w-0 flex-1 space-y-1">
+          <%= link_to transformation_path(transformation), class: "block truncate text-sm font-semibold text-ink-900 after:absolute after:inset-0" do %>
+            #<%= transformation.id %> <%= transformation.type_label %>
+          <% end %>
+          <% if transformation.body.present? %>
+            <p class="truncate text-sm text-ink-600"><%= transformation.body %></p>
+          <% end %>
+          <p class="flex flex-wrap gap-x-3 text-xs text-ink-500">
+            <% if transformation.style %><span>Style: <%= transformation.style.name %></span><% end %>
+            <% if transformation.shot_group %><span>Shot: <%= transformation.shot_group %></span><% end %>
+            <span><%= pluralize(@run_counts[transformation.id].to_i, "run") %></span>
+            <% if transformation.recipes.any? %>
+              <span class="relative z-10">
+                Used by
+                <%= safe_join(transformation.recipes.map { link_to it.name, recipe_path(it), class: "underline hover:text-ink-900" }, ", ") %>
+              </span>
+            <% end %>
+          </p>
+        </div>
+        <%= render "shared/admin_links/transformation", transformation: %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
+    Add a transformation — how a recipe makes media from media.
+  </div>
+<% end %>
