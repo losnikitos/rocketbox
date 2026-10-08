@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Accounts
-  # A workflow's page draws its graph and edits it: each add, connect and remove form submits nested attributes to update.
+  # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
+  # update. `?node=` selects a node for the inspector.
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -30,11 +31,17 @@ module Accounts
     end
 
     def update
-      if @workflow.update(workflow_params)
-        redirect_to workflow_path(@workflow), notice: "Workflow saved."
-      else
-        set_graph
-        render :show, status: :unprocessable_entity
+      saved = @workflow.update(workflow_params)
+      respond_to do |format|
+        format.json { saved ? head(:no_content) : render(json: { error: @workflow.errors.full_messages.to_sentence }, status: :unprocessable_entity) }
+        format.html do
+          if saved
+            redirect_back_or_to workflow_path(@workflow)
+          else
+            set_graph
+            render :show, status: :unprocessable_entity
+          end
+        end
       end
     end
 
@@ -50,19 +57,21 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :kind, :folder_id, :transformation_id, :_destroy ] ],
+        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :transformation_id, :x, :y, :_destroy ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
       end
 
       # Saved nodes and edges only, so a rejected edit doesn't draw.
       def set_graph
-        nodes = @workflow.nodes.select(&:persisted?)
-        @nodes = nodes.to_h do |node|
-          path = node.step? ? transformation_path(node.transformation) : library_folders_path(*[ node.folder.parent&.slug, node.folder.slug ].compact)
-          icon = { "input" => "inbox", "output" => "photo" }[node.kind]
-          [ "node-#{node.id}", { label: node.label, icon:, path:, shape: node.step? ? :recipe : :folder, color: node.folder&.color } ]
+        @graph_nodes = @workflow.nodes.select(&:persisted?)
+        @graph_edges = @workflow.edges.select(&:persisted?)
+        @selected = @graph_nodes.find { it.id == params[:node].to_i }
+        @nodes = @graph_nodes.to_h do |node|
+          icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" unless node.step?
+          [ node.id, { label: node.label, icon:, path: workflow_path(@workflow, node: node.id), frame: "inspector", current: node == @selected,
+                       linkable: true, x: node.x, y: node.y, shape: node.step? ? :recipe : :folder, color: node.folder&.color } ]
         end
-        @edges = @workflow.edges.select(&:persisted?).map { [ "node-#{it.from_id}", "node-#{it.to_id}" ] }
+        @edges = @graph_edges.map { [ it.from_id, it.to_id ] }
       end
   end
 end

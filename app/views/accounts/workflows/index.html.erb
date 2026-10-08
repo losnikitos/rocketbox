@@ -13,10 +13,9 @@
         <div class="min-w-0 flex-1 space-y-1">
           <%= link_to workflow.name, workflow_path(workflow), class: "block truncate text-sm font-semibold text-ink-900 after:absolute after:inset-0" %>
           <p class="flex flex-wrap gap-x-3 text-xs text-ink-500">
-            <% counts = workflow.nodes.map(&:kind).tally %>
-            <span><%= pluralize(counts["input"].to_i, "input") %></span>
-            <span><%= pluralize(counts["step"].to_i, "step") %></span>
-            <span><%= pluralize(counts["output"].to_i, "output") %></span>
+            <% steps, folders = workflow.nodes.partition(&:step?) %>
+            <span><%= pluralize(folders.size, "folder") %></span>
+            <span><%= pluralize(steps.size, "step") %></span>
           </p>
         </div>
       </li>
@@ -24,6 +23,6 @@
   </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-    Add a workflow — input folders, transformation steps and output folders, connected.
+    Add a workflow — folders and transformation steps, connected.
   </div>
 <% end %>

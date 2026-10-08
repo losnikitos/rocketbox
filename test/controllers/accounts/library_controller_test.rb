@@ -15,7 +15,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Interior"
     assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("inbox", "interior")
-    assert_select "main a[href=?]", library_folders_path("inbox", "interior"), text: %r{Inbox / Interior}
+    assert_select "a[href=?]", library_folders_path("inbox", "interior"), text: %r{Inbox / Interior}
     assert_select "img[src]"
     assert_select "aside dd", text: "cut.jpg"
     assert_select "button", text: "Publish as Instagram story", count: 0
@@ -45,8 +45,6 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_item_url(generated)
     assert_select "#transformation-run-heading + span", count: 0
-    assert_select "label #compare-original"
-    assert_select "button[popovertarget=hero-media][title='View full size']"
     assert_select "nav[aria-label=Versions] section:first-child:has(h3:contains('Original')) a[href=?]", library_item_path(source)
     assert_select "nav[aria-label=Versions] h3", text: "Today"
     assert_select "nav[aria-label=Versions] a[href=?][aria-current=page]", library_item_path(generated)

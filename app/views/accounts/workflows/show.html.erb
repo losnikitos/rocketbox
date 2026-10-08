@@ -1,109 +1,151 @@
 <% content_for(:title, "#{@workflow.name_was} — Rocketbox") %>
-<% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-white p-6" %>
+<% content_for(:fit, "true") %>
 <% button = "rb-btn-primary shrink-0 px-3.5 py-2 text-sm" %>
 <% remove = "rounded-lg px-2.5 py-1 text-xs font-medium text-signal-red transition hover:bg-signal-red/10" %>
-<% nodes = @workflow.nodes.select(&:persisted?) %>
-<% node_options = ->(kinds) { nodes.select { kinds.include?(it.kind) }.map { [ "#{it.kind.humanize}: #{it.label}", it.id ] } } %>
+<% chip = "inline-flex shrink-0 cursor-grab items-center gap-1.5 rounded-lg border border-ink-900/10 bg-white px-2.5 py-1.5 text-xs font-medium text-ink-900 transition hover:bg-ink-900/5 active:cursor-grabbing" %>
+<% top = { turbo_frame: "_top" } %>
 
-<div class="space-y-6">
+<% content_for(:breadcrumbs) do %>
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
     <%= link_to "Workflows", workflows_path, class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
     <span aria-current="page"><%= @workflow.name_was %></span>
   </nav>
+<% end %>
 
-  <% if @workflow.errors.any? %>
-    <div class="<%= tw_alert_error_classes %>" role="alert">
-      <ul class="list-inside list-disc">
-        <% @workflow.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <%= form_with model: @workflow, class: "flex max-w-md items-end gap-2" do |f| %>
-    <div class="flex-1">
-      <%= f.label :name, class: tw_label_classes %>
-      <%= f.text_field :name, required: true, class: tw_input_classes %>
-    </div>
-    <%= f.submit "Rename", class: button %>
-  <% end %>
-
-  <section class="rounded-2xl border border-ink-900/10 bg-white p-6">
-    <% if @nodes.empty? %>
-      <p class="text-sm text-ink-500">Add an input folder, a transformation step and an output folder, then connect them.</p>
-    <% else %>
-      <%= render "shared/flow", nodes: @nodes, edges: @edges, height: "max-h-[60dvh]" %>
+<div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= workflow_path(@workflow) %>"
+     data-action="flow:moved->workflow#move flow:linked->workflow#link">
+  <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
+    <% if @workflow.errors.any? %>
+      <div class="<%= tw_alert_error_classes %> m-3" role="alert">
+        <ul class="list-inside list-disc">
+          <%# Node and edge errors (nodes.base, edges.to_id) are whole sentences. %>
+          <% @workflow.errors.each do |error| %>
+            <li><%= error.attribute.to_s.include?(".") ? error.message : error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
     <% end %>
-  </section>
 
-  <div class="grid items-start gap-6 md:grid-cols-2">
-    <section class="<%= island %>">
-      <h2 class="text-sm font-semibold text-ink-900">Add</h2>
-      <% [ [ "input", "Input folder" ], [ "step", "Transformation step" ], [ "output", "Output folder" ] ].each do |kind, label| %>
-        <%= form_with model: @workflow, class: "flex items-end gap-2" do %>
-          <%= hidden_field_tag "workflow[nodes_attributes][0][kind]", kind, id: nil %>
-          <div class="min-w-0 flex-1">
-            <%= label_tag "add_#{kind}", label, class: tw_label_classes %>
-            <% if kind == "step" %>
-              <%= select_tag "workflow[nodes_attributes][0][transformation_id]",
-                    options_for_select(Transformation.order(updated_at: :desc).map { [ "##{it.id} #{it.type_label} #{it.body.truncate(60)}", it.id ] }),
-                    id: "add_#{kind}", class: tw_input_classes %>
-            <% else %>
-              <%= select_tag "workflow[nodes_attributes][0][folder_id]", grouped_options_for_select(Folder.grouped_options), id: "add_#{kind}", class: tw_input_classes %>
+    <div class="relative flex flex-col md:min-h-0 md:flex-1" data-action="dragover->workflow#over drop->workflow#drop">
+      <%= render "shared/flow", nodes: @nodes, edges: @edges, height: "h-[60dvh] md:h-auto md:min-h-0 md:flex-1" %>
+      <% if @nodes.empty? %>
+        <p class="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-ink-500">
+          Drag folders and transformations here from the palette below.
+        </p>
+      <% end %>
+    </div>
+
+    <%= form_with model: @workflow, id: "workflow_add", class: "hidden", data: { workflow_target: "add", action: "submit->workflow#place" } do %>
+      <%= hidden_field_tag "workflow[nodes_attributes][0][x]", nil, id: nil, data: { workflow_target: "x" } %>
+      <%= hidden_field_tag "workflow[nodes_attributes][0][y]", nil, id: nil, data: { workflow_target: "y" } %>
+    <% end %>
+    <%= form_with model: @workflow, class: "hidden", data: { workflow_target: "connect" } do %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
+    <% end %>
+
+    <div aria-label="Palette" role="group" class="flex shrink-0 gap-6 overflow-x-auto border-t border-ink-900/10 p-3">
+      <section class="shrink-0">
+        <h2 class="mb-1.5 text-xs text-ink-500">Folders</h2>
+        <div class="flex gap-1.5">
+          <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
+            <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
+                  data: { action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: chip do %>
+              <%= heroicon "folder", variant: :mini, options: { class: "size-4 #{folder_color(folder)}", "aria-hidden": true } %>
+              <%= folder.path %>
             <% end %>
-          </div>
-          <%= submit_tag "Add", name: nil, class: button %>
-        <% end %>
-      <% end %>
-      <p class="text-xs text-ink-500">
-        Steps use shared transformations; <%= link_to "add one", new_transformation_path, class: "underline hover:text-ink-900" %> first if none fits.
-      </p>
-    </section>
-
-    <section class="<%= island %>">
-      <h2 class="text-sm font-semibold text-ink-900">Connect</h2>
-      <%= form_with model: @workflow, class: "flex flex-wrap items-end gap-2" do %>
-        <div class="min-w-0 flex-1">
-          <%= label_tag "connect_from", "From", class: tw_label_classes %>
-          <%= select_tag "workflow[edges_attributes][0][from_id]", options_for_select(node_options.(%w[input step])), id: "connect_from", class: tw_input_classes %>
-        </div>
-        <div class="min-w-0 flex-1">
-          <%= label_tag "connect_to", "To", class: tw_label_classes %>
-          <%= select_tag "workflow[edges_attributes][0][to_id]", options_for_select(node_options.(%w[step output])), id: "connect_to", class: tw_input_classes %>
-        </div>
-        <%= submit_tag "Connect", name: nil, class: button %>
-      <% end %>
-
-      <% if nodes.any? %>
-        <h3 class="pt-2 text-xs font-semibold tracking-wide text-ink-500 uppercase">Nodes</h3>
-        <ul class="divide-y divide-ink-900/10 text-sm">
-          <% nodes.each do |node| %>
-            <li id="<%= dom_id(node) %>" class="flex items-center justify-between gap-2 py-1.5">
-              <span class="min-w-0 truncate"><span class="text-ink-500"><%= node.kind.humanize %>:</span> <%= node.label %></span>
-              <%= button_to "Remove", workflow_path(@workflow), method: :patch, class: remove,
-                    params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
-            </li>
           <% end %>
-        </ul>
-      <% end %>
-
-      <% if (edges = @workflow.edges.select(&:persisted?)).any? %>
-        <h3 class="pt-2 text-xs font-semibold tracking-wide text-ink-500 uppercase">Connections</h3>
-        <ul class="divide-y divide-ink-900/10 text-sm">
-          <% edges.each do |edge| %>
-            <li id="<%= dom_id(edge) %>" class="flex items-center justify-between gap-2 py-1.5">
-              <span class="min-w-0 truncate"><%= edge.from.label %> → <%= edge.to.label %></span>
-              <%= button_to "Remove", workflow_path(@workflow), method: :patch, class: remove,
-                    params: { workflow: { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } } } %>
-            </li>
+        </div>
+      </section>
+      <section class="shrink-0">
+        <h2 class="mb-1.5 text-xs text-ink-500">Transformations</h2>
+        <div class="flex gap-1.5">
+          <% Transformation.order(updated_at: :desc).each do |transformation| %>
+            <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_id]", value: transformation.id, draggable: "true",
+                  title: transformation.body.presence, data: { action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: chip do %>
+              <%= heroicon "sparkles", variant: :mini, options: { class: "size-4 text-ink-500", "aria-hidden": true } %>
+              #<%= transformation.id %> <%= transformation.type_label %>
+            <% end %>
           <% end %>
-        </ul>
-      <% end %>
-    </section>
+          <%= link_to new_transformation_path, class: "#{chip} cursor-pointer border-dashed text-ink-600" do %>
+            <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+            New transformation
+          <% end %>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?" },
-        class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+  <%= turbo_frame_tag "inspector", class: "block shrink-0 space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
+    <% if (node = @selected) %>
+      <header class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : "Folder" %></p>
+          <h2 class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
+        </div>
+        <%= link_to workflow_path(@workflow), data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+          <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+        <% end %>
+      </header>
+
+      <section class="space-y-2">
+        <h3 class="text-xs font-semibold tracking-wide text-ink-500 uppercase">Connections</h3>
+        <% if (edges = @graph_edges.select { [ it.from_id, it.to_id ].include?(node.id) }).any? %>
+          <ul class="divide-y divide-ink-900/10 text-sm">
+            <% edges.each do |edge| %>
+              <li id="<%= dom_id(edge) %>" class="flex items-center justify-between gap-2 py-1.5">
+                <span class="min-w-0 truncate"><%= edge.from_id == node.id ? "→ #{edge.to.label}" : "← #{edge.from.label}" %></span>
+                <%= button_to "Remove", workflow_path(@workflow), method: :patch, class: remove, form: { data: top },
+                      params: { workflow: { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } } } %>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-sm text-ink-500">Drag from the dot on a node to another node to connect them.</p>
+        <% end %>
+        <% if (targets = @graph_nodes.reject { it == node || !(it.step? || node.step?) }).any? %>
+          <%= form_with model: @workflow, data: top, class: "flex items-end gap-2" do %>
+            <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", node.id, id: nil %>
+            <div class="min-w-0 flex-1">
+              <%= label_tag "connect_to", "Connect to", class: tw_label_classes %>
+              <%= select_tag "workflow[edges_attributes][0][to_id]", options_for_select(targets.map { [ it.label, it.id ] }), id: "connect_to", class: tw_input_classes %>
+            </div>
+            <%= submit_tag "Connect", name: nil, class: button %>
+          <% end %>
+        <% end %>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <% unless node.step? %>
+          <%= link_to "Open in library", library_folders_path(*[ node.folder.parent&.slug, node.folder.slug ].compact), data: top,
+                class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
+        <% end %>
+        <%= button_to "Remove from workflow", workflow_path(@workflow), method: :patch, form: { data: top },
+              class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5",
+              params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
+      </div>
+
+      <% if node.step? %>
+        <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block border-t border-ink-900/10 pt-4" do %>
+          <p class="text-sm text-ink-500">Loading…</p>
+        <% end %>
+      <% end %>
+    <% else %>
+      <h2 class="text-sm font-semibold text-ink-900">Workflow</h2>
+      <%= form_with model: @workflow, data: top, class: "flex items-end gap-2" do |f| %>
+        <div class="min-w-0 flex-1">
+          <%= f.label :name, class: tw_label_classes %>
+          <%= f.text_field :name, required: true, class: tw_input_classes %>
+        </div>
+        <%= f.submit "Rename", class: button %>
+      <% end %>
+      <p class="text-sm text-ink-500">
+        Drag folders and transformations from the palette onto the canvas, or click one to add it. Drag from a node's dot to
+        another node to connect them, and click a node to edit it.
+      </p>
+      <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },
+            class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    <% end %>
+  <% end %>
 </div>

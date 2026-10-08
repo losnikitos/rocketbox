@@ -1,18 +1,21 @@
 <%# locals: (nodes:, edges:, height: "h-[calc(100dvh-10rem)]") %>
-<%# nodes: { id => { label:, icon:, path:, shape: (:folder or :recipe), color: } }, edges: [[from id, to id], ...] %>
+<%# nodes: { id => { label:, icon:, path:, shape: (:folder or :recipe), color:, x:, y:, frame:, current:, linkable: } }, edges: [[from id, to id], ...] %>
+<%# Optional: x and y (centre) pin a node instead of laying it out; frame opens path in that turbo frame; current marks the %>
+<%# selected node; linkable adds a port to drag arrows from (flow:linked). %>
 <div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.to_json %>"
-     data-action="wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive">
+     data-action="wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember">
   <%# Laid out by flow_controller; hidden until the nodes are placed. %>
   <div class="invisible relative" data-flow-target="canvas">
     <svg class="absolute inset-0 size-full overflow-visible" aria-hidden="true">
       <g data-flow-target="edges" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
     </svg>
     <% nodes.each do |id, n| %>
-      <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false",
-            data: { flow_target: "node", id:, action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
+      <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false", aria: { current: ("true" if n[:current]) },
+            data: { flow_target: "node", id:, x: n[:x], y: n[:y], turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
+                    action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
             class: "#{"group" if n[:path]} absolute flex #{n[:shape] == :recipe ? "w-52" : "w-28"} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% if n[:shape] == :recipe %>
-          <span class="w-full truncate rounded-xl border-2 border-ink-900/10 bg-white px-4 py-2.5 group-hover:border-ink-900/20 group-hover:bg-stone-50" title="<%= n[:label] %>"><%= n[:label] %></span>
+          <span class="w-full truncate rounded-xl border-2 border-ink-900/10 bg-white px-4 py-2.5 group-hover:border-ink-900/20 group-hover:bg-stone-50 group-aria-[current=true]:border-rocket" title="<%= n[:label] %>"><%= n[:label] %></span>
         <% else %>
           <span class="relative block w-24 <%= AppHelper::FOLDER_COLORS[n[:color] || "sky"] %>">
             <svg viewBox="0 0 96 76" class="w-24 stroke-current" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
@@ -25,7 +28,13 @@
               <%= heroicon n[:icon], options: { class: "size-7", "aria-hidden": true } %>
             </span>
           </span>
-          <span><%= n[:label] %></span>
+          <span class="group-aria-[current=true]:text-rocket"><%= n[:label] %></span>
+        <% end %>
+        <% if n[:linkable] %>
+          <%# Placed at the arrows' height by flow_controller. %>
+          <span data-flow-handle aria-hidden="true" title="Drag to connect"
+                data-action="pointerdown->flow#link:stop pointermove->flow#stretch:stop pointerup->flow#attach:stop pointercancel->flow#attach:stop"
+                class="absolute -right-2 size-4 -translate-y-1/2 cursor-crosshair rounded-full border-2 border-ink-900/30 bg-white hover:border-rocket hover:bg-rocket/10"></span>
         <% end %>
       <% end %>
     <% end %>

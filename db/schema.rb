@@ -509,10 +509,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
   create_table "workflow_nodes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "folder_id"
-    t.string "kind", null: false
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
     t.integer "workflow_id", null: false
+    t.integer "x", default: 0, null: false
+    t.integer "y", default: 0, null: false
     t.index ["folder_id"], name: "index_workflow_nodes_on_folder_id"
     t.index ["transformation_id"], name: "index_workflow_nodes_on_transformation_id"
     t.index ["workflow_id"], name: "index_workflow_nodes_on_workflow_id"

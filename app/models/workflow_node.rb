@@ -1,16 +1,14 @@
 # frozen_string_literal: true
 
-# A workflow's input folder, transformation step or output folder. Steps point at shared transformations.
+# A workflow's folder or transformation step, placed at x, y (its centre) on the canvas. Steps point at shared
+# transformations. A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow
   belongs_to :folder, optional: true
   belongs_to :transformation, optional: true
 
-  enum :kind, %w[input step output].index_by(&:itself), validate: true
+  validate { errors.add(:base, "Pick a folder or a transformation.") unless folder.nil? ^ transformation.nil? }
 
-  before_validation { step? ? self.folder = nil : self.transformation = nil }
-  validates :folder, presence: true, unless: :step?
-  validates :transformation, presence: true, if: :step?
-
+  def step? = transformation_id.present?
   def label = step? ? "##{transformation_id} #{transformation&.type_label}" : folder&.path
 end

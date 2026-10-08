@@ -9,9 +9,10 @@ class CreateWorkflows < ActiveRecord::Migration[8.1]
 
     create_table :workflow_nodes do |t|
       t.references :workflow, null: false, foreign_key: { on_delete: :cascade }
-      t.string :kind, null: false
       t.references :folder, foreign_key: true
       t.references :transformation, foreign_key: true
+      t.integer :x, null: false, default: 0
+      t.integer :y, null: false, default: 0
       t.timestamps
     end
 

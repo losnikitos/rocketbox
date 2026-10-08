@@ -12,7 +12,7 @@
     <%= render "shared/admin_links/transformation", transformation: transformation if transformation.persisted? %>
   </header>
 
-  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6" do |f| %>
+  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6", data: { turbo_frame: ("transformation" if turbo_frame_request_id == "transformation") } do |f| %>
     <% if transformation.errors.any? %>
       <div class="<%= tw_alert_error_classes %>" role="alert">
         <ul class="list-inside list-disc">
