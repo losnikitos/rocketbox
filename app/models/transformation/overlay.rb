@@ -4,7 +4,7 @@
 class Transformation::Overlay < Transformation::Type
   def self.label = "Overlay"
 
-  def self.overlay? = true
+  def self.single? = true
 
   # A photo as a PNG; a video as an MP4 cropped to the layer's size, its sound kept.
   def file

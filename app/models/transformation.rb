@@ -2,7 +2,8 @@
 
 # How media is made from given media: a recipe's processing step, and anything else that runs one.
 # `kind` is how, the slug of its `type` (see Transformation::Type), which fixes its layer: a Generation is one AI call
-# making an image or a video; an Overlay lays its layer over one photo or video, as the same; a Scripted type cuts the
+# making an image or a video; an Overlay lays its layer over one photo or video, as the same; an Edit (e.g. Crop) edits
+# one photo or video, as the same; a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
@@ -19,7 +20,7 @@ class Transformation < ApplicationRecord
   # Editing it edits its recipes, which the index lists recently edited first.
   after_update { recipes.touch_all }
 
-  delegate :ai?, :video?, :overlay?, :reel?, :layer, :takes_review?, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :layer, :takes_review?, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 

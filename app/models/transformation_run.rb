@@ -48,7 +48,7 @@ class TransformationRun < ApplicationRecord
   # `user` owns the result, made in `folder` with `tags`. Raises ActiveRecord::RecordInvalid when the media don't fit,
   # the shot doesn't fit or an option isn't available.
   def start!(user, folder:, tags: [])
-    build_generated_media(user:, kind: transformation.video? || transformation.reel? || layer_over_video? ? "video" : "photo", folder:, tags:)
+    build_generated_media(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
     self.prompt = [ transformation.body, shot&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
@@ -66,7 +66,7 @@ class TransformationRun < ApplicationRecord
 
   private
 
-    def layer_over_video? = transformation.overlay? && source_media.first&.video?
+    def single_over_video? = transformation.single? && source_media.first&.video?
 
     def media_fit_transformation
       media = source_media

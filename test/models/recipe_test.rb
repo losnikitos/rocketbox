@@ -326,6 +326,28 @@ class RecipeTest < ActiveSupport::TestCase
     assert_in_delta 1.0, probe.lines.last.to_f, 0.1
   end
 
+  test "crop takes one photo or video and makes the same, its middle 9:16 at 1080x1920" do
+    assert_equal "Edit · Crop", Transformation.new(kind: "crop").type_label
+    assert_not new_recipe(name: "x", kind: "crop", inputs: [ input(:ready), input(:ready) ]).valid?
+    crop = Transformation.create!(name: "Crop", kind: "crop")
+    clip = Tempfile.new([ "clip", ".mp4" ])
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-f", "lavfi", "-i", "sine=duration=1",
+      "-pix_fmt", "yuv420p", "-shortest", clip.path, exception: true)
+    video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user, file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png" })
+
+    [ [ video, "video", "video/mp4", 2 ], [ photo, "photo", "image/jpeg", 1 ] ].each do |source, kind, content_type, streams|
+      run = crop.run!(media: [ source ], folder: folders(:photobank_logo))
+      run.run!
+
+      assert_equal "complete", run.reload.status, run.error
+      media = run.generated_media.reload
+      assert_equal [ kind, content_type ], [ media.kind, media.file.content_type ]
+      probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", it.path).first }
+      assert_equal [ "1080,1920", streams ], [ probe.lines.first.strip, probe.lines.size ]
+    end
+  end
+
   test "a review recipe needs a review and renders it on its layer" do
     feature = create_recipe(name: "Reviews", kind: "review", inputs: [ input(:ready) ])
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
