@@ -145,6 +145,13 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
     assert_select "turbo-frame#inspector section[aria-label=Inputs] p", "None in this run."
     assert_select "turbo-frame#inspector section[aria-label=Outputs] button[popovertarget=?]", dom_id(media, :quick_view)
+    assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
+
+    run.step_runs.sole.update!(status: "complete")
+    get workflow_url(workflow, account: admin.id, run: run.id)
+    assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run again']", step.id.to_s, step.id.to_s
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: step.id } }
+    assert_equal [ "running" ], run.step_runs.reload.map(&:status)
   end
 
   test "a folder's media is added from the inspector as a source that only feeds steps" do

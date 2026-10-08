@@ -3,7 +3,8 @@
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
-  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder (run) replays the draft run from it.
+  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder (run) replays the draft run from it;
+  # run again on a step reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -54,7 +55,7 @@ module Accounts
     def run
       node = @workflow.nodes.find(params[:node_id])
       draft = @workflow.draft_run
-      draft.start!(node, Current.account)
+      node.step? ? draft.rerun!(node, Current.account) : draft.start!(node, Current.account)
       redirect_to workflow_path(@workflow, run: draft.id)
     end
 
@@ -105,7 +106,7 @@ module Accounts
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run&.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
                        kind: node.transformation&.type_label, inputs: @graph_edges.count { it.to_id == node.id }, play: @start_nodes.include?(node),
-                       status: step_run&.status, error: step_run&.error } ]
+                       status: step_run&.status, error: step_run&.error, rerun: (step_run && !step_run.running?) } ]
         end
         @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
       end

@@ -2,29 +2,29 @@
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
 # feeding the step outputs media. Played from a start folder, whose newest media feeds the steps downstream; a step run
-# starts the steps its step feeds when it completes. A step that can't start leaves its reason in `error`. For now each
-# workflow has one, its draft, replayed from scratch.
+# starts the steps its step feeds when it completes. A step run stands across plays while it stands (see
+# `stands?`), so a replay reruns only the steps whose inputs or transformation changed and the steps after them;
+# `rerun!` forces a step anyway, e.g. once its type's code changed. A step that can't start leaves its reason in
+# `error`. For now each workflow has one, its draft.
 class WorkflowRun < ApplicationRecord
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
 
-  # `node` is a start folder; `user` owns what the step runs make. Drops what the last play made first.
+  # `node` is a start folder; `user` owns what the step runs make.
   def start!(node, user)
-    step_runs.includes(:generated_media).to_a.each { it.generated_media.destroy! }
     update!(error: nil)
     advance!(node, user)
   end
 
-  # Starts the steps `node` feeds, directly or through a folder, that haven't run yet and whose inputs all output media.
-  def advance!(node, user)
-    with_lock do
-      next_steps(node).each do |step|
-        next if step_runs.exists?(workflow_node: step)
-        media = edges.select { it.to_id == step.id }.map { output_of(it.from, user) }
-        start_step(step, media, user) if media.all?
-      end
-    end
+  # Drops `step`'s step run and the ones after it, and starts it again from what its inputs give now.
+  def rerun!(step, user)
+    update!(error: nil)
+    with_lock { step_runs.find_by(workflow_node: step)&.then { drop(it) } }
+    run_steps([ step ], user)
   end
+
+  # Runs the steps `node` feeds, directly or through a folder.
+  def advance!(node, user) = run_steps(next_steps(node), user)
 
   private
 
@@ -34,6 +34,32 @@ class WorkflowRun < ApplicationRecord
       outs = edges.select { it.from_id == node.id }.map(&:to)
       (outs.select(&:step?) + outs.reject(&:step?).flat_map { |folder| edges.select { it.from_id == folder.id }.map(&:to) }).uniq
     end
+
+    # Stale step runs go first, with the ones after them, so no step starts from a stale result. Then a step whose step
+    # run stands moves on to the steps after it once complete, and a step without one starts once its inputs all give media.
+    def run_steps(steps, user)
+      with_lock do
+        steps.each { |step| step_runs.find_by(workflow_node: step)&.then { drop(it) unless stands?(it, inputs_of(step, user)) } }
+        steps.each do |step|
+          if (run = step_runs.find_by(workflow_node: step)) then advance!(step, user) if run.complete?
+          elsif (media = inputs_of(step, user)).all? then start_step(step, media, user)
+          end
+        end
+      end
+    end
+
+    # A step run stands while it hasn't failed, took what the step's inputs give now, and its transformation wasn't
+    # saved since it started.
+    # ponytail: a style's or shot's text, a newly postable review or a changed output folder don't count; rerun! covers them.
+    def stands?(run, media) = !run.failed? && run.source_media == media && run.created_at >= run.transformation.updated_at
+
+    # Its result goes, and before it the step runs that took it, as their inputs go with it.
+    def drop(run)
+      step_runs.joins(:inputs).where(transformation_run_inputs: { library_media_id: run.generated_media_id }).each { drop(it) }
+      run.generated_media&.destroy!
+    end
+
+    def inputs_of(step, user) = edges.select { it.to_id == step.id }.map { output_of(it.from, user) }
 
     # A node's output in this run: a folder its newest media (with its tag), a media itself, a step what its step run
     # made once complete.

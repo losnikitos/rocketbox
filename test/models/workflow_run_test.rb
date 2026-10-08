@@ -3,7 +3,7 @@
 require "test_helper"
 
 class WorkflowRunTest < ActiveSupport::TestCase
-  test "play runs the start folder's newest media through each step once the one before completes, and replay starts over" do
+  test "play runs the start folder's newest media through each step once the one before completes, and replay reruns only what changed" do
     user = users(:lazaro_nixon)
     photo = ->(created_at) { user.library_media.create!(kind: "photo", folder: folders(:interior), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
     photo.(1.day.ago)
@@ -26,7 +26,26 @@ class WorkflowRunTest < ActiveSupport::TestCase
       [ second.workflow_node, second.source_media, second.generated_media.folder, second.generated_media.tags.to_a ]
     assert_nil run.reload.error
 
+    assert_no_difference -> { LibraryMedia.count } do
+      run.start!(folder, user)
+    end
+    assert_equal [ first, second ], run.step_runs.reload
+
+    second.update!(status: "complete")
+    crop.transformation.touch
+    run.start!(folder, user)
+    assert_equal [ first, crop ], run.step_runs.reload.then { [ it.first, it.last.workflow_node ] }
+    assert_not TransformationRun.exists?(second.id)
+
+    run.step_runs.last.update!(status: "complete")
     assert_difference -> { LibraryMedia.count } => -1 do
+      run.rerun!(generate, user)
+    end
+    assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
+    assert_not TransformationRun.exists?(first.id)
+
+    photo.(1.minute.ago)
+    assert_no_difference -> { LibraryMedia.count } do
       run.start!(folder, user)
     end
     assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
