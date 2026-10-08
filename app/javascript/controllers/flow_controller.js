@@ -21,8 +21,9 @@ export default class extends Controller {
     // Edges attach at the middle of the node's first child (a folder's icon, a recipe's whole box), not the label below,
     // or, coming in, at its [data-flow-input] ports if it has them.
     this.nodeTargets.forEach(el => {
-      const anchor = el.firstElementChild.offsetHeight / 2
-      el.querySelectorAll("[data-flow-handle], [data-flow-play]").forEach(it => it.style.top = `${anchor}px`)
+      const first = el.firstElementChild, anchor = first.offsetHeight / 2
+      el.querySelectorAll("[data-flow-handle]").forEach(it => it.style.top = `${anchor}px`)
+      el.querySelectorAll("[data-flow-play]").forEach(it => Object.assign(it.style, { top: `${first.offsetTop}px`, left: `${first.offsetLeft}px` }))
       // Ports sit in a column flush with the node's top.
       const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
       g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
