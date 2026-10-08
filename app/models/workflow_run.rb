@@ -48,10 +48,9 @@ class WorkflowRun < ApplicationRecord
   def advance!(node, user) = run_steps(next_steps(node), user)
 
   # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its newest N;
-  # only the user's media still in the folder (with its tag), newest first.
+  # only the user's media still in the folder (with all its tags), newest first.
   def picked(node, user)
-    media = user.library_media.where(folder: node.folder)
-    media = media.where(id: node.tag.library_media) if node.tag
+    media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids)
     media = (ids = picks[node.id.to_s]) ? media.where(id: ids) : media.limit(node.newest)
     media.order(created_at: :desc).to_a
   end
@@ -83,7 +82,7 @@ class WorkflowRun < ApplicationRecord
           output, runs = output_of_step(step), runs_of(step)
           batches_of(step, user).each do |batch|
             if (run = runs.find { it.source_media == batch })
-              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | [ output&.tag ].compact)
+              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | Array(output&.tags))
             else start_step(step, batch, user)
             end
           end
@@ -130,11 +129,11 @@ class WorkflowRun < ApplicationRecord
 
     def output_of_step(step) = edges.find { it.from_id == step.id && !it.to.step? }&.to
 
-    # The result lands in the step's first output folder (with its tag), else Ready. A shot is picked at random.
+    # The result lands in the step's first output folder (with its tags), else Ready. A shot is picked at random.
     def start_step(step, media, user)
       transformation = step.transformation
       output = output_of_step(step)
-      transformation.run!(media:, user:, folder: output&.folder || Folder.ready, tags: [ output&.tag ].compact,
+      transformation.run!(media:, user:, folder: output&.folder || Folder.ready, tags: Array(output&.tags),
         shot: (Shot.where(group: transformation.shot_group).sample if transformation.shot_group),
         review: (user.reviews.postable.last if transformation.takes_review?), workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e

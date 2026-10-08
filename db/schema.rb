@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -515,7 +515,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_230000) do
     t.integer "folder_id"
     t.integer "library_media_id"
     t.integer "newest", default: 1, null: false
-    t.integer "tag_id"
+    t.json "tag_ids", default: [], null: false
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
     t.integer "workflow_id", null: false
@@ -523,7 +523,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_230000) do
     t.integer "y", default: 0, null: false
     t.index ["folder_id"], name: "index_workflow_nodes_on_folder_id"
     t.index ["library_media_id"], name: "index_workflow_nodes_on_library_media_id"
-    t.index ["tag_id"], name: "index_workflow_nodes_on_tag_id"
     t.index ["transformation_id"], name: "index_workflow_nodes_on_transformation_id"
     t.index ["workflow_id"], name: "index_workflow_nodes_on_workflow_id"
   end
@@ -589,7 +588,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_230000) do
   add_foreign_key "workflow_edges", "workflows", on_delete: :cascade
   add_foreign_key "workflow_nodes", "folders"
   add_foreign_key "workflow_nodes", "library_media", on_delete: :cascade
-  add_foreign_key "workflow_nodes", "tags", on_delete: :nullify
   add_foreign_key "workflow_nodes", "transformations"
   add_foreign_key "workflow_nodes", "workflows", on_delete: :cascade
   add_foreign_key "workflow_runs", "workflows", on_delete: :cascade

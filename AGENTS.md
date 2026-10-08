@@ -26,7 +26,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Workflows:** our new approach to building the media pipeline — a graph of folder, media and transformation step nodes, edited and run on the overview's flow canvas; inspired by n8n, ComfyUI, Zapier and friends. For now they run in parallel with recipes; recipes may be retired later. See [WORKFLOWS.md](./docs/WORKFLOWS.md).
 
-**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`).
+**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`). A workflow folder node's `tag_ids` do both: an input folder gives only media with all of them, an output folder adds them to what lands in it.
 
 ```mermaid
 flowchart LR

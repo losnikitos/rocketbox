@@ -73,12 +73,16 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: input.id)
     assert_select "turbo-frame#inspector section[aria-label=Picks] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
 
-    tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
-    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: input.id, tag_id: tags(:before).id } } } }
-    assert_equal "#{folders(:interior).path} #before", input.reload.label
+    admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
+    tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before), tags(:after) ])
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: input.id, tag_ids: [ "", tags(:before).id, tags(:after).id ] } } } }
+    assert_equal "#{folders(:interior).path} #after #before", input.reload.label
     get workflow_url(workflow, account: admin.id, node: input.id)
+    assert_select "turbo-frame#inspector p", text: "Only media tagged"
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
+    get workflow_url(workflow, account: admin.id, node: output.id)
+    assert_select "turbo-frame#inspector p", text: "Tag what lands here"
 
     get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"

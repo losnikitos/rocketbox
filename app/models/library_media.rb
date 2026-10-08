@@ -34,6 +34,11 @@ class LibraryMedia < ApplicationRecord
     "business_description" => :business_description
   }.freeze
 
+  # Media with every one of the tags `ids`; all media when there are none.
+  scope :tagged_all, ->(ids) do
+    ids.empty? ? all : where(id: LibraryMedia.unscoped.joins(:tags).where(tags: { id: ids }).group(:id).having("COUNT(*) = ?", ids.size).select(:id))
+  end
+
   validates :kind, presence: true
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true

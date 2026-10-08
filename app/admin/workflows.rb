@@ -30,13 +30,13 @@ ActiveAdmin.register Workflow do
     end
 
     panel "Nodes (workflow_nodes)" do
-      table_for workflow.nodes.includes(:folder, :library_media, :tag, :transformation) do
+      table_for workflow.nodes.includes(:folder, :library_media, :transformation) do
         column :id
         column(:kind) { it.step? ? "Step" : it.library_media ? "Media" : "Folder" }
         column :label
         column(:folder) { auto_link(it.folder) if it.folder }
         column(:library_media) { auto_link(it.library_media) if it.library_media }
-        column(:tag) { auto_link(it.tag) if it.tag }
+        column(:tags) { safe_join(it.tags.map { auto_link(it) }, ", ") }
         column(:transformation) { auto_link(it.transformation) if it.transformation }
         column :x
         column :y

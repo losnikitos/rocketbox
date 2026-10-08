@@ -276,7 +276,7 @@
               </ul>
             <% end %>
           <% else %>
-            <p class="text-sm text-ink-500"><%= node.tag ? "No media in this folder has that tag." : "This folder is empty." %></p>
+            <p class="text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
           <% end %>
         </section>
       <% elsif node.step? ? @node_runs.any? : (@run_inputs + @run_outputs).any? %>
@@ -320,12 +320,15 @@
           </div>
         <% else %>
           <% if Tag.exists? %>
-            <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'hidden' && this.requestSubmit()" } do %>
+            <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
               <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-              <p class="<%= tw_label_classes %>">Only media tagged</p>
+              <p class="<%= tw_label_classes %>"><%= @fed ? "Tag what lands here" : "Only media tagged" %></p>
               <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-                <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_id]", selected: node.tag_id, label: "Tag filter" %>
+                <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
               </div>
+              <p class="mt-1 text-xs text-ink-500">
+                <%= @fed ? "Adds these tags to what steps make here; steps it feeds take only media with all of them." : "Gives only its media with all of these tags." %>
+              </p>
             <% end %>
           <% end %>
           <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
@@ -352,7 +355,7 @@
                 <% end %>
               </ul>
             <% else %>
-              <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500"><%= node.tag ? "No media in this folder has that tag." : "This folder is empty." %></p>
+              <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
             <% end %>
           <% end %>
         <% end %>
