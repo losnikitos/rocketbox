@@ -35,6 +35,9 @@ class Transformation::Type
 
   def self.reel? = false
 
+  # A workflow step's named inputs, in the order their media reach the run (see WorkflowRun), or nil for one open input.
+  def self.slots = nil
+
   def self.takes_review? = false
 
   attr_reader :run

@@ -9,21 +9,25 @@ Workflows are our new approach to building the media pipeline. For now they run 
 Workflows borrow from [n8n](https://n8n.io), [ComfyUI](https://github.com/comfyanonymous/ComfyUI), [Zapier](https://zapier.com)/[Make](https://www.make.com) and [Airflow](https://airflow.apache.org)/[Dagster](https://dagster.io). Before designing a workflow feature, check how they solve it and take their answer unless ours genuinely differs.
 
 Where we stand:
-- A run carries one media per edge, like Zapier/Make (one trigger item per run), not item arrays like n8n or image batches like ComfyUI. A step with several incoming edges takes one media from each.
-- Reruns that keep unchanged steps are ComfyUI's caching.
+- Every node gives a list of media, like n8n's items and ComfyUI's lists: a folder its newest N, a media itself, a step what its step runs made.
+- A reel step takes its whole inputs in one step run (ComfyUI's `INPUT_IS_LIST`); any other step runs once per item, its shorter inputs repeating their last media (ComfyUI's rule), so a product list with one style media gives one step run per product. The next step waits for them all, like Airflow's `.expand()`.
+- A reel type can name its inputs (`Transformation::Type.slots`, e.g. GM Visuals' exterior, interior, features, customers), like ComfyUI's sockets and Dagster's `ins`: its media reach the run slot by slot in that order.
+- Reruns that keep unchanged step runs are ComfyUI's caching, per item: a step run is matched by the media it took, so a folder's new media reruns only its own.
 
 ## Graph
 
 - Each step owns its transformation (never a recipe's), made blank from the type dropped from the palette and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
-- A folder node can hold only its media with a tag.
+- A folder node can hold only its media with a tag, and gives its newest N (Newest, 1 by default).
+- An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
 
 ## Editing
 
 - Drag folders and transformation types in from the bottom palette (each tab has its own search), and a selected folder's media from the inspector.
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections) or the empty canvas to pan.
-- Drag from a node's dot to another node to connect (nodes it can connect to light up).
+- Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
+- A selected folder's inspector sets how many of its newest media it gives (Newest).
 - Click a node to open the inspector on the right (remove, and a step's transformation settings), or a connection to remove it or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
@@ -32,9 +36,9 @@ Where we stand:
 Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - A play button on a start folder or media replays the workflow's draft run, keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
-- The start node's media (a folder's newest) goes to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest media, a media itself, a step what it made in this run.
+- The start node's media (a folder's newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none).
-- Each step node shows its step run's status as a corner badge (working, complete, failed), and its output as a thumbnail on the middle of each connection out of it, opening in a lightbox on click.
+- Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and its last output as a thumbnail on the middle of each connection out of it, opening in a lightbox on click.
 - The bottom panel lists the step runs with their inputs, output, status and time; the inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) instead of its edit controls.
 - One draft run per workflow for now; the run pills switch between runs.
 - Switching between Edit and Run, or between runs, keeps the selected node or connection.
@@ -46,4 +50,5 @@ Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - **Edge** — a connection between two nodes, one end always a step ("connection" in the UI).
 - **Start folder** — a folder or media that feeds steps and that nothing feeds; play starts a run from it.
 - **Run** (`WorkflowRun`) — one execution of a workflow.
-- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step; its result lands in the step's output folder.
+- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder.
+- **Slot** — a named input of a step whose type declares them (`Transformation::Type.slots`); an edge into it carries its `slot`.

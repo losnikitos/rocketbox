@@ -56,6 +56,35 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
   end
 
+  test "a folder's newest media each get a step run, and a reel takes them all once complete, slot by slot, rerunning only a new one's" do
+    user = users(:lazaro_nixon)
+    photo = ->(folder, created_at) { user.library_media.create!(kind: "photo", folder: folders(folder), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
+    photo.(:exterior, 2.days.ago)
+    older, newer, inside = photo.(:exterior, 1.day.ago), photo.(:exterior, 1.hour.ago), photo.(:interior, 1.hour.ago)
+    workflow = Workflow.create!(name: "Batch")
+    interior, exterior, crop, reel = [ { folder: folders(:interior) }, { folder: folders(:exterior), newest: 2 },
+      { transformation_attributes: { kind: "smart_crop" } }, { transformation_attributes: { kind: "gm_visuals" } } ].map { workflow.nodes.create!(it) }
+    assert_not workflow.edges.new(from: interior, to: reel).valid?
+    [ [ interior, reel, "interior" ], [ exterior, crop, nil ], [ crop, reel, "exterior" ] ].each { |from, to, slot| workflow.edges.create!(from:, to:, slot:) }
+    run = workflow.draft_run
+    complete = ->(step_run) { step_run.generated_media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg") && step_run.update!(status: "complete") }
+
+    run.start!(exterior, user)
+    crops = run.step_runs.to_a
+    assert_equal [ [ newer ], [ older ] ], crops.map(&:source_media)
+
+    complete.(crops.first)
+    assert_equal crops, run.step_runs.reload
+    complete.(crops.last)
+    assert_nil run.reload.error
+    assert_equal [ reel, [ *crops.map(&:generated_media), inside ] ], run.step_runs.reload.last.then { [ it.workflow_node, it.source_media ] }
+
+    newest = photo.(:exterior, 1.minute.ago)
+    run.start!(exterior, user)
+    runs = run.step_runs.reload
+    assert_equal [ crops.first, crop, [ [ newer ], [ newest ] ] ], [ runs.first, runs.last.workflow_node, runs.map(&:source_media) ]
+  end
+
   test "a step dropped blank from an AI type doesn't start until it has a prompt" do
     user = users(:lazaro_nixon)
     user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })

@@ -8,8 +8,10 @@ class Reels::GmVisuals < Transformation::Scripted
 
   def self.label = "GM Visuals"
 
-  def self.description = "Cuts where the GM Visuals reel cuts, under its track, a random input per cut, never the same one twice in a row. " \
+  def self.description = "Cuts where the GM Visuals reel cuts, under its track, the inputs in order: exterior, interior, features, customers. " \
     "Each video speed-ramps: fast out of the cut, slow through the middle, fast into the next."
+
+  def self.slots = %w[exterior interior features customers]
 
   # gmvisuals9029's "Signature edit 5".
   def self.source_url = "https://www.instagram.com/reel/Dch0yt_MZlg/"

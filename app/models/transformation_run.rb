@@ -44,6 +44,9 @@ class TransformationRun < ApplicationRecord
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
+  # Several runs' status as one: failed if any failed, else running if any is, else complete; nil for none.
+  def self.status_of(runs) = %w[failed running complete].find { |s| runs.any? { it.status == s } }
+
   def video? = transformation&.video?
 
   # Seconds from start to finish; nil while running.

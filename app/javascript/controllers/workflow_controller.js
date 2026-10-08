@@ -5,7 +5,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // to the drop point (flow:copied), submits the arrows drawn between them or moved to other nodes (flow:linked), and adds
 // palette items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
   static values = { url: String }
 
   async move({ detail: { id, x, y } }) {
@@ -22,10 +22,11 @@ export default class extends Controller {
     Turbo.visit(this.urlValue, { frame: "inspector", action: "advance" })
   }
 
-  link({ detail: { id, from, to } }) {
+  link({ detail: { id, from, to, slot } }) {
     this.edgeTarget.value = id ?? ""
     this.fromTarget.value = from
     this.toTarget.value = to
+    this.slotTarget.value = slot ?? ""
     this.connectTarget.requestSubmit()
   }
 

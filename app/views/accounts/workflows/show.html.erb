@@ -22,7 +22,8 @@
 <% thumb = "h-15 w-auto rounded-md" %>
 <% status_pill = { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
-<% took = ->(step_run) { step_run.duration ? "#{number_with_precision(step_run.duration, precision: 1)} s" : "…" } %>
+<%# How long one or several step runs took: the slowest, once none is running. %>
+<% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
 <% here = workflow_path(@workflow, run: @run&.id) %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
@@ -71,6 +72,7 @@
       <%= hidden_field_tag "workflow[edges_attributes][0][id]", nil, id: nil, data: { workflow_target: "edge" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][slot]", nil, id: nil, data: { workflow_target: "slot" } %>
     <% end %>
     <%= form_with url: copy_workflow_path(@workflow, run: @run&.id), class: "hidden", data: { workflow_target: "copy" } do %>
       <%= hidden_field_tag :node_id, nil, id: nil, data: { workflow_target: "copyNode" } %>
@@ -194,19 +196,19 @@
       </header>
 
       <% if @run %>
-        <% if (step_run = @step_run) %>
+        <% if (status = TransformationRun.status_of(@node_runs)) %>
           <dl aria-label="Stats" class="grid grid-cols-2 gap-3 border-t border-ink-900/10 pt-4 text-sm">
             <div>
               <dt class="text-xs text-ink-500">Status</dt>
-              <dd class="mt-1"><span class="<%= status_pill[step_run.status] %>"><%= step_run.status.humanize %></span></dd>
+              <dd class="mt-1"><span class="<%= status_pill[status] %>"><%= status.humanize %></span></dd>
             </div>
             <div>
               <dt class="text-xs text-ink-500">Took</dt>
-              <dd class="mt-1 text-ink-900 tabular-nums"><%= took.(step_run) %></dd>
+              <dd class="mt-1 text-ink-900 tabular-nums"><%= took.(@node_runs) %></dd>
             </div>
           </dl>
-          <% if step_run.error %>
-            <p class="<%= tw_alert_error_classes %>" role="alert"><%= step_run.error %></p>
+          <% @node_runs.filter_map(&:error).uniq.each do |error| %>
+            <p class="<%= tw_alert_error_classes %>" role="alert"><%= error %></p>
           <% end %>
         <% elsif node.step? %>
           <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
@@ -256,6 +258,15 @@
               </div>
             <% end %>
           <% end %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <%= label_tag "workflow_node_newest", "Newest", class: tw_label_classes %>
+            <div class="w-24">
+              <%= number_field_tag "workflow[nodes_attributes][0][newest]", node.newest, id: "workflow_node_newest", min: 1, required: true,
+                    aria: { describedby: "workflow_node_newest_hint" }, class: tw_input_classes %>
+            </div>
+            <p id="workflow_node_newest_hint" class="mt-1 text-xs text-ink-500">How many of its newest media it gives the steps it feeds.</p>
+          <% end %>
           <% if @folder_media.any? %>
             <ul aria-label="Media" class="grid grid-cols-3 gap-2 border-t border-ink-900/10 pt-4">
               <% @folder_media.each do |media| %>
@@ -296,8 +307,8 @@
         connection's ends can be dragged to other nodes.
       </p>
       <p class="text-sm text-ink-500">
-        Press play on a start folder or media to run that media (a folder's newest) through the steps it feeds. Run shows each step's inputs,
-        output and time.
+        Press play on a start folder or media to run that media (a folder's newest N, set when it's selected) through the steps it feeds: a
+        reel takes them all at once, in its inputs' order, any other step each in turn. Run shows each step's inputs, output and time.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },
             class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>

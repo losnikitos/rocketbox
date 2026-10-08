@@ -51,7 +51,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { id: it.id, path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
+      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id), frame: "inspector", current: false } ] }.to_json
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end

@@ -20,7 +20,7 @@ class Transformation < ApplicationRecord
   # Editing it edits its recipes, which the index lists recently edited first.
   after_update { recipes.touch_all }
 
-  delegate :ai?, :video?, :single?, :reel?, :layer, :takes_review?, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :slots, :layer, :takes_review?, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 

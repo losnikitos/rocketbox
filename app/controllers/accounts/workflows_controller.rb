@@ -74,8 +74,8 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :tag_id, :x, :y, :_destroy, transformation_attributes: [ :kind ] ] ],
-                                         edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
+        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :tag_id, :newest, :x, :y, :_destroy, transformation_attributes: [ :kind ] ] ],
+                                         edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
       end
 
       # Saved nodes and edges only, so a rejected edit doesn't draw.
@@ -92,13 +92,15 @@ module Accounts
             .includes(:transformation_run).order(created_at: :desc)
           @folder_media = @folder_media.where(id: @selected.tag.library_media) if @selected.tag
         end
-        # In run mode, what the selected node took and gave in the run: a step its step run's sources and result, a
+        # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
+        runs_of = ->(node) { @step_runs.to_a.select { it.workflow_node_id == node.id } }
+        # In run mode, what the selected node took and gave in the run: a step its step runs' sources and results, a
         # folder what the step runs feeding it made and what of it the step runs it feeds took (a media node only the latter).
         if @run && @selected
-          @step_run = @step_runs.find { it.workflow_node_id == @selected.id }
+          @node_runs = runs_of.(@selected)
           linked = ->(from, to) { @graph_edges.any? { it.from_id == from && it.to_id == to } }
           @run_inputs, @run_outputs = if @selected.step?
-            [ @step_run&.source_media.to_a, [ @step_run&.generated_media ].compact ]
+            [ @node_runs.flat_map(&:source_media).uniq, @node_runs.map(&:generated_media) ]
           else
             [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:generated_media),
               @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:source_media)
@@ -107,22 +109,23 @@ module Accounts
         end
         # Start folders and media feed steps and nothing feeds them.
         @start_nodes = @graph_nodes.select { |node| !node.step? && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }
-        complete = @step_runs.to_a.select(&:complete?).map(&:workflow_node_id)
+        complete = @graph_nodes.select { |node| runs_of.(node).then { it.any? && it.all?(&:complete?) } }.map(&:id)
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.library_media ? :media : :folder
-          step_run = @step_runs&.find { it.workflow_node_id == node.id }
+          runs = runs_of.(node)
           # In run mode a step not running can start once every step feeding it is complete; folders and media always feed.
           feeds = @graph_edges.select { it.to_id == node.id }
-          ready = @run && node.step? && !step_run&.running? && feeds.any? &&
+          ready = @run && node.step? && runs.none?(&:running?) && feeds.any? &&
             feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run&.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
-                       kind: node.transformation&.type_label, inputs: feeds.size, play: @start_nodes.include?(node) || (ready && !step_run),
-                       status: step_run&.status, error: step_run&.error, rerun: (ready && step_run),
-                       output: step_run&.generated_media&.then { it if it.file.attached? } } ]
+                       kind: node.transformation&.type_label, inputs: feeds.size, slots: node.transformation&.slots,
+                       play: @start_nodes.include?(node) || (ready && runs.empty?),
+                       status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?),
+                       output: runs.last&.generated_media&.then { it if it.file.attached? } } ]
         end
-        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
+        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, slot: it.slot, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
       end
   end
 end
