@@ -26,7 +26,7 @@ class Transformation::SmartCrop < Transformation::Edit
       x = (at["attention_x"] - width / 2).clamp(0, image.width - width)
       y = (at["attention_y"] - height / 2).clamp(0, image.height - height)
       fit = "#{fill},crop=#{width}:#{height}:#{x}:#{y},setsar=1,format=yuv420p"
-      ffmpeg!("-i", video, "-vf", fit, "-map", "0:v", "-map", "0:a?", "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", out)
+      ffmpeg!("-i", video, "-vf", fit, "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", out)
       attachment(File.binread(out), "mp4", "video/mp4")
     end
   end

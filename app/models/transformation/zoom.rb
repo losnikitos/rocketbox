@@ -26,7 +26,7 @@ class Transformation::Zoom < Transformation::Edit
       File.binwrite(source, media.file.download)
       # image2 reads a photo as one frame (see Scripted).
       ffmpeg!(*(%w[-f image2] unless media.video?), "-i", source, "-vf", [ ("fps=#{fps}" if media.video?), fill, pan, "format=yuv420p" ].compact.join(","),
-        "-map", "0:v", "-map", "0:a?", "-t", seconds, "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", out)
+        "-map", "0:v:0", "-map", "0:a?", "-t", seconds, "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", out)
       attachment(File.binread(out), "mp4", "video/mp4")
     end
   end
