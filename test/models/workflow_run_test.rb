@@ -25,6 +25,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ crop, [ first.generated_media ], folders(:photobank_logo), [ tags(:after) ] ],
       [ second.workflow_node, second.source_media, second.generated_media.folder, second.generated_media.tags.to_a ]
     assert_nil run.reload.error
+    assert_equal [ [ newest ], [ second.generated_media ] ], [ run.inputs, run.outputs ]
 
     assert_no_difference -> { LibraryMedia.count } do
       run.start!(folder, user)
@@ -83,6 +84,27 @@ class WorkflowRunTest < ActiveSupport::TestCase
     run.start!(exterior, user)
     runs = run.step_runs.reload
     assert_equal [ crops.first, crop, [ [ newer ], [ newest ] ] ], [ runs.first, runs.last.workflow_node, runs.map(&:source_media) ]
+  end
+
+  test "media picked for a run replace a start folder's newest, and dropping the picks goes back to them" do
+    user = users(:lazaro_nixon)
+    photo = ->(created_at) { user.library_media.create!(kind: "photo", folder: folders(:interior), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
+    older, newest = photo.(1.day.ago), photo.(1.hour.ago)
+    workflow = Workflow.create!(name: "Picks")
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+    workflow.edges.create!(from: folder, to: step)
+    run = workflow.latest_run
+    assert_equal "draft", run.state
+
+    run.update!(picks: { folder.id.to_s => [ older.id ] })
+    run.start!(folder, user)
+    assert_equal [ [ older ] ], run.step_runs.map(&:source_media)
+    assert_equal [ "started", "running" ], [ run.status, run.state ]
+
+    run.update!(picks: {})
+    run.start!(folder, user)
+    assert_equal [ [ newest ] ], run.step_runs.reload.map(&:source_media)
   end
 
   test "a step dropped blank from an AI type doesn't start until it has a prompt" do

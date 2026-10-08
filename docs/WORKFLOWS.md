@@ -37,7 +37,9 @@ Where we stand:
 Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - A play button on a start folder or media replays the selected run (the latest from Edit), keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
-- The start node's media (a folder's newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
+- A selected start folder's inspector shows its media, those play takes checked (its newest N); checking others picks them for this run only (`WorkflowRun#picks`), and Newest N, or unchecking them all, goes back.
+- A run is a draft until it's first played (from a start node or a step); then it's started and its picks are locked, though replays and step reruns still go, taking them. The run header shows its status: Draft, then failed, running or complete as its step runs.
+- The start node's media (a folder's newest N, or what's picked for the run) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none).
 - Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and each connection shows what last went along it as a thumbnail on its middle (a step's output, or the media a step took from a folder or media), opening in a lightbox on click.
 - The bottom panel lists the step runs with their inputs, output, status and time; the inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) instead of its edit controls.
@@ -50,6 +52,6 @@ Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - **Node** — a folder, media or step on the canvas. A **step** is a node owning its transformation.
 - **Edge** — a connection between two nodes, one end always a step ("connection" in the UI).
 - **Start folder** — a folder or media that feeds steps and that nothing feeds; play starts a run from it.
-- **Run** (`WorkflowRun`) — one execution of a workflow.
+- **Run** (`WorkflowRun`) — one execution of a workflow. A **draft** run hasn't been played yet, so its picks can still change.
 - **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder.
 - **Slot** — a named input of a step whose type declares them (`Transformation::Type.slots`); an edge into it carries its `slot`.

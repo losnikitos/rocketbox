@@ -19,7 +19,7 @@
 
 <% mode = "rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
 <% thumb = "h-15 w-auto rounded-md" %>
-<% status_pill = { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
+<% status_pill = { "draft" => "bg-ink-900/5 text-ink-600", "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
 <%# How long one or several step runs took: the slowest, once none is running. %>
 <% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
@@ -35,9 +35,38 @@
       </nav>
       <% if @run %>
         <span class="mx-2 h-5 w-px bg-ink-900/10" aria-hidden="true"></span>
-        <%= select_tag nil, options_for_select(@workflow.runs.reverse.map { [ "#{it.name} · #{l(it.created_at, format: :short)}", workflow_path(@workflow, run: it.id) ] },
-              workflow_path(@workflow, run: @run.id)), id: nil, aria: { label: "Run" }, data: { action: "workflow#switch" },
-              class: "rounded-lg border border-ink-900/15 bg-white py-1 pr-8 pl-2.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+        <% thumbs = ->(media) { capture do %>
+          <span class="flex items-center gap-0.5">
+            <% media.first(4).each do |media| %>
+              <span class="block size-7 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+            <% end %>
+            <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
+          </span>
+        <% end } %>
+        <% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: status_pill[state]) } %>
+        <%# The media a run started from, then the ones it ended with. %>
+        <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
+        <button type="button" popovertarget="workflow_runs" style="anchor-name: --workflow-runs"
+                class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-900/15 bg-white py-1 pr-2 pl-2.5 text-sm text-ink-900 transition hover:border-ink-900/30 focus-visible:border-rocket focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rocket/30">
+          <% current = @runs.find { it == @run } %>
+          <span class="font-medium"><%= @run.name %></span>
+          <%= status.(current) %>
+          <%= ends.(current) %>
+          <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 text-ink-500", "aria-hidden": true } %>
+        </button>
+        <nav id="workflow_runs" popover aria-label="Runs" style="position-anchor: --workflow-runs"
+             class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] max-h-96 min-w-64 overflow-y-auto rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+          <% @runs.each do |run| %>
+            <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
+                  class: "flex flex-col gap-1.5 rounded-md px-2.5 py-2 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5" do %>
+              <span class="flex items-center gap-2">
+                <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
+                <%= status.(run) %>
+              </span>
+              <%= ends.(run) %>
+            <% end %>
+          <% end %>
+        </nav>
         <%= button_to workflow_runs_path(@workflow), title: "New run", class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> New run
         <% end %>
@@ -46,6 +75,7 @@
               class: "cursor-pointer rounded-lg p-1.5 text-ink-500 transition hover:bg-signal-red/10 hover:text-signal-red disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-500" do %>
           <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
         <% end %>
+        <%= render "shared/admin_links/workflow_run", workflow_run: @run %>
       <% end %>
     </div>
 
@@ -218,15 +248,46 @@
         <% elsif node.step? %>
           <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
         <% end %>
-        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
-          <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
-            <h3 class="text-xs text-ink-500"><%= label %></h3>
-            <% if media.any? %>
-              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+        <% if node.folder && @start_nodes.include?(node) %>
+          <section aria-label="Picks" class="space-y-2 border-t border-ink-900/10 pt-4">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-xs text-ink-500"><%= @run.draft? ? "Play takes" : "Play took (locked once the run started)" %></h3>
+              <% if @run.draft? && @run.picks.key?(node.id.to_s) %>
+                <%= button_to "Newest #{node.newest}", workflow_run_path(@workflow, @run), method: :patch, params: { node_id: node.id }, form: { data: top },
+                      title: "Take its newest media again", class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
+              <% end %>
+            </div>
+            <% if @folder_media.any? %>
+              <% picked = @run.picked(node, Current.account) %>
+              <%= form_with url: workflow_run_path(@workflow, @run), method: :patch, data: top, html: { onchange: "this.requestSubmit()" } do %>
+                <%= hidden_field_tag :node_id, node.id, id: nil %>
+                <fieldset class="grid grid-cols-3 gap-2" <%= "disabled" unless @run.draft? %>>
+                  <% @folder_media.each do |media| %>
+                    <label class="group/option relative block cursor-pointer overflow-hidden has-disabled:cursor-default rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                      <%= check_box_tag "media_ids[]", media.id, picked.include?(media), id: nil, class: "sr-only" %>
+                      <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
+                      <span class="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-black/20 text-transparent shadow-sm group-has-checked/option:border-rocket group-has-checked/option:bg-rocket group-has-checked/option:text-white" aria-hidden="true">
+                        <%= heroicon "check", variant: :micro, options: { class: "size-3.5" } %>
+                      </span>
+                    </label>
+                  <% end %>
+                </fieldset>
+              <% end %>
             <% else %>
-              <p class="text-sm text-ink-500">None in this run.</p>
+              <p class="text-sm text-ink-500"><%= node.tag ? "No media in this folder has that tag." : "This folder is empty." %></p>
             <% end %>
           </section>
+        <% else %>
+          <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
+            <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
+              <h3 class="text-xs text-ink-500"><%= label %></h3>
+              <% if media.any? %>
+                <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+              <% else %>
+                <p class="text-sm text-ink-500">None in this run.</p>
+              <% end %>
+            </section>
+          <% end %>
         <% end %>
       <% else %>
         <div class="flex flex-wrap items-center gap-2">
@@ -312,7 +373,8 @@
         connection's ends can be dragged to other nodes.
       </p>
       <p class="text-sm text-ink-500">
-        Press play on a start folder or media to run that media (a folder's newest N, set when it's selected) through the steps it feeds: a
+        Press play on a start folder or media to run that media (a folder's newest N, set when it's selected, or in Run the media picked
+        for that run) through the steps it feeds: a
         reel takes them all at once, in its inputs' order, any other step each in turn. Run shows each step's inputs, output and time.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },

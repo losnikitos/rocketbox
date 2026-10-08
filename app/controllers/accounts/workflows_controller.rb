@@ -83,6 +83,9 @@ module Accounts
         @run = @workflow.runs.find_by(id: params[:run])
         @step_runs = @run.step_runs.includes(:workflow_node, :transformation, inputs: { library_media: { file_attachment: :blob } },
           generated_media: { file_attachment: :blob }) if @run
+        # The run picker: each run with what went in and came out, newest first.
+        @runs = @workflow.runs.includes(step_runs: [ { inputs: { library_media: { file_attachment: :blob } } },
+          { generated_media: { file_attachment: :blob } } ]).reverse if @run
         @graph_nodes = @workflow.nodes.select(&:persisted?)
         @graph_edges = @workflow.edges.select(&:persisted?)
         @selected = @graph_nodes.find { it.id == params[:node].to_i }

@@ -1,0 +1,11 @@
+<%# Locals: workflow_run %>
+<% workflow_run = local_assigns[:workflow_run] %>
+<% if Current.user&.admin? && workflow_run.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "workflow-run-admin-links-#{workflow_run.id}", align: local_assigns.fetch(:align, :right) } do %>
+    <%= render "shared/admin_links/item",
+        path: admin_workflow_run_path(workflow_run),
+        label: "Admin",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+  <% end %>
+<% end %>

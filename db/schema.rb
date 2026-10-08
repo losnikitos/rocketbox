@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_190001) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -532,6 +532,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_180000) do
     t.datetime "created_at", null: false
     t.text "error"
     t.string "name", default: "Draft", null: false
+    t.json "picks", default: {}, null: false
+    t.string "status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.integer "workflow_id", null: false
     t.index ["workflow_id"], name: "index_workflow_runs_on_workflow_id"

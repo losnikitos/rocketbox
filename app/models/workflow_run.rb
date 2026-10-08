@@ -2,29 +2,43 @@
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
 # feeding the step outputs media. Played from a start folder or media, whose newest media feed the steps downstream; a step run
-# starts the steps its step feeds when it completes. Every node gives a list: a reel step takes all of it in one step run, its
+# starts the steps its step feeds when it completes; a run's `picks` swap a start folder's newest media for ones picked for
+# that run. Every node gives a list: a reel step takes all of it in one step run, its
 # slots in order; any other step takes one item per step run, its shorter inputs repeating their last media (ComfyUI's
 # lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them;
 # `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
-# `error`. A workflow has as many as were added, each named Run N.
+# `error`. A workflow has as many as were added, each named Run N. A run is a draft, its picks editable, until it's first
+# played (from a start node or a step); then it's started and its picks are locked.
 class WorkflowRun < ApplicationRecord
+  STATUSES = %w[draft started].freeze
+
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
+
+  validates :status, inclusion: { in: STATUSES }
 
   before_create { self.name = "Run #{workflow.runs.count + 1}" }
 
   def running? = step_runs.any?(&:running?)
+  def draft? = status == "draft"
+
+  # Draft until first played; then failed, running or complete, as its step runs (nil while none started).
+  def state = draft? ? "draft" : error ? "failed" : TransformationRun.status_of(step_runs)
+
+  # What it was played with and what it ended with: media its step runs took that none made, and made that none took.
+  def inputs = took - made
+  def outputs = made - took
 
   # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)
-    update!(error: nil)
+    update!(error: nil, status: "started")
     advance!(node, user)
   end
 
   # Drops `step`'s step runs and the ones after them, and starts it from what its inputs give now.
   def rerun!(step, user)
-    update!(error: nil)
+    update!(error: nil, status: "started")
     with_lock { runs_of(step).each { drop(it) } }
     run_steps([ step ], user)
   end
@@ -32,7 +46,19 @@ class WorkflowRun < ApplicationRecord
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
+  # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its newest N;
+  # only the user's media still in the folder (with its tag), newest first.
+  def picked(node, user)
+    media = user.library_media.where(folder: node.folder)
+    media = media.where(id: node.tag.library_media) if node.tag
+    media = (ids = picks[node.id.to_s]) ? media.where(id: ids) : media.limit(node.newest)
+    media.order(created_at: :desc).to_a
+  end
+
   private
+
+    def took = step_runs.flat_map(&:source_media).uniq
+    def made = step_runs.filter_map(&:generated_media)
 
     def edges = @edges ||= workflow.edges.includes(:from, :to).to_a
 
@@ -89,18 +115,15 @@ class WorkflowRun < ApplicationRecord
       Array.new(inputs.map(&:size).max) { |i| inputs.map { it[i] || it.last } }
     end
 
-    # A node's output in this run: a folder its newest media (with its tag), a media itself, a step what its step runs
-    # made, in its batches' order, once they're all complete.
+    # A node's output in this run: a folder what's picked of it, a media itself, a step what its step runs made, in its
+    # batches' order, once they're all complete.
     def output_of(node, user)
       if node.step?
         runs = runs_of(node).select(&:complete?)
         made = batches_of(node, user).map { |batch| runs.find { it.source_media == batch }&.generated_media }
         made.all? ? made : []
       elsif node.library_media then [ node.library_media ]
-      else
-        media = user.library_media.where(folder: node.folder)
-        media = media.where(id: node.tag.library_media) if node.tag
-        media.order(created_at: :desc).limit(node.newest).to_a
+      else picked(node, user)
       end
     end
 

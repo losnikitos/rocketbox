@@ -47,7 +47,7 @@ ActiveAdmin.register Workflow do
 
     panel "Runs (workflow_runs)" do
       table_for workflow.runs.includes(:step_runs) do
-        column :id
+        column(:id) { link_to it.id, admin_workflow_run_path(it) }
         column :name
         column :error
         column(:step_runs) { |run| safe_join(run.step_runs.map { link_to "##{it.id} #{it.status}", admin_transformation_run_path(it) }, ", ") }
