@@ -45,7 +45,7 @@ export default class extends Controller {
     this.removeTarget.click()
   }
 
-  // Mode and run links keep the selected node or connection, which the inspector frame puts in the page's URL.
+  // Run links keep the selected node or connection, which the inspector frame puts in the page's URL.
   keep({ currentTarget: link }) {
     link.href = this.kept(link.href)
   }
