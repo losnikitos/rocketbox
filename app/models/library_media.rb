@@ -15,6 +15,10 @@ class LibraryMedia < ApplicationRecord
   has_many :generated_media, through: :source_runs
   # The run that made this media; it has a status and an error.
   has_one :transformation_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
+  # Lands once it has its file, or moves folder with one. Declared before the attachment, whose own after_commit clears
+  # attachment_changes. ponytail: a tag added later doesn't land it, so a tag-filtered start folder misses it.
+  after_commit -> { AutorunWorkflowsJob.perform_later(self) },
+    if: -> { file.attached? && (attachment_changes.key?("file") || saved_change_to_folder_id?) }, on: %i[create update]
   has_one_attached :file do |file|
     file.variant :thumb, resize_to_limit: [ 720, 720 ], preprocessed: :video?
   end

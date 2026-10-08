@@ -7,5 +7,11 @@
         label: "Admin",
         icon: "cog",
         chip: "bg-signal-green" %>
+    <%= render "shared/admin_links/item",
+        path: workflow_path(workflow),
+        label: "Delete",
+        icon: "trash",
+        chip: "bg-signal-red",
+        data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?" } %>
   <% end %>
 <% end %>

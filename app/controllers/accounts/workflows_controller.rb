@@ -75,7 +75,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :tag_id, :newest, :x, :y, :_destroy, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :tag_id, :newest, :x, :y, :_destroy, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
       end
 
@@ -111,8 +111,7 @@ module Accounts
                 .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
           end
         end
-        # Start folders and media feed steps and nothing feeds them.
-        @start_nodes = @graph_nodes.select { |node| !node.step? && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }
+        @start_nodes = @workflow.start_nodes
         complete = @graph_nodes.select { |node| runs_of.(node).then { it.any? && it.all?(&:complete?) } }.map(&:id)
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder

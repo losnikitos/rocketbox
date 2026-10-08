@@ -20,8 +20,20 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflow_url(workflow, account: admin.id)
 
     get workflow_url(workflow, account: admin.id)
+    assert_select "header form[data-controller=autosave]" do
+      assert_select "nav[aria-label=Breadcrumb] a[href^=?]", workflows_path, text: "Workflows"
+      assert_select "h1 input[name=?][value=?]", "workflow[name]", "Inbox to ready"
+      assert_select "input[type=checkbox][role=switch][name=?]:not([checked])", "workflow[autorun]"
+    end
+    assert_select "header [id^=workflow-admin-links-#{workflow.id}-] a[href^=?][data-turbo-method=delete]", workflow_path(workflow)
     assert_select "button[form=workflow_add][name=?][value=?]", "workflow[nodes_attributes][0][folder_id]", folders(:ready).id.to_s
     assert_select "button[form=workflow_add][name=?][value=smart_crop]", "workflow[nodes_attributes][0][transformation_attributes][kind]", text: "Smart crop"
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { name: "Inbox to ready", autorun: "1" } }, as: :json
+    assert_response :no_content
+    assert workflow.reload.autorun
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { name: "" } }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal "Inbox to ready", workflow.reload.name
 
     add = ->(attributes) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => attributes } } } }
     add.(folder_id: folders(:interior).id, x: 60, y: 80)
