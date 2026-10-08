@@ -7,5 +7,13 @@
         label: "Admin",
         icon: "cog",
         chip: "bg-signal-green" %>
+    <% unless workflow_run.running? %>
+      <%= render "shared/admin_links/item",
+          path: workflow_run_path(workflow_run.workflow, workflow_run),
+          label: "Delete",
+          icon: "trash",
+          chip: "bg-signal-red",
+          data: { turbo_method: :delete, turbo_confirm: "Delete #{workflow_run.name}? Its media stay in the library." } %>
+    <% end %>
   <% end %>
 <% end %>

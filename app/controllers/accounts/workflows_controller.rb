@@ -2,8 +2,9 @@
 
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
-  # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
-  # are listed below the canvas, in place of + Add, and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the
+  # update. `?node=` or `?edge=` selects a node or connection for the inspector. The runs are listed below the canvas, each
+  # with its step runs. `?run=` is run mode: that run's row is highlighted, the canvas shows its step runs in place of + Add,
+  # and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the
   # selected run from it (the latest in edit mode); play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
@@ -80,12 +81,11 @@ module Accounts
 
       # Saved nodes and edges only, so a rejected edit doesn't draw.
       def set_graph
-        @run = @workflow.runs.find_by(id: params[:run])
-        @step_runs = @run.step_runs.includes(:workflow_node, :transformation, inputs: { library_media: { file_attachment: :blob } },
-          generated_media: { file_attachment: :blob }) if @run
-        # The run picker: each run with what went in and came out, newest first.
-        @runs = @workflow.runs.includes(step_runs: [ { inputs: { library_media: { file_attachment: :blob } } },
-          { generated_media: { file_attachment: :blob } } ]).reverse if @run
+        # The runs panel: each run with its step runs, what went in and came out, newest first.
+        @runs = @workflow.runs.includes(step_runs: [ :workflow_node, :transformation, { inputs: { library_media: { file_attachment: :blob } } },
+          { generated_media: { file_attachment: :blob } } ]).reverse
+        @run = @runs.find { it.id == params[:run].to_i }
+        @step_runs = @run&.step_runs
         @graph_nodes = @workflow.nodes.select(&:persisted?)
         @graph_edges = @workflow.edges.select(&:persisted?)
         @selected = @graph_nodes.find { it.id == params[:node].to_i }

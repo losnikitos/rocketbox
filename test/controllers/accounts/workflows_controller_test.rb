@@ -125,10 +125,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
 
     follow_redirect!
-    assert_select "nav[aria-label=Runs] a[aria-current=page]", /Run 1/
+    assert_select "section[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
-    assert_select "section[aria-label='Run steps'] tbody tr", 1 do
+    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
     end
@@ -234,10 +234,19 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
-    assert_select "nav[aria-label=Runs] a", 2 do |links|
-      assert_equal [ workflow_path(workflow, run: second.id), workflow_path(workflow, run: first.id) ], links.map { it["href"] }
+    assert_select "section[aria-label=Runs] details", 2 do |rows|
+      assert_equal [ dom_id(second), dom_id(first) ], rows.map { it["id"] }
     end
-    assert_select "nav[aria-label=Runs] a[aria-current=page][href=?]", workflow_path(workflow, run: second.id)
+    assert_select "section[aria-label=Runs] details[open]", 0
+    assert_select "section[aria-label=Runs] a[aria-current=page]", 1
+    assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "section[aria-label=Runs] details", 2
+    assert_select "section[aria-label=Runs] a[aria-current=page]", 0
+    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(first), count: 1
+    assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, second)
+    assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, first), count: 0
 
     post run_workflow_url(workflow, account: admin.id, run: second.id), params: { node_id: folder.id }
     assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)

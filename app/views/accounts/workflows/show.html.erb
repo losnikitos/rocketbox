@@ -22,6 +22,17 @@
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
 <%# How long one or several step runs took: the slowest, once none is running. %>
 <% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
+<% thumbs = ->(media) { capture do %>
+  <span class="flex items-center gap-0.5">
+    <% media.first(4).each do |media| %>
+      <span class="block size-7 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+    <% end %>
+    <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
+  </span>
+<% end } %>
+<% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: status_pill[state]) } %>
+<%# The media a run started from, then the ones it ended with. %>
+<% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run&.id) %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
@@ -32,50 +43,6 @@
         <%= link_to "Edit", workflow_path(@workflow), aria: { current: ("page" unless @run) }, data: { action: "workflow#keep" }, class: mode %>
         <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.latest_run).id), aria: { current: ("page" if @run) }, data: { action: "workflow#keep" }, class: mode %>
       </nav>
-      <% if @run %>
-        <span class="mx-2 h-5 w-px bg-ink-900/10" aria-hidden="true"></span>
-        <% thumbs = ->(media) { capture do %>
-          <span class="flex items-center gap-0.5">
-            <% media.first(4).each do |media| %>
-              <span class="block size-7 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
-            <% end %>
-            <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
-          </span>
-        <% end } %>
-        <% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: status_pill[state]) } %>
-        <%# The media a run started from, then the ones it ended with. %>
-        <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
-        <button type="button" popovertarget="workflow_runs" style="anchor-name: --workflow-runs"
-                class="flex cursor-pointer items-center gap-2 rounded-lg border border-ink-900/15 bg-white py-1 pr-2 pl-2.5 text-sm text-ink-900 transition hover:border-ink-900/30 focus-visible:border-rocket focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rocket/30">
-          <% current = @runs.find { it == @run } %>
-          <span class="font-medium"><%= @run.name %></span>
-          <%= status.(current) %>
-          <%= ends.(current) %>
-          <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 text-ink-500", "aria-hidden": true } %>
-        </button>
-        <nav id="workflow_runs" popover aria-label="Runs" style="position-anchor: --workflow-runs"
-             class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] max-h-96 min-w-64 overflow-y-auto rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
-          <% @runs.each do |run| %>
-            <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
-                  class: "flex flex-col gap-1.5 rounded-md px-2.5 py-2 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5" do %>
-              <span class="flex items-center gap-2">
-                <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
-                <%= status.(run) %>
-              </span>
-              <%= ends.(run) %>
-            <% end %>
-          <% end %>
-        </nav>
-        <%= button_to workflow_runs_path(@workflow), title: "New run", class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
-          <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> New run
-        <% end %>
-        <%= button_to workflow_run_path(@workflow, @run), method: :delete, disabled: @run.running?, form: { data: { turbo_confirm: "Delete #{@run.name}? Its media stay in the library." } },
-              title: (@run.running? ? "Wait for its steps to finish" : "Delete run"), aria: { label: "Delete run" },
-              class: "cursor-pointer rounded-lg p-1.5 text-ink-500 transition hover:bg-signal-red/10 hover:text-signal-red disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-500" do %>
-          <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-        <% end %>
-        <%= render "shared/admin_links/workflow_run", workflow_run: @run %>
-      <% end %>
     </div>
 
     <% if @workflow.errors.any? %>
@@ -159,51 +126,77 @@
     <% end %>
     <%= form_with url: run_workflow_path(@workflow, run: @run&.id), id: "workflow_play", class: "hidden" do %><% end %>
 
-    <% if @run %>
-      <%= turbo_stream_from @run %>
-      <section aria-label="Run steps" class="h-56 shrink-0 overflow-y-auto border-t border-ink-900/10">
-        <% if @run.error %>
-          <p class="<%= tw_alert_error_classes %> m-3" role="alert"><%= @run.error %></p>
+    <%= turbo_stream_from @run if @run %>
+    <section aria-label="Runs" class="h-56 shrink-0 overflow-y-auto border-t border-ink-900/10">
+      <header class="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-ink-900/10 bg-white px-3 py-1.5">
+        <h2 class="text-xs font-medium text-ink-500">Runs</h2>
+        <%= button_to workflow_runs_path(@workflow), class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+          <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> New run
         <% end %>
-        <% if @step_runs.any? %>
-          <table class="w-full text-left text-sm">
-            <thead class="sticky top-0 z-10 bg-white text-xs text-ink-500">
-              <tr>
-                <th class="px-3 py-2 font-medium">Step</th>
-                <th class="px-3 py-2 font-medium">Status</th>
-                <th class="px-3 py-2 font-medium">Inputs</th>
-                <th class="px-3 py-2 font-medium">Output</th>
-                <th class="px-3 py-2 text-right font-medium">Time</th>
-                <th class="w-0 px-3 py-2"><span class="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-ink-900/10">
-              <% @step_runs.each do |step_run| %>
-                <tr>
-                  <td class="px-3 py-2 font-medium text-ink-900">
-                    <% if (node = step_run.workflow_node) %>
-                      <%= link_to node.label, workflow_path(@workflow, run: @run.id, node: node.id), class: "hover:underline" %>
-                    <% else %>
-                      <%= step_run.transformation&.name || "Removed step" %>
-                    <% end %>
-                  </td>
-                  <td class="px-3 py-2">
-                    <span title="<%= step_run.error %>" class="<%= status_pill[step_run.status] %>"><%= step_run.status.humanize %></span>
-                  </td>
-                  <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
-                    <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
+      </header>
+      <% if @runs.empty? %>
+        <p class="p-6 text-center text-sm text-ink-500">No runs yet.</p>
+      <% end %>
+      <% @runs.each do |run| %>
+        <div class="relative border-b border-ink-900/10">
+          <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
+                class: "flex min-h-11 items-center gap-3 py-2 pr-12 pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
+            <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
+            <%= status.(run) %>
+            <%= ends.(run) %>
+          <% end %>
+          <details id="<%= dom_id(run) %>" class="group">
+            <summary aria-label="Steps" title="Steps"
+                     class="absolute top-1.5 left-1.5 flex size-8 cursor-pointer list-none items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket [&::-webkit-details-marker]:hidden">
+              <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
+            </summary>
+            <% if run.error %>
+              <p class="<%= tw_alert_error_classes %> m-3" role="alert"><%= run.error %></p>
+            <% end %>
+            <% if run.step_runs.any? %>
+              <table class="w-full border-t border-ink-900/10 text-left text-sm">
+                <thead class="text-xs text-ink-500">
+                  <tr>
+                    <th class="px-3 py-2 font-medium">Step</th>
+                    <th class="px-3 py-2 font-medium">Status</th>
+                    <th class="px-3 py-2 font-medium">Inputs</th>
+                    <th class="px-3 py-2 font-medium">Output</th>
+                    <th class="px-3 py-2 text-right font-medium">Time</th>
+                    <th class="w-0 px-3 py-2"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-ink-900/10">
+                  <% run.step_runs.each do |step_run| %>
+                    <tr>
+                      <td class="px-3 py-2 font-medium text-ink-900">
+                        <% if (node = step_run.workflow_node) %>
+                          <%= link_to node.label, workflow_path(@workflow, run: run.id, node: node.id), class: "hover:underline" %>
+                        <% else %>
+                          <%= step_run.transformation&.name || "Removed step" %>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-2">
+                        <span title="<%= step_run.error %>" class="<%= status_pill[step_run.status] %>"><%= step_run.status.humanize %></span>
+                      </td>
+                      <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
+                        <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
+                      <% end %>
+                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums"><%= took.(step_run) %></td>
+                      <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
+                    </tr>
                   <% end %>
-                  <td class="px-3 py-2 text-right text-ink-600 tabular-nums"><%= took.(step_run) %></td>
-                  <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% elsif !@run.error %>
-          <p class="flex h-full items-center justify-center p-6 text-center text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
-        <% end %>
-      </section>
-    <% end %>
+                </tbody>
+              </table>
+            <% elsif !run.error %>
+              <p class="px-3 pb-3 pl-10 text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
+            <% end %>
+          </details>
+          <div class="absolute top-0 right-3 flex h-11 items-center">
+            <%= render "shared/admin_links/workflow_run", workflow_run: run %>
+          </div>
+        </div>
+      <% end %>
+    </section>
   </div>
 
   <%= turbo_frame_tag "inspector", class: "block shrink-0 space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
