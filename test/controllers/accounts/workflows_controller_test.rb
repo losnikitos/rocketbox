@@ -97,4 +97,60 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to workflows_url(account: admin.id)
   end
+
+  test "play on a start folder runs the draft from its newest media and run mode lists the steps" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Play")
+    media = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+    workflow.edges.create!(from: folder, to: step)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
+    assert_select "a[data-id=?] button[form=workflow_play]", step.id.to_s, count: 0
+    assert_select "[aria-label=Palette]"
+
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
+    run = workflow.runs.sole
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
+
+    follow_redirect!
+    assert_select "nav[aria-label=Runs] a[aria-current=page]", "Draft"
+    assert_select "section[aria-label='Run steps'] tbody tr", 1 do
+      assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
+      assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
+    end
+    assert_select "[aria-label=Palette]", 0
+  end
+
+  test "a folder's media is added from the inspector as a source that only feeds steps" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "One photo")
+    media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+
+    get workflow_url(workflow, account: admin.id, node: folder.id)
+    assert_select "ul[aria-label=Media] li[draggable=true] button[form=workflow_add][name=?][value=?]", "workflow[nodes_attributes][0][library_media_id]", media.id.to_s
+
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { library_media_id: media.id, x: 60, y: 300 } } } }
+    source = workflow.nodes.reload.last
+    assert_equal media, source.library_media
+
+    connect = ->(from, to) { patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { from_id: from.id, to_id: to.id } } } } }
+    connect.(source, step)
+    connect.(step, source)
+    assert_response :unprocessable_entity
+    assert_select "[role=alert] li", "A media only feeds transformations; nothing connects into it."
+    assert_equal [ [ source.id, step.id ] ], workflow.edges.reload.map { [ it.from_id, it.to_id ] }
+
+    get workflow_url(workflow, account: admin.id, node: source.id)
+    assert_select "a[data-id=?][data-source][aria-current=true]", source.id.to_s
+    assert_select "turbo-frame#inspector a[href^=?]", library_item_path(media), text: "Open in library"
+
+    media.destroy!
+    assert_equal [ folder, step ], workflow.nodes.reload.to_a
+    assert_equal 0, workflow.edges.count
+  end
 end

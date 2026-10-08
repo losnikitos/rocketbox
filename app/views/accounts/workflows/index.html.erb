@@ -13,9 +13,11 @@
         <div class="min-w-0 flex-1 space-y-1">
           <%= link_to workflow.name, workflow_path(workflow), class: "block truncate text-sm font-semibold text-ink-900 after:absolute after:inset-0" %>
           <p class="flex flex-wrap gap-x-3 text-xs text-ink-500">
-            <% steps, folders = workflow.nodes.partition(&:step?) %>
-            <span><%= pluralize(folders.size, "folder") %></span>
-            <span><%= pluralize(steps.size, "step") %></span>
+            <span><%= pluralize(workflow.nodes.count(&:folder_id), "folder") %></span>
+            <% if (media = workflow.nodes.count(&:library_media_id)).positive? %>
+              <span><%= media %> media</span>
+            <% end %>
+            <span><%= pluralize(workflow.nodes.count(&:step?), "step") %></span>
           </p>
         </div>
       </li>

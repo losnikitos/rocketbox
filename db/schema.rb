@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_160000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -443,14 +443,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
     t.integer "style_id"
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
-    t.integer "workflow_id"
+    t.integer "workflow_node_id"
+    t.integer "workflow_run_id"
     t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id", unique: true
     t.index ["recipe_id"], name: "index_transformation_runs_on_recipe_id"
     t.index ["review_id"], name: "index_transformation_runs_on_review_id"
     t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
-    t.index ["workflow_id"], name: "index_transformation_runs_on_workflow_id"
+    t.index ["workflow_node_id"], name: "index_transformation_runs_on_workflow_node_id"
+    t.index ["workflow_run_id"], name: "index_transformation_runs_on_workflow_run_id"
   end
 
   create_table "transformations", force: :cascade do |t|
@@ -510,6 +512,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
   create_table "workflow_nodes", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "folder_id"
+    t.integer "library_media_id"
     t.integer "tag_id"
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
@@ -517,9 +520,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
     t.integer "x", default: 0, null: false
     t.integer "y", default: 0, null: false
     t.index ["folder_id"], name: "index_workflow_nodes_on_folder_id"
+    t.index ["library_media_id"], name: "index_workflow_nodes_on_library_media_id"
     t.index ["tag_id"], name: "index_workflow_nodes_on_tag_id"
     t.index ["transformation_id"], name: "index_workflow_nodes_on_transformation_id"
     t.index ["workflow_id"], name: "index_workflow_nodes_on_workflow_id"
+  end
+
+  create_table "workflow_runs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.string "name", default: "Draft", null: false
+    t.datetime "updated_at", null: false
+    t.integer "workflow_id", null: false
+    t.index ["workflow_id"], name: "index_workflow_runs_on_workflow_id"
   end
 
   create_table "workflows", force: :cascade do |t|
@@ -561,13 +574,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
   add_foreign_key "transformation_runs", "shots", on_delete: :nullify
   add_foreign_key "transformation_runs", "styles", on_delete: :nullify
   add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
-  add_foreign_key "transformation_runs", "workflows", on_delete: :nullify
+  add_foreign_key "transformation_runs", "workflow_nodes", on_delete: :nullify
+  add_foreign_key "transformation_runs", "workflow_runs", on_delete: :cascade
   add_foreign_key "transformations", "styles", on_delete: :nullify
   add_foreign_key "workflow_edges", "workflow_nodes", column: "from_id", on_delete: :cascade
   add_foreign_key "workflow_edges", "workflow_nodes", column: "to_id", on_delete: :cascade
   add_foreign_key "workflow_edges", "workflows", on_delete: :cascade
   add_foreign_key "workflow_nodes", "folders"
+  add_foreign_key "workflow_nodes", "library_media", on_delete: :cascade
   add_foreign_key "workflow_nodes", "tags", on_delete: :nullify
   add_foreign_key "workflow_nodes", "transformations"
   add_foreign_key "workflow_nodes", "workflows", on_delete: :cascade
+  add_foreign_key "workflow_runs", "workflows", on_delete: :cascade
 end

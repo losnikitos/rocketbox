@@ -1,0 +1,17 @@
+<%# locals: (id:, trigger_class:) %>
+<%# Render as a layout: the block is the trigger's content. The type is picked here, as it's fixed once created. %>
+<button type="button" popovertarget="<%= id %>" style="anchor-name: --<%= id %>" class="<%= trigger_class %>"><%= yield %></button>
+<div id="<%= id %>" popover style="position-anchor: --<%= id %>"
+     class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] right-[calc(anchor(right))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] w-lg rounded-lg border border-ink-900/15 bg-white p-1 shadow-lg">
+  <% Transformation::Type.all.group_by(&:group).each do |group, types| %>
+    <section aria-label="<%= group.label %>" class="grid grid-cols-4 gap-2 px-2 py-1">
+      <h3 class="col-span-full pt-1 text-xs font-semibold text-ink-500"><%= group.label %></h3>
+      <% types.each do |type| %>
+        <%= link_to new_transformation_path(transformation: { kind: type.slug }), class: "flex min-w-0 flex-col gap-1 rounded-lg p-1.5 text-sm text-ink-900 hover:bg-ink-900/5 focus-visible:bg-ink-900/5" do %>
+          <%= image_tag type.cover, alt: "", class: "aspect-2/3 w-full rounded-md object-cover" %>
+          <span class="truncate font-medium"><%= type.label %></span>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

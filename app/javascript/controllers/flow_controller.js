@@ -5,7 +5,7 @@ import dagre from "@dagrejs/dagre"
 // Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
 // arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
-// centre) and the canvas pinch-zoomed; zoom and scroll survive reloads of the page.
+// centre) and the canvas pinch-zoomed or dragged to pan; zoom and scroll survive reloads of the page.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too.
 export default class extends Controller {
@@ -20,8 +20,8 @@ export default class extends Controller {
     // Edges attach at the middle of the node's first child (a folder's icon, a recipe's whole box), not the label below,
     // or, coming in, at its [data-flow-input] ports if it has them.
     this.nodeTargets.forEach(el => {
-      const anchor = el.firstElementChild.offsetHeight / 2, handle = el.querySelector("[data-flow-handle]")
-      if (handle) handle.style.top = `${anchor}px`
+      const anchor = el.firstElementChild.offsetHeight / 2
+      el.querySelectorAll("[data-flow-handle], [data-flow-play]").forEach(it => it.style.top = `${anchor}px`)
       // Ports sit in a column flush with the node's top.
       const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
       g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
@@ -73,6 +73,33 @@ export default class extends Controller {
   }
 
   get key() { return `flow:${location.pathname}` }
+
+  // A press on the empty canvas (not a node, an edge or the scrollbars) drags the view around.
+  pan(event) {
+    if (event.button !== 0 || !this.canvasTarget.contains(event.target) || event.target.closest("[data-flow-target~='node'], [data-v]")) return
+    this.dragged = false
+    this.panning = { x: event.clientX, y: event.clientY, moved: false }
+    this.element.setPointerCapture(event.pointerId)
+  }
+
+  slide(event) {
+    const p = this.panning
+    if (!p) return
+    const dx = event.clientX - p.x, dy = event.clientY - p.y
+    if (!p.moved && Math.hypot(dx, dy) < 4) return
+    p.moved = true
+    this.element.scrollLeft -= dx
+    this.element.scrollTop -= dy
+    p.x = event.clientX
+    p.y = event.clientY
+  }
+
+  // A pan ends in a click on the canvas; don't clear the selection.
+  stop() {
+    if (!this.panning) return
+    this.dragged = this.panning.moved
+    this.panning = null
+  }
 
   grab(event) {
     if (event.button !== 0) return
@@ -189,12 +216,13 @@ export default class extends Controller {
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
-  // end, and not connected that way already.
+  // end, no arrow into a source (data-source), and not connected that way already.
   droppable({ clientX, clientY }) {
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
     const g = this.graph, { fixed, side } = this.linking, [v, w] = side > 0 ? [fixed, el.dataset.id] : [el.dataset.id, fixed]
-    if (v === w || g.hasEdge(v, w) || !("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
+    if (v === w || g.hasEdge(v, w) || "source" in g.node(w).el.dataset) return
+    if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
     return g.node(el.dataset.id)
   }
 

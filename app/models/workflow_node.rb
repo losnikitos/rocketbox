@@ -1,17 +1,24 @@
 # frozen_string_literal: true
 
-# A workflow's folder or transformation step, placed at x, y (its centre) on the canvas. Steps point at shared
+# A workflow's folder, media or transformation step, placed at x, y (its centre) on the canvas. Steps point at shared
 # transformations. A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
-# A folder with a tag holds only its media with that tag.
+# A folder with a tag holds only its media with that tag. A media is a source that always gives that one media.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow
   belongs_to :folder, optional: true
+  belongs_to :library_media, optional: true
   belongs_to :transformation, optional: true
   belongs_to :tag, optional: true
 
-  validate { errors.add(:base, "Pick a folder or a transformation.") unless folder.nil? ^ transformation.nil? }
-  validate { errors.add(:tag, "only filters a folder") if tag && step? }
+  validate { errors.add(:base, "Pick a folder, a media or a transformation.") unless [ folder, library_media, transformation ].compact.one? }
+  validate { errors.add(:tag, "only filters a folder") if tag && !folder }
 
   def step? = transformation_id.present?
-  def label = step? ? transformation&.name : [ folder&.path, tag && "##{tag.name}" ].compact.join(" ")
+
+  def label
+    if step? then transformation&.name
+    elsif (media = library_media) then media.file.attached? ? media.file.filename.to_s : media.kind.humanize
+    else [ folder&.path, tag && "##{tag.name}" ].compact.join(" ")
+    end
+  end
 end

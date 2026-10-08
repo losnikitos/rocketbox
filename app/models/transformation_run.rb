@@ -2,7 +2,7 @@
 
 # A transformation applied to library media, e.g. each recipe input's count from its folder. The result lands in the
 # given folder, created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. `recipe` is the one it ran for, if any.
+# transformation's type makes it. `recipe` is the one it ran for, if any, or `workflow_run` and its step `workflow_node`.
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
@@ -17,6 +17,8 @@ class TransformationRun < ApplicationRecord
   belongs_to :shot, optional: true
   belongs_to :style, optional: true
   belongs_to :review, optional: true
+  belongs_to :workflow_run, optional: true
+  belongs_to :workflow_node, optional: true
   belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :transformation_run
   has_many :inputs, -> { order(:position) }, class_name: "TransformationRunInput", inverse_of: :transformation_run, dependent: :delete_all
 
@@ -35,6 +37,10 @@ class TransformationRun < ApplicationRecord
       partial: "accounts/recipes/made", locals: { media: generated_media }
   }, if: :saved_change_to_status?
   after_update_commit :broadcast_refresh, if: :saved_change_to_status?
+  after_update_commit -> {
+    workflow_run.advance!(workflow_node, generated_media.user) if complete? && workflow_node
+    workflow_run.broadcast_refresh_later
+  }, if: -> { workflow_run && saved_change_to_status? }
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 

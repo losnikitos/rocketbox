@@ -1,8 +1,9 @@
 <% content_for(:title, "Transformations — Rocketbox") %>
 <% content_for :header_actions do %>
-  <%= link_to new_transformation_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+  <%= render layout: "accounts/transformations/new_menu", locals: { id: "new-transformation-menu", trigger_class: "rb-btn-ghost-on-light cursor-pointer gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" } do %>
     <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
     Add transformation
+    <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
   <% end %>
 <% end %>
 

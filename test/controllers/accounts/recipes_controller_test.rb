@@ -40,16 +40,25 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name='recipe[output_folder_id]'][value=?]", folders(:ready).id.to_s
     assert_select "label:has(input[type=file][name='recipe[example]'][accept='image/*']) img[src*='a.jpg']"
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(kind: "generate_video", output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], example: image("b.jpg")) }
+    assert_select "select[name='recipe[transformation_attributes][kind]']", count: 0
+    assert_select "input[name='recipe[transformation_attributes][kind]']", count: 0
+    assert_select "p", text: "Generation · Image"
+
+    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(output_folder_id: folders(:photobank_interior).id, inputs: [ input(:exterior) ], example: image("b.jpg")) }
     assert_redirected_to recipe_url(recipe, account: @admin.id)
-    assert recipe.reload.video?
-    assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.folder_ids, recipe.output_folder ]
+    assert_equal [ [ folders(:exterior).id ], folders(:photobank_interior) ], [ recipe.reload.folder_ids, recipe.output_folder ]
     assert_equal "b.jpg", recipe.example.filename.to_s
 
-    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(kind: "black_eyed_peas",
+    patch recipe_url(recipe), params: { commit: "save", recipe: recipe_attributes(kind: "generate_video") }
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Transformation kind can't be changed"
+    assert_equal "generate_image", recipe.reload.transformation.kind
+
+    reel = create_recipe(name: "Reel", kind: "black_eyed_peas", inputs: [ input(:photobank_interior) ])
+    patch recipe_url(reel), params: { commit: "save", recipe: recipe_attributes(
       layer_steps: [ { line1: "The", line2: "coffee" }, { line1: "", line2: "tools" }, { line1: "", line2: "" } ]) }
-    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" }, {} ], recipe.reload.transformation.layer_steps
-    get recipe_url(recipe, account: @admin.id)
+    assert_equal [ { "line1" => "The", "line2" => "coffee" }, { "line2" => "tools" }, {} ], reel.reload.transformation.layer_steps
+    get recipe_url(reel, account: @admin.id)
     assert_select "input[name='recipe[transformation_attributes][layer_steps][][line2]']", 5
 
     assert_difference -> { Recipe.count }, -1 do
@@ -105,7 +114,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main section h2", text: ApplicationController.helpers.upload_day_label(3.days.ago.to_date)
     assert_select "nav[aria-label='Secondary']", count: 0
 
-    old.transformation.update!(kind: "welcome")
+    old.transformation.update!(name: "Old reel")
     get recipes_url(account: @admin.id)
     assert_equal dom_id(old), css_select("main li[id^='recipe_']").first["id"]
   end
@@ -220,7 +229,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?]", library_item_path(run.generated_media, account: @admin.id)
     end
 
-    test "run sends the edited prompt and options for that run only; a type change needs a save" do
+    test "run sends the edited prompt and options for that run only; the type can't change" do
       patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ],
         recipe: recipe_attributes(body: "Make it snow.", options: { model: "grok-imagine-video", duration: "5" }) }
       run = @media.source_runs.sole
@@ -232,7 +241,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
         patch recipe_url(@recipe), params: { commit: "run", media_ids: [ @media.id ], recipe: recipe_attributes(kind: "generate_image") }
       end
       assert_response :unprocessable_entity
-      assert_select "[role=alert]", text: /Save to change the type/
+      assert_select "[role=alert]", text: /Transformation kind can't be changed/
       assert @recipe.reload.video?
     end
 
@@ -345,7 +354,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
       assert_select "input[name='media_ids[]'][value=?][checked]", ready.id.to_s
       assert_select "label:has(input[type=radio][name=review_id][value=?][checked])", review.id.to_s, text: /Dana K\.\s+Best fade in town/
       assert_select "section[aria-label=Layer] a[href=?]", layer_path("review", account: @admin.id), text: "Preview"
-      assert_select "select[name='recipe[transformation_attributes][kind]'] option[value=review][selected]"
+      assert_select "p", text: recipe.type_label
 
       assert_difference -> { TransformationRun.count } => 1, -> { SmmPost.count } => 0 do
         assert_enqueued_with(job: GenerateJob) do
@@ -358,7 +367,7 @@ class Accounts::RecipesControllerTest < ActionDispatch::IntegrationTest
 
       patch recipe_url(recipe), params: { commit: "run", media_ids: [ ready.id ], recipe: recipe_attributes(kind: "daily") }
       assert_response :unprocessable_entity
-      assert_select "[role=alert]", text: /Save to change the type/
+      assert_select "[role=alert]", text: /Transformation kind can't be changed/
     end
 
     test "a scripted type previews its layer and original reel, served to admins only for known types" do

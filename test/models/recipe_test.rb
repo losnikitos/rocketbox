@@ -235,13 +235,17 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal [ prompts.first, style ], [ run.reload.prompt, run.style ]
   end
 
-  test "switching type clears the inputs the new type doesn't take" do
+  test "a type drops the inputs it doesn't take, and is fixed once saved" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @recipe.update!(transformation_attributes: { kind: "review", style:, shot_group: "Daily" }, inputs: [ input(:photobank_interior) ])
-    assert_equal [ nil, nil, true, "review" ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer.slug ]
+    review = create_recipe(name: "Reviews", kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    assert_equal [ nil, nil, true, "review" ], [ review.style, review.shot_group, review.takes_review?, review.layer.slug ]
 
-    @recipe.update!(transformation_attributes: { kind: "generate_image", style:, shot_group: "Daily" })
-    assert_equal [ style, "Daily", false, nil ], [ @recipe.style, @recipe.shot_group, @recipe.takes_review?, @recipe.layer ]
+    image = create_recipe(name: "Collage", kind: "generate_image", body: "x", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    assert_equal [ style, "Daily", false, nil ], [ image.style, image.shot_group, image.takes_review?, image.layer ]
+
+    assert_not review.update(transformation_attributes: { kind: "generate_image" })
+    assert_includes review.errors.full_messages, "Transformation kind can't be changed"
+    assert_equal "review", review.transformation.reload.kind
   end
 
   test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do

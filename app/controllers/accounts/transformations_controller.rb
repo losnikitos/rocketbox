@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Accounts
-  # A transformation's page edits it inline; a type or model change resubmits the form as a GET to redraw it.
+  # A transformation's page edits it inline; a model change resubmits the form as a GET to redraw it.
+  # Its type is picked before `new` (`transformation[kind]`) and fixed from then on.
   class TransformationsController < ApplicationController
     layout "app"
 

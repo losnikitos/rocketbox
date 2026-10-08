@@ -28,10 +28,9 @@
       <%= f.text_field :name, required: true, class: tw_input_classes %>
     </div>
 
-    <%# A type change reloads the body, which follows the type. %>
-    <turbo-frame id="transformation_body" target="_top" class="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-2">
+    <div class="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-2">
       <section class="<%= island %>">
-        <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url: %>
+        <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url:, pick: false %>
       </section>
 
       <div class="space-y-6">
@@ -73,9 +72,7 @@
           </div>
         <% end %>
       </div>
-
-      <%= tag.button name: "refresh_type", formaction: refresh_url, formmethod: "get", formnovalidate: true, hidden: true, data: { turbo_frame: "transformation_body" } %>
-    </turbo-frame>
+    </div>
   <% end %>
 
   <% if transformation.persisted? %>

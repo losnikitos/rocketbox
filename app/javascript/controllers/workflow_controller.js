@@ -2,7 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), submits the arrows drawn
-// between them or moved to other nodes (flow:linked), and adds palette items dropped on the canvas there, or clicked, in the middle of the view.
+// between them or moved to other nodes (flow:linked), and adds palette items or a folder's media from the inspector
+// dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
   static targets = ["add", "x", "y", "connect", "edge", "from", "to", "tab", "remove", "item"]
   static values = { url: String }
@@ -50,8 +51,10 @@ export default class extends Controller {
       .forEach(item => item.hidden = !`${item.textContent} ${item.title}`.toLowerCase().includes(query))
   }
 
+  // Palette items are their own add buttons; a folder's media in the inspector holds one.
   pick(event) {
-    this.picked = event.currentTarget
+    const item = event.currentTarget
+    this.picked = item.form ? item : item.querySelector("[form='workflow_add']")
     event.dataTransfer.setData("text/plain", this.picked.textContent.trim())
     event.dataTransfer.effectAllowed = "copy"
   }

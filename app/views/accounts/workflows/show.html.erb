@@ -17,9 +17,29 @@
   </nav>
 <% end %>
 
-<div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= workflow_path(@workflow) %>"
+<% mode = "rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
+<% pill = "rounded-full border border-ink-900/15 px-3 py-1 text-xs font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:border-ink-900 aria-[current=page]:text-ink-900" %>
+<% thumb = "aspect-2/3 w-10 rounded-md object-cover" %>
+<% here = workflow_path(@workflow, run: @run&.id) %>
+
+<div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
      data-action="flow:moved->workflow#move flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
   <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
+    <div class="flex shrink-0 items-center gap-1 border-b border-ink-900/10 px-3 py-2">
+      <nav aria-label="Mode" class="flex gap-1">
+        <%= link_to "Edit", workflow_path(@workflow), aria: { current: ("page" unless @run) }, class: mode %>
+        <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.draft_run).id), aria: { current: ("page" if @run) }, class: mode %>
+      </nav>
+      <% if @run %>
+        <span class="mx-2 h-5 w-px bg-ink-900/10" aria-hidden="true"></span>
+        <nav aria-label="Runs" class="flex gap-1.5">
+          <% @workflow.runs.each do |run| %>
+            <%= link_to run.name, workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, class: pill %>
+          <% end %>
+        </nav>
+      <% end %>
+    </div>
+
     <% if @workflow.errors.any? %>
       <div class="<%= tw_alert_error_classes %> m-3" role="alert">
         <ul class="list-inside list-disc">
@@ -49,51 +69,114 @@
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
     <% end %>
+    <%= form_with url: run_workflow_path(@workflow), id: "workflow_play", class: "hidden" do %><% end %>
 
-    <div aria-label="Palette" role="group" class="flex h-56 shrink-0 border-t border-ink-900/10">
-      <div role="tablist" aria-orientation="vertical" class="flex w-40 shrink-0 flex-col gap-1 border-r border-ink-900/10 p-2">
-        <% { "folders" => "Folders", "transformations" => "Transformations" }.each_with_index do |(key, label), index| %>
-          <button type="button" role="tab" id="palette_<%= key %>_tab" aria-controls="palette_<%= key %>" aria-selected="<%= index.zero? %>"
-                  data-workflow-target="tab" data-action="workflow#tab" class="<%= tab %>"><%= label %></button>
+    <% if @run %>
+      <%= turbo_stream_from @run %>
+      <section aria-label="Run steps" class="h-56 shrink-0 overflow-y-auto border-t border-ink-900/10">
+        <% if @run.error %>
+          <p class="<%= tw_alert_error_classes %> m-3" role="alert"><%= @run.error %></p>
         <% end %>
-      </div>
-      <div role="tabpanel" id="palette_folders" aria-labelledby="palette_folders_tab" class="<%= panel %>">
-        <label class="relative mx-3 mt-2 w-fit">
-          <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
-          <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search folders" },
-                data: { action: "input->workflow#filter" }, class: search %>
-        </label>
-        <div class="<%= tiles %>">
-          <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
-            <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
-                  title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-              <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
-              <span class="line-clamp-2"><%= folder.path %></span>
-            <% end %>
+        <% if @steps.any? %>
+          <table class="w-full text-left text-sm">
+            <thead class="sticky top-0 z-10 bg-white text-xs text-ink-500">
+              <tr>
+                <th class="px-3 py-2 font-medium">Step</th>
+                <th class="px-3 py-2 font-medium">Status</th>
+                <th class="px-3 py-2 font-medium">Inputs</th>
+                <th class="px-3 py-2 font-medium">Output</th>
+                <th class="px-3 py-2 text-right font-medium">Time</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-ink-900/10">
+              <% @steps.each do |step| %>
+                <tr>
+                  <td class="px-3 py-2 font-medium text-ink-900">
+                    <% if (node = step.workflow_node) %>
+                      <%= link_to node.label, workflow_path(@workflow, run: @run.id, node: node.id), class: "hover:underline" %>
+                    <% else %>
+                      <%= step.transformation&.name || "Removed step" %>
+                    <% end %>
+                  </td>
+                  <td class="px-3 py-2">
+                    <span title="<%= step.error %>" class="rounded-full px-2 py-0.5 text-xs font-medium <%= { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }[step.status] %>">
+                      <%= step.status.humanize %>
+                    </span>
+                  </td>
+                  <% [ step.source_media, [ step.generated_media ] ].each do |media_list| %>
+                    <td class="px-3 py-2">
+                      <div class="flex gap-1.5">
+                        <% media_list.each do |media| %>
+                          <% if media.file.attached? %>
+                            <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="Preview" title="Preview"
+                                    class="block cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
+                              <%= render "accounts/library/file", media:, play: true, css: thumb %>
+                            </button>
+                            <%= render "accounts/library/quick_view", media:, button: false %>
+                          <% else %>
+                            <%= render "accounts/library/file", media:, css: thumb %>
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </td>
+                  <% end %>
+                  <td class="px-3 py-2 text-right text-ink-600 tabular-nums">
+                    <%= step.running? ? "…" : "#{number_with_precision(step.updated_at - step.created_at, precision: 1)} s" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% elsif !@run.error %>
+          <p class="flex h-full items-center justify-center p-6 text-center text-sm text-ink-500">Press play on a start folder to run the workflow.</p>
+        <% end %>
+      </section>
+    <% else %>
+      <div aria-label="Palette" role="group" class="flex h-56 shrink-0 border-t border-ink-900/10">
+        <div role="tablist" aria-orientation="vertical" class="flex w-40 shrink-0 flex-col gap-1 border-r border-ink-900/10 p-2">
+          <% { "folders" => "Folders", "transformations" => "Transformations" }.each_with_index do |(key, label), index| %>
+            <button type="button" role="tab" id="palette_<%= key %>_tab" aria-controls="palette_<%= key %>" aria-selected="<%= index.zero? %>"
+                    data-workflow-target="tab" data-action="workflow#tab" class="<%= tab %>"><%= label %></button>
           <% end %>
         </div>
-      </div>
-      <div role="tabpanel" id="palette_transformations" aria-labelledby="palette_transformations_tab" hidden class="<%= panel %>">
-        <label class="relative mx-3 mt-2 w-fit">
-          <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
-          <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search transformations" },
-                data: { action: "input->workflow#filter" }, class: search %>
-        </label>
-        <div class="<%= tiles %>">
-          <% Transformation.order(updated_at: :desc).each do |transformation| %>
-            <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_id]", value: transformation.id, draggable: "true",
-                  title: transformation.body.presence || transformation.name, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-              <%= image_tag transformation.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
-              <span class="line-clamp-2"><%= transformation.name %></span>
+        <div role="tabpanel" id="palette_folders" aria-labelledby="palette_folders_tab" class="<%= panel %>">
+          <label class="relative mx-3 mt-2 w-fit">
+            <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
+            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search folders" },
+                  data: { action: "input->workflow#filter" }, class: search %>
+          </label>
+          <div class="<%= tiles %>">
+            <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
+              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
+                    title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
+                <span class="line-clamp-2"><%= folder.path %></span>
+              <% end %>
             <% end %>
-          <% end %>
-          <%= link_to new_transformation_path, class: "#{tile} cursor-pointer border-dashed text-ink-600" do %>
-            <%= heroicon "plus", options: { class: "size-7", "aria-hidden": true } %>
-            New transformation
-          <% end %>
+          </div>
+        </div>
+        <div role="tabpanel" id="palette_transformations" aria-labelledby="palette_transformations_tab" hidden class="<%= panel %>">
+          <label class="relative mx-3 mt-2 w-fit">
+            <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
+            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search transformations" },
+                  data: { action: "input->workflow#filter" }, class: search %>
+          </label>
+          <div class="<%= tiles %>">
+            <% Transformation.order(updated_at: :desc).each do |transformation| %>
+              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_id]", value: transformation.id, draggable: "true",
+                    title: transformation.body.presence || transformation.name, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                <%= image_tag transformation.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
+                <span class="line-clamp-2"><%= transformation.name %></span>
+              <% end %>
+            <% end %>
+            <%= render layout: "accounts/transformations/new_menu", locals: { id: "palette-new-transformation-menu", trigger_class: "#{tile} cursor-pointer border-dashed text-ink-600" } do %>
+              <%= heroicon "plus", options: { class: "size-7", "aria-hidden": true } %>
+              New transformation
+            <% end %>
+          </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </div>
 
   <%= turbo_frame_tag "inspector", class: "block shrink-0 space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
@@ -103,7 +186,7 @@
           <p class="text-xs text-ink-500">Connection</p>
           <h2 class="truncate text-sm font-semibold text-ink-900"><%= edge.from.label %> → <%= edge.to.label %></h2>
         </div>
-        <%= link_to workflow_path(@workflow), data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+        <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
         <% end %>
       </header>
@@ -114,18 +197,20 @@
     <% elsif (node = @selected) %>
       <header class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : "Folder" %></p>
+          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.library_media ? "Media" : "Folder" %></p>
           <h2 class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
         </div>
-        <%= link_to workflow_path(@workflow), data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+        <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
         <% end %>
       </header>
 
       <div class="flex flex-wrap items-center gap-2">
-        <% unless node.step? %>
+        <% if node.folder %>
           <%= link_to "Open in library", library_folders_path(*[ node.folder.parent&.slug, node.folder.slug ].compact), data: top,
                 class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
+        <% elsif node.library_media %>
+          <%= link_to "Open in library", library_item_path(node.library_media), data: top, class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
         <% end %>
         <%= button_to "Remove from workflow", workflow_path(@workflow), method: :patch, form: { data: top },
               data: { workflow_target: "remove" }, aria: { keyshortcuts: "Delete" },
@@ -137,6 +222,13 @@
         <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block border-t border-ink-900/10 pt-4" do %>
           <p class="text-sm text-ink-500">Loading…</p>
         <% end %>
+      <% elsif (media = node.library_media) %>
+        <div class="border-t border-ink-900/10 pt-4">
+          <div class="group relative w-40">
+            <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+            <%= render "accounts/library/quick_view", media: %>
+          </div>
+        </div>
       <% else %>
         <% if Tag.exists? %>
           <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'hidden' && this.requestSubmit()" } do %>
@@ -150,11 +242,16 @@
         <% if @folder_media.any? %>
           <ul aria-label="Media" class="grid grid-cols-3 gap-2 border-t border-ink-900/10 pt-4">
             <% @folder_media.each do |media| %>
-              <li class="group relative">
+              <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
                 <%= link_to library_item_path(media), data: top, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
                   <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
                 <% end %>
                 <%= render "accounts/library/quick_view", media: %>
+                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id,
+                      title: "Add to canvas", aria: { label: "Add to canvas" },
+                      class: "absolute top-1.5 right-1.5 cursor-pointer rounded-lg bg-white/90 p-1 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket" do %>
+                  <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+                <% end %>
               </li>
             <% end %>
           </ul>
@@ -172,9 +269,14 @@
         <%= f.submit "Rename", class: button %>
       <% end %>
       <p class="text-sm text-ink-500">
-        Drag folders and transformations from the palette onto the canvas, or click one to add it. Drag from a node's dot to
+        Drag folders and transformations from the palette onto the canvas, or click one to add it. A folder's media, shown when
+        it's selected, can be dragged on too: each always gives that one media to the transformations it feeds. Drag from a node's dot to
         another node to connect them, and click a node or connection to edit it, or press Delete to remove it. Click the canvas itself to deselect. A selected
         connection's ends can be dragged to other nodes.
+      </p>
+      <p class="text-sm text-ink-500">
+        Press play on a start folder to run its newest media through the steps it feeds. Run shows each step's inputs,
+        output and time.
       </p>
       <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },
             class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
