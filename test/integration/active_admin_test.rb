@@ -123,7 +123,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     folder = workflow.nodes.create!(folder: folders(:interior), x: 12, y: 34)
     step = workflow.nodes.create!(transformation: transformations(:cinematic))
     workflow.edges.create!(from: folder, to: step)
-    workflow.draft_run
+    workflow.latest_run
 
     get "/app/workflows/#{workflow.id}?account=#{admin.id}", headers: @ua
     assert_select "turbo-frame#inspector a[href^='/admin/workflows/#{workflow.id}']"
@@ -133,7 +133,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "td", text: "##{folder.id} #{folder.label}"
     assert_select "a[href='/admin/transformations/#{step.transformation_id}']"
-    assert_select "td", text: "Draft"
+    assert_select "td", text: "Run 1"
   end
 
   test "admin manages tags and tags media" do

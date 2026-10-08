@@ -13,7 +13,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
       { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") }, { folder: folders(:photobank_logo), tag: tags(:after) } ]
       .map { workflow.nodes.create!(it) }
     [ [ folder, generate ], [ generate, crop ], [ crop, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
-    run = workflow.draft_run
+    run = workflow.latest_run
 
     run.start!(folder, user)
     first = run.step_runs.sole
@@ -66,7 +66,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
       { transformation_attributes: { kind: "smart_crop" } }, { transformation_attributes: { kind: "gm_visuals" } } ].map { workflow.nodes.create!(it) }
     assert_not workflow.edges.new(from: interior, to: reel).valid?
     [ [ interior, reel, "interior" ], [ exterior, crop, nil ], [ crop, reel, "exterior" ] ].each { |from, to, slot| workflow.edges.create!(from:, to:, slot:) }
-    run = workflow.draft_run
+    run = workflow.latest_run
     complete = ->(step_run) { step_run.generated_media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg") && step_run.update!(status: "complete") }
 
     run.start!(exterior, user)
@@ -92,7 +92,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     folder = workflow.nodes.create!(folder: folders(:interior))
     step = workflow.nodes.create!(transformation_attributes: { kind: "generate_image" })
     workflow.edges.create!(from: folder, to: step)
-    run = workflow.draft_run
+    run = workflow.latest_run
 
     run.start!(folder, user)
     assert_equal "#{Transformation::GenerateImage.label}: Add a prompt.", run.reload.error

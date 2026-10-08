@@ -106,7 +106,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflows_url(account: admin.id)
   end
 
-  test "play on a start folder runs the draft from its newest media and run mode lists the steps" do
+  test "play on a start folder runs the latest run from its newest media and run mode lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
@@ -125,7 +125,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id)
 
     follow_redirect!
-    assert_select "nav[aria-label=Runs] a[aria-current=page]", "Draft"
+    assert_select "select[aria-label=Run] option[selected]", /\ARun 1 · /
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
     assert_select "section[aria-label='Run steps'] tbody tr", 1 do
@@ -161,7 +161,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     folder, generate, crop, again = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) },
       *2.times.map { { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") } } ].map { workflow.nodes.create!(it) }
     workflow.edges.create!(from: folder, to: generate)
-    run = workflow.draft_run
+    run = workflow.latest_run
     run.start!(folder, admin)
     made = run.step_runs.sole
     made.generated_media.file.attach(io: StringIO.new("mp4"), filename: "a.mp4", content_type: "video/mp4")
@@ -181,7 +181,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
   end
 
-  test "play on a media node runs the draft from that media" do
+  test "play on a media node runs the latest run from that media" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play media")
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
@@ -194,6 +194,46 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: source.id } }
     assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
+  end
+
+  test "new run adds a blank run that play runs, the select switches runs, and a run is deleted once nothing in it is running" do
+    admin = sign_in_as(users(:admin_user))
+    admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Runs")
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation: transformations(:cinematic))
+    workflow.edges.create!(from: folder, to: step)
+    first = workflow.latest_run
+    first.start!(folder, admin)
+
+    assert_difference -> { workflow.runs.count } do
+      post workflow_runs_url(workflow, account: admin.id)
+    end
+    second = workflow.runs.last
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)
+    assert_equal "Run 2", second.name
+
+    follow_redirect!
+    assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
+    assert_select "select[aria-label=Run] option", 2 do |options|
+      assert_equal [ workflow_path(workflow, run: second.id), workflow_path(workflow, run: first.id) ], options.map { it["value"] }
+    end
+    assert_select "select[aria-label=Run] option[selected][value=?]", workflow_path(workflow, run: second.id)
+
+    post run_workflow_url(workflow, account: admin.id, run: second.id), params: { node_id: folder.id }
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)
+    assert_equal [ 1, 1 ], [ first, second ].map { it.step_runs.count }
+
+    assert_no_difference -> { workflow.runs.count } do
+      delete workflow_run_url(workflow, first, account: admin.id)
+    end
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: first.id)
+
+    first.step_runs.sole.update!(status: "failed")
+    assert_difference -> { workflow.runs.count } => -1, -> { TransformationRun.count } => -1, -> { LibraryMedia.count } => 0 do
+      delete workflow_run_url(workflow, first, account: admin.id)
+    end
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: second.id)
   end
 
   test "alt-dragging a step copies it with its own transformation and no connections" do
