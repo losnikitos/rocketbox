@@ -4,7 +4,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), submits the arrows drawn
 // between them or moved to other nodes (flow:linked), and adds palette items dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "tab", "remove"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "tab", "remove", "item"]
   static values = { url: String }
 
   async move({ detail: { id, x, y } }) {
@@ -41,6 +41,13 @@ export default class extends Controller {
       tab.setAttribute("aria-selected", tab === currentTarget)
       document.getElementById(tab.getAttribute("aria-controls")).hidden = tab !== currentTarget
     })
+  }
+
+  // Items in the search's own tab whose name or title (a folder's path, a transformation's prompt) holds the query.
+  filter({ target }) {
+    const query = target.value.trim().toLowerCase(), panel = target.closest("[role='tabpanel']")
+    this.itemTargets.filter(item => panel.contains(item))
+      .forEach(item => item.hidden = !`${item.textContent} ${item.title}`.toLowerCase().includes(query))
   }
 
   pick(event) {

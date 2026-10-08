@@ -1,0 +1,18 @@
+<%# locals: (media:) %>
+<%# Hover "Quick view" button that opens the media in a lightbox; the parent needs `group relative`. %>
+<% if media.file.attached? %>
+  <% quick_view = dom_id(media, :quick_view) %>
+  <button type="button" popovertarget="<%= quick_view %>"
+          class="absolute inset-x-1.5 bottom-1.5 flex cursor-zoom-in items-center justify-center gap-1.5 rounded-lg bg-white/90 p-1.5 text-xs font-medium text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket">
+    <%= heroicon "eye", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Quick view
+  </button>
+  <div id="<%= quick_view %>" popover class="size-full bg-black/90 p-4"
+       ontoggle="const v = this.querySelector('video'); if (v) event.newState == 'open' ? v.play().catch(() => {}) : v.pause()">
+    <button type="button" popovertarget="<%= quick_view %>" popovertargetaction="hide" aria-label="Close" class="absolute inset-0 cursor-zoom-out"></button>
+    <%# Clicks pass through to the close button, except on video controls. %>
+    <div class="pointer-events-none relative flex size-full items-center justify-center [&_video]:pointer-events-auto">
+      <%= render "accounts/library/file", media:, controls: true, css: "max-h-full max-w-full" %>
+    </div>
+  </div>
+<% end %>
