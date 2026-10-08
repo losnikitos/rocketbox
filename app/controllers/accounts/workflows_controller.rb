@@ -2,8 +2,8 @@
 
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
-  # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's steps
-  # replace the palette. Play on a start folder (run) replays the draft run from it.
+  # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
+  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder (run) replays the draft run from it.
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -72,7 +72,7 @@ module Accounts
       # Saved nodes and edges only, so a rejected edit doesn't draw.
       def set_graph
         @run = @workflow.runs.find_by(id: params[:run])
-        @steps = @run.steps.includes(:workflow_node, :transformation, inputs: { library_media: { file_attachment: :blob } },
+        @step_runs = @run.step_runs.includes(:workflow_node, :transformation, inputs: { library_media: { file_attachment: :blob } },
           generated_media: { file_attachment: :blob }) if @run
         @graph_nodes = @workflow.nodes.select(&:persisted?)
         @graph_edges = @workflow.edges.select(&:persisted?)
@@ -82,6 +82,19 @@ module Accounts
           @folder_media = Current.account.library_media.where(folder: @selected.folder).with_attached_file
             .includes(:transformation_run).order(created_at: :desc)
           @folder_media = @folder_media.where(id: @selected.tag.library_media) if @selected.tag
+        end
+        # In run mode, what the selected node took and gave in the run: a step its step run's sources and result, a
+        # folder what the step runs feeding it made and what of it the step runs it feeds took (a media node only the latter).
+        if @run && @selected
+          @step_run = @step_runs.find { it.workflow_node_id == @selected.id }
+          linked = ->(from, to) { @graph_edges.any? { it.from_id == from && it.to_id == to } }
+          @run_inputs, @run_outputs = if @selected.step?
+            [ @step_run&.source_media.to_a, [ @step_run&.generated_media ].compact ]
+          else
+            [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:generated_media),
+              @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:source_media)
+                .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
+          end
         end
         # Start folders feed steps and nothing feeds them.
         @start_nodes = @graph_nodes.select { |node| node.folder && @graph_edges.any? { it.from_id == node.id } && @graph_edges.none? { it.to_id == node.id } }

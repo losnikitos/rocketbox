@@ -1,26 +1,26 @@
 # frozen_string_literal: true
 
-# One go of a workflow: each step it runs is a TransformationRun (its `steps`), started once every node feeding it gives
-# media. Played from a start folder, whose newest media feeds the steps downstream; a step starts the steps it feeds when
-# it completes. A step that can't start leaves its reason in `error`. For now each workflow has one, its draft, replayed
-# from scratch.
+# One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
+# feeding the step outputs media. Played from a start folder, whose newest media feeds the steps downstream; a step run
+# starts the steps its step feeds when it completes. A step that can't start leaves its reason in `error`. For now each
+# workflow has one, its draft, replayed from scratch.
 class WorkflowRun < ApplicationRecord
   belongs_to :workflow
-  has_many :steps, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
+  has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
 
-  # `node` is a start folder; `user` owns what the steps make. Drops what the last play made first.
+  # `node` is a start folder; `user` owns what the step runs make. Drops what the last play made first.
   def start!(node, user)
-    steps.includes(:generated_media).to_a.each { it.generated_media.destroy! }
+    step_runs.includes(:generated_media).to_a.each { it.generated_media.destroy! }
     update!(error: nil)
     advance!(node, user)
   end
 
-  # Starts the steps `node` feeds, directly or through a folder, that haven't run yet and whose inputs all give media.
+  # Starts the steps `node` feeds, directly or through a folder, that haven't run yet and whose inputs all output media.
   def advance!(node, user)
     with_lock do
       next_steps(node).each do |step|
-        next if steps.exists?(workflow_node: step)
-        media = edges.select { it.to_id == step.id }.map { give(it.from, user) }
+        next if step_runs.exists?(workflow_node: step)
+        media = edges.select { it.to_id == step.id }.map { output_of(it.from, user) }
         start_step(step, media, user) if media.all?
       end
     end
@@ -35,9 +35,10 @@ class WorkflowRun < ApplicationRecord
       (outs.select(&:step?) + outs.reject(&:step?).flat_map { |folder| edges.select { it.from_id == folder.id }.map(&:to) }).uniq
     end
 
-    # A folder gives its newest media (with its tag), a media itself, a step what it made in this run once complete.
-    def give(node, user)
-      if node.step? then steps.find_by(workflow_node: node, status: "complete")&.generated_media
+    # A node's output in this run: a folder its newest media (with its tag), a media itself, a step what its step run
+    # made once complete.
+    def output_of(node, user)
+      if node.step? then step_runs.find_by(workflow_node: node, status: "complete")&.generated_media
       elsif node.library_media then node.library_media
       else
         media = user.library_media.where(folder: node.folder)

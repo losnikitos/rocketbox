@@ -16,12 +16,12 @@ class WorkflowRunTest < ActiveSupport::TestCase
     run = workflow.draft_run
 
     run.start!(folder, user)
-    first = run.steps.sole
+    first = run.step_runs.sole
     assert_equal [ generate, [ newest ], folders(:ready) ], [ first.workflow_node, first.source_media, first.generated_media.folder ]
 
     first.generated_media.file.attach(io: StringIO.new("mp4"), filename: "a.mp4", content_type: "video/mp4")
     first.update!(status: "complete")
-    second = run.steps.reload.last
+    second = run.step_runs.reload.last
     assert_equal [ crop, [ first.generated_media ], folders(:photobank_logo), [ tags(:after) ] ],
       [ second.workflow_node, second.source_media, second.generated_media.folder, second.generated_media.tags.to_a ]
     assert_nil run.reload.error
@@ -29,6 +29,6 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_difference -> { LibraryMedia.count } => -1 do
       run.start!(folder, user)
     end
-    assert_equal [ generate ], run.steps.reload.map(&:workflow_node)
+    assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
   end
 end

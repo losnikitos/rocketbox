@@ -2,7 +2,7 @@
 
 # A transformation applied to library media, e.g. each recipe input's count from its folder. The result lands in the
 # given folder, created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. `recipe` is the one it ran for, if any, or `workflow_run` and its step `workflow_node`.
+# transformation's type makes it. `recipe` is the one it ran for, if any, or, as a step run, its `workflow_run` and step `workflow_node`.
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
@@ -45,6 +45,9 @@ class TransformationRun < ApplicationRecord
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
   def video? = transformation&.video?
+
+  # Seconds from start to finish; nil while running.
+  def duration = (updated_at - created_at unless running?)
 
   def inherited_options = transformation&.options
 

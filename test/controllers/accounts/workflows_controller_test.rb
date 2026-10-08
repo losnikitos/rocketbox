@@ -122,6 +122,18 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
     end
     assert_select "[aria-label=Palette]", 0
+
+    get workflow_url(workflow, account: admin.id, run: run.id, node: step.id)
+    assert_select "turbo-frame#inspector" do
+      assert_select "dl[aria-label=Stats] dd", text: "Running"
+      assert_select "section[aria-label=Inputs] button[popovertarget=?]", dom_id(media, :quick_view)
+      assert_select "section[aria-label=Outputs] p", 0
+      assert_select "button", text: "Remove from workflow", count: 0
+    end
+
+    get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
+    assert_select "turbo-frame#inspector section[aria-label=Inputs] p", "None in this run."
+    assert_select "turbo-frame#inspector section[aria-label=Outputs] button[popovertarget=?]", dom_id(media, :quick_view)
   end
 
   test "a folder's media is added from the inspector as a source that only feeds steps" do
