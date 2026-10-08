@@ -37,6 +37,7 @@ Run mode (`?run=`, [model](/app/models/workflow_run.rb)):
 - Each step node shows its step run's status as a corner badge (working, complete, failed), and its output as a thumbnail on the middle of each connection out of it, opening in a lightbox on click.
 - The bottom panel lists the step runs with their inputs, output, status and time; the inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) instead of its edit controls.
 - One draft run per workflow for now; the run pills switch between runs.
+- Switching between Edit and Run, or between runs, keeps the selected node or connection.
 
 ## Vocabulary
 

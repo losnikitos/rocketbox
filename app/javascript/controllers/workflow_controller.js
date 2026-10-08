@@ -44,6 +44,13 @@ export default class extends Controller {
     this.removeTarget.click()
   }
 
+  // Mode and run links keep the selected node or connection, which the inspector frame puts in the page's URL.
+  keep({ currentTarget: link }) {
+    const url = new URL(link.href), here = new URLSearchParams(location.search)
+    ;["node", "edge"].forEach(key => here.has(key) ? url.searchParams.set(key, here.get(key)) : url.searchParams.delete(key))
+    link.href = url
+  }
+
   tab({ currentTarget }) {
     this.tabTargets.forEach(tab => {
       tab.setAttribute("aria-selected", tab === currentTarget)

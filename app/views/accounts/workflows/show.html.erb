@@ -30,14 +30,14 @@
   <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
     <div class="flex shrink-0 items-center gap-1 border-b border-ink-900/10 px-3 py-2">
       <nav aria-label="Mode" class="flex gap-1">
-        <%= link_to "Edit", workflow_path(@workflow), aria: { current: ("page" unless @run) }, class: mode %>
-        <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.draft_run).id), aria: { current: ("page" if @run) }, class: mode %>
+        <%= link_to "Edit", workflow_path(@workflow), aria: { current: ("page" unless @run) }, data: { action: "workflow#keep" }, class: mode %>
+        <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.draft_run).id), aria: { current: ("page" if @run) }, data: { action: "workflow#keep" }, class: mode %>
       </nav>
       <% if @run %>
         <span class="mx-2 h-5 w-px bg-ink-900/10" aria-hidden="true"></span>
         <nav aria-label="Runs" class="flex gap-1.5">
           <% @workflow.runs.each do |run| %>
-            <%= link_to run.name, workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, class: pill %>
+            <%= link_to run.name, workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" }, class: pill %>
           <% end %>
         </nav>
       <% end %>
