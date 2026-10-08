@@ -117,4 +117,11 @@ module AppHelper
     end
     "#{bg} #{smm_post_status_text_class(status)}"
   end
+
+  # A workflow run's or step run's status: draft, running, complete or failed.
+  def run_status_pill_class(status)
+    color = { "draft" => "bg-ink-900/5 text-ink-600", "running" => "bg-signal-yellow/20 text-ink-700",
+              "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }[status.to_s]
+    "rounded-full px-2 py-0.5 text-xs font-medium #{color}"
+  end
 end

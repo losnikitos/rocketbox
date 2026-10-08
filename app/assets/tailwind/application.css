@@ -93,6 +93,11 @@
     outline-offset: 2px;
   }
 
+  /* iOS-style switch on a checkbox; give it role="switch". */
+  .rb-switch {
+    @apply relative h-6 w-10 shrink-0 cursor-pointer appearance-none rounded-full bg-ink-900/15 transition-colors checked:bg-signal-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket before:absolute before:top-0.5 before:left-0.5 before:size-5 before:rounded-full before:bg-white before:shadow-sm before:transition-transform checked:before:translate-x-4;
+  }
+
   .rb-text-link {
     @apply font-medium text-rocket hover:text-rocket-hover;
   }

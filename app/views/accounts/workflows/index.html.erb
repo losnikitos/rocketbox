@@ -7,19 +7,29 @@
 <% end %>
 
 <% if @workflows.any? %>
-  <ul class="divide-y divide-ink-900/10 rounded-2xl border border-ink-900/10 bg-white">
+  <ul class="space-y-3">
     <% @workflows.each do |workflow| %>
-      <li id="<%= dom_id(workflow) %>" class="relative flex items-center gap-4 p-3 transition hover:bg-ink-900/5">
+      <li id="<%= dom_id(workflow) %>" class="relative flex items-center gap-4 rounded-2xl border border-ink-900/10 bg-white px-4 py-3 transition hover:bg-ink-900/5">
         <div class="min-w-0 flex-1 space-y-1">
           <%= link_to workflow.name, workflow_path(workflow), class: "block truncate text-sm font-semibold text-ink-900 after:absolute after:inset-0" %>
-          <p class="flex flex-wrap gap-x-3 text-xs text-ink-500">
-            <span><%= pluralize(workflow.nodes.count(&:folder_id), "folder") %></span>
-            <% if (media = workflow.nodes.count(&:library_media_id)).positive? %>
-              <span><%= media %> media</span>
+          <%# Drafts don't count: opening a workflow always makes one. %>
+          <% runs = workflow.runs.reject(&:draft?) %>
+          <p class="flex flex-wrap items-center gap-x-3 text-xs text-ink-500">
+            <% if (last = runs.last) %>
+              <span><%= pluralize(runs.size, "run") %></span>
+              <%= tag.time "#{time_ago_in_words(last.updated_at)} ago", datetime: last.updated_at.iso8601, title: l(last.updated_at) %>
+              <% if (state = last.state) %><span class="<%= run_status_pill_class(state) %>"><%= state.humanize %></span><% end %>
+            <% else %>
+              <span>No runs yet</span>
             <% end %>
-            <span><%= pluralize(workflow.nodes.count(&:step?), "step") %></span>
           </p>
         </div>
+        <%= form_with model: workflow, html: { onchange: "this.requestSubmit()" }, class: "relative z-10" do |f| %>
+          <label title="Run each new media that lands in a start folder, on its own" class="flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700">
+            <%= f.check_box :autorun, id: dom_id(workflow, :autorun), role: "switch", class: "rb-switch" %>
+            Autorun
+          </label>
+        <% end %>
       </li>
     <% end %>
   </ul>

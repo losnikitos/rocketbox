@@ -1,6 +1,5 @@
 <% content_for(:title, "#{@workflow.name_was} — Rocketbox") %>
 <% content_for(:fit, "true") %>
-<% button = "rb-btn-primary shrink-0 px-3.5 py-2 text-sm" %>
 <% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 transition hover:bg-ink-900/5 active:cursor-grabbing" %>
 <% tab = "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900" %>
 <% tiles = "flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto p-3" %>
@@ -8,17 +7,27 @@
 <% search_icon = { class: "pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-ink-400", "aria-hidden": true } %>
 <% top = { turbo_frame: "_top" } %>
 
-<% content_for(:breadcrumbs) do %>
-  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
-    <%= link_to "Workflows", workflows_path, class: "underline underline-offset-2 hover:text-ink-900" %>
-    <span class="mx-1">/</span>
-    <span aria-current="page"><%= @workflow.name_was %></span>
-  </nav>
+<% content_for(:heading) do %>
+  <%= form_with model: @workflow, class: "min-w-0",
+        data: { controller: "autosave", action: "change->autosave#queue submit->autosave#submit" } do |f| %>
+    <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+      <%= link_to "Workflows", workflows_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    </nav>
+    <div class="flex min-w-0 items-center gap-3">
+      <h1 class="-ml-2 min-w-0 font-manrope text-xl font-bold tracking-tight sm:text-2xl">
+        <%= f.text_field :name, required: true, placeholder: "Workflow name", "aria-label": "Name",
+              class: "block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+      </h1>
+      <label title="Run each new media that lands in a start folder, on its own" class="flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700">
+        <%= f.check_box :autorun, role: "switch", class: "rb-switch" %>
+        Autorun
+      </label>
+    </div>
+  <% end %>
 <% end %>
+<% content_for(:header_actions) { render "shared/admin_links/workflow", workflow: @workflow } %>
 
 <% thumb = "h-15 w-auto rounded-md" %>
-<% status_pill = { "draft" => "bg-ink-900/5 text-ink-600", "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
-     .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
 <%# How long one or several step runs took: the slowest, once none is running. %>
 <% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
 <% thumbs = ->(media) { capture do %>
@@ -29,7 +38,7 @@
     <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
   </span>
 <% end } %>
-<% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: status_pill[state]) } %>
+<% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: run_status_pill_class(state)) } %>
 <%# The media a run started from, then the ones it ended with. %>
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
@@ -171,7 +180,7 @@
                         <% end %>
                       </td>
                       <td class="px-3 py-2">
-                        <span title="<%= step_run.error %>" class="<%= status_pill[step_run.status] %>"><%= step_run.status.humanize %></span>
+                        <span title="<%= step_run.error %>" class="<%= run_status_pill_class(step_run.status) %>"><%= step_run.status.humanize %></span>
                       </td>
                       <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
                         <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
@@ -194,7 +203,7 @@
     </section>
   </div>
 
-  <%= turbo_frame_tag "inspector", class: "block shrink-0 space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
+  <%= turbo_frame_tag "inspector", class: "hidden shrink-0 has-[*]:block space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
     <% if (edge = @selected_edge) %>
       <header class="flex items-start justify-between gap-2">
         <div class="min-w-0">
@@ -225,7 +234,7 @@
         <dl aria-label="Stats" class="grid grid-cols-2 gap-3 border-t border-ink-900/10 pt-4 text-sm">
           <div>
             <dt class="text-xs text-ink-500">Status</dt>
-            <dd class="mt-1"><span class="<%= status_pill[status] %>"><%= status.humanize %></span></dd>
+            <dd class="mt-1"><span class="<%= run_status_pill_class(status) %>"><%= status.humanize %></span></dd>
           </div>
           <div>
             <dt class="text-xs text-ink-500">Took</dt>
@@ -348,31 +357,6 @@
           <% end %>
         <% end %>
       </section>
-    <% else %>
-      <header class="flex items-center justify-between gap-2">
-        <h2 class="text-sm font-semibold text-ink-900">Workflow</h2>
-        <%= render "shared/admin_links/workflow", workflow: @workflow %>
-      </header>
-      <%= form_with model: @workflow, data: top, class: "flex items-end gap-2" do |f| %>
-        <div class="min-w-0 flex-1">
-          <%= f.label :name, class: tw_label_classes %>
-          <%= f.text_field :name, required: true, class: tw_input_classes %>
-        </div>
-        <%= f.submit "Rename", class: button %>
-      <% end %>
-      <p class="text-sm text-ink-500">
-        Drag folders and transformations from + Add onto the canvas, or click one to add it. A folder's media, shown when
-        it's selected, can be dragged on too: each always gives that one media to the transformations it feeds. Drag from a node's dot to
-        another node to connect them, and click a node or connection to edit it, or press Delete to remove it. Click the canvas itself to deselect. A selected
-        connection's ends can be dragged to other nodes.
-      </p>
-      <p class="text-sm text-ink-500">
-        Press play on a start folder or media to run that media (a folder's newest N, or the media picked for the selected run
-        when it's selected) through the steps it feeds: a reel takes them all at once, in its inputs' order, any other step each
-        in turn. A selected node shows its inputs, output and time in the selected run above its settings.
-      </p>
-      <%= link_to "Delete workflow", workflow_path(@workflow), data: { turbo_method: :delete, turbo_confirm: "Delete this workflow?", **top },
-            class: "inline-block rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
     <% end %>
   <% end %>
 </div>

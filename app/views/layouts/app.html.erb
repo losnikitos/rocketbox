@@ -38,7 +38,11 @@
           <label for="app-nav-toggle" class="rb-btn-ghost-on-light cursor-pointer px-3 py-1.5 text-xs sm:hidden">
             Menu
           </label>
-          <h1 class="font-manrope text-xl font-bold tracking-tight sm:text-2xl"><%= title %></h1>
+          <% if content_for?(:heading) %>
+            <%= yield :heading %>
+          <% else %>
+            <h1 class="font-manrope text-xl font-bold tracking-tight sm:text-2xl"><%= title %></h1>
+          <% end %>
           <% if content_for?(:header_actions) %>
             <div class="ml-auto flex items-center gap-2"><%= yield :header_actions %></div>
           <% end %>
