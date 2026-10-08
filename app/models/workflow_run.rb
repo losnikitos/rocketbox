@@ -7,10 +7,14 @@
 # lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them;
 # `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
-# `error`. For now each workflow has one, its draft.
+# `error`. A workflow has as many as were added, each named Run N.
 class WorkflowRun < ApplicationRecord
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
+
+  before_create { self.name = "Run #{workflow.runs.count + 1}" }
+
+  def running? = step_runs.any?(&:running?)
 
   # `node` is a start folder or media; `user` owns what the step runs make.
   def start!(node, user)

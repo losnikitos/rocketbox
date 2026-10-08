@@ -18,7 +18,6 @@
 <% end %>
 
 <% mode = "rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
-<% pill = "rounded-full border border-ink-900/15 px-3 py-1 text-xs font-medium text-ink-600 transition hover:bg-ink-900/5 aria-[current=page]:border-ink-900 aria-[current=page]:text-ink-900" %>
 <% thumb = "h-15 w-auto rounded-md" %>
 <% status_pill = { "running" => "bg-signal-yellow/20 text-ink-700", "complete" => "bg-signal-green/15 text-ink-900", "failed" => "bg-signal-red/10 text-signal-red" }
      .transform_values { "rounded-full px-2 py-0.5 text-xs font-medium #{it}" } %>
@@ -32,15 +31,21 @@
     <div class="flex shrink-0 items-center gap-1 border-b border-ink-900/10 px-3 py-2">
       <nav aria-label="Mode" class="flex gap-1">
         <%= link_to "Edit", workflow_path(@workflow), aria: { current: ("page" unless @run) }, data: { action: "workflow#keep" }, class: mode %>
-        <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.draft_run).id), aria: { current: ("page" if @run) }, data: { action: "workflow#keep" }, class: mode %>
+        <%= link_to "Run", workflow_path(@workflow, run: (@run || @workflow.latest_run).id), aria: { current: ("page" if @run) }, data: { action: "workflow#keep" }, class: mode %>
       </nav>
       <% if @run %>
         <span class="mx-2 h-5 w-px bg-ink-900/10" aria-hidden="true"></span>
-        <nav aria-label="Runs" class="flex gap-1.5">
-          <% @workflow.runs.each do |run| %>
-            <%= link_to run.name, workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" }, class: pill %>
-          <% end %>
-        </nav>
+        <%= select_tag nil, options_for_select(@workflow.runs.reverse.map { [ "#{it.name} · #{l(it.created_at, format: :short)}", workflow_path(@workflow, run: it.id) ] },
+              workflow_path(@workflow, run: @run.id)), id: nil, aria: { label: "Run" }, data: { action: "workflow#switch" },
+              class: "rounded-lg border border-ink-900/15 bg-white py-1 pr-8 pl-2.5 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+        <%= button_to workflow_runs_path(@workflow), title: "New run", class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
+          <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> New run
+        <% end %>
+        <%= button_to workflow_run_path(@workflow, @run), method: :delete, disabled: @run.running?, form: { data: { turbo_confirm: "Delete #{@run.name}? Its media stay in the library." } },
+              title: (@run.running? ? "Wait for its steps to finish" : "Delete run"), aria: { label: "Delete run" },
+              class: "cursor-pointer rounded-lg p-1.5 text-ink-500 transition hover:bg-signal-red/10 hover:text-signal-red disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink-500" do %>
+          <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+        <% end %>
       <% end %>
     </div>
 
@@ -79,7 +84,7 @@
       <%= hidden_field_tag :x, nil, id: nil, data: { workflow_target: "copyX" } %>
       <%= hidden_field_tag :y, nil, id: nil, data: { workflow_target: "copyY" } %>
     <% end %>
-    <%= form_with url: run_workflow_path(@workflow), id: "workflow_play", class: "hidden" do %><% end %>
+    <%= form_with url: run_workflow_path(@workflow, run: @run&.id), id: "workflow_play", class: "hidden" do %><% end %>
 
     <% if @run %>
       <%= turbo_stream_from @run %>

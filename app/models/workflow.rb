@@ -2,7 +2,7 @@
 
 # A graph of media processing: input folders feed transformation steps, steps feed further steps or output folders.
 # Nodes and edges are edited one at a time through nested attributes, so a workflow can be incomplete.
-# Played from a start folder or media as a WorkflowRun; for now only its draft.
+# Played from a start folder or media as one of its WorkflowRuns.
 class Workflow < ApplicationRecord
   has_many :nodes, -> { order(:id) }, class_name: "WorkflowNode", inverse_of: :workflow, dependent: :destroy
   has_many :edges, -> { order(:id) }, class_name: "WorkflowEdge", inverse_of: :workflow, dependent: :delete_all
@@ -11,5 +11,5 @@ class Workflow < ApplicationRecord
 
   validates :name, presence: true
 
-  def draft_run = runs.first_or_create!
+  def latest_run = runs.last || runs.create!
 end

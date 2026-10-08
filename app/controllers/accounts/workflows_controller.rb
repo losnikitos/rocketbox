@@ -3,8 +3,8 @@
 module Accounts
   # A workflow's page is a canvas editor: adding, connecting, moving and removing nodes all submit nested attributes to
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. `?run=` is run mode: the run's step runs
-  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the draft run from it;
-  # play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
+  # replace the palette and the inspector shows the selected node's inputs and outputs in the run. Play on a start folder or media (run) replays the
+  # selected run from it (the latest in edit mode); play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -54,9 +54,9 @@ module Accounts
 
     def run
       node = @workflow.nodes.find(params[:node_id])
-      draft = @workflow.draft_run
-      node.step? ? draft.rerun!(node, Current.account) : draft.start!(node, Current.account)
-      redirect_to workflow_path(@workflow, run: draft.id)
+      run = @workflow.runs.find_by(id: params[:run]) || @workflow.latest_run
+      node.step? ? run.rerun!(node, Current.account) : run.start!(node, Current.account)
+      redirect_to workflow_path(@workflow, run: run.id)
     end
 
     # Alt-drag: a copy of the node at x, y, without its connections; a step's copy owns a copy of its transformation.
