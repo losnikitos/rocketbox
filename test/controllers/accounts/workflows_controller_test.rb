@@ -154,6 +154,27 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "running" ], run.step_runs.reload.map(&:status)
   end
 
+  test "alt-dragging a step copies it with its own transformation and no connections" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Copy")
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation: transformations(:cinematic).dup)
+    workflow.edges.create!(from: folder, to: step)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "form[action^=?][data-workflow-target=copy] input[name=node_id]", copy_workflow_path(workflow)
+
+    assert_difference -> { Transformation.count } do
+      post copy_workflow_url(workflow, account: admin.id), params: { node_id: step.id, x: 400, y: 120 }
+    end
+    copy = workflow.nodes.reload.last
+    assert_redirected_to workflow_url(workflow, account: admin.id, node: copy.id)
+    assert_equal [ 400, 120 ], [ copy.x, copy.y ]
+    assert_not_equal step.transformation, copy.transformation
+    assert_equal step.transformation.attributes.slice("kind", "name", "body"), copy.transformation.attributes.slice("kind", "name", "body")
+    assert_equal 1, workflow.edges.count
+  end
+
   test "a folder's media is added from the inspector as a source that only feeds steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "One photo")

@@ -74,6 +74,7 @@ Rails.application.routes.draw do
       resources :transformations, except: :edit
       resources :workflows, except: :edit do
         post :run, on: :member
+        post :copy, on: :member
       end
       resources :styles, except: :show
       resources :tags, only: :create

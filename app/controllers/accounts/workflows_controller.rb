@@ -9,7 +9,7 @@ module Accounts
     layout "app"
 
     before_action :authenticate_admin!
-    before_action :set_workflow, only: %i[show update destroy run]
+    before_action :set_workflow, only: %i[show update destroy run copy]
 
     def index
       @workflows = Workflow.includes(:nodes).order(updated_at: :desc)
@@ -57,6 +57,14 @@ module Accounts
       draft = @workflow.draft_run
       node.step? ? draft.rerun!(node, Current.account) : draft.start!(node, Current.account)
       redirect_to workflow_path(@workflow, run: draft.id)
+    end
+
+    # Alt-drag: a copy of the node at x, y, without its connections; a step's copy owns a copy of its transformation.
+    def copy
+      node = @workflow.nodes.find(params[:node_id])
+      copy = node.dup.tap { it.assign_attributes(x: params[:x], y: params[:y], transformation: node.transformation&.dup) }
+      copy.save!
+      redirect_to workflow_path(@workflow, node: copy.id, run: params[:run].presence)
     end
 
     private

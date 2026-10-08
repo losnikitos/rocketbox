@@ -5,7 +5,8 @@ import dagre from "@dagrejs/dagre"
 // Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
 // arrows; an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
-// centre) and the canvas pinch-zoomed or dragged to pan; zoom and scroll survive reloads of the page.
+// centre, or flow:copied when Alt is held at the drop) and the canvas pinch-zoomed or dragged to pan; zoom and scroll
+// survive reloads of the page.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too.
 export default class extends Controller {
@@ -125,12 +126,12 @@ export default class extends Controller {
     this.draw()
   }
 
-  drop() {
+  drop(event) {
     const d = this.dragging
     if (!d) return
     this.dragged = d.moved
     this.dragging = null
-    if (d.moved) this.dispatch("moved", { detail: { id: d.id, x: Math.round(d.node.x), y: Math.round(d.node.y) } })
+    if (d.moved) this.dispatch(event.altKey ? "copied" : "moved", { detail: { id: d.id, x: Math.round(d.node.x), y: Math.round(d.node.y) } })
   }
 
   // A drag ends in a click on the node's link; don't follow it. A real click selects the node.

@@ -26,7 +26,7 @@
 <% here = workflow_path(@workflow, run: @run&.id) %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
-     data-action="flow:moved->workflow#move flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
+     data-action="flow:moved->workflow#move flow:copied->workflow#copy flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
   <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
     <div class="flex shrink-0 items-center gap-1 border-b border-ink-900/10 px-3 py-2">
       <nav aria-label="Mode" class="flex gap-1">
@@ -71,6 +71,11 @@
       <%= hidden_field_tag "workflow[edges_attributes][0][id]", nil, id: nil, data: { workflow_target: "edge" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
+    <% end %>
+    <%= form_with url: copy_workflow_path(@workflow, run: @run&.id), class: "hidden", data: { workflow_target: "copy" } do %>
+      <%= hidden_field_tag :node_id, nil, id: nil, data: { workflow_target: "copyNode" } %>
+      <%= hidden_field_tag :x, nil, id: nil, data: { workflow_target: "copyX" } %>
+      <%= hidden_field_tag :y, nil, id: nil, data: { workflow_target: "copyY" } %>
     <% end %>
     <%= form_with url: run_workflow_path(@workflow), id: "workflow_play", class: "hidden" do %><% end %>
 
@@ -271,7 +276,10 @@
         <% end %>
       <% end %>
     <% else %>
-      <h2 class="text-sm font-semibold text-ink-900">Workflow</h2>
+      <header class="flex items-center justify-between gap-2">
+        <h2 class="text-sm font-semibold text-ink-900">Workflow</h2>
+        <%= render "shared/admin_links/workflow", workflow: @workflow %>
+      </header>
       <%= form_with model: @workflow, data: top, class: "flex items-end gap-2" do |f| %>
         <div class="min-w-0 flex-1">
           <%= f.label :name, class: tw_label_classes %>

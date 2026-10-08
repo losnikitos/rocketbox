@@ -1,11 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
-// The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), submits the arrows drawn
-// between them or moved to other nodes (flow:linked), and adds palette items or a folder's media from the inspector
-// dropped on the canvas there, or clicked, in the middle of the view.
+// The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), copies a node Alt-dragged
+// to the drop point (flow:copied), submits the arrows drawn between them or moved to other nodes (flow:linked), and adds
+// palette items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "tab", "remove", "item"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
   static values = { url: String }
 
   async move({ detail: { id, x, y } }) {
@@ -27,6 +27,13 @@ export default class extends Controller {
     this.fromTarget.value = from
     this.toTarget.value = to
     this.connectTarget.requestSubmit()
+  }
+
+  copy({ detail: { id, x, y } }) {
+    this.copyNodeTarget.value = id
+    this.copyXTarget.value = x
+    this.copyYTarget.value = y
+    this.copyTarget.requestSubmit()
   }
 
   // Delete (Backspace on a Mac) removes the selected node or connection, unless typing in a field.
