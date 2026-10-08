@@ -171,6 +171,8 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run from here']", crop.id.to_s, crop.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
+    assert_select "button[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: crop.id } }
     assert_equal [ made.generated_media ], run.step_runs.find_by!(workflow_node: crop).source_media

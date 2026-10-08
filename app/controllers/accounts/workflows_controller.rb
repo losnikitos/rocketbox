@@ -119,7 +119,8 @@ module Accounts
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run&.id), frame: "inspector",
                        current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
                        kind: node.transformation&.type_label, inputs: feeds.size, play: @start_nodes.include?(node) || (ready && !step_run),
-                       status: step_run&.status, error: step_run&.error, rerun: (ready && step_run) } ]
+                       status: step_run&.status, error: step_run&.error, rerun: (ready && step_run),
+                       output: step_run&.generated_media&.then { it if it.file.attached? } } ]
         end
         @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, path: workflow_path(@workflow, edge: it.id, run: @run&.id), frame: "inspector", current: it == @selected_edge } ] }
       end

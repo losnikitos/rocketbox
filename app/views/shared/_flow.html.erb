@@ -5,6 +5,7 @@
 <%# (its type label) and an input port on the left per arrow in (inputs, at least one). A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
 <%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked). %>
 <%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
+<%# A :step's optional output (a media) shows on the middle of each arrow out of it, and opens in a lightbox. %>
 <%# play (a start node's, or a :step's whose inputs are complete; or a run :step's rerun) adds a play button on the node's top-left corner that submits the page's #workflow_play form with node_id. %>
 <div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.to_json %>"
      data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember
@@ -18,6 +19,15 @@
       <rect width="100%" height="100%" fill="url(#flow-dots)" class="pointer-events-none" />
       <g data-flow-target="edges" data-action="click->flow#pick" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
     </svg>
+    <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from panning or deselecting. %>
+    <% edges.each do |from, to, _| %>
+      <% next unless (media = nodes.dig(from, :output)) %>
+      <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="View output" title="View output"
+              data-flow-target="output" data-v="<%= from %>" data-w="<%= to %>"
+              class="absolute block -translate-1/2 cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
+        <%= render "accounts/library/file", media:, play: true, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm" %>
+      </button>
+    <% end %>
     <% nodes.each do |id, n| %>
       <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false", aria: { current: ("true" if n[:current]) },
             data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), source: (true if n[:shape] == :media), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
@@ -93,3 +103,7 @@
     <div data-flow-target="ends" class="pointer-events-none absolute inset-0"></div>
   </div>
 </div>
+<%# Outside the canvas, so its zoom and the flow's clicks leave them be. %>
+<% nodes.each_value do |n| %>
+  <%= render "accounts/library/quick_view", media: n[:output], button: false if n[:output] %>
+<% end %>

@@ -8,9 +8,10 @@ import dagre from "@dagrejs/dagre"
 // centre, or flow:copied when Alt is held at the drop) and the canvas pinch-zoomed or dragged to pan; zoom and scroll
 // survive reloads of the page.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
-// the selected edge (one with an id) onto another node dispatches it with the edge's id too.
+// the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
+// data-v and data-w) sit on the middle of their edge.
 export default class extends Controller {
-  static targets = ["canvas", "node", "edges", "ends"]
+  static targets = ["canvas", "node", "edges", "ends", "output"]
   static values = { edges: Array }
 
   connect() {
@@ -75,7 +76,6 @@ export default class extends Controller {
   }
 
   get key() { return `flow:${location.pathname}` }
-
   // A press on the empty canvas (not a node, an edge or the scrollbars) drags the view around.
   pan(event) {
     if (event.button !== 0 || !this.canvasTarget.contains(event.target) || event.target.closest("[data-flow-target~='node'], [data-v]")) return
@@ -260,10 +260,15 @@ export default class extends Controller {
       // It routes through node centres; lift the bends to icon height, blending from source to target.
       const lift = t => (from.y - source.y) * (1 - t) + (to.y - target.y) * t
       const points = [from, ...via.map((p, i) => ({ x: p.x, y: p.y + lift((i + 1) / (via.length + 1)) })), to]
+      g.edge(e).middle = middle(points)
       const d = curve(points), { path, current } = g.edge(e), line = `<path d="${d}" class="${current ? "stroke-rocket" : path ? "group-hover:stroke-ink-900/50" : ""}" />`
       // A wide invisible stroke makes the thin dashed line easy to click.
       return path ? `<g data-v="${e.v}" data-w="${e.w}" class="group cursor-pointer"><path d="${d}" stroke="transparent" stroke-width="12" stroke-dasharray="none" />${line}</g>` : line
     }).join("")
+    this.outputTargets.forEach(el => {
+      const { x, y } = g.edge(el.dataset.v, el.dataset.w).middle
+      Object.assign(el.style, { left: `${x}px`, top: `${y}px` })
+    })
     if (this.linking) return
     // Knobs on the selected edge's ends, above every node dragged to the front.
     const selected = g.edges().find(e => g.edge(e).current && g.edge(e).id)
@@ -284,6 +289,15 @@ function place({ el, x, y, width, height }) {
 // Where edges attach on a node's right (side 1) or left (side -1) side, `offset` down from its top.
 function anchor(node, side, offset = node.anchor) {
   return { x: node.x + side * node.width / 2, y: node.y - node.height / 2 + offset }
+}
+
+// The point halfway through curve(points): the middle point, or between the middle two, where their symmetric segment
+// passes at its halfway mark.
+function middle(points) {
+  const i = points.length / 2
+  if (points.length % 2) return points[Math.floor(i)]
+  const a = points[i - 1], b = points[i]
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
 // Bézier segments through the points, horizontal at each one, so a left-to-right flow never overshoots.
