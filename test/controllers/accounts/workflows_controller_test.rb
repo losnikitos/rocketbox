@@ -214,10 +214,6 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
-    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
-      assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
-      assert_select "button[popovertarget^=?]", dom_id(media, :quick_view)
-    end
     assert_select "#workflow_palette", 1
     assert_select "a[href^=?]", admin_workflow_run_path(run)
     get admin_workflow_run_url(run)
@@ -333,7 +329,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id)
     assert_select "button[form=workflow_play]:not([name])", text: /Run/, count: 2
-    assert_select "section[aria-label=Runs] a[aria-current=page] + details + div button[form=workflow_play]"
+    assert_select "section[aria-label=Runs] a[aria-current=page] + div button[form=workflow_play]"
 
     post run_workflow_url(workflow, account: admin.id)
     assert_equal [ [ photo ], [ other ] ], workflow.runs.sole.step_runs.map(&:source_media)
@@ -377,17 +373,15 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
-    assert_select "section[aria-label=Runs] details", 2 do |rows|
+    assert_select "section[aria-label=Runs] [id^=workflow_run_]", 2 do |rows|
       assert_equal [ dom_id(second), dom_id(first) ], rows.map { it["id"] }
     end
-    assert_select "section[aria-label=Runs] details[open]", 0
     assert_select "section[aria-label=Runs] a[aria-current=page]", 1
     assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
 
     get workflow_url(workflow, account: admin.id)
-    assert_select "section[aria-label=Runs] details", 2
+    assert_select "section[aria-label=Runs] [id^=workflow_run_]", 2
     assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
-    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(first), count: 1
     assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, second)
     assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, first), count: 0
 
@@ -403,7 +397,6 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     first.step_runs.sole.update!(status: "failed", error: "Model refused the prompt")
     get workflow_url(workflow, account: admin.id, run: first.id)
     assert_select "section[aria-label=Runs] a[href^=?] span.text-signal-red", workflow_path(workflow, run: first.id), "Model refused the prompt"
-    assert_select "section[aria-label=Runs] details[id=?] tbody td p", dom_id(first), "Model refused the prompt"
 
     assert_difference -> { workflow.runs.count } => -1, -> { TransformationRun.count } => -1, -> { LibraryMedia.count } => 0 do
       delete workflow_run_url(workflow, first, account: admin.id)

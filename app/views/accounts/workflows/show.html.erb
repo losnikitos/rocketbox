@@ -27,19 +27,14 @@
 <% end %>
 <% content_for(:header_actions) { render "shared/admin_links/workflow", workflow: @workflow } %>
 
-<% thumb = "h-15 w-auto rounded-md" %>
-<%# How long one or several step runs took: the slowest, once none is running. %>
-<% took = ->(runs) { (seconds = Array(runs).map(&:duration)).all? ? "#{number_with_precision(seconds.max, precision: 1)} s" : "…" } %>
-<% thumbs = ->(media) { capture do %>
+<% thumbs = ->(media, limit = 4) { capture do %>
   <span class="flex items-center gap-0.5">
-    <% media.first(4).each do |media| %>
-      <span class="block size-7 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+    <% media.first(limit).each do |media| %>
+      <span class="block size-5 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
     <% end %>
-    <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
+    <% if media.size > limit %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - limit %></span><% end %>
   </span>
 <% end } %>
-<%# The media a run started from, then the ones it ended with. %>
-<% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
 <% run_all = "Run #{@run.name} from every start folder and media" %>
 <% add_to_canvas = ->(media) { button_tag "Media", type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id, hidden: true } %>
@@ -144,7 +139,13 @@
     <%= form_with url: run_workflow_path(@workflow, run: @run.id), id: "workflow_play", class: "hidden" do %><% end %>
 
     <%= turbo_stream_from @run %>
-    <section aria-label="Runs" class="h-56 shrink-0 overflow-y-auto border-t border-ink-900/10">
+    <div class="relative shrink-0 border-t border-ink-900/10">
+    <button type="button" id="workflow_runs_handle" aria-expanded="true" aria-controls="workflow_runs" aria-label="Runs" title="Show or hide runs"
+            data-turbo-permanent data-action="workflow#toggle"
+            class="peer group absolute bottom-full left-1/2 z-20 flex h-4 w-12 -translate-x-1/2 cursor-pointer items-center justify-center rounded-t-lg border border-b-0 border-ink-900/10 bg-white text-ink-400 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket">
+      <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 group-aria-[expanded=false]:rotate-180", "aria-hidden": true } %>
+    </button>
+    <section id="workflow_runs" aria-label="Runs" class="h-56 overflow-y-auto peer-aria-[expanded=false]:hidden">
       <header class="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-ink-900/10 bg-white px-3 py-1.5">
         <h2 class="text-xs font-medium text-ink-500">Runs</h2>
         <%= button_to workflow_runs_path(@workflow), class: "flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
@@ -154,78 +155,35 @@
       <% if @runs.empty? %>
         <p class="p-6 text-center text-sm text-ink-500">No runs yet.</p>
       <% end %>
+      <%# Columns: name, time, inputs, outputs, error, status, actions; every row fills each one, empty or not. %>
+      <div class="grid grid-cols-[repeat(4,auto)_minmax(0,1fr)_repeat(2,auto)] gap-x-3">
       <% @runs.each do |run| %>
         <% playable = run == @run && @start_nodes.any? %>
-        <div class="relative border-b border-ink-900/10">
+        <div id="<%= dom_id(run) %>" class="col-span-full grid grid-cols-subgrid items-center border-b border-ink-900/10 hover:bg-ink-900/5 has-[[aria-current=page]]:bg-rocket/10">
           <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
-                class: "flex min-h-11 items-center gap-3 py-2 #{playable ? "pr-32" : "pr-12"} pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
-            <span class="shrink-0"><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
-            <%= ends.(run) %>
-            <% if (reason = run.error || run.step_runs.find(&:failed?)&.error) %>
-              <span title="<%= reason %>" class="line-clamp-2 min-w-0 text-xs text-signal-red"><%= reason %></span>
-            <% end %>
-            <% if (state = run.state) %>
-              <span class="<%= run_status_pill_class(state) %> ml-auto shrink-0"><%= state.humanize %></span>
-            <% end %>
+                class: "col-span-6 grid min-h-8 grid-cols-subgrid items-center py-1 pl-3 text-xs text-ink-900" do %>
+            <span class="font-medium"><%= run.name %></span>
+            <span class="text-ink-500 tabular-nums"><%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span>
+            <%= thumbs.(run.inputs) %>
+            <%= thumbs.(run.outputs, run.outputs.size) %>
+            <% reason = run.error || run.step_runs.find(&:failed?)&.error %>
+            <span title="<%= reason %>" class="line-clamp-2 text-signal-red"><%= reason %></span>
+            <span><% if (state = run.state) %><span class="<%= run_status_pill_class(state) %>"><%= state.humanize %></span><% end %></span>
           <% end %>
-          <details id="<%= dom_id(run) %>" class="group">
-            <summary aria-label="Steps" title="Steps"
-                     class="absolute top-1.5 left-1.5 flex size-8 cursor-pointer list-none items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket [&::-webkit-details-marker]:hidden">
-              <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
-            </summary>
-            <% if run.step_runs.any? %>
-              <table class="w-full border-t border-ink-900/10 text-left text-sm">
-                <thead class="text-xs text-ink-500">
-                  <tr>
-                    <th class="px-3 py-2 font-medium">Step</th>
-                    <th class="px-3 py-2 font-medium">Status</th>
-                    <th class="px-3 py-2 font-medium">Inputs</th>
-                    <th class="px-3 py-2 font-medium">Output</th>
-                    <th class="px-3 py-2 text-right font-medium">Time</th>
-                    <th class="w-0 px-3 py-2"><span class="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-ink-900/10">
-                  <% run.step_runs.each do |step_run| %>
-                    <tr>
-                      <td class="px-3 py-2 font-medium text-ink-900">
-                        <% if (node = step_run.workflow_node) %>
-                          <%= link_to node.label, workflow_path(@workflow, run: run.id, node: node.id), class: "hover:underline" %>
-                        <% else %>
-                          <%= step_run.transformation&.name || "Removed step" %>
-                        <% end %>
-                      </td>
-                      <td class="px-3 py-2">
-                        <span class="<%= run_status_pill_class(step_run.status) %>"><%= step_run.status.humanize %></span>
-                        <% if step_run.error %><p class="mt-1 max-w-xs text-xs text-signal-red"><%= step_run.error %></p><% end %>
-                      </td>
-                      <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
-                        <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
-                      <% end %>
-                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums">
-                        <%= (from = step_run.reused_from) ? "Reused from #{from.workflow_run&.name || "another run"}" : took.(step_run) %>
-                      </td>
-                      <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            <% elsif !run.error %>
-              <p class="px-3 pb-3 pl-10 text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
-            <% end %>
-          </details>
-          <div class="absolute top-0 right-3 flex h-11 items-center gap-1">
+          <div class="flex items-center gap-1 pr-2">
             <% if playable %>
               <button type="submit" form="workflow_play" title="<%= run_all %>"
-                      class="flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900">
-                <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Run
+                      class="flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-ink-600 hover:bg-ink-900/5 hover:text-ink-900">
+                <%= heroicon "play", variant: :mini, options: { class: "size-3.5", "aria-hidden": true } %> Run
               </button>
             <% end %>
             <%= render "shared/admin_links/workflow_run", workflow_run: run %>
           </div>
         </div>
       <% end %>
+      </div>
     </section>
+    </div>
   </div>
 
   <%= turbo_frame_tag "inspector", class: "hidden shrink-0 has-[*]:block space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
