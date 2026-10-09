@@ -17,10 +17,15 @@ module Accounts
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
           .includes(:tags, transformation_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
           .order(created_at: :desc)
-        @library_media = @library_media.joins(:transformation_run).where(transformation_runs: { recipe_id: params[:recipe] }) if params[:recipe].present?
-        recipes = Recipe.with_attached_example.includes(:output_folder, :transformation).ordered.to_a
-        @read_recipes = recipes.select { it.folder_ids.include?(@folder.id) }
-        @write_recipes = recipes.select { it.output_folder_id == @folder.id }
+        # One end of an edge is always a step, so a folder node an edge leaves is an input, one it enters an output.
+        nodes = WorkflowNode.includes(:workflow, :folder).where(folder: @folder)
+        @read_nodes = nodes.where(id: WorkflowEdge.select(:from_id)).to_a
+        @write_nodes = nodes.where(id: WorkflowEdge.select(:to_id)).to_a
+        # A step with no output folder lands its results in Ready.
+        if @folder == Folder.ready
+          @write_nodes += WorkflowNode.includes(:workflow, :transformation).where.not(transformation_id: nil)
+            .where.not(id: WorkflowEdge.joins(:to).where(workflow_nodes: { transformation_id: nil }).select(:from_id)).to_a
+        end
       else
         @folder_media = media.includes(:folder).group_by { it.folder.parent_id || it.folder_id }
       end

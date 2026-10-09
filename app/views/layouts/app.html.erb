@@ -69,20 +69,6 @@
         </div>
       </div>
     </div>
-    <%= turbo_stream_from Current.account, :generations %>
-    <div class="group fixed bottom-4 right-4 z-40 hidden has-[li]:block">
-      <button type="button" popovertarget="generations" aria-label="Generations" style="anchor-name: --generations"
-              class="flex cursor-pointer items-center gap-1.5 rounded-2xl border border-ink-900/10 bg-white px-3 py-2.5 text-sm font-semibold shadow-lg">
-        <%= heroicon "arrow-path", variant: :mini, options: { class: "hidden size-5 animate-spin text-signal-yellow group-has-[[data-running]]:block", "aria-hidden": true } %>
-        <%= heroicon "check-circle", variant: :mini, options: { class: "size-5 text-signal-green group-has-[[data-running]]:hidden", "aria-hidden": true } %>
-        <%= heroicon "sparkles", variant: :mini, options: { class: "size-5 text-ink-500", "aria-hidden": true } %>
-        <span class="hidden group-has-[:popover-open]:inline">Generations</span>
-      </button>
-      <div id="generations" popover style="position-anchor: --generations"
-           class="inset-auto m-0 bottom-[calc(anchor(top)+8px)] right-[anchor(right)] w-72 rounded-2xl border border-ink-900/10 bg-white p-2 shadow-lg">
-        <%= render "layouts/app/generations", user: Current.account %>
-      </div>
-    </div>
     <%= render "shared/flashes" %>
     <%= render "shared/env_switcher" %>
   </body>

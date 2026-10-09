@@ -84,7 +84,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     admin = sign_in_as(users(:admin_user))
     source = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
-    generation = recipes(:cinematic).run!(media: [ source ])
+    generation = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior))
     generation.update!(status: "failed", error: "content policy")
 
     get "/app/library/media/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua
@@ -97,24 +97,17 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "admin can list and open recipes" do
-    admin = sign_in_as(users(:admin_user))
-    recipe = recipes(:cinematic)
-    get "/app/recipes/#{recipe.slug}?account=#{admin.id}", headers: @ua
-    assert_response :success
-    assert_select "header a[href^='/admin/recipes/#{recipe.slug}']"
-    get "/admin/recipes", headers: @ua
-    assert_response :success
-    assert_match recipe.name, response.body
-    get "/admin/recipes/#{recipe.slug}", headers: @ua
-    assert_response :success
-    assert_select "a[href='/app/recipes/#{recipe.slug}']"
-    assert_select "a[href='/admin/transformations/#{recipe.transformation_id}']"
+  test "admin lists and opens transformations, linked to their workflow steps" do
+    sign_in_as(users(:admin_user))
+    workflow = create_workflow("Stored", input: folders(:interior), transformation: transformations(:cinematic))
+    step = workflow.nodes.find(&:step?)
     get "/admin/transformations", headers: @ua
     assert_response :success
-    get "/admin/transformations/#{recipe.transformation_id}", headers: @ua
+    assert_select "td.col-workflows a", text: "Stored"
+    get "/admin/transformations/#{step.transformation_id}", headers: @ua
     assert_response :success
-    assert_match recipe.transformation.body, response.body
+    assert_match transformations(:cinematic).body, response.body
+    assert_select "a[href='/app/workflows/stored?node=#{step.id}']", text: "Stored"
   end
 
   test "workflow links to admin, which shows its nodes, edges and runs" do
@@ -160,14 +153,12 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
 
   test "admin manages tags and tags media" do
     admin = sign_in_as(users(:admin_user))
-    recipes(:cinematic).update!(output_tag_ids: [ tags(:after).id ])
+    Workflow.create!(name: "Tagged").nodes.create!(folder: folders(:ready), tag_ids: [ tags(:after).id ])
     post "/admin/tags", params: { tag: { name: "#Fresh" } }, headers: @ua
     assert_equal "fresh", Tag.last.name
     get "/admin/tags", headers: @ua
     assert_response :success
-    assert_select "td.col-recipes a", text: recipes(:cinematic).name
-    get "/admin/recipes/#{recipes(:cinematic).slug}", headers: @ua
-    assert_select "td", text: "after"
+    assert_select "td.col-workflows a", text: "Tagged"
 
     media = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
     get "/admin/library_media/#{media.id}/edit", headers: @ua

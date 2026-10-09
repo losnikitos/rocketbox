@@ -9,7 +9,7 @@ A scripted type is one folder, `reels/<slug>/`, autoloaded as `Reels::<Name>` ([
 
 ```
 reels/<slug>/
-  <slug>.mp4    original reel (also previewed on the recipe form)
+  <slug>.mp4    original reel (also previewed on the step's form)
   <slug>.wav    its track, laid under every render
   beats.csv     cut ends in seconds, read by Scripted#cuts
   beats.ipynb   the analysis, saved with its outputs
@@ -68,9 +68,9 @@ app/assets/images/transformations/<slug>.jpg   cover: the reel's first frame, 40
 
 8. **Register** the class in `Transformation::Type.all` ([type.rb](/app/models/transformation/type.rb)), after the other `Reels::` entries.
 
-9. **Test and document.** Add `"<slug>" => <video length>` to the track hash in [recipe_test.rb](/test/models/recipe_test.rb), next to `"doppler" => 9.6`. Add the slug to the Scripted list in [PROMPTS.md](/docs/PROMPTS.md). Then run:
+9. **Test and document.** Add `"<slug>" => <video length>` to the track hash in [transformation_test.rb](/test/models/transformation_test.rb), next to `"doppler" => 9.6`. Add the slug to the Scripted list in [PROMPTS.md](/docs/PROMPTS.md). Then run:
    ```bash
-   bin/rails test test/models/recipe_test.rb test/controllers/accounts/recipes_controller_test.rb
+   bin/rails test test/models/transformation_test.rb test/controllers/accounts/transformations_controller_test.rb
    ```
 
 10. **Report** to the user: the segment count and timings, the contact sheet, the cover, the reel and audio links, and any guess you made (marks, layer, steps).

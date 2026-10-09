@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -191,30 +191,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
     t.index ["channel", "external_id"], name: "index_outgoing_messages_on_channel_and_external_id"
     t.index ["created_at"], name: "index_outgoing_messages_on_created_at"
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
-  end
-
-  create_table "recipe_folders", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.string "slug", null: false
-    t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_recipe_folders_on_slug", unique: true
-  end
-
-  create_table "recipes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.json "inputs", default: [], null: false
-    t.string "name", null: false
-    t.integer "output_folder_id", null: false
-    t.json "output_tag_ids", default: [], null: false
-    t.integer "recipe_folder_id"
-    t.string "slug", null: false
-    t.integer "transformation_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["output_folder_id"], name: "index_recipes_on_output_folder_id"
-    t.index ["recipe_folder_id"], name: "index_recipes_on_recipe_folder_id"
-    t.index ["slug"], name: "index_recipes_on_slug", unique: true
-    t.index ["transformation_id"], name: "index_recipes_on_transformation_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -436,7 +412,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
     t.integer "generated_media_id", null: false
     t.json "options", default: {}, null: false
     t.text "prompt"
-    t.integer "recipe_id"
     t.integer "review_id"
     t.integer "shot_id"
     t.string "status", default: "running", null: false
@@ -446,7 +421,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
     t.integer "workflow_node_id"
     t.integer "workflow_run_id"
     t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id", unique: true
-    t.index ["recipe_id"], name: "index_transformation_runs_on_recipe_id"
     t.index ["review_id"], name: "index_transformation_runs_on_review_id"
     t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"
@@ -560,9 +534,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
-  add_foreign_key "recipes", "folders", column: "output_folder_id"
-  add_foreign_key "recipes", "recipe_folders"
-  add_foreign_key "recipes", "transformations"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
@@ -575,7 +546,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_234500) do
   add_foreign_key "transformation_run_inputs", "library_media", on_delete: :cascade
   add_foreign_key "transformation_run_inputs", "transformation_runs", on_delete: :cascade
   add_foreign_key "transformation_runs", "library_media", column: "generated_media_id"
-  add_foreign_key "transformation_runs", "recipes", on_delete: :nullify
   add_foreign_key "transformation_runs", "reviews", on_delete: :nullify
   add_foreign_key "transformation_runs", "shots", on_delete: :nullify
   add_foreign_key "transformation_runs", "styles", on_delete: :nullify

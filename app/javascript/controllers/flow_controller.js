@@ -20,7 +20,7 @@ export default class extends Controller {
     const g = this.graph = new dagre.graphlib.Graph()
     g.setGraph({ rankdir: "LR", nodesep: 24, ranksep: 72, marginx: 4, marginy: 4 })
     g.setDefaultEdgeLabel(() => ({}))
-    // Edges attach at the middle of the node's first child (a folder's icon, a recipe's whole box), not the label below,
+    // Edges attach at the middle of the node's first child (a folder's icon, a step's card), not the label below,
     // or, coming in, at its [data-flow-input] ports if it has them.
     this.nodeTargets.forEach(el => {
       const first = el.firstElementChild, anchor = first.offsetHeight / 2

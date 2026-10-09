@@ -45,7 +45,7 @@
 <% folders = @folder ? @folder.children.to_a : Folder.roots.ordered.to_a %>
 <% media_groups = @library_media.to_a.group_by(&:original) %>
 <% move_targets = Folder.grouped_options if admin && media_groups.any? %>
-<%# Bleeds into main's lg:p-8 so the recipes divider spans the full panel height. %>
+<%# Bleeds into main's lg:p-8 so the workflows divider spans the full panel height. %>
 <div class="flex flex-col lg:-m-8 lg:min-h-[calc(100%+4rem)] lg:flex-row">
   <% if move_targets %>
     <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
@@ -151,18 +151,23 @@
   </div>
 
   <% if @folder %>
-    <aside aria-label="Recipes" class="shrink-0 border-ink-900/10 max-lg:mt-6 max-lg:border-t max-lg:pt-6 lg:w-80 lg:border-l lg:px-6 lg:py-8">
-      <% [ [ "read", "Read", "arrow-long-right", "text-signal-green", "bg-signal-green/10", @read_recipes, "No recipes read from this folder." ],
-           [ "write", "Write", "arrow-long-left", "text-sky-500", "bg-sky-500/10", @write_recipes, "No recipes write to this folder." ] ].each do |key, title, arrow, color, bg, recipes, empty| %>
-        <section aria-labelledby="folder-recipes-<%= key %>" class="border-ink-900/10 not-first:mt-5 not-first:border-t not-first:pt-5">
-          <h3 id="folder-recipes-<%= key %>" class="<%= bg %> relative mb-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-ink-900">
+    <aside aria-label="Workflows" class="shrink-0 border-ink-900/10 max-lg:mt-6 max-lg:border-t max-lg:pt-6 lg:w-80 lg:border-l lg:px-6 lg:py-8">
+      <% [ [ "read", "Read", "arrow-long-right", "text-signal-green", "bg-signal-green/10", @read_nodes, "No workflows read from this folder." ],
+           [ "write", "Write", "arrow-long-left", "text-sky-500", "bg-sky-500/10", @write_nodes, "No workflows write to this folder." ] ].each do |key, title, arrow, color, bg, nodes, empty| %>
+        <section aria-labelledby="folder-workflows-<%= key %>" class="border-ink-900/10 not-first:mt-5 not-first:border-t not-first:pt-5">
+          <h3 id="folder-workflows-<%= key %>" class="<%= bg %> relative mb-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-ink-900">
             <%= heroicon arrow, options: { class: "absolute top-1/2 right-full size-10 -translate-y-1/2 #{color} max-lg:hidden", "aria-hidden": true } %>
             <%= title %>
           </h3>
-          <% if recipes.any? %>
+          <% if nodes.any? %>
             <ul class="flex flex-col gap-0.5">
-              <% recipes.each do |recipe| %>
-                <li><%= render "accounts/recipes/row", recipe:, path: recipe_path(recipe), arrow: key == "write" ? "arrow-left" : "arrow-right" %></li>
+              <% nodes.sort_by { [ it.workflow.name, it.id ] }.each do |node| %>
+                <li>
+                  <%= link_to workflow_path(node.workflow, node: node.id), class: "block rounded-lg p-2 hover:bg-ink-900/5" do %>
+                    <span class="block truncate text-sm font-semibold text-ink-900"><%= node.workflow.name %></span>
+                    <span class="block truncate text-xs text-ink-500"><%= node.label %></span>
+                  <% end %>
+                </li>
               <% end %>
             </ul>
           <% else %>

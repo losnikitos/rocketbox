@@ -1,7 +1,0 @@
-<% content_for(:title, "Overview — Rocketbox") %>
-
-<% if @nodes.empty? %>
-  <p class="text-sm text-ink-500">No recipes yet.</p>
-<% else %>
-  <%= render "shared/flow", nodes: @nodes, edges: @edges %>
-<% end %>

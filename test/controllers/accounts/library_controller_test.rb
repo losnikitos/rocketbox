@@ -21,20 +21,21 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: "Publish as Instagram story", count: 0
   end
 
-  test "source shows recipes and generated media; generated links back to its source" do
+  test "source shows generated media; generated links back to its source and to the workflow step that made it" do
     source = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: @user)
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    TransformationRun.create!(recipe: recipes(:cinematic), generated_media: generated, status: "complete", inputs: [ TransformationRunInput.new(library_media: source) ])
-    failed = recipes(:cinematic).run!(media: [ source ])
+    TransformationRun.create!(generated_media: generated, status: "complete", inputs: [ TransformationRunInput.new(library_media: source) ])
+    workflow = create_workflow("Cinematic shop reel", input: folders(:interior), transformation: transformations(:cinematic), output: folders(:photobank_interior))
+    step, workflow_run = workflow.nodes.find(&:step?), workflow.runs.create!
+    failed = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior), workflow_run:, workflow_node: step)
     get library_item_url(failed.generated_media)
     assert_select "#transformation-run-heading + span", text: "running"
     failed.update!(status: "failed", error: "content policy")
 
     get library_item_url(source)
-    assert_select "#apply_recipe a:not([data-turbo-frame])[href=?]", recipe_path(recipes(:cinematic), media_ids: [ source.id ]), text: /Cinematic shop reel/
-    assert_select "a[href^=?]", recipe_path(recipes(:before_after)), count: 0
+    assert_select "#run_in_workflow", count: 0
     assert_select "turbo-frame", count: 0
     assert_select "nav[aria-label=Versions] a", 3 do |links|
       assert_equal [ library_item_path(source), library_item_path(failed.generated_media), library_item_path(generated) ], links.map { it["href"] }
@@ -53,7 +54,8 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     get library_item_url(failed.generated_media)
     assert_select "details:has(#transformation-run-heading) p", text: "content policy"
-    assert_select "details:has(#transformation-run-heading) a[href=?]", recipe_path(recipes(:cinematic)), text: /Cinematic shop reel/
+    assert_select "details:has(#transformation-run-heading) a#made-by-step[href=?]", workflow_path(workflow, node: step.id, run: workflow_run.id),
+      text: /Cinematic shop reel\s*Cinematic push-in · Run 1/
     assert_select "details:has(#transformation-run-heading) tr", text: /Model\s*\S+/
 
     grandchild = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user, created_at: 2.days.ago)
@@ -85,13 +87,15 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Business card media']", count: 0
   end
 
-  test "ready media shows its recipe run; siblings come from the same recipe" do
+  test "ready media shows its step run; siblings come from the same step" do
     source = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user,
       file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
-    recipe = create_recipe(name: "Collage", body: "Compose a collage.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ])
-    run = recipe.run!(media: [ source ])
-    sibling = recipe.run!(media: [ source ])
-    other = create_recipe(name: "Poster", body: "Make a poster.", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+    collage, poster = { "Collage" => "Compose a collage.", "Poster" => "Make a poster." }.map do |name, body|
+      workflow = create_workflow(name, input: folders(:photobank_interior), transformation: Transformation.create!(name:, kind: "generate_image", body:))
+      step = workflow.nodes.find(&:step?)
+      ->(workflow_run = workflow.runs.create!) { step.transformation.run!(media: [ source ], folder: folders(:ready), workflow_run:, workflow_node: step) }
+    end
+    run, sibling, other = collage.(), collage.(), poster.()
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
@@ -102,6 +106,27 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?]", library_item_path(sibling.generated_media)
       assert_select "a[href=?]", library_item_path(other.generated_media), count: 0
     end
+  end
+
+  test "admins run a media in the workflows starting from its folder" do
+    admin = sign_in_as(users(:admin_user))
+    media = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin,
+      file: { io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg" })
+    workflow = create_workflow("Cinematic shop reel", input: folders(:interior), transformation: transformations(:cinematic))
+    create_workflow("Misc", input: folders(:misc), transformation: transformations(:before_after))
+    start = workflow.nodes.find_by!(folder: folders(:interior))
+
+    get library_item_url(media, account: admin.id)
+    assert_select "#run_in_workflow form[action=?]", workflow_runs_path(workflow, account: admin.id), count: 1 do
+      assert_select "input[name=node_id][value=?]", start.id.to_s
+      assert_select "input[name=media_id][value=?]", media.id.to_s
+      assert_select "button", text: /Cinematic shop reel\s*Inbox \/ Interior/
+    end
+    assert_select "#run_in_workflow form", count: 1
+
+    media.update!(folder: folders(:photobank_misc))
+    get library_item_url(media, account: admin.id)
+    assert_select "#run_in_workflow p", text: "No workflow starts from Photobank / Misc yet."
   end
 
   test "cannot view another account's media" do

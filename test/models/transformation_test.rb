@@ -2,11 +2,10 @@
 
 require "test_helper"
 
-class RecipeTest < ActiveSupport::TestCase
+class TransformationTest < ActiveSupport::TestCase
   setup do
     @user = users(:lazaro_nixon)
-    @recipe = create_recipe(name: "Collage", body: "Compose a collage.",
-      inputs: [ input(:photobank_interior), { "folder_id" => "" }, input(:photobank_customer) ])
+    @collage = Transformation.create!(name: "Collage", kind: "generate_image", body: "Compose a collage.")
     @interior = photo("interior.jpg", :photobank_interior)
     @customer = photo("customer.jpg", :photobank_customer)
     @original_paint = RubyLLM.method(:paint)
@@ -20,85 +19,26 @@ class RecipeTest < ActiveSupport::TestCase
     Layer.define_singleton_method(:screenshot, @original_screenshot)
   end
 
-  test "inputs drop blank folders and need a known folder; output goes to photobank; a video takes one input" do
-    assert_equal [ input(:photobank_interior), input(:photobank_customer) ], @recipe.inputs
-    assert new_recipe(name: "x", body: "x", inputs: [ input(:interior) ]).valid?
-
-    assert_not new_recipe(name: "x", body: "x", inputs: [ { "folder_id" => 0 } ]).valid?
-    assert_not new_recipe(name: "x", body: "x", inputs: []).valid?
-    assert_not new_recipe(name: "x", kind: "steps", inputs: []).valid?
-    assert_not new_recipe(name: "x", body: "x", output_folder: folders(:inbox), inputs: [ input(:interior) ]).valid?
-    assert_not new_recipe(name: "x", body: "x", output_folder: folders(:interior), inputs: [ input(:interior) ]).valid?
-    assert new_recipe(name: "x", body: "x", output_folder: folders(:photobank_logo), inputs: [ input(:interior) ]).valid?
-    video = new_recipe(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior), input(:customer) ])
-    assert_not video.valid?
-    assert_includes video.errors.full_messages, "Inputs must be a single photo to make a video"
-    assert_not new_recipe(name: "x", body: "x", kind: "generate_video", inputs: [ input(:interior, 2) ]).valid?
-    assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
-  end
-
-  test "inputs from one folder merge, their counts summed; a missing count is 1" do
-    recipe = new_recipe(inputs: [ { "folder_id" => folders(:interior).id.to_s }, input(:customer, 5), input(:interior, 2) ])
-    assert_equal [ input(:interior, 3), input(:customer, 5) ], recipe.inputs
-    assert_equal 8, recipe.media_count
-  end
-
-  test "slug follows the name, is never numeric, and old slugs still find the recipe" do
-    assert_equal "collage", @recipe.slug
-    @recipe.update!(name: "Renamed")
-    assert_equal [ "renamed", @recipe, @recipe ], [ @recipe.slug, Recipe.find("renamed"), Recipe.find("collage") ]
-    numeric = create_recipe(name: "2", body: "x", inputs: [ input(:interior) ])
-    assert_equal [ "recipe-2", numeric ], [ numeric.slug, Recipe.find("recipe-2") ]
-    assert_equal "strizhka-i-boroda", create_recipe(name: "Стрижка и борода", body: "x", inputs: [ input(:interior) ]).slug
-  end
-
-  test "run! takes each input's count from its folder, in any order, and rejects other folders, duplicates and another account's photos" do
-    inbox = photo("inbox.jpg", :customer)
+  test "run! rejects duplicates and another account's photos" do
     stranger = photo("stranger.jpg", :photobank_customer, user: users(:admin_user))
-    @recipe.update!(inputs: [ input(:photobank_interior, 2), input(:photobank_customer) ])
-    interior = photo("interior2.jpg", :photobank_interior)
 
     assert_no_difference -> { LibraryMedia.count } do
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, interior, inbox ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, @customer ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, @interior, @customer ]) }
-      assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ @interior, interior, stranger ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ @interior, @interior ]) }
+      assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ @interior, stranger ]) }
     end
-    assert_equal [ @customer, @interior, interior ], @recipe.run!(media: [ @customer, @interior, interior ]).source_media
+    assert_equal [ @customer, @interior ], start(@collage, [ @customer, @interior ]).source_media
   end
 
-  test "a tagged input takes only media with its tag, in any order; output tags land on what it makes" do
-    before, after = tags(:before), tags(:after)
-    assert_equal "new-tag", Tag.create!(name: " #New-Tag ").name
-    plain, other = photo("plain.jpg", :photobank_interior), photo("other.jpg", :photobank_interior)
-    @interior.tags << before
-    @recipe.update!(inputs: [ input(:photobank_interior), input(:photobank_interior).merge("tag_id" => before.id.to_s) ], output_tag_ids: [ after.id.to_s, "" ])
-    assert_equal [ input(:photobank_interior), input(:photobank_interior).merge("tag_id" => before.id) ], @recipe.inputs
-    assert_equal [ after.id ], @recipe.output_tag_ids
-
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media: [ plain, other ]) }
-    run = @recipe.run!(media: [ @interior, plain ])
-    assert_equal [ after ], run.generated_media.tags.to_a
-
-    tagged_only = create_recipe(name: "Tagged", body: "x", inputs: [ input(:photobank_interior).merge("tag_id" => before.id) ])
-    assert_includes @interior.recipes, tagged_only
-    assert_not_includes plain.recipes, tagged_only
-
-    assert_not new_recipe(name: "x", body: "x", inputs: [ input(:interior).merge("tag_id" => 0) ]).valid?
-    assert_not new_recipe(name: "x", body: "x", inputs: [ input(:interior) ], output_tag_ids: [ 0 ]).valid?
-  end
-
-  test "run! paints every input in order with the recipe as given, unsaved edits included, into the output folder" do
+  test "run! paints every input in order with the transformation as given, unsaved edits included, into the given folder" do
     calls = []
     RubyLLM.define_singleton_method(:paint) do |prompt, model:, with:, provider_options:, **|
       calls << [ prompt, model, with.map { it.filename.to_s }, provider_options ]
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"), usage: { "input_tokens" => 10, "cost" => 0.04 })
     end
-    transformation = @recipe.transformation
-    transformation.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
-    transformation.assign_attributes(body: "Compose a collage.\n\nWarmer.", options: transformation.options.merge("quality" => "low"))
-    run = @recipe.run!(media: [ @interior, @customer ])
-    assert_equal "Compose a collage.", transformation.reload.body
+    @collage.update!(options: { "model" => "gpt-image-2", "aspect_ratio" => "1:1", "quality" => "high" })
+    @collage.assign_attributes(body: "Compose a collage.\n\nWarmer.", options: @collage.options.merge("quality" => "low"))
+    run = start(@collage, [ @interior, @customer ])
+    assert_equal "Compose a collage.", @collage.reload.body
     media = run.generated_media
 
     assert_equal [ folders(:ready), @user, "running" ], [ media.folder, media.user, run.status ]
@@ -113,14 +53,15 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal "generate_image_#{run.id}.jpg", media.file.filename.to_s
   end
 
-  test "a video recipe animates its one input into a video" do
+  test "a video animates its one input into a video" do
+    assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
     calls = []
     RubyLLM.define_singleton_method(:animate) do |prompt, with:, **|
       calls << [ prompt, with.filename.to_s ]
       Struct.new(:to_blob).new("mp4-bytes")
     end
     source = photo("room.jpg", :interior)
-    run = recipes(:cinematic).run!(media: [ source ])
+    run = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior))
 
     assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
     run.run!
@@ -130,11 +71,10 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal "mp4-bytes", run.generated_media.file.download
   end
 
-  test "a steps recipe joins its inputs into a video, 1 second each, without a prompt or shot" do
-    recipe = create_recipe(name: "Reel", kind: "steps", shot_group: "Daily", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
-    assert_nil recipe.shot_group
-    media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
-    run = recipe.run!(media:)
+  test "steps joins its inputs into a video, 1 second each, without a prompt or shot" do
+    steps = Transformation.create!(name: "Reel", kind: "steps", shot_group: "Daily")
+    assert_nil steps.shot_group
+    run = start(steps, attach_logo(@interior, @customer))
 
     run.run!
 
@@ -146,10 +86,8 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   { "doppler" => 9.6, "welcome" => 8.1, "black_eyed_peas" => 7.0, "azzurro" => 6.4, "gm_visuals" => 10.2 }.each do |kind, length|
-    test "a #{kind} recipe lays its track under its cuts" do
-      recipe = create_recipe(name: kind, kind:, inputs: [ input(:photobank_interior), input(:photobank_customer) ])
-      media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
-      run = recipe.run!(media:)
+    test "a #{kind} reel lays its track under its cuts" do
+      run = start(Transformation.create!(name: kind, kind:), attach_logo(@interior, @customer))
 
       run.run!
 
@@ -163,13 +101,13 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "gm_visuals speed-ramps videos shorter than their cuts without coming up short" do
-    recipe = create_recipe(name: "GM", kind: "gm_visuals", inputs: [ input(:photobank_interior), input(:photobank_customer) ])
+    gm = Transformation.create!(name: "GM", kind: "gm_visuals")
     Dir.mktmpdir do |dir|
       clip = File.join(dir, "clip.mp4")
       system("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=1", "-pix_fmt", "yuv420p", clip, exception: true)
       [ @interior, @customer ].each { it.update!(kind: "video", file: { io: StringIO.new(File.binread(clip)), filename: "clip.mp4", content_type: "video/mp4" }) }
     end
-    run = recipe.run!(media: [ @interior, @customer ])
+    run = start(gm, [ @interior, @customer ])
 
     run.run!
 
@@ -181,15 +119,13 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "a reel overlays its first cuts with its type's layer, each filled from its own step" do
-    recipe = create_recipe(name: "Black eyed peas", kind: "black_eyed_peas",
-      inputs: [ input(:photobank_interior), input(:photobank_customer) ],
+    reel = Transformation.create!(name: "Black eyed peas", kind: "black_eyed_peas",
       layer_steps: [ { "line2" => "coffee" }, { "line1" => "", "line2" => "" }, { "line1" => "Our", "line2" => "tools" }, { "line2" => "" } ])
-    assert_equal [ { "line2" => "coffee" }, {}, { "line1" => "Our", "line2" => "tools" }, {} ], recipe.transformation.layer_steps
-    media = [ @interior, @customer ].each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
+    assert_equal [ { "line2" => "coffee" }, {}, { "line1" => "Our", "line2" => "tools" }, {} ], reel.layer_steps
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
 
-    run = recipe.run!(media:)
+    run = start(reel, attach_logo(@interior, @customer))
     run.run!
 
     assert_equal "complete", run.reload.status, run.error
@@ -214,22 +150,21 @@ class RecipeTest < ActiveSupport::TestCase
     Transformation::Type.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
-  test "a recipe with a shot group needs a shot from it, and paints the shot and its fixed style after the recipe body" do
+  test "a shot group needs a shot from it, and paints the shot and its fixed style after the body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @recipe = Recipe.find(@recipe.id)
-    @recipe.update!(transformation_attributes: { shot_group: "Daily", style: })
+    @collage.update!(shot_group: "Daily", style:)
     shot = Shot.create!(name: "Empty Chair", body: "The empty chair.", group: "Daily")
     other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:) }
-    assert_raises(ActiveRecord::RecordInvalid) { @recipe.run!(media:, shot: other) }
-    run = @recipe.run!(media:, shot:)
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media) }
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media, shot: other) }
+    run = start(@collage, media, shot:)
     run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
@@ -238,33 +173,28 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    review = create_recipe(name: "Reviews", kind: "review", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    review = Transformation.create!(name: "Reviews", kind: "review", style:, shot_group: "Daily")
     assert_equal [ nil, nil, true, "review" ], [ review.style, review.shot_group, review.takes_review?, review.layer.slug ]
 
-    image = create_recipe(name: "Collage", kind: "generate_image", body: "x", style:, shot_group: "Daily", inputs: [ input(:photobank_interior) ])
+    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:, shot_group: "Daily")
     assert_equal [ style, "Daily", false, nil ], [ image.style, image.shot_group, image.takes_review?, image.layer ]
 
-    assert_not review.update(transformation_attributes: { kind: "generate_image" })
-    assert_includes review.errors.full_messages, "Transformation kind can't be changed"
-    assert_equal "review", review.transformation.reload.kind
+    assert_not review.update(kind: "generate_image")
+    assert_includes review.errors.full_messages, "Kind can't be changed"
+    assert_equal "review", review.reload.kind
   end
 
-  test "a recipe needs a known type, which fixes its layer; an overlay takes one input" do
+  test "a known type fixes its layer" do
     assert_equal [ "fully-booked-color", "Overlay · Fully booked" ], Transformation.new(kind: "fully_booked").then { [ it.layer.slug, it.type_label ] }
     assert_nil Transformation.new(kind: "steps").layer
-    assert new_recipe(name: "x", kind: "daily", inputs: [ input(:ready) ]).valid?
-    assert_not new_recipe(name: "x", kind: "scripted", inputs: [ input(:ready) ]).valid?
-    assert_not new_recipe(name: "x", kind: "nope", inputs: [ input(:ready) ]).valid?
-    assert_not new_recipe(name: "x", kind: "daily", inputs: []).valid?
-    two = new_recipe(name: "x", kind: "daily", inputs: [ input(:ready), input(:ready) ])
-    assert_not two.valid?
-    assert_includes two.errors.full_messages, "Inputs must be a single photo or video to make a story"
-    assert new_recipe(name: "x", kind: "welcome", inputs: [ input(:ready), input(:ready) ]).valid?
+    assert Transformation.new(name: "x", kind: "daily").valid?
+    assert_not Transformation.new(name: "x", kind: "scripted").valid?
+    assert_not Transformation.new(name: "x", kind: "nope").valid?
   end
 
   test "run! records a failure" do
     RubyLLM.define_singleton_method(:paint) { |*, **| raise RubyLLM::Error, "content policy" }
-    run = @recipe.run!(media: [ @interior, @customer ])
+    run = start(@collage, [ @interior, @customer ])
 
     run.run!
 
@@ -278,25 +208,23 @@ class RecipeTest < ActiveSupport::TestCase
     RubyLLM::ActiveRecord::Model.create!(provider: "gemini", model_id: "veo-3.1-generate-preview", name: "Veo 3.1", enabled: true,
       modalities: { "input" => %w[text image], "output" => %w[video] })
 
-    image = @recipe.transformation.runs.new(options: { "model" => "gemini-3-pro-image", "aspect_ratio" => "4:5", "resolution" => "4k" })
+    image = @collage.runs.new(options: { "model" => "gemini-3-pro-image", "aspect_ratio" => "4:5", "resolution" => "4k" })
     assert_equal({ model: "gemini-3-pro-image", generationConfig: { imageConfig: { aspectRatio: "4:5", imageSize: "4K" } }, provider: :gemini },
       image.ai_options)
 
-    video = recipes(:cinematic).transformation.runs.new(options: { "model" => "veo-3.1-generate-preview", "resolution" => "1080p" })
+    video = transformations(:cinematic).runs.new(options: { "model" => "veo-3.1-generate-preview", "resolution" => "1080p" })
     assert_equal({ model: "veo-3.1-generate-preview", parameters: { aspectRatio: "9:16", resolution: "1080p", durationSeconds: 8 }, provider: :gemini },
       video.ai_options)
   end
 
   test "an overlay renders its layer for today over the photo into its output folder" do
-    feature = create_recipe(name: "Fully booked", kind: "fully_booked", inputs: [ input(:ready) ],
-      output_folder: folders(:photobank_logo))
+    feature = Transformation.create!(name: "Fully booked", kind: "fully_booked")
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     rendered = stub_screenshot
 
-    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ @interior ]) }
-    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], user: users(:admin_user)) }
-    run = feature.run!(media: [ photo ])
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], folder: folders(:photobank_logo), user: users(:admin_user)) }
+    run = feature.run!(media: [ photo ], folder: folders(:photobank_logo))
     run.run!
 
     html, size = rendered.sole
@@ -309,17 +237,17 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   test "an overlay over a video lays its transparent layer over the video, as a video" do
-    feature = create_recipe(name: "Daily", kind: "daily", inputs: [ input(:ready) ])
+    feature = Transformation.create!(name: "Daily", kind: "daily")
     clip = Tempfile.new([ "clip", ".mp4" ])
     Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-pix_fmt", "yuv420p", clip.path)
     video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user,
       file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
     assert feature.takes?(video)
-    assert_not @recipe.takes?(video)
+    assert_not @collage.takes?(video)
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
 
-    run = feature.run!(media: [ video ])
+    run = start(feature, [ video ])
     run.run!
 
     assert_equal "complete", run.reload.status, run.error
@@ -334,7 +262,6 @@ class RecipeTest < ActiveSupport::TestCase
   test "smart crop takes one photo or video and makes the same, 9:16 at 1080x1920 around its subject" do
     assert_equal "Transform · Smart crop", Transformation.new(kind: "smart_crop").type_label
     assert_equal "Transform · Smart crop", Transformation.new(kind: "smart_crop").options_label
-    assert_not new_recipe(name: "x", kind: "smart_crop", inputs: [ input(:ready), input(:ready) ]).valid?
     crop = Transformation.create!(name: "Smart crop", kind: "smart_crop")
     # A red box on the left of a black frame: the middle 9:16 is all black.
     scene = "color=c=black:size=640x360:duration=1:rate=30,drawbox=x=20:y=130:w=100:h=100:color=red:t=fill"
@@ -398,8 +325,8 @@ class RecipeTest < ActiveSupport::TestCase
     end
   end
 
-  test "a review recipe needs a review and renders it on its layer" do
-    feature = create_recipe(name: "Reviews", kind: "review", inputs: [ input(:ready) ])
+  test "a review needs a review and renders it on its layer" do
+    feature = Transformation.create!(name: "Reviews", kind: "review")
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     review = @user.reviews.create!(source: "google", customer_name: "Dana K.", rating: 5, body: "Best fade in town.",
@@ -408,9 +335,9 @@ class RecipeTest < ActiveSupport::TestCase
     rendered = stub_screenshot
 
     assert_equal [ review ], @user.reviews.postable.to_a
-    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ]) }
-    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], review: users(:admin_user).reviews.create!(source: "google", customer_name: "X", rating: 5, body: "Hi.")) }
-    run = feature.run!(media: [ photo ], review:)
+    assert_raises(ActiveRecord::RecordInvalid) { start(feature, [ photo ]) }
+    assert_raises(ActiveRecord::RecordInvalid) { start(feature, [ photo ], review: users(:admin_user).reviews.create!(source: "google", customer_name: "X", rating: 5, body: "Hi.")) }
+    run = start(feature, [ photo ], review:)
     run.run!
 
     html, = rendered.sole
@@ -422,7 +349,10 @@ class RecipeTest < ActiveSupport::TestCase
 
   private
 
-    def input(folder, count = 1) = { "folder_id" => folders(folder).id, "count" => count }
+    def start(transformation, media, **) = transformation.run!(media:, folder: folders(:ready), **)
+
+    def attach_logo(*media) = media.each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
+
     def stub_screenshot
       rendered = []
       Layer.define_singleton_method(:screenshot) { |html, size:| rendered << [ html, size ] and "png-bytes" }

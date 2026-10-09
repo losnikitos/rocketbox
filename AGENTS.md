@@ -18,21 +18,21 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Proof / examples:** Use-case pages under `/use-cases/:slug` ([registry](/app/controllers/use_cases_controller.rb)), with real barbershop demos reused on the home page.
 
-**SMM media pipeline:** How SMM media gets produced, drawn live from the recipes at `/app/overview` ([controller](/app/controllers/accounts/overview_controller.rb)): folders hold media, recipes read from folders and write to a folder (scripted recipes to Stories). Styles, shot groups, layers and reviews are drawn as folders too. Laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js).
+**SMM media pipeline:** How SMM media gets produced: workflows read media from folders, run it through transformation steps and land the results in folders (Ready by default).
 
-**Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, the default recipe output. Every media is in exactly one folder; recipe inputs and outputs point at folders.
+**Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, where a step with no output folder lands. Every media is in exactly one folder; workflow folder nodes point at folders, and a folder's page lists the workflows reading and writing it.
 
-**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, shot group, layer steps; a recipe's own takes the recipe's name), a shared row reusable outside recipes, edited at `/app/transformations` ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the "Add transformation" menu (or the new recipe form) and fixed once created. A recipe is inputs + a transformation + output; every run is a `TransformationRun`, its recipe optional.
+**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, shot group, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created. Every run is a `TransformationRun`; a generated media's page links to the step that made it.
 
-**Workflows:** our new approach to building the media pipeline — a graph of folder, media and transformation step nodes, edited and run on the overview's flow canvas; inspired by n8n, ComfyUI, Zapier and friends. For now they run in parallel with recipes; recipes may be retired later. See [WORKFLOWS.md](./docs/WORKFLOWS.md).
+**Workflows:** the media pipeline — a graph of folder, media and transformation step nodes, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md).
 
-**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A recipe tags what it makes (`output_tag_ids`), and an input can take only media with a tag (`inputs[].tag_id`). A workflow folder node's `tag_ids` do both: an input folder gives only media with all of them, an output folder adds them to what lands in it.
+**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow folder node's `tag_ids` filter and label: an input folder gives only media with all of them, an output folder adds them to what lands in it.
 
 ```mermaid
 flowchart LR
- Inbox[/Inbox/] --> InboxRecipes[Recipes] --> Photobank[/Photobank/] --> Recipes --> Ready[/Ready/] --> Scripted[Scripted recipes] --> Stories[/Stories/]
- Styles[/Styles/] --> Recipes
- Shots[/Shot groups/] --> Recipes
+ Inbox[/Inbox/] --> InboxSteps[Steps] --> Photobank[/Photobank/] --> Steps --> Ready[/Ready/] --> Scripted[Scripted steps] --> Stories[/Stories/]
+ Styles[/Styles/] --> Steps
+ Shots[/Shot groups/] --> Steps
  Layers[/Layers/] --> Scripted
  Reviews[/Reviews/] --> Scripted
 ```
@@ -76,7 +76,7 @@ Authentication and session login.
 How the app is deployed and operated in production.
 
 ### [PROMPTS.md](./docs/PROMPTS.md)
-LLM prompts: content `Recipe` rows at `/app/recipes`; service prompts are constants in code.
+LLM prompts: content prompts in workflow steps' transformations; service prompts are constants in code.
 
 ### [PRICE_BANDS.md](./docs/PRICE_BANDS.md)
 How AI models get their £ / ££ / £££ price band: per-image and per-second cost estimates.

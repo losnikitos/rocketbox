@@ -43,7 +43,7 @@ class LibraryMedia < ApplicationRecord
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
-  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; photobank/ready is final recipe output.
+  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; photobank/ready is where steps with no output folder land.
   def business_card? = folder.slug == "business-card"
   def ready? = folder.slug == "ready" && folder.parent&.slug == "photobank"
 
@@ -64,13 +64,6 @@ class LibraryMedia < ApplicationRecord
     return false if !file.attached? || story_image?
 
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
-  end
-
-  # Recipes with an input this media can fill.
-  def recipes
-    return [] unless story_image?
-
-    Recipe.with_attached_example.includes(:transformation).ordered.select { |recipe| recipe.inputs.any? { Recipe.takes_input?(it, self) } }
   end
 
   def extraction_status

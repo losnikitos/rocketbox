@@ -14,7 +14,7 @@
           data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
         <% style.examples.each_with_index do |example, index| %>
           <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
-            <%= render "accounts/recipes/example", example:, css: "size-full object-cover" %>
+            <%= render "shared/example", example:, css: "size-full object-cover" %>
           </div>
         <% end %>
         <%= link_to edit_style_path(style), class: "absolute inset-0 flex items-start" do %>
@@ -27,6 +27,6 @@
   </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-    Add a style — lighting, camera and colour cues added to a recipe.
+    Add a style — lighting, camera and colour cues added to a generation step.
   </div>
 <% end %>
