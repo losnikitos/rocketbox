@@ -2,7 +2,7 @@
 
 # How media is made from given media: a workflow step's processing, owned by its step.
 # `kind` is how, the slug of its `type` (see Transformation::Type), fixed once created, which fixes its layer: a Generation is one AI call
-# making an image or a video; an Overlay lays its layer over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
+# making an image or a video; an Overlay lays its layer, filled from its first layer step, over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
 # one photo or video, as the same, or as a video (Zoom); a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs, or its type's own (see GenerationOptions).
@@ -27,7 +27,7 @@ class Transformation < ApplicationRecord
 
   before_validation do
     self.shot_group, self.style = nil, nil unless ai?
-    self.layer_steps = [] unless reel? && layer
+    self.layer_steps = [] unless layer_steps?
   end
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
@@ -36,6 +36,9 @@ class Transformation < ApplicationRecord
   after_update { workflow_nodes.each(&:touch) }
 
   def type = Type.find(kind)
+
+  # Whether its layer is filled from `layer_steps`; the review type fills it from a review.
+  def layer_steps? = layer.present? && !takes_review?
 
   # "Generation · Image", or "Overlay · Fully booked".
   def type_label = type&.then { "#{it.group.label} · #{it.label}" }

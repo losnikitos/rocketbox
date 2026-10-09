@@ -23,8 +23,7 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     get transformation_url(transformation, account: admin.id), headers: FRAME
     assert_select "turbo-frame#transformation form[data-turbo-frame=transformation]" do
       assert_select "textarea[name='transformation[body]']"
-      assert_select "input[name='transformation[name]'][value=?]", "Image"
-      assert_select "p", text: "Generation · Image"
+      assert_select "input[name='transformation[name]']", count: 0
       assert_select "[name='transformation[kind]']", count: 0
     end
 
@@ -35,9 +34,8 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     patch transformation_url(transformation, account: admin.id), params: { transformation: { body: "" } }, headers: autosave
     assert_response :ok
     assert_predicate transformation.reload.body, :blank?
-    # The canvas node and inspector heading take the saved name and options.
+    # The canvas node takes the saved name and options.
     assert_select "turbo-stream[action=update][target=node_#{step.id}_label] template", text: "Team collage"
-    assert_select "turbo-stream[target=node_#{step.id}_heading]"
     assert_select "turbo-stream[target=node_#{step.id}_kind] template", text: transformation.options_label
     # A model switch saves with the old model's options it doesn't offer refilled.
     patch transformation_url(transformation, account: admin.id), params: { transformation: { options: { model: "gpt-image-2", resolution: "4k" } } }, headers: autosave

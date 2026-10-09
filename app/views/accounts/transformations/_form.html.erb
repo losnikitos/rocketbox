@@ -1,52 +1,35 @@
 <%# locals: (transformation:) %>
-<%# A workflow step's own transformation, edited in the workflow's inspector frame. %>
-<% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
+<%# A workflow step's own transformation, edited in the workflow's inspector frame; its name is edited in the inspector's header. %>
 <% scope = "transformation" %>
-<div class="@container space-y-6">
-  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6",
-        data: { turbo_frame: "transformation", controller: "autosave", action: "input->autosave#queue change->autosave#queue" } do |f| %>
-    <% if transformation.errors.any? %>
-      <div class="<%= tw_alert_error_classes %>" role="alert">
-        <ul class="list-inside list-disc">
-          <% transformation.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
-
-    <div class="max-w-md">
-      <%= f.label :name, class: tw_label_classes %>
-      <%= f.text_field :name, required: true, class: tw_input_classes %>
-    </div>
-
-    <div class="grid grid-cols-1 items-start gap-6 @3xl:grid-cols-2">
-      <section class="<%= island %>">
-        <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url: transformation_path(transformation) %>
-      </section>
-
-      <div class="space-y-6">
-        <% if transformation.ai? || (transformation.reel? && transformation.layer) %>
-          <section class="<%= island %>">
-            <% if transformation.ai? %>
-              <div>
-                <%= f.label :style_id, "Style", class: tw_label_classes %>
-                <%= f.select :style_id, Style.ordered.pluck(:name, :id), { include_blank: "None" }, class: tw_input_classes %>
-              </div>
-              <div>
-                <%= f.label :shot_group, "Shot group", class: tw_label_classes %>
-                <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
-              </div>
-            <% end %>
-            <% if transformation.reel? && transformation.layer %>
-              <div>
-                <p class="<%= tw_label_classes %>">Layer · <%= transformation.layer.name %></p>
-                <%= render "accounts/transformations/layer_steps", transformation:, scope: %>
-              </div>
-            <% end %>
-          </section>
+<% field_label = "mb-1 block text-xs text-ink-500" %>
+<%= form_with model: transformation, id: "transformation_form", class: "space-y-4",
+      data: { turbo_frame: "transformation", controller: "autosave", action: "input->autosave#queue change->autosave#queue" } do |f| %>
+  <% if transformation.errors.any? %>
+    <div class="<%= tw_alert_error_classes %>" role="alert">
+      <ul class="list-inside list-disc">
+        <% transformation.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
         <% end %>
-      </div>
+      </ul>
     </div>
   <% end %>
-</div>
+
+  <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url: transformation_path(transformation) %>
+
+  <% if transformation.ai? %>
+    <div>
+      <%= f.label :style_id, "Style", class: field_label %>
+      <%= f.select :style_id, Style.ordered.pluck(:name, :id), { include_blank: "None" }, class: tw_input_classes %>
+    </div>
+    <div>
+      <%= f.label :shot_group, "Shot group", class: field_label %>
+      <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
+    </div>
+  <% end %>
+  <% if transformation.layer_steps? %>
+    <div>
+      <p class="<%= field_label %>">Layer · <%= transformation.layer.name %></p>
+      <%= render "accounts/transformations/layer_steps", transformation:, scope: %>
+    </div>
+  <% end %>
+<% end %>

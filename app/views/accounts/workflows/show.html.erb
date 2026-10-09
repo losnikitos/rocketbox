@@ -227,59 +227,137 @@
   </div>
 
   <%= turbo_frame_tag "inspector", class: "hidden shrink-0 has-[*]:block space-y-4 overflow-y-auto border-ink-900/10 p-4 max-md:border-t md:w-96 md:border-l lg:w-108" do %>
+    <% panel = "space-y-3 border-t border-ink-900/10 pt-4" %>
+    <% panel_heading = "text-sm font-semibold text-ink-900" %>
+    <% field_label = "mb-1 block text-xs text-ink-500" %>
+    <% title = "min-w-0 flex-1 truncate px-2 py-0.5 font-manrope text-base font-bold text-ink-900" %>
+    <% icon_button = "cursor-pointer rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+    <% close = link_to(here, data: top, aria: { label: "Close" }, class: icon_button) { heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } } %>
+    <% remove = ->(label, params) do
+         button_to(workflow_path(@workflow), method: :patch, form: { data: top }, params: { workflow: params },
+           data: { workflow_target: "remove" }, aria: { label:, keyshortcuts: "Delete" }, title: label, class: "#{icon_button} hover:text-signal-red") do
+           heroicon "trash", variant: :mini, options: { class: "size-5", "aria-hidden": true }
+         end
+       end %>
     <% if (edge = @selected_edge) %>
-      <header class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <p class="text-xs text-ink-500">Connection</p>
-          <h2 class="truncate text-sm font-semibold text-ink-900"><%= edge.from.label %> → <%= edge.to.label %></h2>
-        </div>
-        <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
-          <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
-        <% end %>
+      <header class="-ml-2 flex items-center gap-1">
+        <h2 class="<%= title %>"><%= edge.from.label %> → <%= edge.to.label %></h2>
+        <%= remove.("Remove connection", { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } }) %>
+        <%= close %>
       </header>
-      <%= button_to "Remove connection", workflow_path(@workflow), method: :patch, form: { data: top },
-            data: { workflow_target: "remove" }, aria: { keyshortcuts: "Delete" },
-            class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5",
-            params: { workflow: { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } } } %>
     <% elsif (node = @selected) %>
-      <header class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.note? ? "Note" : node.library_media ? "Media" : "Folder" %></p>
-          <h2 id="node_<%= node.id %>_heading" class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
-        </div>
-        <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
-          <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+      <header class="-ml-2 flex items-center gap-1">
+        <% if node.step? %>
+          <%= form_with model: node.transformation, class: "min-w-0 flex-1",
+                data: { controller: "autosave", action: "input->autosave#queue submit->autosave#submit" } do |f| %>
+            <%= f.text_field :name, required: true, placeholder: "Step name", "aria-label": "Name",
+                  class: "block w-full rounded-lg border-0 bg-transparent px-2 py-0.5 font-manrope text-base font-bold text-ink-900 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+          <% end %>
+        <% elsif (folder = node.folder) %>
+          <h2 class="<%= title %> flex items-center gap-2">
+            <%= heroicon "folder", options: { class: "size-5 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
+            <span class="truncate"><%= folder.path %></span>
+          </h2>
+          <%= link_to library_folders_path(*[ folder.parent&.slug, folder.slug ].compact), target: "_blank", rel: "noopener",
+                title: "Open in library", class: "rb-btn-ghost-on-light shrink-0 gap-1 px-2.5 py-1 text-sm font-normal" do %>
+            Open <span aria-hidden="true">↗</span>
+          <% end %>
+        <% else %>
+          <h2 class="<%= title %>"><%= node.label %></h2>
         <% end %>
+        <%= remove.("Remove from workflow", { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } }) %>
+        <%= close %>
       </header>
 
       <% start = @start_nodes.include?(node) %>
-      <% if (status = TransformationRun.status_of(@node_runs)) %>
-        <dl aria-label="Stats" class="grid grid-cols-2 gap-3 border-t border-ink-900/10 pt-4 text-sm">
-          <div>
-            <dt class="text-xs text-ink-500">Status</dt>
-            <dd class="mt-1"><span class="<%= run_status_pill_class(status) %>"><%= status.humanize %></span></dd>
-          </div>
-          <div>
-            <dt class="text-xs text-ink-500">Took</dt>
-            <dd class="mt-1 text-ink-900 tabular-nums"><%= took.(@node_runs) %></dd>
-          </div>
-        </dl>
-        <% @node_runs.filter_map(&:error).uniq.each do |error| %>
-          <p class="<%= tw_alert_error_classes %>" role="alert"><%= error %></p>
-        <% end %>
-      <% elsif node.step? %>
-        <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
+      <% @node_runs.filter_map(&:error).uniq.each do |error| %>
+        <p class="<%= tw_alert_error_classes %>" role="alert"><%= error %></p>
       <% end %>
-      <% if node.folder && start %>
-        <section aria-label="Pins" class="space-y-2 border-t border-ink-900/10 pt-4">
+
+      <% unless node.note? %>
+        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
+          <section aria-label="<%= label %>" class="<%= panel %>">
+            <h3 class="<%= panel_heading %>"><%= label %></h3>
+            <% if media.any? %>
+              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+            <% else %>
+              <p class="text-sm text-ink-500">None in this run.</p>
+            <% end %>
+          </section>
+        <% end %>
+      <% end %>
+
+      <% if (node.step? || node.folder) && Tag.exists? %>
+        <section aria-label="Tags" class="<%= panel %>">
+          <h3 class="<%= panel_heading %>"><%= node.step? ? "Set tags" : "Filter by tag" %></h3>
+          <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+              <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+
+      <section aria-label="Settings" class="<%= panel %>">
+        <h3 class="<%= panel_heading %>">Settings</h3>
+        <% if node.step? %>
+          <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block" do %>
+            <p class="text-sm text-ink-500">Loading…</p>
+          <% end %>
+        <% elsif node.note? %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "space-y-4" do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <div>
+              <%= label_tag "workflow_node_note", "Note", class: field_label %>
+              <%= text_area_tag "workflow[nodes_attributes][0][note]", node.note, id: "workflow_node_note", rows: 8,
+                    aria: { describedby: "workflow_node_note_hint" }, class: tw_input_classes %>
+              <p id="workflow_node_note_hint" class="mt-1 text-xs text-ink-500">Markdown: **bold**, # heading, - list. Saves when you click away.</p>
+            </div>
+            <fieldset>
+              <legend class="<%= field_label %>">Color</legend>
+              <div class="flex gap-2">
+                <% Folder.colors.each_key do |color| %>
+                  <label title="<%= color.humanize %>"
+                         class="size-8 cursor-pointer rounded-full border-2 <%= AppHelper::NOTE_COLORS[color] %> has-checked:ring-2 has-checked:ring-rocket has-checked:ring-offset-2 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                    <%= radio_button_tag "workflow[nodes_attributes][0][color]", color, node.color == color, id: nil, class: "sr-only" %>
+                    <span class="sr-only"><%= color.humanize %></span>
+                  </label>
+                <% end %>
+              </div>
+            </fieldset>
+          <% end %>
+        <% elsif (media = node.library_media) %>
+          <%= link_to "Open in library", library_item_path(media), data: top, class: "rb-btn-ghost-on-light inline-block px-3.5 py-1.5 text-sm" %>
+        <% else %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <%= label_tag "workflow_node_newest", "Take", class: field_label %>
+            <div class="w-24">
+              <%= number_field_tag "workflow[nodes_attributes][0][newest]", node.newest, id: "workflow_node_newest", min: 1, required: true, class: tw_input_classes %>
+            </div>
+          <% end %>
+        <% end %>
+      </section>
+
+      <% if (media = node.library_media) %>
+        <section aria-label="Media" class="<%= panel %>">
+          <h3 class="<%= panel_heading %>">Media</h3>
+          <div class="group relative w-40">
+            <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+            <%= render "accounts/library/quick_view", media: %>
+          </div>
+        </section>
+      <% elsif node.folder && start %>
+        <section aria-label="Pins" class="<%= panel %>">
           <div class="flex items-center justify-between gap-2">
-            <h3 class="text-xs text-ink-500">
-              <%= node.pinned_media_ids.any? ? "Play takes the pinned media" : "Play takes its newest #{node.newest}; pin media to take them instead" %>
+            <h3 class="<%= panel_heading %>">
+              <%= node.pinned_media_ids.any? ? "Pinned media" : "Play takes its newest #{node.newest}; pin media to take them instead" %>
             </h3>
             <% if node.pinned_media_ids.any? %>
               <%= button_to "Reset pins", workflow_path(@workflow), method: :patch, form: { data: top },
                     params: { workflow: { nodes_attributes: { "0" => { id: node.id, pinned_media_ids: [ "" ] } } } },
-                    title: "Take its newest media again", class: "rb-btn-ghost-on-light shrink-0 px-2.5 py-1 text-xs" %>
+                    title: "Take its newest media again", class: "shrink-0 cursor-pointer text-xs text-ink-600 underline hover:text-ink-900" %>
             <% end %>
           </div>
           <% if @folder_media.any? %>
@@ -309,110 +387,26 @@
             <p class="text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
           <% end %>
         </section>
-      <% elsif node.step? ? @node_runs.any? : (@run_inputs + @run_outputs).any? %>
-        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
-          <section aria-label="<%= label %>" class="space-y-2 border-t border-ink-900/10 pt-4">
-            <h3 class="text-xs text-ink-500"><%= label %></h3>
-            <% if media.any? %>
-              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
-            <% else %>
-              <p class="text-sm text-ink-500">None in this run.</p>
-            <% end %>
-          </section>
-        <% end %>
+      <% elsif node.folder %>
+        <section aria-label="Media" class="<%= panel %>">
+          <h3 class="<%= panel_heading %>">Media</h3>
+          <% if @folder_media.any? %>
+            <ul aria-label="Media" class="grid grid-cols-3 gap-2">
+              <% @folder_media.each do |media| %>
+                <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
+                  <%= link_to library_item_path(media), data: top, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
+                    <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+                  <% end %>
+                  <%= render "accounts/library/quick_view", media: %>
+                  <%= add_to_canvas.(media) %>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
+          <% end %>
+        </section>
       <% end %>
-
-      <section aria-label="Settings" class="space-y-4 border-t border-ink-900/10 pt-4">
-        <h3 class="text-xs text-ink-500">Settings</h3>
-        <div class="flex flex-wrap items-center gap-2">
-          <% if node.folder %>
-            <%= link_to "Open in library", library_folders_path(*[ node.folder.parent&.slug, node.folder.slug ].compact), data: top,
-                  class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
-          <% elsif node.library_media %>
-            <%= link_to "Open in library", library_item_path(node.library_media), data: top, class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
-          <% end %>
-          <%= button_to "Remove from workflow", workflow_path(@workflow), method: :patch, form: { data: top },
-                data: { workflow_target: "remove" }, aria: { keyshortcuts: "Delete" },
-                class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3.5 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5",
-                params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
-        </div>
-
-        <% if (node.step? || node.folder) && Tag.exists? %>
-          <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
-            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-            <p class="<%= tw_label_classes %>"><%= node.step? ? "Tag what it makes" : "Only media tagged" %></p>
-            <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-              <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
-            </div>
-            <p class="mt-1 text-xs text-ink-500">
-              <%= node.step? ? "Its results get these tags." : "Steps it feeds take only its media with all of these tags." %>
-            </p>
-          <% end %>
-        <% end %>
-
-        <% if node.step? %>
-          <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block border-t border-ink-900/10 pt-4" do %>
-            <p class="text-sm text-ink-500">Loading…</p>
-          <% end %>
-        <% elsif (media = node.library_media) %>
-          <div class="border-t border-ink-900/10 pt-4">
-            <div class="group relative w-40">
-              <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-              <%= render "accounts/library/quick_view", media: %>
-            </div>
-          </div>
-        <% elsif node.note? %>
-          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "space-y-4 border-t border-ink-900/10 pt-4" do %>
-            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-            <div>
-              <%= label_tag "workflow_node_note", "Note", class: tw_label_classes %>
-              <%= text_area_tag "workflow[nodes_attributes][0][note]", node.note, id: "workflow_node_note", rows: 8,
-                    aria: { describedby: "workflow_node_note_hint" }, class: tw_input_classes %>
-              <p id="workflow_node_note_hint" class="mt-1 text-xs text-ink-500">Markdown: **bold**, # heading, - list. Saves when you click away.</p>
-            </div>
-            <fieldset>
-              <legend class="<%= tw_label_classes %>">Color</legend>
-              <div class="flex gap-2">
-                <% Folder.colors.each_key do |color| %>
-                  <label title="<%= color.humanize %>"
-                         class="size-8 cursor-pointer rounded-full border-2 <%= AppHelper::NOTE_COLORS[color] %> has-checked:ring-2 has-checked:ring-rocket has-checked:ring-offset-2 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                    <%= radio_button_tag "workflow[nodes_attributes][0][color]", color, node.color == color, id: nil, class: "sr-only" %>
-                    <span class="sr-only"><%= color.humanize %></span>
-                  </label>
-                <% end %>
-              </div>
-            </fieldset>
-          <% end %>
-        <% else %>
-          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
-            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-            <%= label_tag "workflow_node_newest", "Newest", class: tw_label_classes %>
-            <div class="w-24">
-              <%= number_field_tag "workflow[nodes_attributes][0][newest]", node.newest, id: "workflow_node_newest", min: 1, required: true,
-                    aria: { describedby: "workflow_node_newest_hint" }, class: tw_input_classes %>
-            </div>
-            <p id="workflow_node_newest_hint" class="mt-1 text-xs text-ink-500">How many of its newest media it gives the steps it feeds.</p>
-          <% end %>
-          <%# A start folder's media are its pins above. %>
-          <% unless start %>
-            <% if @folder_media.any? %>
-              <ul aria-label="Media" class="grid grid-cols-3 gap-2 border-t border-ink-900/10 pt-4">
-                <% @folder_media.each do |media| %>
-                  <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
-                    <%= link_to library_item_path(media), data: top, class: "block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" do %>
-                      <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
-                    <% end %>
-                    <%= render "accounts/library/quick_view", media: %>
-                    <%= add_to_canvas.(media) %>
-                  </li>
-                <% end %>
-              </ul>
-            <% else %>
-              <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
-            <% end %>
-          <% end %>
-        <% end %>
-      </section>
     <% end %>
   <% end %>
 </div>

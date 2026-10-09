@@ -78,15 +78,16 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: input.id, tag_ids: [ "", tags(:before).id, tags(:after).id ] } } } }
     assert_equal "#{folders(:interior).path} #after #before", input.reload.label
     get workflow_url(workflow, account: admin.id, node: input.id)
-    assert_select "turbo-frame#inspector p", text: "Only media tagged"
+    assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
     get workflow_url(workflow, account: admin.id, node: output.id)
-    assert_select "turbo-frame#inspector p", text: "Only media tagged"
+    assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
     patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, tag_ids: [ "", tags(:after).id ] } } } }
     assert_equal [ tags(:after).id ], step.reload.tag_ids
     get workflow_url(workflow, account: admin.id, node: step.id)
-    assert_select "turbo-frame#inspector p", text: "Tag what it makes"
+    assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Set tags"
+    assert_select "turbo-frame#inspector header form[action^=?] input[name='transformation[name]'][value=?]", transformation_path(step.transformation), step.label
 
     get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
@@ -104,7 +105,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id, edge: edge_out.id)
     assert_select "turbo-frame#inspector h2", "#{step.label} → #{output.label}"
-    assert_select "turbo-frame#inspector button", "Remove connection"
+    assert_select "turbo-frame#inspector header button[aria-label='Remove connection']"
     patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge_out.id, _destroy: 1 } } } }
     assert_equal [ edge_in ], workflow.edges.reload.to_a
 
@@ -217,10 +218,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: step.id)
     assert_select "turbo-frame#inspector" do
-      assert_select "dl[aria-label=Stats] dd", text: "Running"
+      assert_select "dl", 0
       assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
-      assert_select "dl[aria-label=Stats] ~ section[aria-label=Settings] button", text: "Remove from workflow"
+      assert_select "header button[aria-label='Remove from workflow']"
+      assert_select "section[aria-label=Outputs] ~ section[aria-label=Settings]"
     end
     popovers = css_select("[popover]").map { it["id"] }
     assert_equal popovers.uniq, popovers

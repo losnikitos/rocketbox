@@ -236,6 +236,16 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal [ "image/png", "png-bytes" ], [ media.file.content_type, media.file.download ]
   end
 
+  test "an overlay fills its layer from its layer step" do
+    text = Transformation.create!(name: "Text", kind: "text", layer_steps: [ { "text" => "Open late tonight" } ])
+    rendered = stub_screenshot
+
+    start(text, [ attach_logo(@interior).first ]).run!
+
+    assert_includes rendered.sole.first, "Open late tonight"
+    assert_empty Transformation.create!(name: "Reviews", kind: "review", layer_steps: [ { "text" => "x" } ]).layer_steps
+  end
+
   test "an overlay over a video lays its transparent layer over the video, as a video" do
     feature = Transformation.create!(name: "Daily", kind: "daily")
     clip = Tempfile.new([ "clip", ".mp4" ])

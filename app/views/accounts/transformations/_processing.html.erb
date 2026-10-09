@@ -1,23 +1,14 @@
 <%# locals: (tf:, transformation:, scope:, refresh_url:) %>
-<%# A saved type is fixed. %>
 <% type = transformation.type %>
+<% field_label = "mb-1 block text-xs text-ink-500" %>
+<% layer, original = type&.layer, type.try(:original) %>
+<% if layer || original || type.try(:source_url) %>
 <div class="space-y-3">
-  <p class="<%= tw_label_classes %>">Type</p>
-  <% if type %>
-    <p class="mt-1 flex items-center gap-2 text-sm text-ink-900">
-      <%= image_tag type.cover, alt: "", class: "aspect-2/3 w-6 shrink-0 rounded-sm object-cover" %>
-      <%= transformation.type_label %>
-    </p>
-  <% end %>
-  <% if type&.description %>
-    <p class="text-sm text-ink-600"><%= type.description %></p>
-  <% end %>
-  <% layer, original = type&.layer, type.try(:original) %>
   <% if layer || original %>
     <div class="grid grid-cols-2 gap-3">
       <% if layer %>
         <div>
-          <p class="<%= tw_label_classes %>">Layer</p>
+          <p class="<%= field_label %>">Layer</p>
           <div class="relative overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900 transition hover:border-ink-900/30"
                style="aspect-ratio: <%= layer.size.join(" / ") %>">
             <iframe src="<%= canvas_layer_path(layer) %>" title="<%= layer.name %>" loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
@@ -27,7 +18,7 @@
       <% end %>
       <% if original %>
         <div>
-          <p class="<%= tw_label_classes %>">Original</p>
+          <p class="<%= field_label %>">Original</p>
           <%= tag.video controls: true, preload: "metadata", src: original_transformations_path(type.slug), "aria-label": "Original reel",
                 class: "aspect-9/16 w-full rounded-lg bg-ink-900" %>
         </div>
@@ -41,9 +32,10 @@
     <% end %>
   <% end %>
 </div>
+<% end %>
 <% if transformation.ai? %>
   <div>
-    <%= tf.label :body, "Prompt", class: tw_label_classes %>
+    <%= tf.label :body, "Prompt", class: field_label %>
     <%= tf.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
   </div>
 <% end %>
