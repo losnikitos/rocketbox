@@ -133,17 +133,18 @@ module Accounts
         @start_nodes = @workflow.start_nodes
         complete = @graph_nodes.select { |node| runs_of.(node).then { it.any? && it.all?(&:complete?) } }.map(&:id)
         @nodes = @graph_nodes.to_h do |node|
-          icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
+          input = node.folder && @graph_edges.any? { it.from_id == node.id }
+          icon = input ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.note? ? :note : node.library_media ? :media : :folder
           runs = runs_of.(node)
           # A step not running can start once every step feeding it is complete in the run; folders and media always feed.
           feeds = @graph_edges.select { it.to_id == node.id }
           ready = node.step? && runs.none?(&:running?) && feeds.any? &&
             feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
-          [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
+          [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
-                       kind: node.transformation&.options_label, tags: (node.tags if node.step?), inputs: feeds.size, slots: node.transformation&.slots,
+                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input), inputs: feeds.size, slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end

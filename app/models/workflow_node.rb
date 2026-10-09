@@ -37,13 +37,16 @@ class WorkflowNode < ApplicationRecord
       (media_type.nil? || (media_type == "image" ? media.story_image? : media.video?))
   end
 
+  # A folder's media type and how many it gives, e.g. "Videos · take 3".
+  def gives
+    [ media_type&.pluralize&.capitalize, pinned_media_ids.any? ? "#{pinned_media_ids.size} pinned" : ("take #{take}" if take.to_i > 1) ].compact.join(" · ").presence
+  end
+
   def label
     if step? then transformation&.name
     elsif note? then note.lines.first&.strip.presence || "Note"
     elsif (media = library_media) then media.file.attached? ? media.file.filename.to_s : media.kind.humanize
-    else
-      gives = pinned_media_ids.any? ? "· #{pinned_media_ids.size} pinned" : ("· take #{take}" if take.to_i > 1)
-      [ folder&.path, *tags.map { "##{it.name}" }, media_type&.pluralize, gives ].compact.join(" ")
+    else [ folder&.path, *tags.map { "##{it.name}" }, ("· #{gives}" if gives) ].compact.join(" ")
     end
   end
 end
