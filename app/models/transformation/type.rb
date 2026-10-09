@@ -10,6 +10,7 @@ class Transformation::Type
     Transformation::GenerateImage, Transformation::GenerateVideo,
     Transformation::SmartCrop, Transformation::Zoom, Transformation::ColorGrade,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
+    Transformation::Caption, Transformation::Text,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
   ]
 
@@ -25,6 +26,9 @@ class Transformation::Type
   def self.cover = "transformations/#{slug}.jpg"
 
   def self.layer = nil
+
+  # How many layer steps the form shows: one is used over every cut (or the one photo or video), more are one per cut.
+  def self.steps = 1
 
   def self.ai? = false
 
@@ -57,8 +61,8 @@ class Transformation::Type
     def attachment(bytes, ext, content_type) = { io: StringIO.new(bytes), filename: "#{transformation.kind}_#{run.id}.#{ext}", content_type: }
 
     # PNG bytes: the layer over the first source media, cropped to the layer's size, filled from `values`
-    # (the run's review's, if any). Transparent behind the layer when `over_photo` is false.
-    def layer_png(over_photo: true, values: run.review&.layer_values || {})
+    # (the run's review's, else the first layer step's). Transparent behind the layer when `over_photo` is false.
+    def layer_png(over_photo: true, values: run.review&.layer_values || transformation.layer_steps.first.to_h.symbolize_keys)
       layer = self.class.layer
       if over_photo
         photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed

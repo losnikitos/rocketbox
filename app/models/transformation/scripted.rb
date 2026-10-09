@@ -25,9 +25,6 @@ class Transformation::Scripted < Transformation::Type
 
   def self.track = dir.join("#{slug}.wav").then { it if it.exist? }
 
-  # How many layer steps the form shows: one is used over every cut, more are one per cut.
-  def self.steps = 1
-
   def file
     media, track = source_media, self.class.track
     Dir.mktmpdir do |dir|

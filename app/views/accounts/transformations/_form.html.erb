@@ -26,7 +26,7 @@
       </section>
 
       <div class="space-y-6">
-        <% if transformation.ai? || (transformation.reel? && transformation.layer) %>
+        <% if transformation.ai? || transformation.layer_steps? %>
           <section class="<%= island %>">
             <% if transformation.ai? %>
               <div>
@@ -38,7 +38,7 @@
                 <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
               </div>
             <% end %>
-            <% if transformation.reel? && transformation.layer %>
+            <% if transformation.layer_steps? %>
               <div>
                 <p class="<%= tw_label_classes %>">Layer · <%= transformation.layer.name %></p>
                 <%= render "accounts/transformations/layer_steps", transformation:, scope: %>
