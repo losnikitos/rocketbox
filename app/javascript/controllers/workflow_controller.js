@@ -5,7 +5,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // to the drop point (flow:copied), submits the arrows drawn between them or moved to other nodes (flow:linked), and adds
 // + Add items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "tab", "remove", "item"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "remove", "item"]
   static values = { url: String }
 
   async move({ detail: { nodes } }) {
@@ -56,18 +56,11 @@ export default class extends Controller {
     return url.toString()
   }
 
-  tab({ currentTarget }) {
-    this.tabTargets.forEach(tab => {
-      tab.setAttribute("aria-selected", tab === currentTarget)
-      document.getElementById(tab.getAttribute("aria-controls")).hidden = tab !== currentTarget
-    })
-  }
-
-  // Items in the search's own tab whose name or title (a folder's path, a transformation's prompt) holds the query.
+  // + Add items whose name or title (a folder's path, a transformation's description) holds the query; sections left empty hide.
   filter({ target }) {
-    const query = target.value.trim().toLowerCase(), panel = target.closest("[role='tabpanel']")
-    this.itemTargets.filter(item => panel.contains(item))
-      .forEach(item => item.hidden = !`${item.textContent} ${item.title}`.toLowerCase().includes(query))
+    const query = target.value.trim().toLowerCase(), palette = target.closest("[popover]")
+    this.itemTargets.forEach(item => item.hidden = !`${item.textContent} ${item.title}`.toLowerCase().includes(query))
+    palette.querySelectorAll("section").forEach(section => section.hidden = !section.querySelector("[data-workflow-target~='item']:not([hidden])"))
   }
 
   // + Add items are their own add buttons; a folder's media in the inspector holds one. The + Add popover closes to free

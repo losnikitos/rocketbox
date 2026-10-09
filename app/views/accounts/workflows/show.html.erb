@@ -1,8 +1,8 @@
 <% content_for(:title, "#{@workflow.name_was} — Rocketbox") %>
 <% content_for(:fit, "true") %>
 <% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 transition hover:bg-ink-900/5 active:cursor-grabbing" %>
-<% tab = "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900" %>
-<% tiles = "flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto p-3" %>
+<% tiles = "flex flex-wrap content-start gap-2 p-3" %>
+<% section_heading = "px-3 pt-3 text-xs font-medium text-ink-500" %>
 <% search = "block w-48 rounded-lg border border-ink-900/15 bg-white py-1 pr-2 pl-7 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
 <% search_icon = { class: "pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-ink-400", "aria-hidden": true } %>
 <% top = { turbo_frame: "_top" } %>
@@ -74,42 +74,41 @@
       </button>
       <div id="workflow_palette" popover aria-label="Add" style="position-anchor: --workflow-palette"
            class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] w-xl rounded-lg border border-ink-900/15 bg-white shadow-lg">
-        <% groups = Transformation::Type.all.group_by(&:group) %>
-        <div role="tablist" class="flex gap-1 border-b border-ink-900/10 p-2">
-          <% { "folders" => "Folders", **groups.keys.to_h { [ it.slug, it.label ] } }.each_with_index do |(key, label), index| %>
-            <button type="button" role="tab" id="palette_<%= key %>_tab" aria-controls="palette_<%= key %>" aria-selected="<%= index.zero? %>"
-                    data-workflow-target="tab" data-action="workflow#tab" class="<%= tab %>"><%= label %></button>
-          <% end %>
-        </div>
-        <div role="tabpanel" id="palette_folders" aria-labelledby="palette_folders_tab">
-          <label class="relative mx-3 mt-3 block w-fit">
+        <div class="border-b border-ink-900/10 p-2">
+          <label class="relative block w-fit">
             <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
-            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search folders" },
+            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search" },
                   data: { action: "input->workflow#filter" }, class: search %>
           </label>
-          <div class="<%= tiles %>">
-            <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
-              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
-                    title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
-                <span class="line-clamp-2"><%= folder.path %></span>
-              <% end %>
-            <% end %>
-          </div>
         </div>
-        <% groups.each do |group, types| %>
-          <div role="tabpanel" id="palette_<%= group.slug %>" aria-labelledby="palette_<%= group.slug %>_tab" hidden>
+        <div class="max-h-96 overflow-y-auto">
+          <section aria-labelledby="palette_folders">
+            <h3 id="palette_folders" class="<%= section_heading %>">Folders</h3>
             <div class="<%= tiles %>">
-              <% types.each do |type| %>
-                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_attributes][kind]", value: type.slug, draggable: "true",
-                      title: type.description || type.label, data: { action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                  <%= image_tag type.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
-                  <span class="line-clamp-2"><%= type.label %></span>
+              <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
+                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
+                      title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                  <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
+                  <span class="line-clamp-2"><%= folder.path %></span>
                 <% end %>
               <% end %>
             </div>
-          </div>
-        <% end %>
+          </section>
+          <% Transformation::Type.all.group_by(&:group).each do |group, types| %>
+            <section aria-labelledby="palette_<%= group.slug %>">
+              <h3 id="palette_<%= group.slug %>" class="<%= section_heading %>"><%= group.label %></h3>
+              <div class="<%= tiles %>">
+                <% types.each do |type| %>
+                  <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_attributes][kind]", value: type.slug, draggable: "true",
+                        title: type.description || type.label, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                    <%= image_tag type.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
+                    <span class="line-clamp-2"><%= type.label %></span>
+                  <% end %>
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+        </div>
       </div>
     </div>
 
