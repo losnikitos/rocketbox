@@ -128,12 +128,14 @@ module Accounts
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
-        # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media.
+        # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media;
+        # until a step takes from a folder, what the folder gives in the run (its picks, else its newest).
         by_id = @graph_nodes.index_by(&:id)
         carried = ->(edge) do
           from = by_id[edge.from_id]
           media = if from.step? then runs_of.(from).last&.generated_media
-          else runs_of.(by_id[edge.to_id]).last&.source_media&.find { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }
+          else runs_of.(by_id[edge.to_id]).last&.source_media&.find { from.library_media ? it == from.library_media : it.folder_id == from.folder_id } ||
+            (@run.picked(from, Current.account).first if from.folder)
           end
           media if media&.file&.attached?
         end

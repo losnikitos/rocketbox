@@ -35,6 +35,10 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     patch transformation_url(transformation, account: admin.id), params: { transformation: { body: "" } }, headers: autosave
     assert_response :ok
     assert_predicate transformation.reload.body, :blank?
+    # The canvas node and inspector heading take the saved name and options.
+    assert_select "turbo-stream[action=update][target=node_#{step.id}_label] template", text: "Team collage"
+    assert_select "turbo-stream[target=node_#{step.id}_heading]"
+    assert_select "turbo-stream[target=node_#{step.id}_kind] template", text: transformation.options_label
     # A model switch saves with the old model's options it doesn't offer refilled.
     patch transformation_url(transformation, account: admin.id), params: { transformation: { options: { model: "gpt-image-2", resolution: "4k" } } }, headers: autosave
     patch transformation_url(transformation, account: admin.id), params: { transformation: { options: { model: "grok-imagine-image-2.0", resolution: "4k" } } }, headers: autosave

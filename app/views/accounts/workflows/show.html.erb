@@ -231,7 +231,7 @@
       <header class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.note? ? "Note" : node.library_media ? "Media" : "Folder" %></p>
-          <h2 class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
+          <h2 id="node_<%= node.id %>_heading" class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
         </div>
         <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>

@@ -223,6 +223,22 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
   end
 
+  test "a folder's arrow shows the media it will give before a step takes any" do
+    admin = sign_in_as(users(:admin_user))
+    older, newer = %w[a b].map { admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "#{it}.jpg", content_type: "image/jpeg" }) }
+    older.update!(created_at: 1.day.ago)
+    workflow = Workflow.create!(name: "Folder arrow")
+    folder, step = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) } ].map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: folder, to: step)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
+
+    workflow.latest_run.update!(picks: { folder.id.to_s => [ older.id ] })
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
+  end
+
   test "play on a media node runs the latest run from that media" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play media")

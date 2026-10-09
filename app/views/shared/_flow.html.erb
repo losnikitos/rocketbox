@@ -36,11 +36,11 @@
             class: "#{"group" if n[:path]} absolute flex #{n[:shape].in?(%i[step note]) ? "w-56" : "w-28"} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% if n[:shape] == :step %>
           <span style="<%= "min-height: #{n[:slots].size * 2}rem" if n[:slots] %>"
-                class="relative flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left hover:border-ink-900/20 hover:bg-stone-50 group-aria-[current=true]:border-rocket group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
+                class="relative flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left hover:border-ink-900/20 hover:bg-stone-50 group-aria-[current=true]:border-rocket group-aria-[current=true]:hover:border-rocket-press group-aria-[current=true]:hover:bg-rocket/5 group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
             <%= image_tag n[:cover], alt: "", draggable: "false", class: "aspect-2/3 w-14 shrink-0 rounded-lg object-cover" %>
             <span class="flex min-w-0 flex-1 flex-col gap-1">
-              <span class="line-clamp-3 break-words" title="<%= n[:label] %>"><%= n[:label] %></span>
-              <span class="line-clamp-2 text-xs font-normal text-ink-500" title="<%= n[:kind] %>"><%= n[:kind] %></span>
+              <span id="node_<%= id %>_label" class="line-clamp-3 break-words" title="<%= n[:label] %>"><%= n[:label] %></span>
+              <span id="node_<%= id %>_kind" class="line-clamp-2 text-xs font-normal text-ink-500" title="<%= n[:kind] %>"><%= n[:kind] %></span>
             </span>
             <% if n[:status] %>
               <% label, icon, css = { "running" => [ "Working", "arrow-path", "bg-signal-yellow [&_svg]:animate-spin" ],
@@ -85,7 +85,7 @@
           <%# Images don't take the pointer, so a press drags the node rather than the picture. %>
           <% size = n[:media].file.attached? ? n[:media].file.metadata.values_at(:width, :height) : [] %>
           <span style="aspect-ratio: <%= size.compact.many? ? size.join(" / ") : "2 / 3" %>"
-                class="block w-20 overflow-hidden rounded-lg border-2 border-ink-900/10 hover:border-ink-900/20 group-aria-[current=true]:border-rocket [&_img]:pointer-events-none">
+                class="block w-20 overflow-hidden rounded-lg border-2 border-ink-900/10 hover:border-ink-900/20 group-aria-[current=true]:border-rocket group-aria-[current=true]:hover:border-rocket-press [&_img]:pointer-events-none">
             <%= render "accounts/library/file", media: n[:media], play: true, css: "size-full object-cover" %>
           </span>
           <span class="line-clamp-2 break-all group-aria-[current=true]:text-rocket" title="<%= n[:label] %>"><%= n[:label] %></span>
