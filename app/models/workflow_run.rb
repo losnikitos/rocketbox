@@ -31,10 +31,10 @@ class WorkflowRun < ApplicationRecord
   def inputs = took - made
   def outputs = made - took
 
-  # `node` is a start folder or media; `user` owns what the step runs make.
-  def start!(node, user)
+  # `nodes` are start folders or media; `user` owns what the step runs make.
+  def start!(nodes, user)
     update!(error: nil, status: "started", updated_at: Time.current)
-    advance!(node, user)
+    run_steps(Array(nodes).flat_map { next_steps(it) }.uniq, user)
   end
 
   # Drops `step`'s step runs and the ones after them, and starts it from what its inputs give now.

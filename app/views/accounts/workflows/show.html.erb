@@ -42,6 +42,7 @@
 <%# The media a run started from, then the ones it ended with. %>
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
+<% run_all = "Run #{@run.name} from every start folder and media" %>
 <% add_to_canvas = ->(media, corner) { button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id,
      title: "Add to canvas", aria: { label: "Add to canvas" },
      class: "absolute top-1.5 #{corner} cursor-pointer rounded-lg bg-white/90 p-1 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket" do
@@ -69,9 +70,17 @@
           Add folders and transformations with + Add.
         </p>
       <% end %>
-      <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="absolute top-3 left-3 z-10 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-ink-900/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink-900 hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
-        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Add
-      </button>
+      <% canvas_button = "inline-flex cursor-pointer items-center gap-1 rounded-lg border border-ink-900/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink-900 hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
+      <div class="absolute top-3 left-3 z-10 flex gap-2">
+        <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="<%= canvas_button %>">
+          <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Add
+        </button>
+        <% if @start_nodes.any? %>
+          <button type="submit" form="workflow_play" title="<%= run_all %>" class="<%= canvas_button %>">
+            <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Run
+          </button>
+        <% end %>
+      </div>
       <div id="workflow_palette" popover aria-label="Add" style="position-anchor: --workflow-palette"
            class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] w-xl rounded-lg border border-ink-900/15 bg-white shadow-lg">
         <div class="border-b border-ink-900/10 p-2">
@@ -151,9 +160,10 @@
         <p class="p-6 text-center text-sm text-ink-500">No runs yet.</p>
       <% end %>
       <% @runs.each do |run| %>
+        <% playable = run == @run && @start_nodes.any? %>
         <div class="relative border-b border-ink-900/10">
           <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
-                class: "flex min-h-11 items-center gap-3 py-2 pr-12 pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
+                class: "flex min-h-11 items-center gap-3 py-2 #{playable ? "pr-32" : "pr-12"} pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
             <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
             <%= status.(run) %>
             <%= ends.(run) %>
@@ -204,7 +214,13 @@
               <p class="px-3 pb-3 pl-10 text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
             <% end %>
           </details>
-          <div class="absolute top-0 right-3 flex h-11 items-center">
+          <div class="absolute top-0 right-3 flex h-11 items-center gap-1">
+            <% if playable %>
+              <button type="submit" form="workflow_play" title="<%= run_all %>"
+                      class="flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900">
+                <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Run
+              </button>
+            <% end %>
             <%= render "shared/admin_links/workflow_run", workflow_run: run %>
           </div>
         </div>

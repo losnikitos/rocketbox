@@ -5,7 +5,7 @@ module Accounts
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. The runs are listed below the canvas, each
   # with its step runs; `?run=` selects one (the latest by default), highlighted, whose step runs the canvas shows, and the
   # inspector shows the selected node's inputs and outputs in it above its settings. Play on a start folder or media (run)
-  # replays the selected run from it; play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
+  # replays the selected run from it, Run all from every one; play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -66,9 +66,11 @@ module Accounts
     end
 
     def run
-      node = @workflow.nodes.find(params[:node_id])
       run = @workflow.runs.find_by(id: params[:run]) || @workflow.latest_run
-      node.step? ? run.rerun!(node, Current.account) : run.start!(node, Current.account)
+      if params[:node_id].blank? then run.start!(@workflow.start_nodes, Current.account)
+      elsif (node = @workflow.nodes.find(params[:node_id])).step? then run.rerun!(node, Current.account)
+      else run.start!(node, Current.account)
+      end
       redirect_to workflow_path(@workflow, run: run.id)
     end
 

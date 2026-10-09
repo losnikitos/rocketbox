@@ -135,5 +135,5 @@
 </div>
 <%# Outside the canvas, so its zoom and the flow's clicks leave them be. %>
 <% edges.filter_map { it[2]&.dig(:media) }.uniq.each do |media| %>
-  <%= render "accounts/library/quick_view", media:, button: false %>
+  <%= render "accounts/library/quick_view", media:, button: false, id: dom_id(media, :quick_view) %>
 <% end %>

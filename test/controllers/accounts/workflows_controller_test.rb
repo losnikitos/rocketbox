@@ -207,7 +207,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
     assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
-      assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
+      assert_select "button[popovertarget^=?]", dom_id(media, :quick_view)
     end
     assert_select "#workflow_palette", 1
     assert_select "a[href^=?]", admin_workflow_run_path(run)
@@ -218,10 +218,12 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id, node: step.id)
     assert_select "turbo-frame#inspector" do
       assert_select "dl[aria-label=Stats] dd", text: "Running"
-      assert_select "section[aria-label=Inputs] button[popovertarget=?]", dom_id(media, :quick_view)
+      assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
       assert_select "dl[aria-label=Stats] ~ section[aria-label=Settings] button", text: "Remove from workflow"
     end
+    popovers = css_select("[popover]").map { it["id"] }
+    assert_equal popovers.uniq, popovers
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
     pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
@@ -304,6 +306,23 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: source.id } }
     assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
+  end
+
+  test "run plays the selected run from every start folder and media" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Run all")
+    photo = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    other = admin.library_media.create!(kind: "photo", folder: folders(:misc), file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+    [ { folder: folders(:interior) }, { library_media: other } ].each do |start|
+      workflow.edges.create!(from: workflow.nodes.create!(start), to: workflow.nodes.create!(transformation: transformations(:cinematic).dup))
+    end
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[form=workflow_play]:not([name])", text: /Run/, count: 2
+    assert_select "section[aria-label=Runs] a[aria-current=page] + details + div button[form=workflow_play]"
+
+    post run_workflow_url(workflow, account: admin.id)
+    assert_equal [ [ photo ], [ other ] ], workflow.runs.sole.step_runs.map(&:source_media)
   end
 
   test "a media page's Run in workflow plays a new run of just that media from a start folder it's in" do

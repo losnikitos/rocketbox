@@ -3,11 +3,12 @@
 <div class="flex flex-wrap gap-1.5">
   <% media.each do |media| %>
     <% if media.file.attached? %>
-      <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="Preview" title="Preview"
+      <% id = "#{dom_id(media, :quick_view)}_#{SecureRandom.hex(4)}" %>
+      <button type="button" popovertarget="<%= id %>" aria-label="Preview" title="Preview"
               class="block cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
         <%= render "accounts/library/file", media:, play: true, css: %>
       </button>
-      <%= render "accounts/library/quick_view", media:, button: false %>
+      <%= render "accounts/library/quick_view", media:, button: false, id: %>
     <% else %>
       <%= render "accounts/library/file", media:, css: "aspect-2/3 #{css}" %>
     <% end %>
