@@ -81,7 +81,15 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
+    input.update!(take: 3, media_type: "video")
     get workflow_url(workflow, account: admin.id, node: output.id)
+    assert_select "a[data-id=?]", input.id.to_s do
+      assert_select "#node_#{input.id}_label", folders(:interior).path
+      assert_select "#node_#{input.id}_kind", "Videos · take 3"
+      assert_select "span", text: "after"
+      assert_select "span", text: "before"
+    end
+    assert_select "#node_#{output.id}_kind", ""
     assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
     patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, tag_ids: [ "", tags(:after).id ] } } } }
     assert_equal [ tags(:after).id ], step.reload.tag_ids

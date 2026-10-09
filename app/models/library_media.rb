@@ -40,6 +40,9 @@ class LibraryMedia < ApplicationRecord
     ids.empty? ? all : where(id: LibraryMedia.unscoped.joins(:tags).where(tags: { id: ids }).group(:id).having("COUNT(*) = ?", ids.size).select(:id))
   end
 
+  # Media whose file is `type` ("image" or "video"); all media when nil.
+  scope :of_type, ->(type) { type ? joins(file_attachment: :blob).where("active_storage_blobs.content_type LIKE ?", "#{type}/%") : all }
+
   validates :kind, presence: true
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true

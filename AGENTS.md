@@ -26,7 +26,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Workflows:** the media pipeline — a graph of folder, media and transformation step nodes, with colored Markdown sticky notes beside them, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md). Given a workflow URL, curl its `.md` first: graph, step settings and runs in one page ([how](./docs/WORKFLOWS.md#reading-a-workflow-agents)).
 
-**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow node's `tag_ids`: a folder gives only media with all of them, a step sets them on what it makes.
+**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow node's `tag_ids`: a folder gives only media with all of them, a step sets them on what it makes. A folder can also filter by `media_type` (images, videos or any), set beside its Take.
 
 ```mermaid
 flowchart LR
