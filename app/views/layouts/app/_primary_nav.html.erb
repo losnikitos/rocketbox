@@ -88,23 +88,19 @@
           <% end %>
         </li>
         <% [
-          [ "Shots", shots_path, :shots ],
-          [ "Styles", styles_path, :styles ],
-          [ "Layers", layers_path, :layers ],
-          [ "Posts", instagram_posts_path, :posts, heroicon("squares-2x2", options: { class: "size-5 shrink-0", "aria-hidden": true }) ]
+          [ "Shots", shots_path, :shots, "camera" ],
+          [ "Styles", styles_path, :styles, "swatch" ],
+          [ "Layers", layers_path, :layers, "square-3-stack-3d" ],
+          [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
         ].each do |label, path, key, icon| %>
           <li>
-            <% if icon %>
+            <% if key == :posts || Current.user&.admin? %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>
-                <%= icon %>
+                <%= heroicon icon, options: { class: "size-5 shrink-0", "aria-hidden": true } %>
                 <%= label %>
               <% end %>
-            <% elsif Current.user&.admin? %>
-              <%= link_to label, path,
-                    class: "block rounded-xl py-2 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                    aria: { selected: section == key } %>
             <% else %>
               <span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500"><%= label %></span>
             <% end %>
