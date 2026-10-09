@@ -56,6 +56,23 @@ There's no separate run mode: the canvas always shows a run ([model](/app/models
 - New run in the panel adds a blank run (Run N), and a run with no step still running can be deleted from its row's admin menu (its media stay in the library).
 - Switching runs keeps the selected node or connection.
 
+## Reading a workflow (agents)
+
+Given a workflow URL, read its Markdown first: the same path plus `.md`, keeping `node` and `run` (`account` doesn't matter). So `https://dev.rocketbox.plus/app/workflows/interior?account=2&node=16&run=10` reads as:
+
+```bash
+TOKEN=$(bin/rails runner 'print Rails.application.credentials.agent_token')
+curl -s -H "Authorization: Bearer $TOKEN" "https://dev.rocketbox.plus/app/workflows/interior.md?node=16&run=10"
+```
+
+The token (`agent_token` in Rails credentials, the same in production) opens only this page, nothing else. Use `http://localhost:3003` when the tunnel is down. The page ([view](/app/views/accounts/workflows/show.md.erb)) holds, top to bottom:
+- **Header**: the canvas URL, autorun, start nodes, the selected node, and a short how-to-read note.
+- **Graph**: a Mermaid flowchart. Node ids are `n<node id>`, the same ids used everywhere else on the page. Folders are slanted, steps are boxes with their options and tags, and media nodes are rounded.
+- **Nodes**: one section per node. A step's section has its type and kind, its options (as shown and raw), the tags it sets, what feeds it and where its results land, its slots, shot group, layer and layer steps, and its prompt and style text in full. A folder's section has Newest N and the tags it filters on. Notes come last, quoted verbatim, because they often say why the workflow exists.
+- **Runs**: the newest 20 runs. The selected run (`?run=`, else the latest) gets a section of its own: its picks, what it started from and ended with, and each step run's status, duration, cost, input and output media (with folder, tags, media page and file links), options, shot, and its prompt as sent when that differs from the step's.
+
+It's read-only: change a workflow in code or on the canvas. Opening it never creates a run, unlike the canvas.
+
 ## Vocabulary
 
 - **Workflow** — a graph of nodes and edges (the definition).

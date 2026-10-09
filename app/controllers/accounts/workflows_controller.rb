@@ -10,6 +10,8 @@ module Accounts
     layout "app"
 
     before_action :authenticate_admin!
+    # Agents read a workflow as Markdown with the agent token (see docs/WORKFLOWS.md).
+    skip_before_action :authenticate, :authenticate_admin!, if: :agent?
     before_action :set_workflow, only: %i[show update destroy run copy]
 
     def index
@@ -30,7 +32,17 @@ module Accounts
     end
 
     def show
-      set_graph
+      respond_to do |format|
+        format.html { set_graph }
+        # Never creates a run, unlike the canvas.
+        format.md do
+          @runs = @workflow.runs.includes(:step_runs).reverse
+          @run = @runs.find { it.id == params[:run].to_i } || @runs.first
+          media = [ :folder, :tags, { file_attachment: :blob } ]
+          @step_runs = @run ? @run.step_runs.includes(:workflow_node, :shot, inputs: { library_media: media }, generated_media: media) : []
+          @selected = @workflow.nodes.find { it.id == params[:node].to_i }
+        end
+      end
     end
 
     def update
@@ -72,6 +84,12 @@ module Accounts
 
       def set_workflow
         @workflow = Workflow.find(params[:id])
+      end
+
+      # The action is checked here: `only:` beside `if:` on a skip would skip for every show.
+      def agent?
+        token = Rails.application.credentials.agent_token
+        action_name == "show" && request.format.md? && token.present? && authenticate_with_http_token { ActiveSupport::SecurityUtils.secure_compare(it, token) }
       end
 
       def workflow_params

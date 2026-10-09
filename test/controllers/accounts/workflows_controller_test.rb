@@ -141,6 +141,41 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "First", "Second" ], order.()
   end
 
+  test "agents read a workflow as Markdown with the agent token, nothing else" do
+    credentials = Rails.application.credentials
+    credentials.define_singleton_method(:agent_token) { "secret" }
+    user = users(:lazaro_nixon)
+    workflow = Workflow.create!(name: "Agent read")
+    folder, step = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic), tag_ids: [ tags(:after).id ] } ]
+      .map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: folder, to: step)
+    workflow.nodes.create!(note: "Why it exists")
+    media = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    run = workflow.latest_run
+    run.start!(folder, user)
+    md = ->(token) { get workflow_url(workflow, format: :md, node: step.id), headers: { "Authorization" => "Bearer #{token}" } }
+
+    md.("secret")
+    assert_response :success
+    assert_equal "text/markdown", response.media_type
+    assert_includes response.body, %(```mermaid\nflowchart LR\n  n#{folder.id}[/"#{folders(:interior).path}"/]\n)
+    assert_includes response.body, "n#{folder.id} --> n#{step.id}"
+    assert_includes response.body, %(### n#{step.id} · Step "#{step.label}" (selected))
+    assert_includes response.body, "- Tags it sets on what it makes: #after"
+    assert_includes response.body, "~~~text\n#{transformations(:cinematic).body}\n~~~"
+    assert_includes response.body, "> Why it exists"
+    assert_includes response.body, %(### Step run #{run.step_runs.sole.id} · n#{step.id} "#{step.label}": running)
+    assert_includes response.body, "- In: [media #{media.id}](#{library_item_url(media)}) photo [a.jpg]"
+    assert_no_match(/&quot;|&#39;/, response.body)
+
+    md.("wrong")
+    assert_redirected_to sign_in_url
+    get workflow_url(workflow), headers: { "Authorization" => "Bearer secret" }
+    assert_redirected_to sign_in_url
+  ensure
+    credentials.singleton_class.remove_method(:agent_token)
+  end
+
   test "play on a start folder runs the latest run from its newest media and the selected run lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")
