@@ -134,7 +134,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "#workflow_palette section h3", 5
+    assert_select "#workflow_palette section h3", 6
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
@@ -355,5 +355,25 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     media.destroy!
     assert_equal [ folder, step ], workflow.nodes.reload.to_a
     assert_equal 0, workflow.edges.count
+  end
+
+  test "a sticky note is added, shows its Markdown on the canvas with links as text, and is edited in the inspector" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Noted")
+
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { note: "Note", x: 60, y: 60 } } } }
+    note = workflow.nodes.reload.sole
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: note.id, note: "## Why\n**Crop** first, see [docs](https://example.com)", color: "rose" } } } }
+    assert_equal [ "## Why", "rose" ], [ note.reload.label, note.color ]
+
+    get workflow_url(workflow, account: admin.id, node: note.id)
+    assert_select "a[data-id=?][data-note][aria-current=true]", note.id.to_s do
+      assert_select "div.bg-rose-50 h2", "Why"
+      assert_select "strong", "Crop"
+      assert_select "div a", count: 0
+      assert_select "[data-flow-handle]", count: 0
+    end
+    assert_select "turbo-frame#inspector textarea[name=?]", "workflow[nodes_attributes][0][note]"
+    assert_select "turbo-frame#inspector input[type=radio][value=rose][checked]"
   end
 end

@@ -44,6 +44,16 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_empty Workflow.starts_for(users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:ready)))
   end
 
+  test "a note stands alone, blank or not, and connects to nothing" do
+    workflow = Workflow.create!(name: "Notes")
+    note = workflow.nodes.create!(note: "")
+    crop = workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"))
+    assert_equal [ "amber", "Note" ], [ note.color, note.label ]
+    assert_not workflow.nodes.build(note: "Hi", folder: folders(:interior)).valid?
+    assert_not workflow.nodes.build(note: "Hi", color: "pink").valid?
+    assert_equal [ "Notes don't connect." ], workflow.edges.build(from: crop, to: note).tap(&:validate).errors[:base]
+  end
+
   test "slug follows the name, and an old slug still finds it" do
     workflow = Workflow.create!(name: "Inbox to ready")
     assert_equal "inbox-to-ready", workflow.to_param

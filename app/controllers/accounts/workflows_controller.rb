@@ -75,7 +75,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :newest, :x, :y, :_destroy, { tag_ids: [] }, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :newest, :note, :color, :x, :y, :_destroy, { tag_ids: [] }, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
       end
 
@@ -115,14 +115,15 @@ module Accounts
         complete = @graph_nodes.select { |node| runs_of.(node).then { it.any? && it.all?(&:complete?) } }.map(&:id)
         @nodes = @graph_nodes.to_h do |node|
           icon = @graph_edges.any? { it.from_id == node.id } ? "inbox" : "photo" if node.folder
-          shape = node.step? ? :step : node.library_media ? :media : :folder
+          shape = node.step? ? :step : node.note? ? :note : node.library_media ? :media : :folder
           runs = runs_of.(node)
           # A step not running can start once every step feeding it is complete in the run; folders and media always feed.
           feeds = @graph_edges.select { it.to_id == node.id }
           ready = node.step? && runs.none?(&:running?) && feeds.any? &&
             feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
           [ node.id, { label: node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
-                       current: node == @selected, linkable: true, x: node.x, y: node.y, shape:, color: node.folder&.color,
+                       current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
+                       color: node.note? ? node.color : node.folder&.color,
                        kind: node.transformation&.options_label, inputs: feeds.size, slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]

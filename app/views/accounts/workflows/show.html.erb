@@ -1,6 +1,6 @@
 <% content_for(:title, "#{@workflow.name_was} — Rocketbox") %>
 <% content_for(:fit, "true") %>
-<% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 transition hover:bg-ink-900/5 active:cursor-grabbing" %>
+<% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 hover:bg-ink-900/5 active:cursor-grabbing" %>
 <% tiles = "flex flex-wrap content-start gap-2 p-3" %>
 <% section_heading = "px-3 pt-3 text-xs font-medium text-ink-500" %>
 <% search = "block w-48 rounded-lg border border-ink-900/15 bg-white py-1 pr-2 pl-7 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
@@ -69,7 +69,7 @@
           Add folders and transformations with + Add.
         </p>
       <% end %>
-      <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="rb-btn-ghost-on-light absolute top-3 left-3 z-10 gap-1 px-3.5 py-2 shadow-sm">
+      <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="absolute top-3 left-3 z-10 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-ink-900/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink-900 hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket">
         <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Add
       </button>
       <div id="workflow_palette" popover aria-label="Add" style="position-anchor: --workflow-palette"
@@ -108,6 +108,16 @@
               </div>
             </section>
           <% end %>
+          <section aria-labelledby="palette_notes">
+            <h3 id="palette_notes" class="<%= section_heading %>">Notes</h3>
+            <div class="<%= tiles %>">
+              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][note]", value: "Note", draggable: "true",
+                    title: "A sticky note", data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                <%= heroicon "pencil-square", options: { class: "size-7 text-amber-400", "aria-hidden": true } %>
+                <span class="line-clamp-2">Note</span>
+              <% end %>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -220,7 +230,7 @@
     <% elsif (node = @selected) %>
       <header class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.library_media ? "Media" : "Folder" %></p>
+          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.note? ? "Note" : node.library_media ? "Media" : "Folder" %></p>
           <h2 class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
         </div>
         <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
@@ -317,6 +327,28 @@
               <%= render "accounts/library/quick_view", media: %>
             </div>
           </div>
+        <% elsif node.note? %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "space-y-4 border-t border-ink-900/10 pt-4" do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <div>
+              <%= label_tag "workflow_node_note", "Note", class: tw_label_classes %>
+              <%= text_area_tag "workflow[nodes_attributes][0][note]", node.note, id: "workflow_node_note", rows: 8,
+                    aria: { describedby: "workflow_node_note_hint" }, class: tw_input_classes %>
+              <p id="workflow_node_note_hint" class="mt-1 text-xs text-ink-500">Markdown: **bold**, # heading, - list. Saves when you click away.</p>
+            </div>
+            <fieldset>
+              <legend class="<%= tw_label_classes %>">Color</legend>
+              <div class="flex gap-2">
+                <% Folder.colors.each_key do |color| %>
+                  <label title="<%= color.humanize %>"
+                         class="size-8 cursor-pointer rounded-full border-2 <%= AppHelper::NOTE_COLORS[color] %> has-checked:ring-2 has-checked:ring-rocket has-checked:ring-offset-2 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                    <%= radio_button_tag "workflow[nodes_attributes][0][color]", color, node.color == color, id: nil, class: "sr-only" %>
+                    <span class="sr-only"><%= color.humanize %></span>
+                  </label>
+                <% end %>
+              </div>
+            </fieldset>
+          <% end %>
         <% else %>
           <% if Tag.exists? %>
             <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>

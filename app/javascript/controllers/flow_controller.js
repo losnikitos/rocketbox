@@ -246,12 +246,14 @@ export default class extends Controller {
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
-  // end, no arrow into a source (data-source), and not connected that way already, unless by the edge being moved.
+  // end, no arrow into a source (data-source), no note (data-note) at either end, and not connected that way already,
+  // unless by the edge being moved.
   droppable({ clientX, clientY }) {
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
     const g = this.graph, { fixed, side, edge } = this.linking, [v, w] = side > 0 ? [fixed, el.dataset.id] : [el.dataset.id, fixed]
     if (v === w || (g.hasEdge(v, w) && !(edge?.v === v && edge?.w === w)) || "source" in g.node(w).el.dataset) return
+    if ([v, w].some(id => "note" in g.node(id).el.dataset)) return
     if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
     return g.node(el.dataset.id)
   }

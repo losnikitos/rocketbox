@@ -1,6 +1,6 @@
 # Workflows
 
-A workflow ([model](/app/models/workflow.rb), edited at `/app/workflows` ([controller](/app/controllers/accounts/workflows_controller.rb))) is a graph of folder, media and step nodes joined by edges, edited and run on the overview's flow canvas ([workflow_controller](/app/javascript/controllers/workflow_controller.js), laid out by [flow_controller](/app/javascript/controllers/flow_controller.js)).
+A workflow ([model](/app/models/workflow.rb), edited at `/app/workflows` ([controller](/app/controllers/accounts/workflows_controller.rb))) is a graph of folder, media and step nodes joined by edges, with sticky notes beside them, edited and run on the overview's flow canvas ([workflow_controller](/app/javascript/controllers/workflow_controller.js), laid out by [flow_controller](/app/javascript/controllers/flow_controller.js)).
 
 Workflows are the media pipeline: folders, tags and the transformations their steps own.
 
@@ -18,6 +18,7 @@ Where we stand:
 - A reel type can name its inputs (`Transformation::Type.slots`, e.g. GM Visuals' exterior, interior, features, customers), like ComfyUI's sockets and Dagster's `ins`: its media reach the run slot by slot in that order.
 - Reruns that keep unchanged step runs are ComfyUI's caching, per item: a step run is matched by the media it took, so a folder's new media reruns only its own.
 - Autorun's trigger is the start folder itself, like n8n's trigger node: it passes the new media on, as the run's picks, rather than just starting a run that reads the folder's newest.
+- Notes are n8n's sticky notes: colored Markdown on the canvas that runs ignore. Groups that move their nodes (ComfyUI, Node-RED) and resizable notes aren't built yet.
 
 ## Graph
 
@@ -26,6 +27,7 @@ Where we stand:
 - A folder node can have tags: as an input it holds only its media with all of them, and gives its newest N (Newest, 1 by default); as an output, what lands in it gets them all.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
+- A note node is a sticky note: Markdown text (links show as plain text on the canvas) on a card in one of the folder colors, amber by default. It never connects, so runs pass it by.
 
 ## Editing
 
@@ -34,6 +36,7 @@ Where we stand:
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
 - A selected folder's inspector sets how many of its newest media it gives (Newest).
+- Drag (or click) Note, under Notes in + Add, to drop a sticky note; its inspector edits its Markdown (saved when you click away) and color.
 - Click a node to open the inspector on the right: first what it did in the selected run (see Running), then its settings (remove, a folder's tags — "Only media tagged" on an input, "Tag what lands here" on an output — and Newest, a step's transformation settings). Click a connection to remove it or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
@@ -55,7 +58,7 @@ There's no separate run mode: the canvas always shows a run ([model](/app/models
 ## Vocabulary
 
 - **Workflow** — a graph of nodes and edges (the definition).
-- **Node** — a folder, media or step on the canvas. A **step** is a node owning its transformation.
+- **Node** — a folder, media, step or note on the canvas. A **step** is a node owning its transformation; a **note** is a sticky note that never connects.
 - **Edge** — a connection between two nodes, one end always a step ("connection" in the UI).
 - **Start folder** — a folder or media that feeds steps and that nothing feeds; play starts a run from it.
 - **Autorun** (`Workflow#autorun`) — a workflow setting: media landing in a start folder starts a run with it (`Workflow.autorun!`).
