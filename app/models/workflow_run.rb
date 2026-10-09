@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
-# feeding the step outputs media. Played from a start folder or media, whose newest media feed the steps downstream; a step run
-# starts the steps its step feeds when it completes; a run's `picks` swap a start folder's newest media for ones picked for
-# that run. Every node gives a list: a reel step takes all of it in one step run, its
+# feeding the step outputs media. Played from a start folder or media, whose pinned or newest media feed the steps
+# downstream; a step run starts the steps its step feeds when it completes; a run of one media (autorun, a media page's
+# Run in workflow) holds it in `picks`, in place of the folder's. Every node gives a list: a reel step takes all of it in one step run, its
 # slots in order; any other step takes one item per step run, its shorter inputs repeating their last media (ComfyUI's
 # lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them;
 # `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
-# `error`. A workflow has as many as were added, each named Run N. A run is a draft, its picks editable, until it's first
-# played (from a start node or a step); then it's started and its picks are locked.
+# `error`. A workflow has as many as were added, each named Run N. A run is a draft until it's first played (from a start
+# node or a step); then it's started.
 class WorkflowRun < ApplicationRecord
   STATUSES = %w[draft started].freeze
 
@@ -47,11 +47,11 @@ class WorkflowRun < ApplicationRecord
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
-  # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its newest N;
-  # only the user's media still in the folder (with all its tags), newest first.
+  # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its pinned
+  # media, else its newest N; only the user's media still in the folder (with all its tags), newest first.
   def picked(node, user)
     media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids)
-    media = (ids = picks[node.id.to_s]) ? media.where(id: ids) : media.limit(node.newest)
+    media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.newest)
     media.order(created_at: :desc).to_a
   end
 

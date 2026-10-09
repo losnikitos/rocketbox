@@ -26,7 +26,7 @@
 - Selected node: <%= ref.(@selected) %>
 <% end %>
 
-How to read it (more in docs/WORKFLOWS.md): a folder node gives its newest N media having all its tags; a media node gives
+How to read it (more in docs/WORKFLOWS.md): a folder node gives its pinned media, else its newest N, having all its tags; a media node gives
 itself. A step runs once per input item (a reel step takes all its inputs in one step run), each step run making one
 media, which lands in the step's first output folder, else <%= ready.path %>, with the step's tags. Results don't inherit
 their source's tags. A step starts once every node feeding it gives media.
@@ -104,7 +104,7 @@ Style "<%= t.style.name %>", appended to the prompt:
 ### n<%= node.id %> · Folder <%= node.label %><%= " (selected)" if node == @selected %>
 
 <% if outs.(node).any? %>
-- Gives: its newest <%= node.newest %> media<%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %>
+- Gives: <%= node.pinned_media_ids.any? ? "its pinned media #{node.pinned_media_ids.join(", ")}" : "its newest #{node.newest} media" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %>
 <% end %>
 - From: <%= ins.(node).join(", ").presence || "nothing" %>
 - To: <%= outs.(node).join(", ").presence || "nothing" %>
@@ -140,7 +140,7 @@ No runs yet.
 <% if @run.error %>
 - Error: <%= @run.error %>
 <% end %>
-- Picks: <%= @run.picks.map { |id, media_ids| "n#{id}: media #{media_ids.join(", ")}" }.join("; ").presence || "none, so start folders give their newest" %>
+- Picks: <%= @run.picks.map { |id, media_ids| "n#{id}: media #{media_ids.join(", ")}" }.join("; ").presence || "none, so start folders give their pinned or newest" %>
 - Started from: <%= @run.inputs.map { media_line.(it) }.join("; ").presence || "nothing" %>
 - Ended with: <%= @run.outputs.map { media_line.(it) }.join("; ").presence || "nothing" %>
 <% @step_runs.each do |step_run| %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -491,6 +491,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_130000) do
     t.integer "library_media_id"
     t.integer "newest", default: 1, null: false
     t.text "note"
+    t.json "pinned_media_ids", default: [], null: false
     t.json "tag_ids", default: [], null: false
     t.integer "transformation_id"
     t.datetime "updated_at", null: false

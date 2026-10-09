@@ -2,8 +2,8 @@
 
 module Accounts
   # Adds a blank run to a workflow, or, given a start folder `node_id` and a `media_id` it takes (a media page's Run in
-  # workflow), plays a new run of that media alone from it. Picks a start folder's media for a draft one (none picked goes
-  # back to its newest N), or deletes one none of whose step runs is still running; the media its step runs made stay in the library.
+  # workflow), plays a new run of that media alone from it. Deletes one none of whose step runs is still running; the
+  # media its step runs made stay in the library.
   class WorkflowRunsController < ApplicationController
     before_action :authenticate_admin!
     before_action :set_workflow
@@ -16,18 +16,6 @@ module Accounts
       return redirect_back_or_to(library_item_path(media), alert: "This workflow doesn't start from #{media.folder.path}.") unless node
 
       redirect_to workflow_path(@workflow, run: @workflow.start_with!(node, media, Current.account).id, node: node.id)
-    end
-
-    def update
-      run = @workflow.runs.find(params[:id])
-      node = @workflow.nodes.find(params[:node_id])
-      unless run.draft?
-        return redirect_to(workflow_path(@workflow, run: run.id, node: node.id), alert: "This run has started, so its picks are locked. Add a new run to pick other media.")
-      end
-
-      ids = Array(params[:media_ids]).compact_blank.map(&:to_i)
-      run.update!(picks: ids.any? ? run.picks.merge(node.id.to_s => ids) : run.picks.except(node.id.to_s))
-      redirect_to workflow_path(@workflow, run: run.id, node: node.id)
     end
 
     def destroy

@@ -48,7 +48,7 @@ ActiveAdmin.register WorkflowRun do
   form do |f|
     f.inputs do
       f.input :name
-      f.input :status, as: :select, collection: WorkflowRun::STATUSES, include_blank: false, hint: "Draft unlocks its picks"
+      f.input :status, as: :select, collection: WorkflowRun::STATUSES, include_blank: false
       f.input :error
     end
     f.actions

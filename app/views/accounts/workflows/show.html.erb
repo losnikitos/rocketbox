@@ -38,7 +38,7 @@
     <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
   </span>
 <% end } %>
-<% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: run_status_pill_class(state)) } %>
+<% status = ->(run) { (state = run.state) && tag.span(state.humanize, class: run_status_pill_class(state)) } %>
 <%# The media a run started from, then the ones it ended with. %>
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
@@ -257,26 +257,33 @@
         <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
       <% end %>
       <% if node.folder && start %>
-        <section aria-label="Picks" class="space-y-2 border-t border-ink-900/10 pt-4">
+        <section aria-label="Pins" class="space-y-2 border-t border-ink-900/10 pt-4">
           <div class="flex items-center justify-between gap-2">
-            <h3 class="text-xs text-ink-500"><%= @run.draft? ? "Play takes" : "Play took (locked once the run started)" %></h3>
-            <% if @run.draft? && @run.picks.key?(node.id.to_s) %>
-              <%= button_to "Newest #{node.newest}", workflow_run_path(@workflow, @run), method: :patch, params: { node_id: node.id }, form: { data: top },
-                    title: "Take its newest media again", class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
+            <h3 class="text-xs text-ink-500">
+              <%= node.pinned_media_ids.any? ? "Play takes the pinned media" : "Play takes its newest #{node.newest}; pin media to take them instead" %>
+            </h3>
+            <% if node.pinned_media_ids.any? %>
+              <%= button_to "Reset pins", workflow_path(@workflow), method: :patch, form: { data: top },
+                    params: { workflow: { nodes_attributes: { "0" => { id: node.id, pinned_media_ids: [ "" ] } } } },
+                    title: "Take its newest media again", class: "rb-btn-ghost-on-light shrink-0 px-2.5 py-1 text-xs" %>
             <% end %>
           </div>
           <% if @folder_media.any? %>
-            <% picked = @run.picked(node, Current.account) %>
-            <%= form_with url: workflow_run_path(@workflow, @run), method: :patch, data: top, html: { onchange: "this.requestSubmit()" } do %>
-              <%= hidden_field_tag :node_id, node.id, id: nil %>
+            <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
+              <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+              <%= hidden_field_tag "workflow[nodes_attributes][0][pinned_media_ids][]", "", id: nil %>
               <ul aria-label="Media" class="grid grid-cols-3 gap-2">
                 <% @folder_media.each do |media| %>
                   <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
-                    <label class="group/option relative block cursor-pointer overflow-hidden has-disabled:cursor-default rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                      <%= check_box_tag "media_ids[]", media.id, picked.include?(media), id: nil, disabled: !@run.draft?, class: "sr-only" %>
+                    <label title="Pin" class="group/option relative block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                      <%= check_box_tag "workflow[nodes_attributes][0][pinned_media_ids][]", media.id, node.pinned_media_ids.include?(media.id), id: nil,
+                            aria: { label: "Pin" }, class: "sr-only" %>
                       <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
-                      <span class="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-black/20 text-transparent shadow-sm group-has-checked/option:border-rocket group-has-checked/option:bg-rocket group-has-checked/option:text-white" aria-hidden="true">
-                        <%= heroicon "check", variant: :micro, options: { class: "size-3.5" } %>
+                      <span class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-has-focus-visible/option:opacity-100 group-has-checked/option:bg-rocket group-has-checked/option:text-white group-has-checked/option:opacity-100" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5 group-has-checked/option:fill-current">
+                          <path d="M12 17v5" />
+                          <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                        </svg>
                       </span>
                     </label>
                     <%= add_to_canvas.(media, "left-1.5") %>
@@ -372,7 +379,7 @@
             </div>
             <p id="workflow_node_newest_hint" class="mt-1 text-xs text-ink-500">How many of its newest media it gives the steps it feeds.</p>
           <% end %>
-          <%# A start folder's media are its picks above. %>
+          <%# A start folder's media are its pins above. %>
           <% unless start %>
             <% if @folder_media.any? %>
               <ul aria-label="Media" class="grid grid-cols-3 gap-2 border-t border-ink-900/10 pt-4">

@@ -93,7 +93,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :newest, :note, :color, :x, :y, :_destroy, { tag_ids: [] }, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :newest, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_media_ids: [] }, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
       end
 
@@ -146,7 +146,7 @@ module Accounts
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
         # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media;
-        # until a step takes from a folder, what the folder gives in the run (its picks, else its newest).
+        # until a step takes from a folder, what the folder gives in the run (its picks, else its pins, else its newest).
         by_id = @graph_nodes.index_by(&:id)
         carried = ->(edge) do
           from = by_id[edge.from_id]

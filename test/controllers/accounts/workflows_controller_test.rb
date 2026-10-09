@@ -71,7 +71,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
     get workflow_url(workflow, account: admin.id, node: input.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
+    assert_select "turbo-frame#inspector section[aria-label=Pins] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
 
     admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
     tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before), tags(:after) ])
@@ -224,23 +224,21 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] input[name='media_ids[]'][value=?][checked][disabled]", media.id.to_s
+    pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
+    assert_select "#{pin}:not([checked]):not([disabled])"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins", count: 0
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
-    patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
-    assert_empty run.reload.picks
 
+    pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_media_ids: [ "", *ids ] } } } } }
+    pins.([ media.id ])
+    assert_equal [ media.id ], folder.reload.pinned_media_ids
     draft = workflow.runs.create!
     get workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
     assert_select "span", text: "Draft"
-    assert_select "turbo-frame#inspector section[aria-label=Picks] input[disabled]", 0
-    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
-    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
-    assert_redirected_to workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
-    assert_equal({ folder.id.to_s => [ media.id ] }, draft.reload.picks)
-    follow_redirect!
-    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1"
-    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id }
-    assert_empty draft.reload.picks
+    assert_select "#{pin}[checked]"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins"
+    pins.([])
+    assert_empty folder.reload.pinned_media_ids
 
     run.step_runs.sole.update!(status: "complete")
     get workflow_url(workflow, account: admin.id, run: run.id)
@@ -288,7 +286,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id)
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
 
-    workflow.latest_run.update!(picks: { folder.id.to_s => [ older.id ] })
+    folder.update!(pinned_media_ids: [ older.id ])
     get workflow_url(workflow, account: admin.id)
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
   end

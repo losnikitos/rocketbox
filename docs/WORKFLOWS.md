@@ -13,18 +13,18 @@ Outside the canvas:
 Workflows borrow from [n8n](https://n8n.io), [ComfyUI](https://github.com/comfyanonymous/ComfyUI), [Zapier](https://zapier.com)/[Make](https://www.make.com) and [Airflow](https://airflow.apache.org)/[Dagster](https://dagster.io). Before designing a workflow feature, check how they solve it and take their answer unless ours genuinely differs.
 
 Where we stand:
-- Every node gives a list of media, like n8n's items and ComfyUI's lists: a folder its newest N, a media itself, a step what its step runs made.
+- Every node gives a list of media, like n8n's items and ComfyUI's lists: a folder its pinned media or newest N, a media itself, a step what its step runs made.
 - A reel step takes its whole inputs in one step run (ComfyUI's `INPUT_IS_LIST`); any other step runs once per item, its shorter inputs repeating their last media (ComfyUI's rule), so a product list with one style media gives one step run per product. The next step waits for them all, like Airflow's `.expand()`.
 - A reel type can name its inputs (`Transformation::Type.slots`, e.g. GM Visuals' exterior, interior, features, customers), like ComfyUI's sockets and Dagster's `ins`: its media reach the run slot by slot in that order.
 - Reruns that keep unchanged step runs are ComfyUI's caching, per item: a step run is matched by the media it took, so a folder's new media reruns only its own.
-- Autorun's trigger is the start folder itself, like n8n's trigger node: it passes the new media on, as the run's picks, rather than just starting a run that reads the folder's newest.
+- Autorun's trigger is the start folder itself, like n8n's trigger node: it passes the new media on, as the run's picks, rather than just starting a run that reads the folder's pinned or newest.
 - Notes are n8n's sticky notes: colored Markdown on the canvas that runs ignore. Groups that move their nodes (ComfyUI, Node-RED) and resizable notes aren't built yet.
 
 ## Graph
 
 - Each step owns its transformation, made blank from the type added from + Add, edited in the inspector and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
-- A folder node can have tags: it holds only its media with all of them, and gives its newest N (Newest, 1 by default).
+- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (Newest, 1 by default).
 - A step can have tags: what it makes gets them all. Its result doesn't inherit its source's tags, so a horizontal render of a `#vertical` photo gets only the step's, e.g. `#horizontal`. Steps writing one folder can tag their results apart.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
@@ -46,10 +46,11 @@ Where we stand:
 There's no separate run mode: the canvas always shows a run ([model](/app/models/workflow_run.rb)), the one selected in the bottom panel (`?run=`), else the latest.
 - A play button on a start folder or media replays the selected run, keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
-- A selected start folder's inspector shows its media (draggable onto the canvas like any folder's), those play takes checked (its newest N); checking others picks them for this run only (`WorkflowRun#picks`), and Newest N, or unchecking them all, goes back.
+- A selected start folder's inspector shows its media (draggable onto the canvas like any folder's), each with a pin: pinned media are what it gives in every run, saved on the node until unpinned; Reset pins, or unpinning them all, goes back to its newest N.
 - Autorun (a switch in the page header after the workflow's name, off by default): each media landing in a start folder (with all its tags) starts a new run of its own, played from that folder with the media as its picks, as the media's owner. Landing is getting its file (uploads, Telegram, WhatsApp, a step run's result) or being moved there with one. Media with no owner, and media a workflow's own runs made, don't start that workflow.
-- A run is a draft until it's first played (from a start node or a step); then it's started and its picks are locked, though replays and step reruns still go, taking them. The run header shows its status: Draft, then failed, running or complete as its step runs.
-- The start node's media (a folder's newest N, or what's picked for the run) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its newest N, a media itself, a step what all its step runs made in this run.
+- A run of one media (autorun, a media page's Run in workflow) keeps it as its picks (`WorkflowRun#picks`), in place of that folder's pinned or newest, through replays and step reruns.
+- A run is a draft until it's first played (from a start node or a step); then it's started. The run header shows its status: Draft, then failed, running or complete as its step runs.
+- The start node's media (the run's picks, else a folder's pinned or newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its pinned or newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none), with the step's tags. A kept step run's result gains tags added to the step since; removing one doesn't take it off.
 - Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and each connection shows what last went along it as a thumbnail on its middle (a step's output, or the media a step took from a folder or media), opening in a lightbox on click.
 - The bottom panel lists the runs, newest first, one row per run with its status and the media it started from and ended with; its chevron expands it to its step runs with their inputs, output, status and time. Clicking a row selects that run, highlighted. The inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) above its settings.
@@ -80,6 +81,7 @@ It's read-only: change a workflow in code or on the canvas. Opening it never cre
 - **Edge** — a connection between two nodes, one end always a step ("connection" in the UI).
 - **Start folder** — a folder or media that feeds steps and that nothing feeds; play starts a run from it.
 - **Autorun** (`Workflow#autorun`) — a workflow setting: media landing in a start folder starts a run with it (`Workflow.autorun!`).
-- **Run** (`WorkflowRun`) — one execution of a workflow. A **draft** run hasn't been played yet, so its picks can still change.
+- **Run** (`WorkflowRun`) — one execution of a workflow. A **draft** run hasn't been played yet.
+- **Pin** (`WorkflowNode#pinned_media_ids`) — a start folder's media it gives in every run in place of its newest N, until Reset pins.
 - **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder.
 - **Slot** — a named input of a step whose type declares them (`Transformation::Type.slots`); an edge into it carries its `slot`.

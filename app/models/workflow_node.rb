@@ -3,8 +3,9 @@
 # A workflow's folder, media, transformation step or note, placed at x, y (its centre) on the canvas. A step owns its
 # transformation, made from a type added from + Add, named after it, and deleted with the step.
 # A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
-# A folder's tags filter what it gives to its media with all of them; it gives its `newest` media. A step's tags go on
-# what it makes. A media is a source that always gives that one media.
+# A folder's tags filter what it gives to its media with all of them; it gives its pinned media (`pinned_media_ids`,
+# every run until reset), else its `newest` media. A step's tags go on what it makes. A media is a source that always
+# gives that one media.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow, touch: true
@@ -13,7 +14,7 @@ class WorkflowNode < ApplicationRecord
   belongs_to :transformation, optional: true, dependent: :destroy
   accepts_nested_attributes_for :transformation
 
-  normalizes :tag_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
+  normalizes :tag_ids, :pinned_media_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
 
   before_validation { transformation.name = transformation.type&.label if transformation&.new_record? && transformation.name.blank? }
   validate { errors.add(:base, "Pick a folder, a media, a transformation or a note.") unless [ folder, library_media, transformation, note ].compact.one? }
@@ -35,7 +36,9 @@ class WorkflowNode < ApplicationRecord
     if step? then transformation&.name
     elsif note? then note.lines.first&.strip.presence || "Note"
     elsif (media = library_media) then media.file.attached? ? media.file.filename.to_s : media.kind.humanize
-    else [ folder&.path, *tags.map { "##{it.name}" }, ("· newest #{newest}" if newest.to_i > 1) ].compact.join(" ")
+    else
+      gives = pinned_media_ids.any? ? "· #{pinned_media_ids.size} pinned" : ("· newest #{newest}" if newest.to_i > 1)
+      [ folder&.path, *tags.map { "##{it.name}" }, gives ].compact.join(" ")
     end
   end
 end
