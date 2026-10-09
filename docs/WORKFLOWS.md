@@ -24,7 +24,7 @@ Where we stand:
 
 - Each step owns its transformation, made blank from the type added from + Add, edited in the inspector and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
-- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (`WorkflowNode#take`, 1 by default).
+- A folder node can have tags and a media type (`WorkflowNode#media_type`: images, videos, or any by default): it holds only its media with all of them and of that type, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (`WorkflowNode#take`, 1 by default).
 - A step can have tags: what it makes gets them all. Its result doesn't inherit its source's tags, so a horizontal render of a `#vertical` photo gets only the step's, e.g. `#horizontal`. Steps writing one folder can tag their results apart.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
@@ -36,9 +36,9 @@ Where we stand:
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
-- A selected folder's inspector sets how many of its newest media it gives (Take).
+- A selected folder's inspector sets how many of its newest media it gives (Take) and of which type (Media: any, images or videos).
 - Drag (or click) Note, under Notes in + Add, to drop a sticky note; its inspector edits its Markdown (saved when you click away) and color.
-- Click a node to open the inspector on the right, top to bottom: its name (a step's editable in place) with a bin to remove it, its Inputs and Outputs in the selected run (see Running), its tags (a folder's "Filter by tag" (only its media with all of them), a step's "Set tags", which its results get), its Settings (a step's transformation settings, saved as you edit; a folder's Take; a note's Markdown and color), then its media (a folder's, or a media node's own). Click a connection to remove it with the bin or drag its ends to other nodes.
+- Click a node to open the inspector on the right, top to bottom: its name (a step's editable in place) with a bin to remove it, its Inputs and Outputs in the selected run (see Running), its tags (a folder's "Filter by tag" (only its media with all of them), a step's "Set tags", which its results get), its Settings (a step's transformation settings, saved as you edit; a folder's Take and Media type; a note's Markdown and color), then its media (a folder's, or a media node's own). Click a connection to remove it with the bin or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
 ## Running
@@ -49,7 +49,7 @@ There's no separate run mode: the canvas always shows a run ([model](/app/models
 - Run, beside + Add on the canvas and on the selected run's row, plays it from every start folder and media at once, e.g. a reel fed by many branches.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun afresh, never reusing (e.g. for another take, or after its type's code changed); the steps after it follow. A result another run shares stays for that run.
 - A selected start folder's inspector shows its media last (draggable onto the canvas like any folder's), each with a pin: pinned media are what it gives in every run, saved on the node until unpinned; Reset pins, or unpinning them all, goes back to its newest N.
-- Autorun (a switch in the page header after the workflow's name, off by default): each media landing in a start folder (with all its tags) starts a new run of its own, played from that folder with the media as its picks, as the media's owner. Landing is getting its file (uploads, Telegram, WhatsApp, a step run's result) or being moved there with one. Media with no owner, and media a workflow's own runs made, don't start that workflow.
+- Autorun (a switch in the page header after the workflow's name, off by default): each media landing in a start folder (with all its tags, of its media type) starts a new run of its own, played from that folder with the media as its picks, as the media's owner. Landing is getting its file (uploads, Telegram, WhatsApp, a step run's result) or being moved there with one. Media with no owner, and media a workflow's own runs made, don't start that workflow.
 - A run of one media (autorun, a media page's Run in workflow) keeps it as its picks (`WorkflowRun#picks`), in place of that folder's pinned or newest, through replays and step reruns.
 - A run is a draft until it's first played (from a start node or a step); then it's started. The run header shows its status: Draft, then failed, running or complete as its step runs.
 - The start node's media (the run's picks, else a folder's pinned or newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its pinned or newest N, a media itself, a step what all its step runs made in this run.
@@ -71,7 +71,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "https://dev.rocketbox.plus/app/workfl
 The token (`agent_token` in Rails credentials, the same in production) opens only this page, nothing else. Use `http://localhost:3003` when the tunnel is down. The page ([view](/app/views/accounts/workflows/show.md.erb)) holds, top to bottom:
 - **Header**: the canvas URL, autorun, start nodes, the selected node, and a short how-to-read note.
 - **Graph**: a Mermaid flowchart. Node ids are `n<node id>`, the same ids used everywhere else on the page. Folders are slanted, steps are boxes with their options and tags, and media nodes are rounded.
-- **Nodes**: one section per node. A step's section has its type and kind, its options (as shown and raw), the tags it sets, what feeds it and where its results land, its slots, shot group, layer and layer steps, and its prompt and style text in full. A folder's section has Take N and the tags it filters on. Notes come last, quoted verbatim, because they often say why the workflow exists.
+- **Nodes**: one section per node. A step's section has its type and kind, its options (as shown and raw), the tags it sets, what feeds it and where its results land, its slots, shot group, layer and layer steps, and its prompt and style text in full. A folder's section has Take N and the tags and media type it filters on. Notes come last, quoted verbatim, because they often say why the workflow exists.
 - **Runs**: the newest 20 runs. The selected run (`?run=`, else the latest) gets a section of its own: its picks, what it started from and ended with, and each step run's status, duration, cost, input and output media (with folder, tags, media page and file links), options, shot, and its prompt as sent when that differs from the step's.
 
 It's read-only: change a workflow in code or on the canvas. Opening it never creates a run, unlike the canvas.

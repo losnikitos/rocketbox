@@ -332,11 +332,16 @@
         <% elsif (media = node.library_media) %>
           <%= link_to "Open in library", library_item_path(media), data: top, class: "rb-btn-ghost-on-light inline-block px-3.5 py-1.5 text-sm" %>
         <% else %>
-          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "flex gap-3" do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-            <%= label_tag "workflow_node_take", "Take", class: field_label %>
             <div class="w-24">
+              <%= label_tag "workflow_node_take", "Take", class: field_label %>
               <%= number_field_tag "workflow[nodes_attributes][0][take]", node.take, id: "workflow_node_take", min: 1, required: true, class: tw_input_classes %>
+            </div>
+            <div class="w-32">
+              <%= label_tag "workflow_node_media_type", "Media", class: field_label %>
+              <%= select_tag "workflow[nodes_attributes][0][media_type]", options_for_select([ [ "Any", "" ], [ "Images", "image" ], [ "Videos", "video" ] ], node.media_type),
+                    id: "workflow_node_media_type", class: tw_input_classes %>
             </div>
           <% end %>
         <% end %>
@@ -384,7 +389,7 @@
               </ul>
             <% end %>
           <% else %>
-            <p class="text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
+            <p class="text-sm text-ink-500"><%= node.tag_ids.any? || node.media_type ? "No media in this folder matches." : "This folder is empty." %></p>
           <% end %>
         </section>
       <% elsif node.folder %>
@@ -403,7 +408,7 @@
               <% end %>
             </ul>
           <% else %>
-            <p class="text-sm text-ink-500"><%= node.tag_ids.any? ? "No media in this folder has those tags." : "This folder is empty." %></p>
+            <p class="text-sm text-ink-500"><%= node.tag_ids.any? || node.media_type ? "No media in this folder matches." : "This folder is empty." %></p>
           <% end %>
         </section>
       <% end %>

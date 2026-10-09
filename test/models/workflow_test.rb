@@ -44,6 +44,22 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_empty Workflow.starts_for(users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:ready)))
   end
 
+  test "a start folder's media type filters what it takes and gives" do
+    workflow = Workflow.create!(name: "Types")
+    images, videos = %w[image video].map { workflow.nodes.create!(folder: folders(:interior), media_type: it) }
+    crop = workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"))
+    [ images, videos ].each { workflow.edges.create!(from: it, to: crop) }
+    user = users(:lazaro_nixon)
+    photo = user.library_media.create!(kind: "document", folder: folders(:interior))
+    photo.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
+
+    assert_equal [ [ workflow, images ] ], Workflow.starts_for(photo)
+    run = workflow.runs.create!
+    assert_equal [ [ photo ], [] ], [ run.picked(images, user), run.picked(videos, user) ]
+    assert_not workflow.nodes.build(folder: folders(:interior), media_type: "audio").valid?
+    assert_nil workflow.nodes.build(media_type: "").media_type
+  end
+
   test "a note stands alone, blank or not, and connects to nothing" do
     workflow = Workflow.create!(name: "Notes")
     note = workflow.nodes.create!(note: "")

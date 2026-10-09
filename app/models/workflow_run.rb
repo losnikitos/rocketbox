@@ -49,9 +49,9 @@ class WorkflowRun < ApplicationRecord
   def advance!(node, user) = run_steps(next_steps(node), user)
 
   # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its pinned
-  # media, else its newest N; only the user's media still in the folder (with all its tags), newest first.
+  # media, else its newest N; only the user's media still in the folder (with all its tags, of its type), newest first.
   def picked(node, user)
-    media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids)
+    media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids).of_type(node.media_type)
     media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.take)
     media.order(created_at: :desc).to_a
   end

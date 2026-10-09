@@ -95,7 +95,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_media_ids: [] }, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_media_ids: [] }, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
       end
 
@@ -112,7 +112,7 @@ module Accounts
         @selected = @graph_nodes.find { it.id == params[:node].to_i }
         @selected_edge = @graph_edges.find { it.id == params[:edge].to_i }
         if @selected&.folder
-          @folder_media = Current.account.library_media.where(folder: @selected.folder).tagged_all(@selected.tags.ids).with_attached_file
+          @folder_media = Current.account.library_media.where(folder: @selected.folder).tagged_all(@selected.tags.ids).of_type(@selected.media_type).with_attached_file
             .includes(:transformation_run).order(created_at: :desc)
         end
         # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
