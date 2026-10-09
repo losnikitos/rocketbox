@@ -45,7 +45,7 @@
 <% add_to_canvas = ->(media) { button_tag "Media", type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id, hidden: true } %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
-     data-action="flow:moved->workflow#move flow:copied->workflow#copy flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
+     data-action="flow:moved->workflow#move flow:copied->workflow#copy flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove dragstart@window->workflow#pickFolder dragend@window->workflow#unpick">
   <div class="flex min-w-0 flex-1 flex-col md:min-h-0">
     <% if @workflow.errors.any? %>
       <div class="<%= tw_alert_error_classes %> m-3" role="alert">
@@ -235,16 +235,10 @@
     <% title = "min-w-0 flex-1 truncate px-2 py-0.5 font-manrope text-base font-bold text-ink-900" %>
     <% icon_button = "cursor-pointer rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" %>
     <% close = link_to(here, data: top, aria: { label: "Close" }, class: icon_button) { heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } } %>
-    <% remove = ->(label, params) do
-         button_to(workflow_path(@workflow), method: :patch, form: { data: top }, params: { workflow: params },
-           data: { workflow_target: "remove" }, aria: { label:, keyshortcuts: "Delete" }, title: label, class: "#{icon_button} hover:text-signal-red") do
-           heroicon "trash", variant: :mini, options: { class: "size-5", "aria-hidden": true }
-         end
-       end %>
     <% if (edge = @selected_edge) %>
       <header class="-ml-2 flex items-center gap-1">
         <h2 class="<%= title %>"><%= edge.from.label %> → <%= edge.to.label %></h2>
-        <%= remove.("Remove connection", { edges_attributes: { "0" => { id: edge.id, _destroy: 1 } } }) %>
+        <%= render "shared/admin_links/workflow_element", element: edge, trigger_class: icon_button %>
         <%= close %>
       </header>
     <% elsif (node = @selected) %>
@@ -267,7 +261,7 @@
         <% else %>
           <h2 class="<%= title %>"><%= node.label %></h2>
         <% end %>
-        <%= remove.("Remove from workflow", { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } }) %>
+        <%= render "shared/admin_links/workflow_element", element: node, trigger_class: icon_button %>
         <%= close %>
       </header>
 
