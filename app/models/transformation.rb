@@ -33,6 +33,7 @@ class Transformation < ApplicationRecord
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
   # The type is picked once, on create.
   validate { errors.add(:kind, "can't be changed") if persisted? && kind_changed? }
+  after_update { workflow_nodes.each(&:touch) }
 
   def type = Type.find(kind)
 

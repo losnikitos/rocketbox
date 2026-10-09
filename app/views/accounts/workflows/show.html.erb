@@ -316,6 +316,19 @@
                 params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
         </div>
 
+        <% if (node.step? || node.folder) && Tag.exists? %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <p class="<%= tw_label_classes %>"><%= node.step? ? "Tag what it makes" : "Only media tagged" %></p>
+            <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+              <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
+            </div>
+            <p class="mt-1 text-xs text-ink-500">
+              <%= node.step? ? "Its results get these tags." : "Steps it feeds take only its media with all of these tags." %>
+            </p>
+          <% end %>
+        <% end %>
+
         <% if node.step? %>
           <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block border-t border-ink-900/10 pt-4" do %>
             <p class="text-sm text-ink-500">Loading…</p>
@@ -350,18 +363,6 @@
             </fieldset>
           <% end %>
         <% else %>
-          <% if Tag.exists? %>
-            <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
-              <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-              <p class="<%= tw_label_classes %>"><%= @fed ? "Tag what lands here" : "Only media tagged" %></p>
-              <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-                <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
-              </div>
-              <p class="mt-1 text-xs text-ink-500">
-                <%= @fed ? "Adds these tags to what steps make here; steps it feeds take only media with all of them." : "Gives only its media with all of these tags." %>
-              </p>
-            <% end %>
-          <% end %>
           <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
             <%= label_tag "workflow_node_newest", "Newest", class: tw_label_classes %>

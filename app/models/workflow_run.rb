@@ -82,7 +82,7 @@ class WorkflowRun < ApplicationRecord
           output, runs = output_of_step(step), runs_of(step)
           batches_of(step, user).each do |batch|
             if (run = runs.find { it.source_media == batch })
-              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | Array(output&.tags))
+              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | step.tags)
             else start_step(step, batch, user)
             end
           end
@@ -129,11 +129,10 @@ class WorkflowRun < ApplicationRecord
 
     def output_of_step(step) = edges.find { it.from_id == step.id && !it.to.step? }&.to
 
-    # The result lands in the step's first output folder (with its tags), else Ready. A shot is picked at random.
+    # The result, with the step's tags, lands in the step's first output folder, else Ready. A shot is picked at random.
     def start_step(step, media, user)
       transformation = step.transformation
-      output = output_of_step(step)
-      transformation.run!(media:, user:, folder: output&.folder || Folder.ready, tags: Array(output&.tags),
+      transformation.run!(media:, user:, folder: output_of_step(step)&.folder || Folder.ready, tags: step.tags,
         shot: (Shot.where(group: transformation.shot_group).sample if transformation.shot_group),
         review: (user.reviews.postable.last if transformation.takes_review?), workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e

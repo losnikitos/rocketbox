@@ -82,7 +82,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
     get workflow_url(workflow, account: admin.id, node: output.id)
-    assert_select "turbo-frame#inspector p", text: "Tag what lands here"
+    assert_select "turbo-frame#inspector p", text: "Only media tagged"
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, tag_ids: [ "", tags(:after).id ] } } } }
+    assert_equal [ tags(:after).id ], step.reload.tag_ids
+    get workflow_url(workflow, account: admin.id, node: step.id)
+    assert_select "turbo-frame#inspector p", text: "Tag what it makes"
 
     get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
@@ -122,6 +126,21 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflows_url(account: admin.id)
   end
 
+  test "workflows list recently edited first, counting node, edge and transformation edits" do
+    admin = sign_in_as(users(:admin_user))
+    first, second = Workflow.create!(name: "First"), Workflow.create!(name: "Second")
+    step = first.nodes.create!(transformation: transformations(:cinematic))
+    order = -> { get workflows_url(account: admin.id); css_select("li[id^=workflow_] a").map(&:text) & [ "First", "Second" ] }
+
+    travel 1.minute
+    second.nodes.create!(note: "")
+    assert_equal [ "Second", "First" ], order.()
+
+    travel 1.minute
+    step.transformation.update!(name: "Renamed")
+    assert_equal [ "First", "Second" ], order.()
+  end
+
   test "play on a start folder runs the latest run from its newest media and the selected run lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")
@@ -142,7 +161,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflows_url(account: admin.id)
     assert_select "##{dom_id(workflow)}" do
-      assert_select "p", /1 run\b/
+      assert_select "p", /Edited .* ago.*1 run\b.*Last run .* ago/m
       assert_select "span", "Running"
       assert_select "input[type=checkbox][name='workflow[autorun]']:not([checked])"
     end

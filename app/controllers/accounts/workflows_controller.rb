@@ -94,7 +94,6 @@ module Accounts
         if @selected&.folder
           @folder_media = Current.account.library_media.where(folder: @selected.folder).tagged_all(@selected.tags.ids).with_attached_file
             .includes(:transformation_run).order(created_at: :desc)
-          @fed = @graph_edges.any? { it.to_id == @selected.id }
         end
         # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
         runs_of = ->(node) { @step_runs.select { it.workflow_node_id == node.id } }

@@ -10,7 +10,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     newest = photo.(1.hour.ago)
     workflow = Workflow.create!(name: "Chain")
     folder, generate, crop, output = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) },
-      { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop") }, { folder: folders(:photobank_logo), tag_ids: [ tags(:before).id, tags(:after).id ] } ]
+      { transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"), tag_ids: [ tags(:after).id ] }, { folder: folders(:photobank_logo) } ]
       .map { workflow.nodes.create!(it) }
     [ [ folder, generate ], [ generate, crop ], [ crop, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
     run = workflow.latest_run
@@ -22,7 +22,8 @@ class WorkflowRunTest < ActiveSupport::TestCase
     first.generated_media.file.attach(io: StringIO.new("mp4"), filename: "a.mp4", content_type: "video/mp4")
     first.update!(status: "complete")
     second = run.step_runs.reload.last
-    assert_equal [ crop, [ first.generated_media ], folders(:photobank_logo), [ tags(:after), tags(:before) ] ],
+    assert_empty first.generated_media.tags
+    assert_equal [ crop, [ first.generated_media ], folders(:photobank_logo), [ tags(:after) ] ],
       [ second.workflow_node, second.source_media, second.generated_media.folder, second.generated_media.tags.order(:name).to_a ]
     assert_nil run.reload.error
     assert_equal [ [ newest ], [ second.generated_media ] ], [ run.inputs, run.outputs ]
@@ -33,7 +34,8 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ first, second ], run.step_runs.reload
 
     second.update!(status: "complete")
-    output.update!(folder: folders(:photobank_misc), tag_ids: [])
+    output.update!(folder: folders(:photobank_misc))
+    crop.update!(tag_ids: [ tags(:before).id ])
     WorkflowRun.find(run.id).start!(folder, user)
     assert_equal [ first, second ], run.step_runs.reload
     assert_equal [ folders(:photobank_misc), [ tags(:after), tags(:before) ] ], second.generated_media.reload.then { [ it.folder, it.tags.order(:name).to_a ] }

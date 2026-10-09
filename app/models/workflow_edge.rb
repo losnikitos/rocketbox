@@ -3,7 +3,7 @@
 # Media flows from a folder, a media or a step to a step or a folder of the same workflow; one end is always a step.
 # Into a step whose type has slots, it goes into one of them (`slot`).
 class WorkflowEdge < ApplicationRecord
-  belongs_to :workflow
+  belongs_to :workflow, touch: true
   belongs_to :from, class_name: "WorkflowNode"
   belongs_to :to, class_name: "WorkflowNode"
 
