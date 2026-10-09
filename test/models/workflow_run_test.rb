@@ -96,7 +96,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     photo.(:exterior, 2.days.ago)
     older, newer, inside = photo.(:exterior, 1.day.ago), photo.(:exterior, 1.hour.ago), photo.(:interior, 1.hour.ago)
     workflow = Workflow.create!(name: "Batch")
-    interior, exterior, crop, reel = [ { folder: folders(:interior) }, { folder: folders(:exterior), newest: 2 },
+    interior, exterior, crop, reel = [ { folder: folders(:interior) }, { folder: folders(:exterior), take: 2 },
       { transformation_attributes: { kind: "smart_crop" } }, { transformation_attributes: { kind: "gm_visuals" } } ].map { workflow.nodes.create!(it) }
     assert_not workflow.edges.new(from: interior, to: reel).valid?
     [ [ interior, reel, "interior" ], [ exterior, crop, nil ], [ crop, reel, "exterior" ] ].each { |from, to, slot| workflow.edges.create!(from:, to:, slot:) }

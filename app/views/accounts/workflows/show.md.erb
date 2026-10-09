@@ -104,7 +104,7 @@ Style "<%= t.style.name %>", appended to the prompt:
 ### n<%= node.id %> · Folder <%= node.label %><%= " (selected)" if node == @selected %>
 
 <% if outs.(node).any? %>
-- Gives: <%= node.pinned_media_ids.any? ? "its pinned media #{node.pinned_media_ids.join(", ")}" : "its newest #{node.newest} media" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %>
+- Gives: <%= node.pinned_media_ids.any? ? "its pinned media #{node.pinned_media_ids.join(", ")}" : "its newest #{node.take} media" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %>
 <% end %>
 - From: <%= ins.(node).join(", ").presence || "nothing" %>
 - To: <%= outs.(node).join(", ").presence || "nothing" %>

@@ -52,7 +52,7 @@ class WorkflowRun < ApplicationRecord
   # media, else its newest N; only the user's media still in the folder (with all its tags), newest first.
   def picked(node, user)
     media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids)
-    media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.newest)
+    media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.take)
     media.order(created_at: :desc).to_a
   end
 

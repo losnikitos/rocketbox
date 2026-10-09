@@ -4,7 +4,7 @@
 # transformation, made from a type added from + Add, named after it, and deleted with the step.
 # A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
 # A folder's tags filter what it gives to its media with all of them; it gives its pinned media (`pinned_media_ids`,
-# every run until reset), else its `newest` media. A step's tags go on what it makes. A media is a source that always
+# every run until reset), else its newest `take` media. A step's tags go on what it makes. A media is a source that always
 # gives that one media.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
 class WorkflowNode < ApplicationRecord
@@ -20,7 +20,7 @@ class WorkflowNode < ApplicationRecord
   validate { errors.add(:base, "Pick a folder, a media, a transformation or a note.") unless [ folder, library_media, transformation, note ].compact.one? }
   validate { errors.add(:tag_ids, "only go on a folder or a step") if tag_ids.any? && !folder && !transformation }
   validate { errors.add(:tag_ids, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.size }
-  validates :newest, numericality: { only_integer: true, greater_than: 0 }
+  validates :take, numericality: { only_integer: true, greater_than: 0 }
   validates :color, inclusion: { in: Folder.colors.keys }
 
   def step? = transformation_id.present?
@@ -37,7 +37,7 @@ class WorkflowNode < ApplicationRecord
     elsif note? then note.lines.first&.strip.presence || "Note"
     elsif (media = library_media) then media.file.attached? ? media.file.filename.to_s : media.kind.humanize
     else
-      gives = pinned_media_ids.any? ? "· #{pinned_media_ids.size} pinned" : ("· newest #{newest}" if newest.to_i > 1)
+      gives = pinned_media_ids.any? ? "· #{pinned_media_ids.size} pinned" : ("· take #{take}" if take.to_i > 1)
       [ folder&.path, *tags.map { "##{it.name}" }, gives ].compact.join(" ")
     end
   end

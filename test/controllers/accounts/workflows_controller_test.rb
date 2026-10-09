@@ -231,10 +231,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
     assert_select "#{pin}[type=radio]:not([checked]):not([disabled])"
     assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins", count: 0
-    folder.update!(newest: 2)
+    folder.update!(take: 2)
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
     assert_select "#{pin}[type=checkbox]"
-    folder.update!(newest: 1)
+    folder.update!(take: 1)
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
 
     pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_media_ids: [ "", *ids ] } } } } }

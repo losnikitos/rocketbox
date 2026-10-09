@@ -24,7 +24,7 @@ Where we stand:
 
 - Each step owns its transformation, made blank from the type added from + Add, edited in the inspector and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
-- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (Take, 1 by default).
+- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (`WorkflowNode#take`, 1 by default).
 - A step can have tags: what it makes gets them all. Its result doesn't inherit its source's tags, so a horizontal render of a `#vertical` photo gets only the step's, e.g. `#horizontal`. Steps writing one folder can tag their results apart.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
@@ -71,7 +71,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "https://dev.rocketbox.plus/app/workfl
 The token (`agent_token` in Rails credentials, the same in production) opens only this page, nothing else. Use `http://localhost:3003` when the tunnel is down. The page ([view](/app/views/accounts/workflows/show.md.erb)) holds, top to bottom:
 - **Header**: the canvas URL, autorun, start nodes, the selected node, and a short how-to-read note.
 - **Graph**: a Mermaid flowchart. Node ids are `n<node id>`, the same ids used everywhere else on the page. Folders are slanted, steps are boxes with their options and tags, and media nodes are rounded.
-- **Nodes**: one section per node. A step's section has its type and kind, its options (as shown and raw), the tags it sets, what feeds it and where its results land, its slots, shot group, layer and layer steps, and its prompt and style text in full. A folder's section has Newest N and the tags it filters on. Notes come last, quoted verbatim, because they often say why the workflow exists.
+- **Nodes**: one section per node. A step's section has its type and kind, its options (as shown and raw), the tags it sets, what feeds it and where its results land, its slots, shot group, layer and layer steps, and its prompt and style text in full. A folder's section has Take N and the tags it filters on. Notes come last, quoted verbatim, because they often say why the workflow exists.
 - **Runs**: the newest 20 runs. The selected run (`?run=`, else the latest) gets a section of its own: its picks, what it started from and ended with, and each step run's status, duration, cost, input and output media (with folder, tags, media page and file links), options, shot, and its prompt as sent when that differs from the step's.
 
 It's read-only: change a workflow in code or on the canvas. Opening it never creates a run, unlike the canvas.
