@@ -24,9 +24,9 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, shot group, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created. Every run is a `TransformationRun`; a generated media's page links to the step that made it.
 
-**Workflows:** the media pipeline — a graph of folder, media and transformation step nodes, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md).
+**Workflows:** the media pipeline — a graph of folder, media and transformation step nodes, with colored Markdown sticky notes beside them, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md). Given a workflow URL, curl its `.md` first: graph, step settings and runs in one page ([how](./docs/WORKFLOWS.md#reading-a-workflow-agents)).
 
-**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow folder node's `tag_ids` filter and label: an input folder gives only media with all of them, an output folder adds them to what lands in it.
+**Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow node's `tag_ids`: a folder gives only media with all of them, a step sets them on what it makes.
 
 ```mermaid
 flowchart LR
@@ -58,7 +58,7 @@ Prefer built-in scale utilities over arbitrary values (`rounded-[10px]`, `min-w-
 # Documentation Index
 
 ### [WORKFLOWS.md](./docs/WORKFLOWS.md)
-Workflow graphs, the canvas editor, runs and step runs; prior art (n8n, ComfyUI, Zapier).
+Workflow graphs, the canvas editor, runs and step runs, reading one as Markdown (agents); prior art (n8n, ComfyUI, Zapier).
 
 ### [STRIPE.md](./docs/STRIPE.md)
 Payments and billing via Stripe.

@@ -1,8 +1,8 @@
 <% content_for(:title, "#{@workflow.name_was} — Rocketbox") %>
 <% content_for(:fit, "true") %>
-<% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 transition hover:bg-ink-900/5 active:cursor-grabbing" %>
-<% tab = "cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900" %>
-<% tiles = "flex max-h-96 flex-wrap content-start gap-2 overflow-y-auto p-3" %>
+<% tile = "flex size-28 cursor-grab flex-col items-center justify-center gap-2 rounded-xl border border-ink-900/10 bg-white p-2 text-center text-xs font-medium text-ink-900 hover:bg-ink-900/5 active:cursor-grabbing" %>
+<% tiles = "flex flex-wrap content-start gap-2 p-3" %>
+<% section_heading = "px-3 pt-3 text-xs font-medium text-ink-500" %>
 <% search = "block w-48 rounded-lg border border-ink-900/15 bg-white py-1 pr-2 pl-7 text-sm text-ink-900 focus:border-rocket focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
 <% search_icon = { class: "pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 text-ink-400", "aria-hidden": true } %>
 <% top = { turbo_frame: "_top" } %>
@@ -38,15 +38,12 @@
     <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
   </span>
 <% end } %>
-<% status = ->(run) { (state = run.state) && tag.span(state.humanize, title: ("Its picks are locked" unless run.draft?), class: run_status_pill_class(state)) } %>
+<% status = ->(run) { (state = run.state) && tag.span(state.humanize, class: run_status_pill_class(state)) } %>
 <%# The media a run started from, then the ones it ended with. %>
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
-<% add_to_canvas = ->(media, corner) { button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id,
-     title: "Add to canvas", aria: { label: "Add to canvas" },
-     class: "absolute top-1.5 #{corner} cursor-pointer rounded-lg bg-white/90 p-1 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket" do
-       heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true }
-     end } %>
+<% run_all = "Run #{@run.name} from every start folder and media" %>
+<% add_to_canvas = ->(media) { button_tag "Media", type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id, hidden: true } %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
      data-action="flow:moved->workflow#move flow:copied->workflow#copy flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
@@ -69,47 +66,64 @@
           Add folders and transformations with + Add.
         </p>
       <% end %>
-      <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="rb-btn-ghost-on-light absolute top-3 left-3 z-10 gap-1 px-3.5 py-2 shadow-sm">
-        <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Add
-      </button>
+      <% canvas_button = "inline-flex cursor-pointer items-center gap-1 rounded-lg border border-ink-900/15 bg-white px-3.5 py-2 text-sm font-semibold text-ink-900 hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket" %>
+      <div class="absolute top-3 left-3 z-10 flex gap-2">
+        <button type="button" popovertarget="workflow_palette" style="anchor-name: --workflow-palette" class="<%= canvas_button %>">
+          <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Add
+        </button>
+        <% if @start_nodes.any? %>
+          <button type="submit" form="workflow_play" title="<%= run_all %>" class="<%= canvas_button %>">
+            <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Run
+          </button>
+        <% end %>
+      </div>
       <div id="workflow_palette" popover aria-label="Add" style="position-anchor: --workflow-palette"
            class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline] w-xl rounded-lg border border-ink-900/15 bg-white shadow-lg">
-        <% groups = Transformation::Type.all.group_by(&:group) %>
-        <div role="tablist" class="flex gap-1 border-b border-ink-900/10 p-2">
-          <% { "folders" => "Folders", **groups.keys.to_h { [ it.slug, it.label ] } }.each_with_index do |(key, label), index| %>
-            <button type="button" role="tab" id="palette_<%= key %>_tab" aria-controls="palette_<%= key %>" aria-selected="<%= index.zero? %>"
-                    data-workflow-target="tab" data-action="workflow#tab" class="<%= tab %>"><%= label %></button>
-          <% end %>
-        </div>
-        <div role="tabpanel" id="palette_folders" aria-labelledby="palette_folders_tab">
-          <label class="relative mx-3 mt-3 block w-fit">
+        <div class="border-b border-ink-900/10 p-2">
+          <label class="relative block w-fit">
             <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
-            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search folders" },
+            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search" },
                   data: { action: "input->workflow#filter" }, class: search %>
           </label>
-          <div class="<%= tiles %>">
-            <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
-              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
-                    title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
-                <span class="line-clamp-2"><%= folder.path %></span>
-              <% end %>
-            <% end %>
-          </div>
         </div>
-        <% groups.each do |group, types| %>
-          <div role="tabpanel" id="palette_<%= group.slug %>" aria-labelledby="palette_<%= group.slug %>_tab" hidden>
+        <div class="max-h-96 overflow-y-auto">
+          <section aria-labelledby="palette_folders">
+            <h3 id="palette_folders" class="<%= section_heading %>">Folders</h3>
             <div class="<%= tiles %>">
-              <% types.each do |type| %>
-                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_attributes][kind]", value: type.slug, draggable: "true",
-                      title: type.description || type.label, data: { action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                  <%= image_tag type.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
-                  <span class="line-clamp-2"><%= type.label %></span>
+              <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
+                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
+                      title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                  <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
+                  <span class="line-clamp-2"><%= folder.path %></span>
                 <% end %>
               <% end %>
             </div>
-          </div>
-        <% end %>
+          </section>
+          <% Transformation::Type.all.group_by(&:group).each do |group, types| %>
+            <section aria-labelledby="palette_<%= group.slug %>">
+              <h3 id="palette_<%= group.slug %>" class="<%= section_heading %>"><%= group.label %></h3>
+              <div class="<%= tiles %>">
+                <% types.each do |type| %>
+                  <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][transformation_attributes][kind]", value: type.slug, draggable: "true",
+                        title: type.description || type.label, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                    <%= image_tag type.cover, alt: "", draggable: "false", class: "aspect-2/3 h-14 rounded-md object-cover" %>
+                    <span class="line-clamp-2"><%= type.label %></span>
+                  <% end %>
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+          <section aria-labelledby="palette_notes">
+            <h3 id="palette_notes" class="<%= section_heading %>">Notes</h3>
+            <div class="<%= tiles %>">
+              <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][note]", value: "Note", draggable: "true",
+                    title: "A sticky note", data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
+                <%= heroicon "pencil-square", options: { class: "size-7 text-amber-400", "aria-hidden": true } %>
+                <span class="line-clamp-2">Note</span>
+              <% end %>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
 
@@ -142,9 +156,10 @@
         <p class="p-6 text-center text-sm text-ink-500">No runs yet.</p>
       <% end %>
       <% @runs.each do |run| %>
+        <% playable = run == @run && @start_nodes.any? %>
         <div class="relative border-b border-ink-900/10">
           <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
-                class: "flex min-h-11 items-center gap-3 py-2 pr-12 pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
+                class: "flex min-h-11 items-center gap-3 py-2 #{playable ? "pr-32" : "pr-12"} pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
             <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
             <%= status.(run) %>
             <%= ends.(run) %>
@@ -185,7 +200,9 @@
                       <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
                         <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
                       <% end %>
-                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums"><%= took.(step_run) %></td>
+                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums">
+                        <%= (from = step_run.reused_from) ? "Reused from #{from.workflow_run&.name || "another run"}" : took.(step_run) %>
+                      </td>
                       <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
                     </tr>
                   <% end %>
@@ -195,7 +212,13 @@
               <p class="px-3 pb-3 pl-10 text-sm text-ink-500">Press play on a start folder or media to run the workflow.</p>
             <% end %>
           </details>
-          <div class="absolute top-0 right-3 flex h-11 items-center">
+          <div class="absolute top-0 right-3 flex h-11 items-center gap-1">
+            <% if playable %>
+              <button type="submit" form="workflow_play" title="<%= run_all %>"
+                      class="flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900">
+                <%= heroicon "play", variant: :mini, options: { class: "size-4", "aria-hidden": true } %> Run
+              </button>
+            <% end %>
             <%= render "shared/admin_links/workflow_run", workflow_run: run %>
           </div>
         </div>
@@ -221,8 +244,8 @@
     <% elsif (node = @selected) %>
       <header class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.library_media ? "Media" : "Folder" %></p>
-          <h2 class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
+          <p class="text-xs text-ink-500"><%= node.step? ? "Transformation" : node.note? ? "Note" : node.library_media ? "Media" : "Folder" %></p>
+          <h2 id="node_<%= node.id %>_heading" class="truncate text-sm font-semibold text-ink-900"><%= node.label %></h2>
         </div>
         <%= link_to here, data: top, aria: { label: "Close" }, class: "rounded-lg p-1 text-ink-500 transition hover:bg-ink-900/5 hover:text-ink-900" do %>
           <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
@@ -248,29 +271,36 @@
         <p class="border-t border-ink-900/10 pt-4 text-sm text-ink-500">This step hasn't run in this run.</p>
       <% end %>
       <% if node.folder && start %>
-        <section aria-label="Picks" class="space-y-2 border-t border-ink-900/10 pt-4">
+        <section aria-label="Pins" class="space-y-2 border-t border-ink-900/10 pt-4">
           <div class="flex items-center justify-between gap-2">
-            <h3 class="text-xs text-ink-500"><%= @run.draft? ? "Play takes" : "Play took (locked once the run started)" %></h3>
-            <% if @run.draft? && @run.picks.key?(node.id.to_s) %>
-              <%= button_to "Newest #{node.newest}", workflow_run_path(@workflow, @run), method: :patch, params: { node_id: node.id }, form: { data: top },
-                    title: "Take its newest media again", class: "rb-btn-ghost-on-light px-2.5 py-1 text-xs" %>
+            <h3 class="text-xs text-ink-500">
+              <%= node.pinned_media_ids.any? ? "Play takes the pinned media" : "Play takes its newest #{node.newest}; pin media to take them instead" %>
+            </h3>
+            <% if node.pinned_media_ids.any? %>
+              <%= button_to "Reset pins", workflow_path(@workflow), method: :patch, form: { data: top },
+                    params: { workflow: { nodes_attributes: { "0" => { id: node.id, pinned_media_ids: [ "" ] } } } },
+                    title: "Take its newest media again", class: "rb-btn-ghost-on-light shrink-0 px-2.5 py-1 text-xs" %>
             <% end %>
           </div>
           <% if @folder_media.any? %>
-            <% picked = @run.picked(node, Current.account) %>
-            <%= form_with url: workflow_run_path(@workflow, @run), method: :patch, data: top, html: { onchange: "this.requestSubmit()" } do %>
-              <%= hidden_field_tag :node_id, node.id, id: nil %>
+            <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
+              <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+              <%= hidden_field_tag "workflow[nodes_attributes][0][pinned_media_ids][]", "", id: nil %>
               <ul aria-label="Media" class="grid grid-cols-3 gap-2">
                 <% @folder_media.each do |media| %>
                   <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
-                    <label class="group/option relative block cursor-pointer overflow-hidden has-disabled:cursor-default rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                      <%= check_box_tag "media_ids[]", media.id, picked.include?(media), id: nil, disabled: !@run.draft?, class: "sr-only" %>
+                    <label title="Pin" class="group/option relative block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                      <%= check_box_tag "workflow[nodes_attributes][0][pinned_media_ids][]", media.id, node.pinned_media_ids.include?(media.id), id: nil,
+                            aria: { label: "Pin" }, class: "sr-only" %>
                       <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
-                      <span class="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full border-2 border-white bg-black/20 text-transparent shadow-sm group-has-checked/option:border-rocket group-has-checked/option:bg-rocket group-has-checked/option:text-white" aria-hidden="true">
-                        <%= heroicon "check", variant: :micro, options: { class: "size-3.5" } %>
+                      <span class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-has-focus-visible/option:opacity-100 group-has-checked/option:bg-rocket group-has-checked/option:text-white group-has-checked/option:opacity-100" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5 group-has-checked/option:fill-current">
+                          <path d="M12 17v5" />
+                          <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                        </svg>
                       </span>
                     </label>
-                    <%= add_to_canvas.(media, "left-1.5") %>
+                    <%= add_to_canvas.(media) %>
                   </li>
                 <% end %>
               </ul>
@@ -307,6 +337,19 @@
                 params: { workflow: { nodes_attributes: { "0" => { id: node.id, _destroy: 1 } } } } %>
         </div>
 
+        <% if (node.step? || node.folder) && Tag.exists? %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <p class="<%= tw_label_classes %>"><%= node.step? ? "Tag what it makes" : "Only media tagged" %></p>
+            <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
+              <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
+            </div>
+            <p class="mt-1 text-xs text-ink-500">
+              <%= node.step? ? "Its results get these tags." : "Steps it feeds take only its media with all of these tags." %>
+            </p>
+          <% end %>
+        <% end %>
+
         <% if node.step? %>
           <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block border-t border-ink-900/10 pt-4" do %>
             <p class="text-sm text-ink-500">Loading…</p>
@@ -318,19 +361,29 @@
               <%= render "accounts/library/quick_view", media: %>
             </div>
           </div>
-        <% else %>
-          <% if Tag.exists? %>
-            <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
-              <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
-              <p class="<%= tw_label_classes %>"><%= @fed ? "Tag what lands here" : "Only media tagged" %></p>
-              <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
-                <%= render "shared/tag_pick", name: "workflow[nodes_attributes][0][tag_ids][]", selected: node.tag_ids, label: "Tags", multiple: true %>
+        <% elsif node.note? %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "space-y-4 border-t border-ink-900/10 pt-4" do %>
+            <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
+            <div>
+              <%= label_tag "workflow_node_note", "Note", class: tw_label_classes %>
+              <%= text_area_tag "workflow[nodes_attributes][0][note]", node.note, id: "workflow_node_note", rows: 8,
+                    aria: { describedby: "workflow_node_note_hint" }, class: tw_input_classes %>
+              <p id="workflow_node_note_hint" class="mt-1 text-xs text-ink-500">Markdown: **bold**, # heading, - list. Saves when you click away.</p>
+            </div>
+            <fieldset>
+              <legend class="<%= tw_label_classes %>">Color</legend>
+              <div class="flex gap-2">
+                <% Folder.colors.each_key do |color| %>
+                  <label title="<%= color.humanize %>"
+                         class="size-8 cursor-pointer rounded-full border-2 <%= AppHelper::NOTE_COLORS[color] %> has-checked:ring-2 has-checked:ring-rocket has-checked:ring-offset-2 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+                    <%= radio_button_tag "workflow[nodes_attributes][0][color]", color, node.color == color, id: nil, class: "sr-only" %>
+                    <span class="sr-only"><%= color.humanize %></span>
+                  </label>
+                <% end %>
               </div>
-              <p class="mt-1 text-xs text-ink-500">
-                <%= @fed ? "Adds these tags to what steps make here; steps it feeds take only media with all of them." : "Gives only its media with all of these tags." %>
-              </p>
-            <% end %>
+            </fieldset>
           <% end %>
+        <% else %>
           <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" } do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
             <%= label_tag "workflow_node_newest", "Newest", class: tw_label_classes %>
@@ -340,7 +393,7 @@
             </div>
             <p id="workflow_node_newest_hint" class="mt-1 text-xs text-ink-500">How many of its newest media it gives the steps it feeds.</p>
           <% end %>
-          <%# A start folder's media are its picks above. %>
+          <%# A start folder's media are its pins above. %>
           <% unless start %>
             <% if @folder_media.any? %>
               <ul aria-label="Media" class="grid grid-cols-3 gap-2 border-t border-ink-900/10 pt-4">
@@ -350,7 +403,7 @@
                       <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
                     <% end %>
                     <%= render "accounts/library/quick_view", media: %>
-                    <%= add_to_canvas.(media, "right-1.5") %>
+                    <%= add_to_canvas.(media) %>
                   </li>
                 <% end %>
               </ul>

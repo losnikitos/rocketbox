@@ -20,9 +20,15 @@ module Accounts
     end
 
     def update
-      if @transformation.update(transformation_params)
+      @transformation.assign_attributes(transformation_params)
+      @transformation.fill_options
+      if @transformation.save
+        return render turbo_stream: node_streams if autosave_request?
+
         redirect_to transformation_path(@transformation), notice: "Transformation saved."
       else
+        return render_autosave_error(@transformation) if autosave_request?
+
         render :show, status: :unprocessable_entity
       end
     end
@@ -46,5 +52,13 @@ module Accounts
       end
 
       def draft_params = params[:transformation] ? transformation_params : {}
+
+      # Its step's node on the canvas and the inspector's heading show the saved name and options.
+      def node_streams
+        @transformation.workflow_nodes.flat_map do |node|
+          { label: @transformation.name, heading: @transformation.name, kind: @transformation.options_label }
+            .map { |part, text| turbo_stream.update("node_#{node.id}_#{part}", text) }
+        end
+      end
   end
 end

@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 
-// Debounced form autosave. Success: green check in the field. Failure: toast.
+// Debounced form autosave. Success: green check in the field, and a Turbo Stream response is applied. Failure: toast.
 export default class extends Controller {
   static targets = ["indicator"]
   static values = { delay: { type: Number, default: 400 } }
@@ -20,7 +21,7 @@ export default class extends Controller {
   queue(event) {
     const field = event.target
     if (!field.matches("input, textarea, select")) return
-    if (field.type === "hidden" || field.type === "submit") return
+    if (!field.name || field.type === "submit") return
 
     this.activeField = field
     clearTimeout(this.timer)
@@ -68,6 +69,7 @@ export default class extends Controller {
       }
 
       this.showOk(field)
+      if (response.headers.get("Content-Type")?.includes("turbo-stream")) Turbo.renderStreamMessage(await response.text())
       if (field?.type === "file") window.location.reload()
     } catch (error) {
       if (error.name === "AbortError") return

@@ -31,9 +31,25 @@ class Accounts::TransformationsControllerTest < ActionDispatch::IntegrationTest
     patch transformation_url(transformation, account: admin.id), params: { transformation: { name: "Team collage", body: "Team collage", kind: "generate_video" } }, headers: FRAME
     assert_redirected_to transformation_url(transformation, account: admin.id)
     assert_equal [ "Team collage", "Team collage", "generate_image" ], transformation.reload.then { [ it.name, it.body, it.kind ] }
-    patch transformation_url(transformation, account: admin.id), params: { transformation: { body: "" } }, headers: FRAME
+    autosave = FRAME.merge("X-Autosave" => "1", "Accept" => "application/json")
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { body: "" } }, headers: autosave
+    assert_response :ok
+    assert_predicate transformation.reload.body, :blank?
+    # The canvas node and inspector heading take the saved name and options.
+    assert_select "turbo-stream[action=update][target=node_#{step.id}_label] template", text: "Team collage"
+    assert_select "turbo-stream[target=node_#{step.id}_heading]"
+    assert_select "turbo-stream[target=node_#{step.id}_kind] template", text: transformation.options_label
+    # A model switch saves with the old model's options it doesn't offer refilled.
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { options: { model: "gpt-image-2", resolution: "4k" } } }, headers: autosave
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { options: { model: "grok-imagine-image-2.0", resolution: "4k" } } }, headers: autosave
+    assert_response :ok
+    assert_equal [ "grok-imagine-image-2.0", "2k" ], transformation.reload.options.values_at("model", "resolution")
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { name: "" } }, headers: autosave
     assert_response :unprocessable_entity
-    assert_select "turbo-frame#transformation li", text: "Body can't be blank"
+    assert_equal "Name can't be blank", response.parsed_body["error"]
+    patch transformation_url(transformation, account: admin.id), params: { transformation: { name: "" } }, headers: FRAME
+    assert_response :unprocessable_entity
+    assert_select "turbo-frame#transformation li", text: "Name can't be blank"
 
     zoom = workflow.nodes.create!(transformation_attributes: { kind: "zoom" }).transformation
     get transformation_url(zoom, account: admin.id), headers: { "Turbo-Frame" => "generation_options" }

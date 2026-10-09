@@ -74,6 +74,9 @@ module AppHelper
   FOLDER_COLORS = { "sky" => "text-sky-400", "emerald" => "text-emerald-500", "amber" => "text-amber-400",
                     "rose" => "text-rose-400", "violet" => "text-violet-400", "slate" => "text-slate-400" }.freeze
 
+  NOTE_COLORS = { "sky" => "border-sky-200 bg-sky-50", "emerald" => "border-emerald-200 bg-emerald-50", "amber" => "border-amber-200 bg-amber-50",
+                  "rose" => "border-rose-200 bg-rose-50", "violet" => "border-violet-200 bg-violet-50", "slate" => "border-slate-200 bg-slate-50" }.freeze
+
   def folder_color(folder) = FOLDER_COLORS[folder&.color || "sky"]
 
   def posts_tabs

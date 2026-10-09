@@ -1,0 +1,175 @@
+<%
+  nodes, edges = @workflow.nodes.to_a, @workflow.edges.to_a
+  by_id = nodes.index_by(&:id)
+  ready = Folder.ready
+  hashtags = ->(tags) { tags.map { "##{it.name}" }.join(" ").presence }
+  ref = ->(node) { "n#{node.id} #{node.step? ? %("#{node.label}") : node.label}" }
+  ins = ->(node) { edges.select { it.to_id == node.id }.map { [ ref.(by_id[it.from_id]), (" (slot #{it.slot})" if it.slot) ].join } }
+  outs = ->(node) { edges.select { it.from_id == node.id }.map { ref.(by_id[it.to_id]) } }
+  output_folder = ->(step) { edges.map { by_id[it.to_id] if it.from_id == step.id }.find { it && !it.step? } }
+  media_line = ->(media) do
+    next "(deleted media)" unless media
+    file = media.file.attached? ? "[#{media.file.filename}](#{rails_blob_url(media.file)})" : "no file yet"
+    [ "[media #{media.id}](#{library_item_url(media)})", media.kind, file, "in #{media.folder.path}", hashtags.(media.tags) ].compact.join(" ")
+  end
+  mermaid = ->(text) { %("#{text.to_s.gsub('"', "#quot;")}") }
+  graph = nodes.reject(&:note?)
+  notes = nodes.select(&:note?)
+%>
+# Workflow: <%= @workflow.name %>
+
+- Canvas: <%= workflow_url(@workflow) %>
+- Autorun: <%= @workflow.autorun ? "on, media landing in a start node starts a run of its own" : "off" %>
+- Edited: <%= @workflow.updated_at.iso8601 %>
+- Start nodes (play starts a run here): <%= @workflow.start_nodes.map { ref.(it) }.join(", ").presence || "none" %>
+<% if @selected %>
+- Selected node: <%= ref.(@selected) %>
+<% end %>
+
+How to read it (more in docs/WORKFLOWS.md): a folder node gives its pinned media, else its newest N, having all its tags; a media node gives
+itself. A step runs once per input item (a reel step takes all its inputs in one step run), each step run making one
+media, which lands in the step's first output folder, else <%= ready.path %>, with the step's tags. Results don't inherit
+their source's tags. A step starts once every node feeding it gives media.
+
+## Graph
+
+```mermaid
+flowchart LR
+<% graph.each do |node| %>
+<% if node.step? %>
+  n<%= node.id %>[<%= mermaid.([ node.label, node.transformation.options_label, hashtags.(node.tags) ].compact.join(" · ")) %>]
+<% elsif node.library_media %>
+  n<%= node.id %>([<%= mermaid.(node.label) %>])
+<% else %>
+  n<%= node.id %>[/<%= mermaid.(node.label) %>/]
+<% end %>
+<% end %>
+<% edges.each do |edge| %>
+  n<%= edge.from_id %> --><%= "|#{mermaid.(edge.slot)}|" if edge.slot %> n<%= edge.to_id %>
+<% end %>
+<% if (to_ready = graph.select { it.step? && !output_folder.(it) }).any? %>
+  ready[/<%= mermaid.("#{ready.path} (no output folder)") %>/]
+<% to_ready.each do |step| %>
+  n<%= step.id %> -.-> ready
+<% end %>
+<% end %>
+```
+
+## Nodes
+<% graph.each do |node| %>
+
+<% if node.step? %>
+<% t = node.transformation %>
+### n<%= node.id %> · Step "<%= node.label %>"<%= " (selected)" if node == @selected %>
+
+- Type: <%= t.type_label %> (`<%= t.kind %>`), <%= t.reel? ? "takes all its inputs in one step run" : "one step run per input item" %>
+- Options: <%= t.options_label %> `<%= t.options.to_json %>`
+- Tags it sets on what it makes: <%= hashtags.(node.tags) || "none" %>
+- From: <%= ins.(node).join(", ").presence || "nothing yet" %>
+- To: <%= outs.(node).join(", ").presence || "nothing" %><%= ", results land in #{ready.path}" unless output_folder.(node) %>
+<% if t.slots %>
+- Slots, in the order their media reach a step run: <%= t.slots.join(", ") %>
+<% end %>
+<% if t.shot_group %>
+- Shot group: <%= t.shot_group %> (each step run appends a random shot's text from it to the prompt)
+<% end %>
+<% if t.layer %>
+- Layer: <%= t.layer.name %>
+<% end %>
+<% if t.layer_steps.any? %>
+- Layer steps: `<%= t.layer_steps.to_json %>`
+<% end %>
+<% if t.ai? %>
+
+Prompt:
+
+~~~text
+<%= t.body %>
+~~~
+<% end %>
+<% if t.style %>
+
+Style "<%= t.style.name %>", appended to the prompt:
+
+~~~text
+<%= t.style.body %>
+~~~
+<% end %>
+<% elsif node.library_media %>
+### n<%= node.id %> · Media <%= node.label %><%= " (selected)" if node == @selected %>
+
+- Gives: <%= media_line.(node.library_media) %>
+- To: <%= outs.(node).join(", ").presence || "nothing" %>
+<% else %>
+### n<%= node.id %> · Folder <%= node.label %><%= " (selected)" if node == @selected %>
+
+<% if outs.(node).any? %>
+- Gives: <%= node.pinned_media_ids.any? ? "its pinned media #{node.pinned_media_ids.join(", ")}" : "its newest #{node.newest} media" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %>
+<% end %>
+- From: <%= ins.(node).join(", ").presence || "nothing" %>
+- To: <%= outs.(node).join(", ").presence || "nothing" %>
+<% end %>
+<% end %>
+<% if notes.any? %>
+
+## Notes
+
+Sticky notes on the canvas; runs ignore them.
+<% notes.each do |note| %>
+
+### n<%= note.id %> · Note (<%= note.color %>)<%= " (selected)" if note == @selected %>
+
+<%= note.note.lines.map { "> #{it}" }.join.presence || "> (blank)" %>
+<% end %>
+<% end %>
+
+## Runs
+
+Newest first; add `?run=<id>` to show another run in detail.
+
+<% if @runs.empty? %>
+No runs yet.
+<% end %>
+<% @runs.first(20).each do |run| %>
+- <%= run.name %> (id <%= run.id %>)<%= " (shown)" if run == @run %>: <%= run.state || "started" %>, <%= pluralize(run.step_runs.size, "step run") %>, updated <%= run.updated_at.iso8601 %>
+<% end %>
+<% if @run %>
+
+## <%= @run.name %> (id <%= @run.id %>): <%= @run.state || "started" %>
+
+<% if @run.error %>
+- Error: <%= @run.error %>
+<% end %>
+- Picks: <%= @run.picks.map { |id, media_ids| "n#{id}: media #{media_ids.join(", ")}" }.join("; ").presence || "none, so start folders give their pinned or newest" %>
+- Started from: <%= @run.inputs.map { media_line.(it) }.join("; ").presence || "nothing" %>
+- Ended with: <%= @run.outputs.map { media_line.(it) }.join("; ").presence || "nothing" %>
+<% @step_runs.each do |step_run| %>
+
+### Step run <%= step_run.id %> · <%= step_run.workflow_node ? ref.(step_run.workflow_node) : "deleted step" %>: <%= step_run.status %>
+
+<% if (from = step_run.reused_from) %>
+- Reused: the result of step run <%= from.id %><%= " in #{from.workflow_run.name} (id #{from.workflow_run.id})" if from.workflow_run %>, not made again
+<% elsif step_run.duration %>
+- Duration: <%= step_run.duration.round %> s<%= ", cost #{number_to_currency(step_run.cost, precision: 3)}" if step_run.cost %>
+<% end %>
+<% if step_run.error %>
+- Error: <%= step_run.error %>
+<% end %>
+- In: <%= step_run.source_media.map { media_line.(it) }.join("; ") %>
+- Out: <%= media_line.(step_run.generated_media) %>
+<% if step_run.options.present? %>
+- Options: `<%= step_run.options.to_json %>`
+<% end %>
+<% if step_run.shot %>
+- Shot: <%= step_run.shot.name %> (<%= step_run.shot.group %>)
+<% end %>
+<% if step_run.prompt.present? && step_run.prompt != step_run.workflow_node&.transformation&.body %>
+
+Prompt as sent:
+
+~~~text
+<%= step_run.prompt %>
+~~~
+<% end %>
+<% end %>
+<% end %>

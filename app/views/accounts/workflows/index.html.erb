@@ -15,9 +15,10 @@
           <%# Drafts don't count: opening a workflow always makes one. %>
           <% runs = workflow.runs.reject(&:draft?) %>
           <p class="flex flex-wrap items-center gap-x-3 text-xs text-ink-500">
+            <span>Edited <%= tag.time "#{time_ago_in_words(workflow.updated_at)} ago", datetime: workflow.updated_at.iso8601, title: l(workflow.updated_at) %></span>
             <% if (last = runs.last) %>
               <span><%= pluralize(runs.size, "run") %></span>
-              <%= tag.time "#{time_ago_in_words(last.updated_at)} ago", datetime: last.updated_at.iso8601, title: l(last.updated_at) %>
+              <span>Last run <%= tag.time "#{time_ago_in_words(last.updated_at)} ago", datetime: last.updated_at.iso8601, title: l(last.updated_at) %></span>
               <% if (state = last.state) %><span class="<%= run_status_pill_class(state) %>"><%= state.humanize %></span><% end %>
             <% else %>
               <span>No runs yet</span>

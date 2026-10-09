@@ -71,7 +71,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     media = admin.library_media.create!(kind: "photo", folder: folders(:interior))
     get workflow_url(workflow, account: admin.id, node: input.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
+    assert_select "turbo-frame#inspector section[aria-label=Pins] ul[aria-label=Media] li[draggable=true] button[form=workflow_add][value=?]", media.id.to_s
 
     admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before) ])
     tagged = admin.library_media.create!(kind: "photo", folder: folders(:interior), tags: [ tags(:before), tags(:after) ])
@@ -82,7 +82,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
     get workflow_url(workflow, account: admin.id, node: output.id)
-    assert_select "turbo-frame#inspector p", text: "Tag what lands here"
+    assert_select "turbo-frame#inspector p", text: "Only media tagged"
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, tag_ids: [ "", tags(:after).id ] } } } }
+    assert_equal [ tags(:after).id ], step.reload.tag_ids
+    get workflow_url(workflow, account: admin.id, node: step.id)
+    assert_select "turbo-frame#inspector p", text: "Tag what it makes"
 
     get transformation_url(step.transformation, account: admin.id), headers: { "Turbo-Frame" => "transformation" }
     assert_select "turbo-frame#transformation form#transformation_form[data-turbo-frame=transformation]"
@@ -122,6 +126,56 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflows_url(account: admin.id)
   end
 
+  test "workflows list recently edited first, counting node, edge and transformation edits" do
+    admin = sign_in_as(users(:admin_user))
+    first, second = Workflow.create!(name: "First"), Workflow.create!(name: "Second")
+    step = first.nodes.create!(transformation: transformations(:cinematic))
+    order = -> { get workflows_url(account: admin.id); css_select("li[id^=workflow_] a").map(&:text) & [ "First", "Second" ] }
+
+    travel 1.minute
+    second.nodes.create!(note: "")
+    assert_equal [ "Second", "First" ], order.()
+
+    travel 1.minute
+    step.transformation.update!(name: "Renamed")
+    assert_equal [ "First", "Second" ], order.()
+  end
+
+  test "agents read a workflow as Markdown with the agent token, nothing else" do
+    credentials = Rails.application.credentials
+    credentials.define_singleton_method(:agent_token) { "secret" }
+    user = users(:lazaro_nixon)
+    workflow = Workflow.create!(name: "Agent read")
+    folder, step = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic), tag_ids: [ tags(:after).id ] } ]
+      .map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: folder, to: step)
+    workflow.nodes.create!(note: "Why it exists")
+    media = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    run = workflow.latest_run
+    run.start!(folder, user)
+    md = ->(token) { get workflow_url(workflow, format: :md, node: step.id), headers: { "Authorization" => "Bearer #{token}" } }
+
+    md.("secret")
+    assert_response :success
+    assert_equal "text/markdown", response.media_type
+    assert_includes response.body, %(```mermaid\nflowchart LR\n  n#{folder.id}[/"#{folders(:interior).path}"/]\n)
+    assert_includes response.body, "n#{folder.id} --> n#{step.id}"
+    assert_includes response.body, %(### n#{step.id} · Step "#{step.label}" (selected))
+    assert_includes response.body, "- Tags it sets on what it makes: #after"
+    assert_includes response.body, "~~~text\n#{transformations(:cinematic).body}\n~~~"
+    assert_includes response.body, "> Why it exists"
+    assert_includes response.body, %(### Step run #{run.step_runs.sole.id} · n#{step.id} "#{step.label}": running)
+    assert_includes response.body, "- In: [media #{media.id}](#{library_item_url(media)}) photo [a.jpg]"
+    assert_no_match(/&quot;|&#39;/, response.body)
+
+    md.("wrong")
+    assert_redirected_to sign_in_url
+    get workflow_url(workflow), headers: { "Authorization" => "Bearer secret" }
+    assert_redirected_to sign_in_url
+  ensure
+    credentials.singleton_class.remove_method(:agent_token)
+  end
+
   test "play on a start folder runs the latest run from its newest media and the selected run lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")
@@ -134,7 +188,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "#workflow_palette [role=tab]", 5
+    assert_select "#workflow_palette section h3", 6
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
@@ -142,7 +196,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflows_url(account: admin.id)
     assert_select "##{dom_id(workflow)}" do
-      assert_select "p", /1 run\b/
+      assert_select "p", /Edited .* ago.*1 run\b.*Last run .* ago/m
       assert_select "span", "Running"
       assert_select "input[type=checkbox][name='workflow[autorun]']:not([checked])"
     end
@@ -153,7 +207,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
     assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
       assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
-      assert_select "button[popovertarget=?]", dom_id(media, :quick_view)
+      assert_select "button[popovertarget^=?]", dom_id(media, :quick_view)
     end
     assert_select "#workflow_palette", 1
     assert_select "a[href^=?]", admin_workflow_run_path(run)
@@ -164,29 +218,29 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id, node: step.id)
     assert_select "turbo-frame#inspector" do
       assert_select "dl[aria-label=Stats] dd", text: "Running"
-      assert_select "section[aria-label=Inputs] button[popovertarget=?]", dom_id(media, :quick_view)
+      assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
       assert_select "dl[aria-label=Stats] ~ section[aria-label=Settings] button", text: "Remove from workflow"
     end
+    popovers = css_select("[popover]").map { it["id"] }
+    assert_equal popovers.uniq, popovers
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    assert_select "turbo-frame#inspector section[aria-label=Picks] input[name='media_ids[]'][value=?][checked][disabled]", media.id.to_s
+    pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
+    assert_select "#{pin}:not([checked]):not([disabled])"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins", count: 0
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
-    patch workflow_run_url(workflow, run, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
-    assert_empty run.reload.picks
 
+    pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_media_ids: [ "", *ids ] } } } } }
+    pins.([ media.id ])
+    assert_equal [ media.id ], folder.reload.pinned_media_ids
     draft = workflow.runs.create!
     get workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
     assert_select "span", text: "Draft"
-    assert_select "turbo-frame#inspector section[aria-label=Picks] input[disabled]", 0
-    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1", count: 0
-    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id, media_ids: [ media.id ] }
-    assert_redirected_to workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
-    assert_equal({ folder.id.to_s => [ media.id ] }, draft.reload.picks)
-    follow_redirect!
-    assert_select "turbo-frame#inspector section[aria-label=Picks] button", text: "Newest 1"
-    patch workflow_run_url(workflow, draft, account: admin.id), params: { node_id: folder.id }
-    assert_empty draft.reload.picks
+    assert_select "#{pin}[checked]"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins"
+    pins.([])
+    assert_empty folder.reload.pinned_media_ids
 
     run.step_runs.sole.update!(status: "complete")
     get workflow_url(workflow, account: admin.id, run: run.id)
@@ -223,6 +277,22 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
   end
 
+  test "a folder's arrow shows the media it will give before a step takes any" do
+    admin = sign_in_as(users(:admin_user))
+    older, newer = %w[a b].map { admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "#{it}.jpg", content_type: "image/jpeg" }) }
+    older.update!(created_at: 1.day.ago)
+    workflow = Workflow.create!(name: "Folder arrow")
+    folder, step = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) } ].map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: folder, to: step)
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
+
+    folder.update!(pinned_media_ids: [ older.id ])
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
+  end
+
   test "play on a media node runs the latest run from that media" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play media")
@@ -236,6 +306,23 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: source.id } }
     assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
+  end
+
+  test "run plays the selected run from every start folder and media" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Run all")
+    photo = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    other = admin.library_media.create!(kind: "photo", folder: folders(:misc), file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+    [ { folder: folders(:interior) }, { library_media: other } ].each do |start|
+      workflow.edges.create!(from: workflow.nodes.create!(start), to: workflow.nodes.create!(transformation: transformations(:cinematic).dup))
+    end
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "button[form=workflow_play]:not([name])", text: /Run/, count: 2
+    assert_select "section[aria-label=Runs] a[aria-current=page] + details + div button[form=workflow_play]"
+
+    post run_workflow_url(workflow, account: admin.id)
+    assert_equal [ [ photo ], [ other ] ], workflow.runs.sole.step_runs.map(&:source_media)
   end
 
   test "a media page's Run in workflow plays a new run of just that media from a start folder it's in" do
@@ -355,5 +442,25 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     media.destroy!
     assert_equal [ folder, step ], workflow.nodes.reload.to_a
     assert_equal 0, workflow.edges.count
+  end
+
+  test "a sticky note is added, shows its Markdown on the canvas with links as text, and is edited in the inspector" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Noted")
+
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { note: "Note", x: 60, y: 60 } } } }
+    note = workflow.nodes.reload.sole
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: note.id, note: "## Why\n**Crop** first, see [docs](https://example.com)", color: "rose" } } } }
+    assert_equal [ "## Why", "rose" ], [ note.reload.label, note.color ]
+
+    get workflow_url(workflow, account: admin.id, node: note.id)
+    assert_select "a[data-id=?][data-note][aria-current=true]", note.id.to_s do
+      assert_select "div.bg-rose-50 h2", "Why"
+      assert_select "strong", "Crop"
+      assert_select "div a", count: 0
+      assert_select "[data-flow-handle]", count: 0
+    end
+    assert_select "turbo-frame#inspector textarea[name=?]", "workflow[nodes_attributes][0][note]"
+    assert_select "turbo-frame#inspector input[type=radio][value=rose][checked]"
   end
 end

@@ -60,19 +60,45 @@
     </li>
     <li class="mt-2">
       <ol>
+        <li>
+          <% if Current.user&.admin? %>
+            <% current_workflow = @workflow if @workflow&.persisted? %>
+            <details class="group" <%= "open" if section == :workflows %>>
+              <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
+                <%= link_to workflows_path,
+                      class: "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                      aria: { selected: section == :workflows && !current_workflow } do %>
+                  <%= lucide_icon("workflow", class: "size-5 shrink-0", "stroke-width": 1.5, "aria-hidden": true) %>
+                  Workflows
+                <% end %>
+                <%= heroicon "chevron-right", variant: :mini, options: { class: "mx-1 size-6 shrink-0 rounded-lg p-1 text-ink-400 transition hover:bg-ink-900/5 group-open:rotate-90", "aria-hidden": true } %>
+              </summary>
+              <ul>
+                <% Workflow.order(updated_at: :desc).each do |workflow| %>
+                  <li>
+                    <%= link_to workflow.name, workflow_path(workflow),
+                          class: "block truncate rounded-xl py-1.5 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
+                          aria: { current: ("page" if workflow == current_workflow) } %>
+                  </li>
+                <% end %>
+              </ul>
+            </details>
+          <% else %>
+            <span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500">Workflows</span>
+          <% end %>
+        </li>
         <% [
-          [ "Workflows", workflows_path, :workflows ],
           [ "Shots", shots_path, :shots ],
           [ "Styles", styles_path, :styles ],
           [ "Layers", layers_path, :layers ],
-          [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
+          [ "Posts", instagram_posts_path, :posts, heroicon("squares-2x2", options: { class: "size-5 shrink-0", "aria-hidden": true }) ]
         ].each do |label, path, key, icon| %>
           <li>
             <% if icon %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>
-                <%= heroicon icon, options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                <%= icon %>
                 <%= label %>
               <% end %>
             <% elsif Current.user&.admin? %>

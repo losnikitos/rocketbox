@@ -1,15 +1,16 @@
 # frozen_string_literal: true
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
-# feeding the step outputs media. Played from a start folder or media, whose newest media feed the steps downstream; a step run
-# starts the steps its step feeds when it completes; a run's `picks` swap a start folder's newest media for ones picked for
-# that run. Every node gives a list: a reel step takes all of it in one step run, its
+# feeding the step outputs media. Played from a start folder or media, whose pinned or newest media feed the steps
+# downstream; a step run starts the steps its step feeds when it completes; a run of one media (autorun, a media page's
+# Run in workflow) holds it in `picks`, in place of the folder's. Every node gives a list: a reel step takes all of it in one step run, its
 # slots in order; any other step takes one item per step run, its shorter inputs repeating their last media (ComfyUI's
 # lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
-# `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them;
-# `rerun!` forces a step anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
-# `error`. A workflow has as many as were added, each named Run N. A run is a draft, its picks editable, until it's first
-# played (from a start node or a step); then it's started and its picks are locked.
+# `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them, and
+# a step run that stands in another run is reused, sharing its result (`reuse`), so a new run makes only what's new;
+# `rerun!` forces a step afresh anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
+# `error`. A workflow has as many as were added, each named Run N. A run is a draft until it's first played (from a start
+# node or a step); then it's started.
 class WorkflowRun < ApplicationRecord
   STATUSES = %w[draft started].freeze
 
@@ -31,27 +32,27 @@ class WorkflowRun < ApplicationRecord
   def inputs = took - made
   def outputs = made - took
 
-  # `node` is a start folder or media; `user` owns what the step runs make.
-  def start!(node, user)
+  # `nodes` are start folders or media; `user` owns what the step runs make.
+  def start!(nodes, user)
     update!(error: nil, status: "started", updated_at: Time.current)
-    advance!(node, user)
+    run_steps(Array(nodes).flat_map { next_steps(it) }.uniq, user)
   end
 
-  # Drops `step`'s step runs and the ones after them, and starts it from what its inputs give now.
+  # Drops `step`'s step runs and the ones after them, and starts it afresh from what its inputs give now.
   def rerun!(step, user)
     update!(error: nil, status: "started", updated_at: Time.current)
     with_lock { runs_of(step).each { drop(it) } }
-    run_steps([ step ], user)
+    run_steps([ step ], user, fresh: step)
   end
 
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
-  # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its newest N;
-  # only the user's media still in the folder (with all its tags), newest first.
+  # What a folder node gives in this run: the media picked for it in `picks` (node id => media ids), else its pinned
+  # media, else its newest N; only the user's media still in the folder (with all its tags), newest first.
   def picked(node, user)
     media = user.library_media.where(folder: node.folder).tagged_all(node.tags.ids)
-    media = (ids = picks[node.id.to_s]) ? media.where(id: ids) : media.limit(node.newest)
+    media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.newest)
     media.order(created_at: :desc).to_a
   end
 
@@ -70,9 +71,10 @@ class WorkflowRun < ApplicationRecord
     def runs_of(step) = step_runs.where(workflow_node: step).includes(inputs: :library_media).to_a
 
     # Stale step runs go first, with the ones after them, so no step starts from a stale result. Then each of a step's
-    # batches either has a step run that stands, whose result moves to the step's output folder should that have
-    # changed, or starts one; once they're all complete, the steps after it go on.
-    def run_steps(steps, user)
+    # batches either has a step run that stands, reuses one from another run (except the `fresh` step's), whose result
+    # moves to the step's output folder should that have changed, or starts one; once they're all complete, the steps
+    # after it go on.
+    def run_steps(steps, user, fresh: nil)
       with_lock do
         steps.each do |step|
           batches = batches_of(step, user)
@@ -81,8 +83,8 @@ class WorkflowRun < ApplicationRecord
         steps.each do |step|
           output, runs = output_of_step(step), runs_of(step)
           batches_of(step, user).each do |batch|
-            if (run = runs.find { it.source_media == batch })
-              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | Array(output&.tags))
+            if (run = runs.find { it.source_media == batch } || (reuse(step, batch) unless step == fresh))
+              run.generated_media&.update!(folder: output&.folder || Folder.ready, tags: run.generated_media.tags | step.tags)
             else start_step(step, batch, user)
             end
           end
@@ -95,10 +97,22 @@ class WorkflowRun < ApplicationRecord
     # ponytail: a style's or shot's text or a newly postable review don't count; rerun! covers them.
     def stands?(run, media) = !run.failed? && run.source_media == media && run.created_at >= run.transformation.updated_at
 
-    # Its result goes, and before it the step runs that took it, as their inputs go with it.
+    # A complete step run of the step's transformation, from any run, that took `media` and stands, copied into this one
+    # with its result shared, so the steps after it reuse theirs too; nil when there's none.
+    def reuse(step, media)
+      transformation = step.transformation
+      prior = transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
+        .includes(inputs: :library_media).find { it.source_media == media } or return
+      copy = prior.dup
+      copy.assign_attributes(workflow_run: self, workflow_node: step, cost: nil, inputs: prior.inputs.map(&:dup))
+      copy if copy.save
+    end
+
+    # Its result goes, unless another step run shares it, and before it the step runs here that took it, as their
+    # inputs go with it.
     def drop(run)
       step_runs.joins(:inputs).where(transformation_run_inputs: { library_media_id: run.generated_media_id }).each { drop(it) }
-      run.generated_media&.destroy!
+      run.generated_media.transformation_runs.many? ? run.destroy! : run.generated_media.destroy!
     end
 
     # Each input's media, slot by slot in the type's order, then in the order they were connected.
@@ -129,11 +143,10 @@ class WorkflowRun < ApplicationRecord
 
     def output_of_step(step) = edges.find { it.from_id == step.id && !it.to.step? }&.to
 
-    # The result lands in the step's first output folder (with its tags), else Ready. A shot is picked at random.
+    # The result, with the step's tags, lands in the step's first output folder, else Ready. A shot is picked at random.
     def start_step(step, media, user)
       transformation = step.transformation
-      output = output_of_step(step)
-      transformation.run!(media:, user:, folder: output&.folder || Folder.ready, tags: Array(output&.tags),
+      transformation.run!(media:, user:, folder: output_of_step(step)&.folder || Folder.ready, tags: step.tags,
         shot: (Shot.where(group: transformation.shot_group).sample if transformation.shot_group),
         review: (user.reviews.postable.last if transformation.takes_review?), workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e
