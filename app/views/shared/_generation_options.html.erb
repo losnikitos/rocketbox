@@ -69,6 +69,21 @@
       </fieldset>
       <% next %>
     <% end %>
+    <% if key == "look" %>
+      <fieldset>
+        <legend class="<%= tw_label_classes %>">Look</legend>
+        <div class="<%= tw_segments_classes %>">
+          <% choices.each do |value| %>
+            <label class="<%= tw_segment_classes %> flex flex-col items-center gap-1.5 p-2 before:inset-y-4">
+              <%= radio_button_tag "#{scope}[options][look]", value, record.options["look"] == value, class: "sr-only" %>
+              <%= image_tag "luts/#{value}.jpg", alt: "", class: "aspect-2/3 w-full rounded-lg object-cover" %>
+              <span class="text-sm font-medium text-ink-900"><%= Transformation::ColorGrade::LOOKS[value] %></span>
+            </label>
+          <% end %>
+        </div>
+      </fieldset>
+      <% next %>
+    <% end %>
     <% if key.in?(%w[quality zoom]) || (key == "resolution" && !record.video?) %>
       <fieldset>
         <legend class="<%= tw_label_classes %>"><%= key == "resolution" ? "Size" : key.humanize %></legend>

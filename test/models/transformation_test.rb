@@ -325,6 +325,39 @@ class TransformationTest < ActiveSupport::TestCase
     end
   end
 
+  test "color grade puts one photo or video through its look's LUTs and makes the same, a video's sound kept" do
+    grade = Transformation.create!(name: "Color grade", kind: "color_grade")
+    assert_equal({ "look" => "kodak_2383" }, grade.options)
+    assert_equal "Kodak 2383", grade.options_label
+    assert_not grade.update(options: { "look" => "teal_orange" })
+    grade.reload
+    scene = "color=c=gray:size=320x240:duration=1:rate=30"
+    clip, still = Tempfile.new([ "clip", ".mp4" ]), Tempfile.new([ "still", ".png" ])
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-f", "lavfi", "-i", "sine=duration=1",
+      "-pix_fmt", "yuv420p", "-shortest", clip.path, exception: true)
+    system("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", scene, "-frames:v", "1", still.path, exception: true)
+    video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user, file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
+    photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: File.open(still.path), filename: "still.png", content_type: "image/png" })
+    source = Vips::Image.new_from_file(still.path).avg
+
+    [ [ photo, "kodak_2393", "photo", "image/jpeg", 1 ], [ video, "fujifilm_3510", "video", "video/mp4", 2 ] ].each do |media, look, kind, content_type, streams|
+      grade.update!(options: { "look" => look })
+      run = grade.run!(media: [ media ], folder: folders(:photobank_logo))
+      run.run!
+
+      assert_equal "complete", run.reload.status, run.error
+      graded = run.generated_media.reload
+      assert_equal [ kind, content_type ], [ graded.kind, graded.file.content_type ]
+      probe, average = graded.file.open do |file|
+        frame = kind == "video" ? Open3.capture2("ffmpeg", "-loglevel", "error", "-i", file.path, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-").first : File.binread(file.path)
+        [ Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", file.path).first,
+          Vips::Image.new_from_buffer(frame, "").avg ]
+      end
+      assert_equal [ "320,240", streams ], [ probe.lines.first.strip, probe.lines.size ]
+      assert_operator (average - source).abs, :>, 3, "#{look} left the #{kind} ungraded"
+    end
+  end
+
   test "a review needs a review and renders it on its layer" do
     feature = Transformation.create!(name: "Reviews", kind: "review")
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user,

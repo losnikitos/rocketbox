@@ -49,6 +49,7 @@ class Transformation < ApplicationRecord
       when "model" then models.find { it.model_id == value }&.name || value
       when "duration" then "#{value} s"
       when "zoom" then "Zoom #{value}"
+      when "look" then Transformation::ColorGrade::LOOKS[value]
       else value
       end
     end.join(" · ").presence || type_label
