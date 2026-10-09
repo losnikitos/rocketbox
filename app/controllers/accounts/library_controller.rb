@@ -6,12 +6,12 @@ module Accounts
 
     def show
       @media = Current.account.library_media.with_attached_file.includes(
-        :folder, :tags, transformation_run: [ :transformation, { recipe: :transformation }, :shot, { inputs: { library_media: { file_attachment: :blob } } } ]
+        :folder, :tags, transformation_run: [ :transformation, :shot, { workflow_run: :workflow, workflow_node: :transformation }, { inputs: { library_media: { file_attachment: :blob } } } ]
       ).find(params[:id])
       @versions = @media.original.lineage
       # ponytail: loads every sibling; add a window around @media if libraries get big
-      @siblings = if @media.ready?
-        Current.account.library_media.where(folder: Folder.ready).joins(:transformation_run).where(transformation_runs: { recipe_id: @media.transformation_run&.recipe_id })
+      @siblings = if @media.ready? && (step_id = @media.transformation_run&.workflow_node_id)
+        Current.account.library_media.where(folder: Folder.ready).joins(:transformation_run).where(transformation_runs: { workflow_node_id: step_id })
       else
         Current.account.library_media.where(folder: @media.folder)
       end

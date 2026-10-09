@@ -2,7 +2,11 @@
 
 A workflow ([model](/app/models/workflow.rb), edited at `/app/workflows` ([controller](/app/controllers/accounts/workflows_controller.rb))) is a graph of folder, media and step nodes joined by edges, edited and run on the overview's flow canvas ([workflow_controller](/app/javascript/controllers/workflow_controller.js), laid out by [flow_controller](/app/javascript/controllers/flow_controller.js)).
 
-Workflows are our new approach to building the media pipeline. For now they run in parallel with recipes, sharing folders, tags and transformations; recipes may be retired later, so build new pipeline features on workflows.
+Workflows are the media pipeline: folders, tags and the transformations their steps own.
+
+Outside the canvas:
+- A folder's page ([view](/app/views/accounts/folders/show.html.erb)) lists the workflows that read from it (its folder nodes feeding a step) and write to it (its folder nodes a step feeds, and on Ready every step with no output folder), each linking to that node.
+- A media's page ([view](/app/views/accounts/library/show.html.erb)) links a generated media to the step that made it, in its run. Its Run in workflow panel lists the start folders it fits (`Workflow.starts_for`), each playing a new run of just that media from there ([controller](/app/controllers/accounts/workflow_runs_controller.rb)).
 
 ## Prior art — don't reinvent the wheel
 
@@ -17,7 +21,7 @@ Where we stand:
 
 ## Graph
 
-- Each step owns its transformation (never a recipe's), made blank from the type added from + Add and deleted with the step.
+- Each step owns its transformation, made blank from the type added from + Add, edited in the inspector and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
 - A folder node can have tags: as an input it holds only its media with all of them, and gives its newest N (Newest, 1 by default); as an output, what lands in it gets them all.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.

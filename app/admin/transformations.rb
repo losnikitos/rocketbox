@@ -1,13 +1,13 @@
 ActiveAdmin.register Transformation do
   actions :index, :show
 
-  includes :style, :recipes
+  includes :style, workflow_nodes: :workflow
 
   index do
     id_column
     column :name
     column :type_label
-    column(:recipes) { safe_join(it.recipes.map { auto_link(it) }, ", ") }
+    column(:workflows) { safe_join(it.workflow_nodes.map { auto_link(it.workflow) }, ", ") }
     column :style
     column :shot_group
     column("Runs") { it.runs.count }
@@ -20,8 +20,9 @@ ActiveAdmin.register Transformation do
       row :id
       row :name
       row :type_label
-      row(:edit) { link_to "Open in app", transformation_path(it) }
-      row(:recipes) { safe_join(it.recipes.map { auto_link(it) }, ", ") }
+      row(:workflows) do
+        safe_join(it.workflow_nodes.map { link_to it.workflow.name, workflow_path(it.workflow, node: it.id) }, ", ")
+      end
       row :style
       row :shot_group
       row :body

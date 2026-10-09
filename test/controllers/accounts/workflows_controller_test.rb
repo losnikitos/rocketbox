@@ -238,6 +238,25 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ media ], workflow.runs.sole.step_runs.sole.source_media
   end
 
+  test "a media page's Run in workflow plays a new run of just that media from a start folder it's in" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = create_workflow("Run media", input: folders(:interior), transformation: transformations(:cinematic))
+    start = workflow.nodes.find_by!(folder: folders(:interior))
+    picked, newer = 2.times.map { admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
+    elsewhere = admin.library_media.create!(kind: "photo", folder: folders(:misc), file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+
+    assert_no_difference(-> { WorkflowRun.count }) do
+      post workflow_runs_url(workflow, account: admin.id), params: { node_id: start.id, media_id: elsewhere.id }
+    end
+    assert_redirected_to library_item_url(elsewhere, account: admin.id)
+
+    assert_enqueued_with(job: GenerateJob) { post workflow_runs_url(workflow, account: admin.id), params: { node_id: start.id, media_id: picked.id } }
+    run = workflow.runs.sole
+    assert_redirected_to workflow_url(workflow, account: admin.id, run: run.id, node: start.id)
+    assert_equal [ "started", { start.id.to_s => [ picked.id ] }, [ picked ] ], [ run.status, run.picks, run.step_runs.sole.source_media ]
+    assert_not_includes run.step_runs.sole.source_media, newer
+  end
+
   test "new run adds a blank run that play runs, the run picker switches runs, and a run is deleted once nothing in it is running" do
     admin = sign_in_as(users(:admin_user))
     admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })

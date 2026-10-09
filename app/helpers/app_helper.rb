@@ -4,8 +4,6 @@ module AppHelper
   # Returns [section, title, tabs] where tabs are [path, label, selected, count = nil]
   def app_nav
     case controller_path
-    when "accounts/overview"
-      [ :overview, "Overview", [] ]
     when "accounts/recent"
       [ :recent, "Recent", [] ]
     when "accounts/folders", "accounts/library"
@@ -56,18 +54,8 @@ module AppHelper
       ] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
-    when "accounts/recipes"
-      [ :recipes, "Recipes", [] ]
     when "accounts/styles"
       [ :styles, "Styles", [] ]
-    when "accounts/transformations"
-      index = action_name == "index"
-      counts = Transformation.group(:kind).count
-      [ :transformations, "Transformations", [
-        [ transformations_path, "All", index && params[:kind].blank?, counts.values.sum ],
-        :separator,
-        *Transformation::Type.all.filter_map { |type| [ transformations_path(kind: type.slug), type.label, index && params[:kind] == type.slug, counts[type.slug] ] if counts[type.slug] }
-      ] ]
     when "accounts/workflows"
       [ :workflows, "Workflows", [] ]
     else

@@ -22,12 +22,12 @@ class ActiveSupport::TestCase
     Rails.cache = previous_cache
   end
 
-  TRANSFORMATION_KEYS = %i[kind body options style style_id shot_group layer_steps].freeze
-
-  # Recipe attributes with its transformation's nested, as the recipe form sends them.
-  def recipe_attributes(**attrs) = attrs.except(*TRANSFORMATION_KEYS).merge(transformation_attributes: attrs.slice(*TRANSFORMATION_KEYS))
-
-  def new_recipe(**attrs) = Recipe.new(**recipe_attributes(**attrs))
-
-  def create_recipe(**attrs) = new_recipe(**attrs).tap(&:save!)
+  # A workflow feeding the `input` folder into a step of `transformation`, landing in `output` (Ready if none).
+  def create_workflow(name, input:, transformation:, output: nil)
+    Workflow.create!(name:).tap do |workflow|
+      step = workflow.nodes.create!(transformation:)
+      workflow.edges.create!(from: workflow.nodes.create!(folder: input), to: step)
+      workflow.edges.create!(from: step, to: workflow.nodes.create!(folder: output)) if output
+    end
+  end
 end

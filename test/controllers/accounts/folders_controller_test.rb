@@ -40,9 +40,12 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[popovertarget=new-folder]", count: 0
   end
 
-  test "a subfolder shows its media and the recipes reading it" do
+  test "a subfolder shows its media and the workflows reading and writing it" do
     filed = photo(folders(:interior))
     loose = photo(folders(:inbox))
+    reads = create_workflow("Cinematic", input: folders(:interior), transformation: transformations(:cinematic), output: folders(:photobank_interior))
+    writes = create_workflow("Back in", input: folders(:misc), transformation: transformations(:before_after), output: folders(:interior))
+    other = create_workflow("Other", input: folders(:misc), transformation: transformations(:before_after), output: folders(:photobank_misc))
 
     get library_folders_url("inbox", "interior")
     assert_response :success
@@ -53,21 +56,24 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#folder-media-#{filed.id}"
     assert_select "#folder-media-#{loose.id}", count: 0
     assert_select "[id^=library-media-move-]", count: 0
-    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", recipe_path(recipes(:cinematic))
-    assert_select "aside[aria-label=Recipes] a[href=?]", recipe_path(recipes(:before_after)), count: 0
+    read_node = reads.nodes.find_by(folder: folders(:interior))
+    write_node = writes.nodes.find_by(folder: folders(:interior))
+    assert_select "section[aria-labelledby=folder-workflows-read] a[href=?]", workflow_path(reads, node: read_node.id), text: /Cinematic\s*Inbox \/ Interior/
+    assert_select "section[aria-labelledby=folder-workflows-write] a[href=?]", workflow_path(writes, node: write_node.id), text: /Back in/
+    assert_select "section[aria-labelledby=folder-workflows-read] a", count: 1
+    assert_select "section[aria-labelledby=folder-workflows-write] a", count: 1
+    assert_select "aside[aria-label=Workflows] a[href^=?]", workflow_path(other), count: 0
     assert_select "[id^=folder-rename-]", count: 0
   end
 
-  test "ready filters by recipe" do
-    source = photo(folders(:photobank_interior))
-    collage = create_recipe(name: "Collage", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
-    poster = create_recipe(name: "Poster", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ]).run!(media: [ source ])
+  test "ready lists the steps with no output folder as writing to it" do
+    landed = create_workflow("No output", input: folders(:interior), transformation: transformations(:cinematic))
+    filed = create_workflow("Filed", input: folders(:interior), transformation: transformations(:before_after), output: folders(:photobank_interior))
 
-    get library_folders_url("photobank", "ready", recipe: collage.recipe_id)
-    assert_select "main a[href=?]", library_item_path(collage.generated_media)
-    assert_select "main a[href=?]", library_item_path(poster.generated_media), count: 0
-    assert_select "section[aria-labelledby=folder-recipes-write] a[href=?]", recipe_path(collage.recipe)
-    assert_select "section[aria-labelledby=folder-recipes-read] a[href=?]", recipe_path(collage.recipe), count: 0
+    get library_folders_url("photobank", "ready")
+    assert_select "section[aria-labelledby=folder-workflows-write] a[href=?]", workflow_path(landed, node: landed.nodes.find(&:step?).id), text: /No output/
+    assert_select "section[aria-labelledby=folder-workflows-write] a[href^=?]", workflow_path(filed), count: 0
+    assert_select "section[aria-labelledby=folder-workflows-read] a", count: 0
   end
 
   test "admin creates, renames and deletes a subfolder; deleting moves its media up" do
@@ -139,8 +145,9 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "emerald", folders(:inbox).children.find_by!(slug: "team").color
   end
 
-  test "a folder that's a recipe output can't be deleted" do
+  test "a folder that's a workflow's output can't be deleted" do
     admin = sign_in_as(users(:admin_user))
+    create_workflow("Cinematic", input: folders(:interior), transformation: transformations(:cinematic), output: folders(:photobank_interior))
 
     delete library_folders_url("photobank", "interior")
     assert_redirected_to library_folders_url("photobank", "interior", account: admin.id)

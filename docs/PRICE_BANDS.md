@@ -43,7 +43,7 @@ Don't use the `pricing` column on the model row. It is per token, missing for ma
 
 ## Known gaps
 
-- **Reference photos are not counted.** Edits and recipe runs also pay input tokens. These are cheap on Gemini, but `gpt-image-2` always reads input at high fidelity, which makes it even pricier than its band shows.
+- **Reference photos are not counted.** Edits and step runs also pay input tokens. These are cheap on Gemini, but `gpt-image-2` always reads input at high fidelity, which makes it even pricier than its band shows.
 - **Lower quality settings are cheaper.** At OpenAI `medium` or `low`, the 2.5 models cost less than flash-lite. The band reflects the worst case.
 - **Gemini thinking/text output** is billed too. It is small and varies per call.
 - **Real cost** of every call is in RubyLLM's usage table ([admin](/app/admin/ruby_llm_usages.rb), RubyLLM → Usages). Check it against the band once a model has real traffic.

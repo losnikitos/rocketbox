@@ -15,9 +15,5 @@ class Accounts::ShotsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", shots_path(group: "Events", account: @admin.id), text: /Events/
     assert_select "##{dom_id(Shot.find_by!(name: "Empty Chair"))}", text: /The empty chair/
     assert_select "li", text: /Red Carpet/, count: 0
-
-    recipe = create_recipe(name: "Chair", body: "p", inputs: [ { "folder_id" => folders(:photobank_interior).id } ], shot_group: "Daily")
-    get recipe_url(recipe, account: @admin.id)
-    assert_select "label:has(input[type=radio][name=shot_id])", text: /Empty Chair\s+The empty chair/
   end
 end

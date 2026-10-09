@@ -56,7 +56,6 @@ Rails.application.routes.draw do
     end
 
     scope module: :accounts do
-      get "overview", to: "overview#show", as: :overview
       get "recent", to: "recent#show", as: :recent
       get "calendar", to: "calendar#show", as: :calendar
       resource :business, only: [ :show, :update ], controller: "business"
@@ -65,13 +64,9 @@ Rails.application.routes.draw do
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end
-      resources :recipes, except: :edit do
-        get "folders/:folder", action: :index, on: :collection, as: :folder
-        patch "folders/:folder", action: :rename_folder, on: :collection
+      resources :transformations, only: %i[show update] do
         get "originals/:kind", action: :original, on: :collection, as: :original
-        delete :example, action: :destroy_example, on: :member
       end
-      resources :transformations, except: :edit
       resources :workflows, except: :edit do
         post :run, on: :member
         post :copy, on: :member

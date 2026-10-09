@@ -29,6 +29,21 @@ class WorkflowTest < ActiveSupport::TestCase
     end
   end
 
+  test "starts_for finds the start folders a media is in with all their tags" do
+    assert_equal "new-tag", Tag.create!(name: " #New-Tag ").name
+    workflow = Workflow.create!(name: "Crop")
+    plain, tagged, output = [ { folder: folders(:interior) }, { folder: folders(:interior), tag_ids: [ tags(:before).id ] },
+      { folder: folders(:ready) } ].map { workflow.nodes.create!(it) }
+    crop = workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"))
+    [ [ plain, crop ], [ tagged, crop ], [ crop, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    media = users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:interior))
+
+    assert_equal [ [ workflow, plain ] ], Workflow.starts_for(media)
+    media.tags << tags(:before)
+    assert_equal [ [ workflow, plain ], [ workflow, tagged ] ], Workflow.starts_for(media.reload)
+    assert_empty Workflow.starts_for(users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:ready)))
+  end
+
   test "slug follows the name, and an old slug still finds it" do
     workflow = Workflow.create!(name: "Inbox to ready")
     assert_equal "inbox-to-ready", workflow.to_param

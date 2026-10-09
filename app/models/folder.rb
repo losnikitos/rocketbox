@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# Where library media lives; recipe inputs and outputs point at folders. Global, shared by every account.
+# Where library media lives; workflow folder nodes point at folders. Global, shared by every account.
 # Top-level folders (inbox and photobank are seeded) hold subfolders one level below.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
 # ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
-# (card extraction, WhatsApp onboarding) and photobank/ready (recipe output) by slug, so deleting those rows breaks them.
+# (card extraction, WhatsApp onboarding) and photobank/ready (default step output) by slug, so deleting those rows breaks them.
 # Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
@@ -14,7 +14,6 @@ class Folder < ApplicationRecord
   belongs_to :parent, class_name: "Folder", optional: true
   has_many :children, -> { order(:name) }, class_name: "Folder", foreign_key: :parent_id, inverse_of: :parent, dependent: :restrict_with_error
   has_many :library_media, dependent: :restrict_with_error
-  has_many :output_recipes, class_name: "Recipe", foreign_key: :output_folder_id, inverse_of: :output_folder, dependent: :restrict_with_error
   has_many :workflow_nodes, dependent: :restrict_with_error
 
   enum :color, %w[sky emerald amber rose violet slate].index_by(&:itself), validate: true
@@ -28,7 +27,7 @@ class Folder < ApplicationRecord
 
   def self.inbox = roots.find_by!(slug: "inbox")
   def self.photobank = roots.find_by!(slug: "photobank")
-  # Final recipe output.
+  # Where a step with no output folder lands its results.
   def self.ready = photobank.children.find_by!(slug: "ready")
 
   def root? = parent_id.nil?

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# How media is made from given media: a recipe's processing step, and anything else that runs one.
+# How media is made from given media: a workflow step's processing, owned by its step.
 # `kind` is how, the slug of its `type` (see Transformation::Type), fixed once created, which fixes its layer: a Generation is one AI call
 # making an image or a video; an Overlay lays its layer over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
 # one photo or video, as the same, or as a video (Zoom); a Scripted type cuts the
@@ -8,17 +8,13 @@
 # `options` are the defaults for its AI runs, or its type's own (see GenerationOptions).
 # Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
 # pick (the review type).
-# A recipe's is shared by the recipes pointing at it, so editing it changes them all; a workflow step owns its own.
 class Transformation < ApplicationRecord
   include GenerationOptions
 
   # Runs outlive their transformation.
   has_many :runs, class_name: "TransformationRun", dependent: :nullify
-  has_many :recipes, dependent: :restrict_with_error
   has_many :workflow_nodes, dependent: :restrict_with_error
   belongs_to :style, optional: true
-  # Editing it edits its recipes, which the index lists recently edited first.
-  after_update { recipes.touch_all }
 
   delegate :ai?, :video?, :single?, :reel?, :slots, :layer, :takes_review?, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
@@ -64,12 +60,12 @@ class Transformation < ApplicationRecord
   def takes?(media) = media.story_image? || (!ai? && media.video?)
 
   # `media` are the run's source media, in order; the result lands in `folder` with `tags`. `shot` is from the shot
-  # group, `review` for the review type, `recipe` the one it runs for, if any, or `workflow_run` and its step
-  # `workflow_node`. `user` owns the result.
+  # group, `review` for the review type, `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
+  # `user` owns the result.
   # Runs the transformation as it is in memory, unsaved edits included (see TransformationRun#start!).
   # Raises ActiveRecord::RecordInvalid when the media, shot or review don't fit or an option isn't available.
-  def run!(media:, folder:, user: media.first&.user, tags: [], shot: nil, review: nil, recipe: nil, workflow_run: nil, workflow_node: nil)
-    runs.new(recipe:, shot:, style:, review:, workflow_run:, workflow_node:,
+  def run!(media:, folder:, user: media.first&.user, tags: [], shot: nil, review: nil, workflow_run: nil, workflow_node: nil)
+    runs.new(shot:, style:, review:, workflow_run:, workflow_node:,
              inputs: media.each_with_index.map { |item, position| TransformationRunInput.new(library_media: item, position:) })
       .start!(user, folder:, tags:)
   end

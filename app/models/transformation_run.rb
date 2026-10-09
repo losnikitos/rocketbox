@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# A transformation applied to library media, e.g. each recipe input's count from its folder. The result lands in the
-# given folder, created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. `recipe` is the one it ran for, if any, or, as a step run, its `workflow_run` and step `workflow_node`.
+# A transformation applied to library media, e.g. a workflow step's batch. The result lands in the given folder,
+# created up front so a running or failed run already has a page; GenerateJob attaches its file once the
+# transformation's type makes it. As a step run it has its `workflow_run` and step `workflow_node`.
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
@@ -13,7 +13,6 @@ class TransformationRun < ApplicationRecord
   STATUSES = %w[running complete failed].freeze
 
   belongs_to :transformation, optional: true
-  belongs_to :recipe, optional: true
   belongs_to :shot, optional: true
   belongs_to :style, optional: true
   belongs_to :review, optional: true
@@ -25,17 +24,6 @@ class TransformationRun < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validate :media_fit_transformation, on: :create, if: :transformation
 
-  # The user's last recipe runs, for the Generations panel.
-  scope :recent_for, ->(user) {
-    where.not(recipe_id: nil).joins(:generated_media).where(library_media: { user_id: user.id })
-      .includes(:recipe, generated_media: { file_attachment: :blob }).order(created_at: :desc).limit(5)
-  }
-
-  after_update_commit -> {
-    broadcast_update_to [ generated_media.user, :generations ], target: "generations", partial: "layouts/app/generations", locals: { user: generated_media.user }
-    broadcast_replace_to [ generated_media.user, :generations ], target: ActionView::RecordIdentifier.dom_id(generated_media, :made),
-      partial: "accounts/recipes/made", locals: { media: generated_media }
-  }, if: :saved_change_to_status?
   after_update_commit :broadcast_refresh, if: :saved_change_to_status?
   after_update_commit -> {
     workflow_run.advance!(workflow_node, generated_media.user) if complete? && workflow_node
@@ -85,8 +73,8 @@ class TransformationRun < ApplicationRecord
     def media_fit_transformation
       media = source_media
       fits = media.any? && media.all? && media.uniq.size == media.size &&
-        media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) } && (recipe.nil? || recipe.fills_inputs?(media))
-      errors.add(:base, "Pick the right number of media for every input.") unless fits
+        media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) }
+      errors.add(:base, "Pick the right media for every input.") unless fits
       errors.add(:base, "Pick a shot from the shot group.") unless shot&.group == transformation.shot_group
       errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
       errors.add(:base, "Pick a review.") unless review.present? == transformation.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)

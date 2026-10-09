@@ -24,6 +24,9 @@ class WorkflowNode < ApplicationRecord
 
   def tags = Tag.where(id: tag_ids).ordered
 
+  # Whether `media` is in this folder with all its tags.
+  def takes?(media) = folder_id.present? && folder_id == media.folder_id && (tag_ids - media.tag_ids).empty?
+
   def label
     if step? then transformation&.name
     elsif (media = library_media) then media.file.attached? ? media.file.filename.to_s : media.kind.humanize

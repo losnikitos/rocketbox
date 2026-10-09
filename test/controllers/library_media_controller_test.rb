@@ -141,8 +141,8 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "delete returns to the page it was clicked from" do
-    delete library_media_url(@media), headers: { "HTTP_REFERER" => recipes_url }
-    assert_redirected_to recipes_url
+    delete library_media_url(@media), headers: { "HTTP_REFERER" => workflows_url }
+    assert_redirected_to workflows_url
   end
 
   test "delete from the media's own page goes to its folder" do
@@ -170,7 +170,7 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     media = user.library_media.order(:id).last
     assert_equal source, media.original
     assert media.transformation_run.complete?
-    assert_nil media.transformation_run.recipe
+    assert_nil media.transformation_run.transformation
     assert_equal folders(:photobank_interior), media.folder
     assert_redirected_to library_folders_url("photobank", "interior")
 

@@ -30,14 +30,20 @@ class Workflow < ApplicationRecord
     nodes.select { |node| node.persisted? && !node.step? && saved.any? { it.from_id == node.id } && saved.none? { it.to_id == node.id } }
   end
 
+  # The start folders `media` fits (see WorkflowNode#takes?), as [[workflow, node], ...].
+  def self.starts_for(media)
+    includes(:nodes, :edges).order(:name).flat_map { |workflow| workflow.start_nodes.select { it.takes?(media) }.map { [ workflow, it ] } }
+  end
+
   # Runs `media`, just landed in its folder, from each autorun workflow's start folders it fits, as its owner; never
   # through the workflow that made it.
   # ponytail: one run per media, and a loop across workflows (A feeds B feeds A) isn't caught.
   def self.autorun!(media)
-    where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).find_each do |workflow|
-      workflow.start_nodes.select { it.folder_id == media.folder_id && (it.tags.ids - media.tag_ids).empty? }.each do |node|
-        workflow.runs.create!(picks: { node.id.to_s => [ media.id ] }).start!(node, media.user)
-      end
+    where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).starts_for(media).each do |workflow, node|
+      workflow.start_with!(node, media, media.user)
     end
   end
+
+  # A new run of `media` alone from start folder `node`, as `user`.
+  def start_with!(node, media, user) = runs.create!(picks: { node.id.to_s => [ media.id ] }).tap { it.start!(node, user) }
 end
