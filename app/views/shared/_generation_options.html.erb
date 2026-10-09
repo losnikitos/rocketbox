@@ -1,11 +1,12 @@
 <%# locals: (record:, scope:, refresh_url:) %>
 <%# A model switch reloads just this frame through the hidden refresh button, so other fields and picked files stay. %>
+<% field_label = "mb-1 block text-xs text-ink-500" %>
 <turbo-frame id="generation_options" class="block space-y-4">
   <% record.option_choices.each do |key, choices| %>
     <% if key == "model" %>
       <div>
         <div class="flex items-baseline justify-between gap-2">
-          <span id="<%= field_id(scope, :options, :model) %>" class="<%= tw_label_classes %>">Model</span>
+          <span id="<%= field_id(scope, :options, :model) %>" class="<%= field_label %>">Model</span>
           <% if Current.user&.admin? %>
             <%= link_to "Manage models", admin_models_path(account: nil), target: "_top", class: "text-xs text-ink-600 underline hover:text-ink-900" %>
           <% end %>
@@ -51,7 +52,7 @@
     <% end %>
     <% if key == "aspect_ratio" %>
       <fieldset>
-        <legend class="<%= tw_label_classes %>">Aspect ratio</legend>
+        <legend class="<%= field_label %>">Aspect ratio</legend>
         <div class="<%= tw_segments_classes %>">
           <% shapes = { "9:16" => [ "Story", "h-6 aspect-9/16" ], "4:5" => [ "Portrait", "h-6 aspect-4/5" ],
                         "1:1" => [ "Square", "h-5 aspect-square" ], "4:3" => [ "Classic", "w-6 aspect-4/3" ],
@@ -71,7 +72,7 @@
     <% end %>
     <% if key == "look" %>
       <fieldset>
-        <legend class="<%= tw_label_classes %>">Look</legend>
+        <legend class="<%= field_label %>">Look</legend>
         <div class="<%= tw_segments_classes %>">
           <% choices.each do |value| %>
             <label class="<%= tw_segment_classes %> flex flex-col items-center gap-1.5 p-2 before:inset-y-4">
@@ -86,7 +87,7 @@
     <% end %>
     <% if key.in?(%w[quality zoom]) || (key == "resolution" && !record.video?) %>
       <fieldset>
-        <legend class="<%= tw_label_classes %>"><%= key == "resolution" ? "Size" : key.humanize %></legend>
+        <legend class="<%= field_label %>"><%= key == "resolution" ? "Size" : key.humanize %></legend>
         <div class="<%= tw_segments_classes %>">
           <% [ ("" if key == "quality"), *choices ].compact.each do |value| %>
             <label class="<%= tw_segment_classes %> px-3 py-1.5 text-center text-sm font-medium text-ink-900 before:inset-y-2">
@@ -99,7 +100,7 @@
       <% next %>
     <% end %>
     <div>
-      <%= label_tag field_id(scope, :options, key), key.humanize, class: tw_label_classes %>
+      <%= label_tag field_id(scope, :options, key), key.humanize, class: field_label %>
       <%= select_tag "#{scope}[options][#{key}]",
             options_for_select(choices.map { [ key == "duration" ? "#{it} s" : it, it ] }, record.options[key]),
             id: field_id(scope, :options, key), include_blank: ("Auto" unless record.type&.options), class: tw_input_classes %>

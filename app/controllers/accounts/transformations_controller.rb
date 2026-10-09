@@ -53,10 +53,10 @@ module Accounts
 
       def draft_params = params[:transformation] ? transformation_params : {}
 
-      # Its step's node on the canvas and the inspector's heading show the saved name and options.
+      # Its step's node on the canvas shows the saved name and options.
       def node_streams
         @transformation.workflow_nodes.flat_map do |node|
-          { label: @transformation.name, heading: @transformation.name, kind: @transformation.options_label }
+          { label: @transformation.name, kind: @transformation.options_label }
             .map { |part, text| turbo_stream.update("node_#{node.id}_#{part}", text) }
         end
       end

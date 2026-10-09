@@ -24,7 +24,7 @@ Where we stand:
 
 - Each step owns its transformation, made blank from the type added from + Add, edited in the inspector and deleted with the step.
 - One end of an edge is always a step, so a folder feeding a step is an input and one a step feeds is an output.
-- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (Newest, 1 by default).
+- A folder node can have tags: it holds only its media with all of them, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (Take, 1 by default).
 - A step can have tags: what it makes gets them all. Its result doesn't inherit its source's tags, so a horizontal render of a `#vertical` photo gets only the step's, e.g. `#horizontal`. Steps writing one folder can tag their results apart.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
@@ -36,9 +36,9 @@ Where we stand:
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
-- A selected folder's inspector sets how many of its newest media it gives (Newest).
+- A selected folder's inspector sets how many of its newest media it gives (Take).
 - Drag (or click) Note, under Notes in + Add, to drop a sticky note; its inspector edits its Markdown (saved when you click away) and color.
-- Click a node to open the inspector on the right: first what it did in the selected run (see Running), then its settings (remove, a folder's tags ("Only media tagged") and Newest, a step's tags ("Tag what it makes") and transformation settings, saved as you edit). Click a connection to remove it or drag its ends to other nodes.
+- Click a node to open the inspector on the right, top to bottom: its name (a step's editable in place) with a bin to remove it, its Inputs and Outputs in the selected run (see Running), its tags (a folder's "Filter by tag" (only its media with all of them), a step's "Set tags", which its results get), its Settings (a step's transformation settings, saved as you edit; a folder's Take; a note's Markdown and color), then its media (a folder's, or a media node's own). Click a connection to remove it with the bin or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
 ## Running
@@ -48,14 +48,14 @@ There's no separate run mode: the canvas always shows a run ([model](/app/models
 - A step with no such step run in the run reuses a complete one from any other run of the workflow that took the same inputs since its transformation was last saved: the run gets a step run sharing that result (the same media, at no cost), shown as Reused from Run N. So a new run of the same media makes nothing again.
 - Run, beside + Add on the canvas and on the selected run's row, plays it from every start folder and media at once, e.g. a reel fed by many branches.
 - A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun afresh, never reusing (e.g. for another take, or after its type's code changed); the steps after it follow. A result another run shares stays for that run.
-- A selected start folder's inspector shows its media (draggable onto the canvas like any folder's), each with a pin: pinned media are what it gives in every run, saved on the node until unpinned; Reset pins, or unpinning them all, goes back to its newest N.
+- A selected start folder's inspector shows its media last (draggable onto the canvas like any folder's), each with a pin: pinned media are what it gives in every run, saved on the node until unpinned; Reset pins, or unpinning them all, goes back to its newest N.
 - Autorun (a switch in the page header after the workflow's name, off by default): each media landing in a start folder (with all its tags) starts a new run of its own, played from that folder with the media as its picks, as the media's owner. Landing is getting its file (uploads, Telegram, WhatsApp, a step run's result) or being moved there with one. Media with no owner, and media a workflow's own runs made, don't start that workflow.
 - A run of one media (autorun, a media page's Run in workflow) keeps it as its picks (`WorkflowRun#picks`), in place of that folder's pinned or newest, through replays and step reruns.
 - A run is a draft until it's first played (from a start node or a step); then it's started. The run header shows its status: Draft, then failed, running or complete as its step runs.
 - The start node's media (the run's picks, else a folder's pinned or newest N) go to the steps it feeds, and each step starts once every node feeding it gives media: a folder its pinned or newest N, a media itself, a step what all its step runs made in this run.
 - Each step run is a `TransformationRun`; its result lands in the step's output folder (Ready if none), with the step's tags. A kept step run's result gains tags added to the step since; removing one doesn't take it off.
 - Each step node shows its step runs' status as a corner badge (working, complete, failed: failed if any failed, working if any is), and each connection shows what last went along it as a thumbnail on its middle (a step's output, or the media a step took from a folder or media), opening in a lightbox on click.
-- The bottom panel lists the runs, newest first, one row per run with its status and the media it started from and ended with; its chevron expands it to its step runs with their inputs, output, status and time. Clicking a row selects that run, highlighted. The inspector shows the selected node's inputs and outputs in the selected run (a step's also its status and how long it took) above its settings.
+- The bottom panel lists the runs, newest first, one row per run with its status and the media it started from and ended with; its chevron expands it to its step runs with their inputs, output, status and time. Clicking a row selects that run, highlighted. The inspector shows the selected node's inputs and outputs in the selected run, and a step's errors, above its settings; its status shows on the canvas.
 - New run in the panel adds a blank run (Run N), and a run with no step still running can be deleted from its row's admin menu (its media stay in the library).
 - Switching runs keeps the selected node or connection.
 
