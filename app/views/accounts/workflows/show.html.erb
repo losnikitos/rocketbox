@@ -38,7 +38,6 @@
     <% if media.size > 4 %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - 4 %></span><% end %>
   </span>
 <% end } %>
-<% status = ->(run) { (state = run.state) && tag.span(state.humanize, class: run_status_pill_class(state)) } %>
 <%# The media a run started from, then the ones it ended with. %>
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
@@ -160,18 +159,20 @@
         <div class="relative border-b border-ink-900/10">
           <%= link_to workflow_path(@workflow, run: run.id), aria: { current: ("page" if run == @run) }, data: { action: "workflow#keep" },
                 class: "flex min-h-11 items-center gap-3 py-2 #{playable ? "pr-32" : "pr-12"} pl-10 text-sm text-ink-900 transition hover:bg-ink-900/5 aria-[current=page]:bg-rocket/10" do %>
-            <span><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
-            <%= status.(run) %>
+            <span class="shrink-0"><span class="font-medium"><%= run.name %></span> <span class="text-ink-500">&middot; <%= upload_day_label(run.created_at.to_date) %> <%= run.created_at.strftime("%H:%M") %></span></span>
             <%= ends.(run) %>
+            <% if (reason = run.error || run.step_runs.find(&:failed?)&.error) %>
+              <span title="<%= reason %>" class="line-clamp-2 min-w-0 text-xs text-signal-red"><%= reason %></span>
+            <% end %>
+            <% if (state = run.state) %>
+              <span class="<%= run_status_pill_class(state) %> ml-auto shrink-0"><%= state.humanize %></span>
+            <% end %>
           <% end %>
           <details id="<%= dom_id(run) %>" class="group">
             <summary aria-label="Steps" title="Steps"
                      class="absolute top-1.5 left-1.5 flex size-8 cursor-pointer list-none items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-900/5 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket [&::-webkit-details-marker]:hidden">
               <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 transition group-open:rotate-90", "aria-hidden": true } %>
             </summary>
-            <% if run.error %>
-              <p class="<%= tw_alert_error_classes %> m-3" role="alert"><%= run.error %></p>
-            <% end %>
             <% if run.step_runs.any? %>
               <table class="w-full border-t border-ink-900/10 text-left text-sm">
                 <thead class="text-xs text-ink-500">
@@ -195,7 +196,8 @@
                         <% end %>
                       </td>
                       <td class="px-3 py-2">
-                        <span title="<%= step_run.error %>" class="<%= run_status_pill_class(step_run.status) %>"><%= step_run.status.humanize %></span>
+                        <span class="<%= run_status_pill_class(step_run.status) %>"><%= step_run.status.humanize %></span>
+                        <% if step_run.error %><p class="mt-1 max-w-xs text-xs text-signal-red"><%= step_run.error %></p><% end %>
                       </td>
                       <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
                         <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>

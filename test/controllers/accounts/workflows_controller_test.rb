@@ -392,7 +392,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to workflow_url(workflow, account: admin.id, run: first.id)
 
-    first.step_runs.sole.update!(status: "failed")
+    first.step_runs.sole.update!(status: "failed", error: "Model refused the prompt")
+    get workflow_url(workflow, account: admin.id, run: first.id)
+    assert_select "section[aria-label=Runs] a[href^=?] span.text-signal-red", workflow_path(workflow, run: first.id), "Model refused the prompt"
+    assert_select "section[aria-label=Runs] details[id=?] tbody td p", dom_id(first), "Model refused the prompt"
+
     assert_difference -> { workflow.runs.count } => -1, -> { TransformationRun.count } => -1, -> { LibraryMedia.count } => 0 do
       delete workflow_run_url(workflow, first, account: admin.id)
     end
