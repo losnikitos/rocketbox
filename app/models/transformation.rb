@@ -31,12 +31,8 @@ class Transformation < ApplicationRecord
   end
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
-  # A workflow step's is made blank from its type; its runs need a prompt (see TransformationRun).
-  validates :body, presence: true, if: :ai?, on: :update
   # The type is picked once, on create.
   validate { errors.add(:kind, "can't be changed") if persisted? && kind_changed? }
-  # A run of unsaved edits: its job reloads the transformation, so it would run the saved layer steps.
-  validate(on: :run) { errors.add(:base, "Save to change the layer steps.") if layer_steps_changed? }
 
   def type = Type.find(kind)
 

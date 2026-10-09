@@ -20,9 +20,15 @@ module Accounts
     end
 
     def update
-      if @transformation.update(transformation_params)
+      @transformation.assign_attributes(transformation_params)
+      @transformation.fill_options
+      if @transformation.save
+        return head :ok if autosave_request?
+
         redirect_to transformation_path(@transformation), notice: "Transformation saved."
       else
+        return render_autosave_error(@transformation) if autosave_request?
+
         render :show, status: :unprocessable_entity
       end
     end

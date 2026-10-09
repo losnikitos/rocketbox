@@ -3,7 +3,8 @@
 <% island = "space-y-4 rounded-2xl border border-ink-900/10 bg-stone-50 p-6" %>
 <% scope = "transformation" %>
 <div class="@container space-y-6">
-  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6", data: { turbo_frame: "transformation" } do |f| %>
+  <%= form_with model: transformation, id: "transformation_form", class: "space-y-6",
+        data: { turbo_frame: "transformation", controller: "autosave", action: "input->autosave#queue change->autosave#queue" } do |f| %>
     <% if transformation.errors.any? %>
       <div class="<%= tw_alert_error_classes %>" role="alert">
         <ul class="list-inside list-disc">
@@ -45,8 +46,6 @@
             <% end %>
           </section>
         <% end %>
-
-        <%= f.button "Save", class: "rb-btn-primary w-full px-3.5 py-2" %>
       </div>
     </div>
   <% end %>

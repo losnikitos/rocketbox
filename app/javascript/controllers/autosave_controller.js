@@ -20,7 +20,7 @@ export default class extends Controller {
   queue(event) {
     const field = event.target
     if (!field.matches("input, textarea, select")) return
-    if (field.type === "hidden" || field.type === "submit") return
+    if (!field.name || field.type === "submit") return
 
     this.activeField = field
     clearTimeout(this.timer)

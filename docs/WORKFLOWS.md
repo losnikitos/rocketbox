@@ -37,7 +37,7 @@ Where we stand:
 - Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
 - A selected folder's inspector sets how many of its newest media it gives (Newest).
 - Drag (or click) Note, under Notes in + Add, to drop a sticky note; its inspector edits its Markdown (saved when you click away) and color.
-- Click a node to open the inspector on the right: first what it did in the selected run (see Running), then its settings (remove, a folder's tags — "Only media tagged" on an input, "Tag what lands here" on an output — and Newest, a step's transformation settings). Click a connection to remove it or drag its ends to other nodes.
+- Click a node to open the inspector on the right: first what it did in the selected run (see Running), then its settings (remove, a folder's tags — "Only media tagged" on an input, "Tag what lands here" on an output — and Newest, a step's transformation settings, saved as you edit). Click a connection to remove it or drag its ends to other nodes.
 - Delete removes whichever is selected; clicking the empty canvas deselects.
 
 ## Running
