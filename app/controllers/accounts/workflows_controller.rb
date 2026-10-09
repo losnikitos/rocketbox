@@ -158,8 +158,11 @@ module Accounts
           end
           media if media&.file&.attached?
         end
-        @edges = @graph_edges.map { [ it.from_id, it.to_id, { id: it.id, slot: it.slot, path: workflow_path(@workflow, edge: it.id, run: @run.id), frame: "inspector",
-                                                              current: it == @selected_edge, media: carried.(it) } ] }
+        @edges = @graph_edges.map do |edge|
+          media = carried.(edge)
+          [ edge.from_id, edge.to_id, { id: edge.id, slot: edge.slot, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
+                                        current: edge == @selected_edge, media:, pinned: media && by_id[edge.from_id].pinned_media_ids.include?(media.id) } ]
+        end
       end
   end
 end

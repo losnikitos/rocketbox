@@ -229,8 +229,12 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
     pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
-    assert_select "#{pin}:not([checked]):not([disabled])"
+    assert_select "#{pin}[type=radio]:not([checked]):not([disabled])"
     assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins", count: 0
+    folder.update!(newest: 2)
+    get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
+    assert_select "#{pin}[type=checkbox]"
+    folder.update!(newest: 1)
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
 
     pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_media_ids: [ "", *ids ] } } } } }
@@ -288,11 +292,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     workflow.edges.create!(from: folder, to: step)
 
     get workflow_url(workflow, account: admin.id)
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?][aria-label='View media']", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
 
     folder.update!(pinned_media_ids: [ older.id ])
     get workflow_url(workflow, account: admin.id)
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?][aria-label='View pinned media']", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
   end
 
   test "play on a media node runs the latest run from that media" do

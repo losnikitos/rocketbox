@@ -5,10 +5,10 @@
 <%# (its options, e.g. model and aspect ratio), its optional tags on a line below, and an input port on the left per arrow in (inputs, at least one), or, with slots, a labelled port per slot. A :folder has the same input ports. A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
 <%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked); its optional slot is the port it goes into. %>
 <%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
-<%# An edge's optional media (what went along it) shows on its middle, and opens in a lightbox. %>
+<%# An edge's optional media (what went along it) shows on its middle, and opens in a lightbox; pinned badges it with a pin. %>
 <%# A :note is a sticky note: its Markdown note on a card in its color, connecting to nothing. %>
 <%# play (a start node's, or a :step's whose inputs are complete; or a run :step's rerun) adds a play button on the node's top-left corner that submits the page's #workflow_play form with node_id. %>
-<div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.map { |from, to, edge| [ from, to, edge&.except(:media) ].compact }.to_json %>"
+<div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.map { |from, to, edge| [ from, to, edge&.except(:media, :pinned) ].compact }.to_json %>"
      data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember
                   pointerdown->flow#lasso pointermove->flow#sweep pointerup->flow#stop pointercancel->flow#stop">
   <%# Laid out by flow_controller; hidden until the nodes are placed. %>
@@ -23,10 +23,16 @@
     <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from starting a selection or deselecting. %>
     <% edges.each do |from, to, edge| %>
       <% next unless (media = edge&.dig(:media)) %>
-      <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="View media" title="View media"
+      <% label = edge[:pinned] ? "View pinned media" : "View media" %>
+      <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="<%= label %>" title="<%= label %>"
               data-flow-target="output" data-v="<%= from %>" data-w="<%= to %>"
               class="absolute block -translate-1/2 cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
         <%= render "accounts/library/file", media:, play: true, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm" %>
+        <% if edge[:pinned] %>
+          <span class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-white text-stone-500 shadow-sm">
+            <%= lucide_icon "pin", class: "size-3 fill-current", "aria-hidden": true %>
+          </span>
+        <% end %>
       </button>
     <% end %>
     <% nodes.each do |id, n| %>

@@ -368,14 +368,12 @@
                 <% @folder_media.each do |media| %>
                   <li class="group relative cursor-grab active:cursor-grabbing" draggable="true" data-action="dragstart->workflow#pick dragend->workflow#unpick">
                     <label title="Pin" class="group/option relative block cursor-pointer overflow-hidden rounded-lg border border-ink-900/15 hover:border-ink-900/30 has-checked:outline-2 has-checked:-outline-offset-2 has-checked:outline-white has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
-                      <%= check_box_tag "workflow[nodes_attributes][0][pinned_media_ids][]", media.id, node.pinned_media_ids.include?(media.id), id: nil,
-                            aria: { label: "Pin" }, class: "sr-only" %>
+                      <%# Taking one, a new pin replaces the last. %>
+                      <%= tag.input type: node.newest > 1 ? "checkbox" : "radio", name: "workflow[nodes_attributes][0][pinned_media_ids][]", value: media.id,
+                            checked: node.pinned_media_ids.include?(media.id), aria: { label: "Pin" }, class: "sr-only" %>
                       <span class="block"><%= render "accounts/library/file", media:, css: "aspect-2/3 w-full object-cover", play: true %></span>
                       <span class="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-has-focus-visible/option:opacity-100 group-has-checked/option:bg-rocket group-has-checked/option:text-white group-has-checked/option:opacity-100" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-3.5 group-has-checked/option:fill-current">
-                          <path d="M12 17v5" />
-                          <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
-                        </svg>
+                        <%= lucide_icon "pin", class: "size-3.5 group-has-checked/option:fill-current", "aria-hidden": true %>
                       </span>
                     </label>
                     <%= add_to_canvas.(media) %>
