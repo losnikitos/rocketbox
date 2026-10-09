@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_150000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -420,7 +420,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
     t.datetime "updated_at", null: false
     t.integer "workflow_node_id"
     t.integer "workflow_run_id"
-    t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id", unique: true
+    t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id"
     t.index ["review_id"], name: "index_transformation_runs_on_review_id"
     t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"

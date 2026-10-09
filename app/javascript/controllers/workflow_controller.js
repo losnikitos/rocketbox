@@ -63,7 +63,7 @@ export default class extends Controller {
     palette.querySelectorAll("section").forEach(section => section.hidden = !section.querySelector("[data-workflow-target~='item']:not([hidden])"))
   }
 
-  // + Add items are their own add buttons; a folder's media in the inspector holds one. The + Add popover closes to free
+  // + Add items are their own add buttons; a folder's media in the inspector holds a hidden one. The + Add popover closes to free
   // the canvas, a frame later: hiding the dragged item during dragstart cancels the drag.
   pick(event) {
     const item = event.currentTarget

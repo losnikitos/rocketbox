@@ -43,11 +43,7 @@
 <% ends = ->(run) { tag.span(thumbs.(run.inputs) + thumbs.(run.outputs), class: "flex items-center gap-2") if run.inputs.any? || run.outputs.any? } %>
 <% here = workflow_path(@workflow, run: @run.id) %>
 <% run_all = "Run #{@run.name} from every start folder and media" %>
-<% add_to_canvas = ->(media, corner) { button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id,
-     title: "Add to canvas", aria: { label: "Add to canvas" },
-     class: "absolute top-1.5 #{corner} cursor-pointer rounded-lg bg-white/90 p-1 text-ink-700 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket" do
-       heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true }
-     end } %>
+<% add_to_canvas = ->(media) { button_tag "Media", type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][library_media_id]", value: media.id, hidden: true } %>
 
 <div class="flex min-w-0 flex-1 flex-col md:min-h-0 md:flex-row" data-controller="workflow" data-workflow-url-value="<%= here %>"
      data-action="flow:moved->workflow#move flow:copied->workflow#copy flow:linked->workflow#link flow:cleared->workflow#clear keydown@document->workflow#remove">
@@ -204,7 +200,9 @@
                       <% [ step_run.source_media, [ step_run.generated_media ] ].each do |media| %>
                         <td class="px-3 py-2"><%= render "media", media:, css: thumb %></td>
                       <% end %>
-                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums"><%= took.(step_run) %></td>
+                      <td class="px-3 py-2 text-right text-ink-600 tabular-nums">
+                        <%= (from = step_run.reused_from) ? "Reused from #{from.workflow_run&.name || "another run"}" : took.(step_run) %>
+                      </td>
                       <td class="px-3 py-2"><%= render "shared/admin_links/transformation_run", transformation_run: step_run %></td>
                     </tr>
                   <% end %>
@@ -302,7 +300,7 @@
                         </svg>
                       </span>
                     </label>
-                    <%= add_to_canvas.(media, "left-1.5") %>
+                    <%= add_to_canvas.(media) %>
                   </li>
                 <% end %>
               </ul>
@@ -405,7 +403,7 @@
                       <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
                     <% end %>
                     <%= render "accounts/library/quick_view", media: %>
-                    <%= add_to_canvas.(media, "right-1.5") %>
+                    <%= add_to_canvas.(media) %>
                   </li>
                 <% end %>
               </ul>

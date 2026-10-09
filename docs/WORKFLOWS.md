@@ -16,7 +16,7 @@ Where we stand:
 - Every node gives a list of media, like n8n's items and ComfyUI's lists: a folder its pinned media or newest N, a media itself, a step what its step runs made.
 - A reel step takes its whole inputs in one step run (ComfyUI's `INPUT_IS_LIST`); any other step runs once per item, its shorter inputs repeating their last media (ComfyUI's rule), so a product list with one style media gives one step run per product. The next step waits for them all, like Airflow's `.expand()`.
 - A reel type can name its inputs (`Transformation::Type.slots`, e.g. GM Visuals' exterior, interior, features, customers), like ComfyUI's sockets and Dagster's `ins`: its media reach the run slot by slot in that order.
-- Reruns that keep unchanged step runs are ComfyUI's caching, per item: a step run is matched by the media it took, so a folder's new media reruns only its own.
+- Keeping unchanged step runs is ComfyUI's caching, per item and across runs: a step run is matched by the media it took, so a folder's new media reruns only its own, and a new run reuses what any run already made from the same media (sharing that result, so the steps after it match too).
 - Autorun's trigger is the start folder itself, like n8n's trigger node: it passes the new media on, as the run's picks, rather than just starting a run that reads the folder's pinned or newest.
 - Notes are n8n's sticky notes: colored Markdown on the canvas that runs ignore. Groups that move their nodes (ComfyUI, Node-RED) and resizable notes aren't built yet.
 
@@ -45,8 +45,9 @@ Where we stand:
 
 There's no separate run mode: the canvas always shows a run ([model](/app/models/workflow_run.rb)), the one selected in the bottom panel (`?run=`), else the latest.
 - A play button on a start folder or media replays the selected run, keeping each step run while it took the same inputs and its transformation wasn't saved since, so only changed steps and the steps after them rerun.
+- A step with no such step run in the run reuses a complete one from any other run of the workflow that took the same inputs since its transformation was last saved: the run gets a step run sharing that result (the same media, at no cost), shown as Reused from Run N. So a new run of the same media makes nothing again.
 - Run, beside + Add on the canvas and on the selected run's row, plays it from every start folder and media at once, e.g. a reel fed by many branches.
-- A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun (e.g. after its type's code changed); the steps after it follow.
+- A play button on a step's corner, shown once every step feeding it is complete in the run, starts it there, or forces a finished one to rerun afresh, never reusing (e.g. for another take, or after its type's code changed); the steps after it follow. A result another run shares stays for that run.
 - A selected start folder's inspector shows its media (draggable onto the canvas like any folder's), each with a pin: pinned media are what it gives in every run, saved on the node until unpinned; Reset pins, or unpinning them all, goes back to its newest N.
 - Autorun (a switch in the page header after the workflow's name, off by default): each media landing in a start folder (with all its tags) starts a new run of its own, played from that folder with the media as its picks, as the media's owner. Landing is getting its file (uploads, Telegram, WhatsApp, a step run's result) or being moved there with one. Media with no owner, and media a workflow's own runs made, don't start that workflow.
 - A run of one media (autorun, a media page's Run in workflow) keeps it as its picks (`WorkflowRun#picks`), in place of that folder's pinned or newest, through replays and step reruns.
@@ -84,5 +85,5 @@ It's read-only: change a workflow in code or on the canvas. Opening it never cre
 - **Autorun** (`Workflow#autorun`) — a workflow setting: media landing in a start folder starts a run with it (`Workflow.autorun!`).
 - **Run** (`WorkflowRun`) — one execution of a workflow. A **draft** run hasn't been played yet.
 - **Pin** (`WorkflowNode#pinned_media_ids`) — a start folder's media it gives in every run in place of its newest N, until Reset pins.
-- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder.
+- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder. A reused one (`reused_from`) shares another run's result.
 - **Slot** — a named input of a step whose type declares them (`Transformation::Type.slots`); an edge into it carries its `slot`.

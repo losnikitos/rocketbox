@@ -59,6 +59,37 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ generate ], run.step_runs.reload.map(&:workflow_node)
   end
 
+  test "a new run reuses what another run made from the same media, sharing it, unless a step is forced to rerun" do
+    user = users(:lazaro_nixon)
+    user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Reuse")
+    folder, generate, crop = [ { folder: folders(:interior) }, { transformation: transformations(:cinematic) }, { transformation_attributes: { kind: "smart_crop" } } ]
+      .map { workflow.nodes.create!(it) }
+    [ [ folder, generate ], [ generate, crop ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    complete = ->(step_run) { step_run.generated_media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg") && step_run.update!(status: "complete") }
+    first = workflow.latest_run
+    first.start!(folder, user)
+    complete.(first.step_runs.sole)
+    complete.(first.step_runs.reload.last)
+    made = first.step_runs.map(&:generated_media)
+
+    second = workflow.runs.create!
+    assert_no_difference -> { LibraryMedia.count } do
+      second.start!(folder, user)
+    end
+    assert_equal [ made, first.step_runs.to_a, [ "complete" ] * 2 ], second.step_runs.then { [ it.map(&:generated_media), it.map(&:reused_from), it.map(&:status) ] }
+
+    assert_difference -> { LibraryMedia.count } => 1 do
+      second.rerun!(crop, user)
+    end
+    assert_not_equal made.last, second.step_runs.reload.last.generated_media
+    assert LibraryMedia.exists?(made.last.id)
+
+    first.destroy!
+    assert_equal made.first, second.step_runs.first.generated_media.reload
+    assert_nil second.step_runs.first.reused_from
+  end
+
   test "a folder's newest media each get a step run, and a reel takes them all once complete, slot by slot, rerunning only a new one's" do
     user = users(:lazaro_nixon)
     photo = ->(folder, created_at) { user.library_media.create!(kind: "photo", folder: folders(folder), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }

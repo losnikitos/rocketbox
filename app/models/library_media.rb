@@ -13,8 +13,9 @@ class LibraryMedia < ApplicationRecord
   has_many :source_inputs, -> { where(position: 0) }, class_name: "TransformationRunInput"
   has_many :source_runs, through: :source_inputs, source: :transformation_run
   has_many :generated_media, through: :source_runs
-  # The run that made this media; it has a status and an error.
-  has_one :transformation_run, foreign_key: :generated_media_id, inverse_of: :generated_media, dependent: :destroy
+  # The run that made this media; it has a status and an error. Later step runs reusing it share it (see WorkflowRun).
+  has_one :transformation_run, -> { order(:id) }, foreign_key: :generated_media_id, inverse_of: :generated_media
+  has_many :transformation_runs, foreign_key: :generated_media_id, inverse_of: false, dependent: :destroy
   # Lands once it has its file, or moves folder with one. Declared before the attachment, whose own after_commit clears
   # attachment_changes. ponytail: a tag added later doesn't land it, so a tag-filtered start folder misses it.
   after_commit -> { AutorunWorkflowsJob.perform_later(self) },

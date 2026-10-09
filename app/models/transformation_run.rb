@@ -2,7 +2,8 @@
 
 # A transformation applied to library media, e.g. a workflow step's batch. The result lands in the given folder,
 # created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. As a step run it has its `workflow_run` and step `workflow_node`.
+# transformation's type makes it. As a step run it has its `workflow_run` and step `workflow_node`, and may share
+# another run's result instead (`reused_from`).
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
@@ -18,7 +19,8 @@ class TransformationRun < ApplicationRecord
   belongs_to :review, optional: true
   belongs_to :workflow_run, optional: true
   belongs_to :workflow_node, optional: true
-  belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: :transformation_run
+  # Not its `transformation_run`: a step run reusing it shares it.
+  belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: false
   has_many :inputs, -> { order(:position) }, class_name: "TransformationRunInput", inverse_of: :transformation_run, dependent: :delete_all
 
   validates :status, inclusion: { in: STATUSES }
@@ -41,6 +43,9 @@ class TransformationRun < ApplicationRecord
 
   # Seconds from start to finish; nil while running.
   def duration = (updated_at - created_at unless running?)
+
+  # The step run that made its result, when this one reuses it from another run (see WorkflowRun#reuse).
+  def reused_from = generated_media.transformation_run.then { it unless it == self }
 
   def inherited_options = transformation&.options
 

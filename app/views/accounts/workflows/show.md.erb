@@ -147,7 +147,9 @@ No runs yet.
 
 ### Step run <%= step_run.id %> · <%= step_run.workflow_node ? ref.(step_run.workflow_node) : "deleted step" %>: <%= step_run.status %>
 
-<% if step_run.duration %>
+<% if (from = step_run.reused_from) %>
+- Reused: the result of step run <%= from.id %><%= " in #{from.workflow_run.name} (id #{from.workflow_run.id})" if from.workflow_run %>, not made again
+<% elsif step_run.duration %>
 - Duration: <%= step_run.duration.round %> s<%= ", cost #{number_to_currency(step_run.cost, precision: 3)}" if step_run.cost %>
 <% end %>
 <% if step_run.error %>
