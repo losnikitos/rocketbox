@@ -34,6 +34,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Transformation run | [`_transformation_run`](/app/views/shared/admin_links/_transformation_run.html.erb) | Admin |
 | Workflow | [`_workflow`](/app/views/shared/admin_links/_workflow.html.erb) | Admin, Delete |
+| Workflow node or edge | [`_workflow_element`](/app/views/shared/admin_links/_workflow_element.html.erb) | Admin (step's transformation, folder or media), Delete |
 | Workflow run | [`_workflow_run`](/app/views/shared/admin_links/_workflow_run.html.erb) | Admin |
 | Tags (library tabs) | [`_tags`](/app/views/shared/admin_links/_tags.html.erb) | Tags |
 

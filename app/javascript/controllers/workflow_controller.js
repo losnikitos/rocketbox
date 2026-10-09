@@ -3,7 +3,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 
 // The workflow editor around the flow canvas: saves where nodes are dragged to (flow:moved), copies a node Alt-dragged
 // to the drop point (flow:copied), submits the arrows drawn between them or moved to other nodes (flow:linked), and adds
-// + Add items or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle of the view.
+// + Add items, sidebar folders or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle
+// of the view.
 export default class extends Controller {
   static targets = ["add", "x", "y", "connect", "edge", "from", "to", "slot", "copy", "copyNode", "copyX", "copyY", "remove", "item"]
   static values = { url: String }
@@ -71,6 +72,15 @@ export default class extends Controller {
     event.dataTransfer.setData("text/plain", this.picked.textContent.trim())
     event.dataTransfer.effectAllowed = "copy"
     requestAnimationFrame(() => item.closest("[popover]")?.hidePopover())
+  }
+
+  // A sidebar folder dragged in adds like its + Add tile.
+  pickFolder(event) {
+    const id = event.target.closest?.("[data-folder-id]")?.dataset.folderId
+    const tile = id && this.itemTargets.find(it => it.name.endsWith("[folder_id]") && it.value === id)
+    if (!tile) return
+    this.picked = tile
+    event.dataTransfer.effectAllowed = "copy"
   }
 
   unpick() {

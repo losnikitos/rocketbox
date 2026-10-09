@@ -1,0 +1,21 @@
+<%# Locals: element (a WorkflowNode or WorkflowEdge), trigger_class (optional) %>
+<% element = local_assigns[:element] %>
+<% if Current.user&.admin? && element.present? %>
+  <% edge = element.is_a?(WorkflowEdge) %>
+  <% admin_path = if edge then nil
+                  elsif element.transformation then admin_transformation_path(element.transformation)
+                  elsif element.folder then admin_folder_path(element.folder.id)
+                  elsif element.library_media then admin_library_media_path(element.library_media)
+                  end %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "#{dom_id(element)}-admin-links", align: :right, trigger_class: local_assigns[:trigger_class] }.compact do %>
+    <% if admin_path %>
+      <%= render "shared/admin_links/item", path: admin_path, label: "Admin", icon: "cog", chip: "bg-signal-green" %>
+    <% end %>
+    <%= render "shared/admin_links/item",
+        path: workflow_path(element.workflow, workflow: { (edge ? :edges_attributes : :nodes_attributes) => { "0" => { id: element.id, _destroy: 1 } } }),
+        label: "Delete",
+        icon: "trash",
+        chip: "bg-signal-red",
+        data: { turbo_method: :patch, turbo_frame: "_top", workflow_target: "remove" } %>
+  <% end %>
+<% end %>
