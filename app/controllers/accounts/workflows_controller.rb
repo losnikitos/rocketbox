@@ -152,21 +152,20 @@ module Accounts
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
-        # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media;
+        # What went along an edge in the run: a step's results out of it, or what its step runs took from a folder or media;
         # until then, what the step or folder gives.
         carried = ->(edge) do
           from = by_id[edge.from_id]
-          media = if from.step? then runs_of.(from).last&.generated_media || gives[from.id].first
-          else runs_of.(by_id[edge.to_id]).last&.source_media&.find { from.library_media ? it == from.library_media : it.folder_id == from.folder_id } ||
-            (gives[from.id].first if from.folder)
+          media = if from.step? then runs_of.(from).filter_map(&:generated_media).presence || gives[from.id]
+          else runs_of.(by_id[edge.to_id]).flat_map(&:source_media).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
+            (from.folder ? gives[from.id] : [])
           end
-          media if media&.file&.attached?
+          media.select { it.file.attached? }
         end
         @edges = @graph_edges.map do |edge|
-          media = carried.(edge)
           [ edge.from_id, edge.to_id, { id: edge.id, slot: edge.slot, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
                                         current: edge == @selected_edge, available: gives[edge.from_id].any?,
-                                        media:, pinned: media && by_id[edge.from_id].pinned_media_ids.include?(media.id) } ]
+                                        media: carried.(edge), pinned: by_id[edge.from_id].pinned_media_ids } ]
         end
       end
   end
