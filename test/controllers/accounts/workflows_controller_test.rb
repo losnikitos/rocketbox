@@ -113,7 +113,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id, edge: edge_out.id)
     assert_select "turbo-frame#inspector h2", "#{step.label} → #{output.label}"
-    assert_select "turbo-frame#inspector header button[aria-label='Remove connection']"
+    assert_select "turbo-frame#inspector header [id^=#{dom_id(edge_out)}-admin-links] a[data-turbo-method=patch][data-workflow-target=remove]", text: /Delete/
     patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge_out.id, _destroy: 1 } } } }
     assert_equal [ edge_in ], workflow.edges.reload.to_a
 
@@ -225,7 +225,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "dl", 0
       assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
-      assert_select "header button[aria-label='Remove from workflow']"
+      assert_select "header [id^=#{dom_id(step)}-admin-links] a[data-turbo-method=patch][data-workflow-target=remove]", text: /Delete/
       assert_select "section[aria-label=Outputs] ~ section[aria-label=Settings]"
     end
     popovers = css_select("[popover]").map { it["id"] }
