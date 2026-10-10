@@ -1,0 +1,56 @@
+<%# locals: (prompt:) %>
+<div class="@container space-y-4">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Prompts", prompts_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page"><%= prompt.new_record? ? "New prompt" : prompt.name_was %></span>
+  </nav>
+
+  <div class="grid items-start gap-8 @3xl:grid-cols-2">
+    <%= form_with model: prompt, id: "prompt_form", multipart: true, class: "min-w-0 space-y-4" do |f| %>
+      <% if prompt.errors.any? %>
+        <div class="<%= tw_alert_error_classes %>" role="alert">
+          <ul class="list-inside list-disc">
+            <% prompt.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="max-w-md">
+        <%= f.label :name, class: tw_label_classes %>
+        <%= f.text_field :name, required: true, autofocus: prompt.new_record?, placeholder: "Empty Chair", class: tw_input_classes %>
+      </div>
+
+      <div class="max-w-md">
+        <%= f.label :folder, class: tw_label_classes %>
+        <%= f.text_field :folder, required: true, list: "prompt_folders", placeholder: "Shots", class: tw_input_classes %>
+        <datalist id="prompt_folders">
+          <% Prompt.folders.each do |folder| %>
+            <option value="<%= folder %>"></option>
+          <% end %>
+        </datalist>
+      </div>
+
+      <div>
+        <%= f.label :body, "Prompt", class: tw_label_classes %>
+        <%= f.text_area :body, required: true, rows: 6, placeholder: "The empty barber chair waiting for the next client…", class: tw_input_classes %>
+        <p class="mt-1 text-xs text-ink-500">Added after the step's prompt.</p>
+      </div>
+    <% end %>
+
+    <%= render "shared/examples", record: prompt, form_id: "prompt_form" %>
+  </div>
+
+  <div class="flex items-center justify-between gap-2">
+    <% if prompt.persisted? %>
+      <%= link_to "Remove", prompt_path(prompt), data: { turbo_method: :delete, turbo_confirm: "Remove this prompt?" },
+            class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
+    <% end %>
+    <div class="ml-auto flex items-center gap-2">
+      <%= link_to "Cancel", prompts_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <button type="submit" form="prompt_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
+    </div>
+  </div>
+</div>

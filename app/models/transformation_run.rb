@@ -6,15 +6,15 @@
 # another run's result instead (`reused_from`).
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
-# `prompt` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps the
-# text as sent, as the transformation, shot and style may change later.
+# `prompt_text` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps
+# the text as sent, as the transformation, prompt and style may change later.
 class TransformationRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
 
   belongs_to :transformation, optional: true
-  belongs_to :shot, optional: true
+  belongs_to :prompt, optional: true
   belongs_to :style, optional: true
   belongs_to :review, optional: true
   belongs_to :workflow_run, optional: true
@@ -53,10 +53,10 @@ class TransformationRun < ApplicationRecord
   def source_media = inputs.map(&:library_media)
 
   # `user` owns the result, made in `folder` with `tags`. Raises ActiveRecord::RecordInvalid when the media don't fit,
-  # the shot doesn't fit or an option isn't available.
+  # the prompt doesn't fit or an option isn't available.
   def start!(user, folder:, tags: [])
     build_generated_media(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
-    self.prompt = [ transformation.body, shot&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
+    self.prompt_text = [ transformation.body, prompt&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
     self
@@ -80,7 +80,7 @@ class TransformationRun < ApplicationRecord
       fits = media.any? && media.all? && media.uniq.size == media.size &&
         media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) }
       errors.add(:base, "Pick the right media for every input.") unless fits
-      errors.add(:base, "Pick a shot from the shot group.") unless shot&.group == transformation.shot_group
+      errors.add(:base, "Pick a prompt from the prompt folder.") unless prompt&.folder == transformation.prompt_folder
       errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
       errors.add(:base, "Pick a review.") unless review.present? == transformation.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
     end

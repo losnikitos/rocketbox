@@ -44,13 +44,13 @@ module AppHelper
       ] ]
     when "accounts/admin"
       [ :admin, "Admin", [] ]
-    when "accounts/shots"
+    when "accounts/prompts"
       index = action_name == "index"
-      counts = Shot.group(:group).count
-      [ :shots, "Shots", [
-        [ shots_path, "All", index && params[:group].blank?, counts.values.sum ],
+      counts = Prompt.group(:folder).count
+      [ :prompts, "Prompts", [
+        [ prompts_path, "All", index && params[:folder].blank?, counts.values.sum ],
         :separator,
-        *counts.sort.map { |group, count| [ shots_path(group:), group, index && params[:group] == group, count ] }
+        *counts.sort.map { |folder, count| [ prompts_path(folder:), folder, index && params[:folder] == folder, count ] }
       ] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]

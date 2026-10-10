@@ -114,7 +114,7 @@
         <div class="ml-auto"><%= render "shared/admin_links/transformation_run", transformation_run: run %></div>
       </summary>
       <% step = run.workflow_node %>
-      <% if run.error.present? || run.workflow_run || run.prompt.present? %>
+      <% if run.error.present? || run.workflow_run || run.prompt_text.present? %>
         <div class="mt-3 space-y-3">
           <% if run.error.present? %>
             <p class="text-sm text-signal-red"><%= run.error %></p>
@@ -131,16 +131,16 @@
               </span>
             <% end %>
           <% end %>
-          <% if run.transformation ? run.transformation.ai? : run.prompt.present? %>
+          <% if run.transformation ? run.transformation.ai? : run.prompt_text.present? %>
             <%= render "accounts/transformation_runs/options", record: run, rows: [
-                  [ "Shot", run.shot && link_to(run.shot.name, edit_shot_path(run.shot), class: "underline hover:text-ink-600") ]
+                  [ "Prompt", run.prompt && link_to(run.prompt.name, edit_prompt_path(run.prompt), class: "underline hover:text-ink-600") ]
                 ] %>
           <% end %>
-          <% if run.prompt.present? %>
+          <% if run.prompt_text.present? %>
             <div>
-              <label for="transformation-run-prompt" class="text-sm text-ink-500">Prompt</label>
+              <label for="transformation-run-prompt" class="text-sm text-ink-500">Prompt as sent</label>
               <textarea id="transformation-run-prompt" readonly rows="6"
-                        class="mt-1 block w-full resize-y rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-700"><%= run.prompt %></textarea>
+                        class="mt-1 block w-full resize-y rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm text-ink-700"><%= run.prompt_text %></textarea>
             </div>
           <% end %>
         </div>

@@ -102,7 +102,7 @@ class WorkflowRun < ApplicationRecord
     end
 
     # A step run stands while it hasn't failed, took `media`, and its transformation wasn't saved since it started.
-    # ponytail: a style's or shot's text or a newly postable review don't count; rerun! covers them.
+    # ponytail: a style's or prompt's text or a newly postable review don't count; rerun! covers them.
     def stands?(run, media) = !run.failed? && run.source_media == media && run.created_at >= run.transformation.updated_at
 
     # A complete step run of the step's transformation, from any run, that took `media` and stands, copied into this one
@@ -169,11 +169,11 @@ class WorkflowRun < ApplicationRecord
 
     def output_of_step(step) = edges.find { it.from_id == step.id && !it.to.step? }&.to
 
-    # The result, with the step's tags, lands in the step's first output folder, else Ready. A shot is picked at random.
+    # The result, with the step's tags, lands in the step's first output folder, else Ready. A prompt is picked at random.
     def start_step(step, media, user)
       transformation = step.transformation
       transformation.run!(media:, user:, folder: output_of_step(step)&.folder || Folder.ready, tags: step.tags,
-        shot: (Shot.where(group: transformation.shot_group).sample if transformation.shot_group),
+        prompt: (Prompt.where(folder: transformation.prompt_folder).sample if transformation.prompt_folder),
         review: (user.reviews.postable.last if transformation.takes_review?), workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e
       update!(error: "#{step.label}: #{e.record.errors.full_messages.to_sentence}")

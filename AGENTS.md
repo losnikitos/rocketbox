@@ -22,7 +22,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table. Top-level folders (Inbox and Photobank are seeded) hold subfolders one level below (`inbox/interior`, `photobank/logo`). Ready is `photobank/ready`, where a step with no output folder lands. Every media is in exactly one folder; workflow folder nodes point at folders, and a folder's page lists the workflows reading and writing it.
 
-**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, shot group, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created. Every run is a `TransformationRun`; a generated media's page links to the step that made it.
+**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, prompt folder, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created. Every run is a `TransformationRun`; a generated media's page links to the step that made it.
 
 **Workflows:** the media pipeline — a graph of folder, media and transformation step nodes, with colored Markdown sticky notes beside them, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md). Given a workflow URL, curl its `.md` first: graph, step settings and runs in one page ([how](./docs/WORKFLOWS.md#reading-a-workflow-agents)).
 
@@ -32,7 +32,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 flowchart LR
  Inbox[/Inbox/] --> InboxSteps[Steps] --> Photobank[/Photobank/] --> Steps --> Ready[/Ready/] --> Scripted[Scripted steps] --> Stories[/Stories/]
  Styles[/Styles/] --> Steps
- Shots[/Shot groups/] --> Steps
+ Prompts[/Prompts/] --> Steps
  Layers[/Layers/] --> Scripted
  Reviews[/Reviews/] --> Scripted
 ```

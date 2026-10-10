@@ -22,8 +22,8 @@
       <%= f.select :style_id, Style.ordered.pluck(:name, :id), { include_blank: "None" }, class: tw_input_classes %>
     </div>
     <div>
-      <%= f.label :shot_group, "Shot group", class: field_label %>
-      <%= f.select :shot_group, Shot.groups, { include_blank: "None" }, class: tw_input_classes %>
+      <%= f.label :prompt_folder, "Prompt folder", class: field_label %>
+      <%= f.select :prompt_folder, Prompt.folders, { include_blank: "None" }, class: tw_input_classes %>
     </div>
   <% end %>
   <% if transformation.layer_steps? %>

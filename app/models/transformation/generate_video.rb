@@ -7,7 +7,7 @@ class Transformation::GenerateVideo < Transformation::Generation
   def self.video? = true
 
   def file
-    result = RubyLLM.animate(run.prompt, with: images, **ai_args)
+    result = RubyLLM.animate(run.prompt_text, with: images, **ai_args)
     attachment(result.to_blob, "mp4", "video/mp4")
   end
 end

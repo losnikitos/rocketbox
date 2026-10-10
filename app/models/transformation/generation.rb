@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# One AI call on the source media, prompted by the run's prompt, with the run's options.
+# One AI call on the source media, prompted by the run's prompt text, with the run's options.
 class Transformation::Generation < Transformation::Type
   def self.label = "Generation"
 

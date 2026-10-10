@@ -70,8 +70,8 @@ flowchart LR
 <% if t.slots %>
 - Slots, in the order their media reach a step run: <%= t.slots.join(", ") %>
 <% end %>
-<% if t.shot_group %>
-- Shot group: <%= t.shot_group %> (each step run appends a random shot's text from it to the prompt)
+<% if t.prompt_folder %>
+- Prompt folder: <%= t.prompt_folder %> (each step run appends a random prompt's text from it to the step's prompt)
 <% end %>
 <% if t.layer %>
 - Layer: <%= t.layer.name %>
@@ -160,15 +160,15 @@ No runs yet.
 <% if step_run.options.present? %>
 - Options: `<%= step_run.options.to_json %>`
 <% end %>
-<% if step_run.shot %>
-- Shot: <%= step_run.shot.name %> (<%= step_run.shot.group %>)
+<% if step_run.prompt %>
+- Prompt: <%= step_run.prompt.name %> (<%= step_run.prompt.folder %>)
 <% end %>
-<% if step_run.prompt.present? && step_run.prompt != step_run.workflow_node&.transformation&.body %>
+<% if step_run.prompt_text.present? && step_run.prompt_text != step_run.workflow_node&.transformation&.body %>
 
 Prompt as sent:
 
 ~~~text
-<%= step_run.prompt %>
+<%= step_run.prompt_text %>
 ~~~
 <% end %>
 <% end %>

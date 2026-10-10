@@ -9,7 +9,7 @@ ActiveAdmin.register Transformation do
     column :type_label
     column(:workflows) { safe_join(it.workflow_nodes.map { auto_link(it.workflow) }, ", ") }
     column :style
-    column :shot_group
+    column :prompt_folder
     column("Runs") { it.runs.count }
     column :updated_at
     actions
@@ -24,7 +24,7 @@ ActiveAdmin.register Transformation do
         safe_join(it.workflow_nodes.map { link_to it.workflow.name, workflow_path(it.workflow, node: it.id) }, ", ")
       end
       row :style
-      row :shot_group
+      row :prompt_folder
       row :body
       row(:layer_steps) { pre JSON.pretty_generate(it.layer_steps) }
       row(:options) { pre JSON.pretty_generate(it.options) }

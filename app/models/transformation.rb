@@ -6,7 +6,7 @@
 # one photo or video, as the same, or as a video (Zoom); a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs, or its type's own (see GenerationOptions).
-# Inputs besides media: a fixed `style` and a `shot_group` its runs pick a shot from (AI kinds); a review its runs
+# Inputs besides media: a fixed `style` and a `prompt_folder` its runs pick a prompt from (AI kinds); a review its runs
 # pick (the review type).
 class Transformation < ApplicationRecord
   include GenerationOptions
@@ -22,11 +22,11 @@ class Transformation < ApplicationRecord
 
   # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
-  # nil takes no shot.
-  normalizes :shot_group, with: ->(value) { value.strip.presence }
+  # nil takes no prompt.
+  normalizes :prompt_folder, with: ->(value) { value.strip.presence }
 
   before_validation do
-    self.shot_group, self.style = nil, nil unless ai?
+    self.prompt_folder, self.style = nil, nil unless ai?
     self.layer_steps = [] unless layer_steps?
   end
   validates :name, presence: true
@@ -60,13 +60,13 @@ class Transformation < ApplicationRecord
 
   def takes?(media) = media.story_image? || (!ai? && media.video?)
 
-  # `media` are the run's source media, in order; the result lands in `folder` with `tags`. `shot` is from the shot
-  # group, `review` for the review type, `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
+  # `media` are the run's source media, in order; the result lands in `folder` with `tags`. `prompt` is from the prompt
+  # folder, `review` for the review type, `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
   # `user` owns the result.
   # Runs the transformation as it is in memory, unsaved edits included (see TransformationRun#start!).
-  # Raises ActiveRecord::RecordInvalid when the media, shot or review don't fit or an option isn't available.
-  def run!(media:, folder:, user: media.first&.user, tags: [], shot: nil, review: nil, workflow_run: nil, workflow_node: nil)
-    runs.new(shot:, style:, review:, workflow_run:, workflow_node:,
+  # Raises ActiveRecord::RecordInvalid when the media, prompt or review don't fit or an option isn't available.
+  def run!(media:, folder:, user: media.first&.user, tags: [], prompt: nil, review: nil, workflow_run: nil, workflow_node: nil)
+    runs.new(prompt:, style:, review:, workflow_run:, workflow_node:,
              inputs: media.each_with_index.map { |item, position| TransformationRunInput.new(library_media: item, position:) })
       .start!(user, folder:, tags:)
   end

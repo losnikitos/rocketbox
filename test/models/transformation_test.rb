@@ -48,7 +48,7 @@ class TransformationTest < ActiveSupport::TestCase
     run.run!
 
     assert_equal [ [ "Compose a collage.\n\nWarmer.", "gpt-image-2", %w[interior.jpg customer.jpg], { size: "1920x1920", quality: "low", output_format: "jpeg" } ] ], calls
-    assert_equal [ "complete", 0.04, "Compose a collage.\n\nWarmer." ], [ run.reload.status, run.cost, run.prompt ]
+    assert_equal [ "complete", 0.04, "Compose a collage.\n\nWarmer." ], [ run.reload.status, run.cost, run.prompt_text ]
     assert_equal "jpeg-bytes", media.reload.file.download
     assert_equal "generate_image_#{run.id}.jpg", media.file.filename.to_s
   end
@@ -71,14 +71,14 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal "mp4-bytes", run.generated_media.file.download
   end
 
-  test "steps joins its inputs into a video, 1 second each, without a prompt or shot" do
-    steps = Transformation.create!(name: "Reel", kind: "steps", shot_group: "Daily")
-    assert_nil steps.shot_group
+  test "steps joins its inputs into a video, 1 second each, without a prompt" do
+    steps = Transformation.create!(name: "Reel", kind: "steps", prompt_folder: "Shots")
+    assert_nil steps.prompt_folder
     run = start(steps, attach_logo(@interior, @customer))
 
     run.run!
 
-    assert_equal [ "complete", nil ], [ run.reload.status, run.prompt ]
+    assert_equal [ "complete", nil ], [ run.reload.status, run.prompt_text ]
     file = run.generated_media.reload.file
     assert_equal [ "video", "video/mp4", "steps_#{run.id}.mp4" ], [ run.generated_media.kind, file.content_type, file.filename.to_s ]
     duration = file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", it.path).first.to_f }
@@ -150,34 +150,34 @@ class TransformationTest < ActiveSupport::TestCase
     Transformation::Type.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
-  test "a shot group needs a shot from it, and paints the shot and its fixed style after the body" do
+  test "a prompt folder needs a prompt from it, and paints the prompt and its fixed style after the body" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @collage.update!(shot_group: "Daily", style:)
-    shot = Shot.create!(name: "Empty Chair", body: "The empty chair.", group: "Daily")
-    other = Shot.create!(name: "Red Carpet", body: "A premiere.", group: "Events")
+    @collage.update!(prompt_folder: "Shots", style:)
+    prompt = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: "Shots")
+    other = Prompt.create!(name: "Red Carpet", body: "A premiere.", folder: "Events")
     media = [ @interior, @customer ]
 
     assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media) }
-    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media, shot: other) }
-    run = start(@collage, media, shot:)
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media, prompt: other) }
+    run = start(@collage, media, prompt:)
     run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
-    assert_equal [ prompts.first, style ], [ run.reload.prompt, run.style ]
+    assert_equal [ prompts.first, prompt, style ], [ run.reload.prompt_text, run.prompt, run.style ]
   end
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    review = Transformation.create!(name: "Reviews", kind: "review", style:, shot_group: "Daily")
-    assert_equal [ nil, nil, true, "review" ], [ review.style, review.shot_group, review.takes_review?, review.layer.slug ]
+    review = Transformation.create!(name: "Reviews", kind: "review", style:, prompt_folder: "Shots")
+    assert_equal [ nil, nil, true, "review" ], [ review.style, review.prompt_folder, review.takes_review?, review.layer.slug ]
 
-    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:, shot_group: "Daily")
-    assert_equal [ style, "Daily", false, nil ], [ image.style, image.shot_group, image.takes_review?, image.layer ]
+    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:, prompt_folder: "Shots")
+    assert_equal [ style, "Shots", false, nil ], [ image.style, image.prompt_folder, image.takes_review?, image.layer ]
 
     assert_not review.update(kind: "generate_image")
     assert_includes review.errors.full_messages, "Kind can't be changed"
@@ -232,7 +232,7 @@ class TransformationTest < ActiveSupport::TestCase
     assert_includes html, "background-image: url(data:image/jpeg;base64,"
     assert_includes html, Date.current.strftime("%-d %B")
     media = run.reload.generated_media
-    assert_equal [ "complete", nil, "photo", folders(:photobank_logo), [ photo ] ], [ run.status, run.prompt, media.kind, media.folder, run.source_media ]
+    assert_equal [ "complete", nil, "photo", folders(:photobank_logo), [ photo ] ], [ run.status, run.prompt_text, media.kind, media.folder, run.source_media ]
     assert_equal [ "image/png", "png-bytes" ], [ media.file.content_type, media.file.download ]
   end
 

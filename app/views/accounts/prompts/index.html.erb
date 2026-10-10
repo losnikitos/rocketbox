@@ -1,28 +1,28 @@
-<% content_for(:title, "Shots — Rocketbox") %>
+<% content_for(:title, "Prompts — Rocketbox") %>
 <% content_for :header_actions do %>
-  <%= link_to new_shot_path(group: params[:group]), class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+  <%= link_to new_prompt_path(folder: params[:folder]), class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
     <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-    Add shot
+    Add prompt
   <% end %>
 <% end %>
 
-<% if @shots.any? %>
+<% if @prompts.any? %>
   <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-8">
-    <% @shots.each do |shot| %>
-      <% covered = shot.examples.any? %>
-      <li id="<%= dom_id(shot) %>" class="relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
+    <% @prompts.each do |prompt| %>
+      <% covered = prompt.examples.any? %>
+      <li id="<%= dom_id(prompt) %>" class="relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 transition hover:border-ink-900/30"
           data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
-        <% shot.examples.each_with_index do |example, index| %>
+        <% prompt.examples.each_with_index do |example, index| %>
           <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
             <%= render "shared/example", example:, css: "size-full object-cover" %>
           </div>
         <% end %>
-        <%= link_to edit_shot_path(shot), class: "absolute inset-0 flex flex-col items-start" do %>
+        <%= link_to edit_prompt_path(prompt), class: "absolute inset-0 flex flex-col items-start" do %>
           <span class="w-full p-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
-            <%= shot.name %>
+            <%= prompt.name %>
           </span>
           <% unless covered %>
-            <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= shot.body %></span>
+            <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= prompt.body %></span>
           <% end %>
         <% end %>
       </li>
@@ -30,6 +30,6 @@
   </ul>
 <% else %>
   <div class="mx-auto max-w-3xl rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
-    Add a shot — a scene a generation step can be built around.
+    Add a prompt — text a generation step can append to its own.
   </div>
 <% end %>

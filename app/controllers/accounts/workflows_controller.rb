@@ -39,7 +39,7 @@ module Accounts
           @runs = @workflow.runs.includes(:step_runs).reverse
           @run = @runs.find { it.id == params[:run].to_i } || @runs.first
           media = [ :folder, :tags, { file_attachment: :blob } ]
-          @step_runs = @run ? @run.step_runs.includes(:workflow_node, :shot, inputs: { library_media: media }, generated_media: media) : []
+          @step_runs = @run ? @run.step_runs.includes(:workflow_node, :prompt, inputs: { library_media: media }, generated_media: media) : []
           @selected = @workflow.nodes.find { it.id == params[:node].to_i }
         end
       end

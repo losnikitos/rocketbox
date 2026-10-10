@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -193,6 +193,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
   end
 
+  create_table "prompts", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "folder", default: "Shots", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "reviews", force: :cascade do |t|
     t.datetime "archived_at"
     t.text "body"
@@ -314,14 +322,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
-  create_table "shots", force: :cascade do |t|
-    t.text "body", null: false
-    t.datetime "created_at", null: false
-    t.string "group", default: "Daily", null: false
-    t.string "name", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "smm_post_media_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "library_media_id", null: false
@@ -411,9 +411,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
     t.text "error"
     t.integer "generated_media_id", null: false
     t.json "options", default: {}, null: false
-    t.text "prompt"
+    t.integer "prompt_id"
+    t.text "prompt_text"
     t.integer "review_id"
-    t.integer "shot_id"
     t.string "status", default: "running", null: false
     t.integer "style_id"
     t.integer "transformation_id"
@@ -421,8 +421,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
     t.integer "workflow_node_id"
     t.integer "workflow_run_id"
     t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id"
+    t.index ["prompt_id"], name: "index_transformation_runs_on_prompt_id"
     t.index ["review_id"], name: "index_transformation_runs_on_review_id"
-    t.index ["shot_id"], name: "index_transformation_runs_on_shot_id"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
     t.index ["workflow_node_id"], name: "index_transformation_runs_on_workflow_node_id"
@@ -436,7 +436,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
     t.json "layer_steps", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
-    t.string "shot_group"
+    t.string "prompt_folder"
     t.integer "style_id"
     t.datetime "updated_at", null: false
     t.index ["style_id"], name: "index_transformations_on_style_id"
@@ -550,8 +550,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_170000) do
   add_foreign_key "transformation_run_inputs", "library_media", on_delete: :cascade
   add_foreign_key "transformation_run_inputs", "transformation_runs", on_delete: :cascade
   add_foreign_key "transformation_runs", "library_media", column: "generated_media_id"
+  add_foreign_key "transformation_runs", "prompts", on_delete: :nullify
   add_foreign_key "transformation_runs", "reviews", on_delete: :nullify
-  add_foreign_key "transformation_runs", "shots", on_delete: :nullify
   add_foreign_key "transformation_runs", "styles", on_delete: :nullify
   add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
   add_foreign_key "transformation_runs", "workflow_nodes", on_delete: :nullify

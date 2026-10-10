@@ -6,7 +6,7 @@ module Accounts
 
     def show
       @media = Current.account.library_media.with_attached_file.includes(
-        :folder, :tags, transformation_run: [ :transformation, :shot, { workflow_run: :workflow, workflow_node: :transformation }, { inputs: { library_media: { file_attachment: :blob } } } ]
+        :folder, :tags, transformation_run: [ :transformation, :prompt, { workflow_run: :workflow, workflow_node: :transformation }, { inputs: { library_media: { file_attachment: :blob } } } ]
       ).find(params[:id])
       @versions = @media.original.lineage
       # ponytail: loads every sibling; add a window around @media if libraries get big

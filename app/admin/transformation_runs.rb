@@ -21,8 +21,8 @@ ActiveAdmin.register TransformationRun do
       row(:step) { |run| run.workflow_node && link_to(run.workflow_node.label, workflow_path(run.workflow_run.workflow, node: run.workflow_node_id, run: run.workflow_run_id)) }
       row(:source_media) { |run| safe_join(run.source_media.map { auto_link(it) }, ", ") }
       row :generated_media
-      row :shot
       row :prompt
+      row :prompt_text
       row :status
       row :error
       row :created_at

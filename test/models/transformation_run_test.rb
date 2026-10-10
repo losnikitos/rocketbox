@@ -15,6 +15,6 @@ class TransformationRunTest < ActiveSupport::TestCase
 
     assert_equal [ transformation, nil, [ photo ] ], [ run.transformation, run.workflow_run, run.source_media ]
     assert_equal [ folders(:photobank_logo), "video", [ tags(:after) ], "Slow cinematic push-in on the shop." ],
-      [ run.generated_media.folder, run.generated_media.kind, run.generated_media.tags.to_a, run.prompt ]
+      [ run.generated_media.folder, run.generated_media.kind, run.generated_media.tags.to_a, run.prompt_text ]
   end
 end
