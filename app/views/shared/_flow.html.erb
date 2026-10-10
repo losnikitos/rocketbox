@@ -2,7 +2,7 @@
 <%# nodes: { id => { label:, icon:, cover:, media:, note:, path:, shape: (:folder, :media, :step or :note), color:, x:, y:, frame:, current:, linkable: } }, edges: [[from id, to id, { id:, path:, frame:, current: }], ...] %>
 <%# Optional: x and y (centre) pin a node instead of laying it out; frame opens path in that turbo frame; current marks the %>
 <%# selected node; linkable adds a port to drag arrows from (flow:linked). A :step is a card with its type's cover left of its label and kind %>
-<%# (its options, e.g. model and aspect ratio), its optional tags on a line below, and an input port on the left per arrow in (inputs, at least one), or, with slots, a labelled port per slot. A :folder is the same card with a folder drawing in its color instead of a cover. A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
+<%# (its options, e.g. model and aspect ratio), its optional tags on a line below, and an input port on the left per arrow in (inputs, at least one), or, with slots, a labelled port per slot; single takes one arrow in. A :folder is the same card with a folder drawing in its color instead of a cover. A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
 <%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked); its optional slot is the port it goes into; available draws it green. %>
 <%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
 <%# An edge's optional media (what went along it) shows on its middle, and opens in a lightbox; pinned badges it with a pin. %>
@@ -37,7 +37,7 @@
     <% end %>
     <% nodes.each do |id, n| %>
       <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false", aria: { current: ("true" if n[:current]) },
-            data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), source: (true if n[:shape] == :media), note: (true if n[:shape] == :note), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
+            data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), single: (true if n[:single]), source: (true if n[:shape] == :media), note: (true if n[:shape] == :note), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
                     action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
             class: "#{"group" if n[:path]} absolute flex #{n[:shape] == :media ? "w-28" : "w-56"} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% port = "relative size-4 shrink-0 rounded-full border-2 border-ink-900/30 bg-white group-data-[flow-drop]:border-rocket" %>

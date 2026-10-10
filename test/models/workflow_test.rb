@@ -34,8 +34,8 @@ class WorkflowTest < ActiveSupport::TestCase
     workflow = Workflow.create!(name: "Crop")
     plain, tagged, output = [ { folder: folders(:interior) }, { folder: folders(:interior), tag_ids: [ tags(:before).id ] },
       { folder: folders(:ready) } ].map { workflow.nodes.create!(it) }
-    crop = workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"))
-    [ [ plain, crop ], [ tagged, crop ], [ crop, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    image = workflow.nodes.create!(transformation: Transformation.create!(name: "Image", kind: "generate_image"))
+    [ [ plain, image ], [ tagged, image ], [ image, output ] ].each { |from, to| workflow.edges.create!(from:, to:) }
     media = users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:interior))
 
     assert_equal [ [ workflow, plain ] ], Workflow.starts_for(media)
@@ -47,8 +47,8 @@ class WorkflowTest < ActiveSupport::TestCase
   test "a start folder's media type filters what it takes and gives" do
     workflow = Workflow.create!(name: "Types")
     images, videos = %w[image video].map { workflow.nodes.create!(folder: folders(:interior), media_type: it) }
-    crop = workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop"))
-    [ images, videos ].each { workflow.edges.create!(from: it, to: crop) }
+    image = workflow.nodes.create!(transformation: Transformation.create!(name: "Image", kind: "generate_image"))
+    [ images, videos ].each { workflow.edges.create!(from: it, to: image) }
     user = users(:lazaro_nixon)
     photo = user.library_media.create!(kind: "document", folder: folders(:interior))
     photo.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
