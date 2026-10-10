@@ -2,8 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 import dagre from "@dagrejs/dagre"
 
-// Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current }]) as curved
-// arrows; an edge with a path is clicked like a node's link.
+// Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current, available }]) as curved
+// arrows, solid green when available (media ready to go along them); an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
 // centres, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or scrolled to pan; zoom and scroll
 // survive reloads of the page. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
@@ -302,7 +302,8 @@ export default class extends Controller {
       const lift = t => (from.y - source.y) * (1 - t) + (to.y - target.y) * t
       const points = [from, ...via.map((p, i) => ({ x: p.x, y: p.y + lift((i + 1) / (via.length + 1)) })), to]
       g.edge(e).middle = middle(points)
-      const d = curve(points), { path, current } = g.edge(e), line = `<path d="${d}" class="${current ? "stroke-rocket" : path ? "group-hover:stroke-ink-900/50" : ""}" />`
+      const d = curve(points), { path, current, available } = g.edge(e)
+      const line = `<path d="${d}" ${available ? `stroke-dasharray="none"` : ""} class="${current ? "stroke-rocket" : available ? "stroke-signal-green group-hover:stroke-signal-green/70" : path ? "group-hover:stroke-ink-900/50" : ""}" />`
       // A wide invisible stroke makes the thin dashed line easy to click.
       return path ? `<g data-v="${e.v}" data-w="${e.w}" class="group cursor-pointer"><path d="${d}" stroke="transparent" stroke-width="12" stroke-dasharray="none" />${line}</g>` : line
     }).join("")

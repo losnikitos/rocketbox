@@ -63,7 +63,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false } ] }.to_json
+      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false, available: false } ] }.to_json
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end
@@ -113,7 +113,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id, edge: edge_out.id)
     assert_select "turbo-frame#inspector h2", "#{step.label} → #{output.label}"
-    assert_select "turbo-frame#inspector header button[aria-label='Remove connection']"
+    assert_select "turbo-frame#inspector header [id^=#{dom_id(edge_out)}-admin-links] a[data-turbo-method=patch][data-workflow-target=remove]", text: /Delete/
     patch workflow_url(workflow, account: admin.id), params: { workflow: { edges_attributes: { "0" => { id: edge_out.id, _destroy: 1 } } } }
     assert_equal [ edge_in ], workflow.edges.reload.to_a
 
@@ -214,10 +214,6 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-label=Runs] a[aria-current=page]", /Run 1/
     assert_select "a[data-id=?] [role=img][aria-label=Working]", step.id.to_s
     assert_select "a[data-id=?] [role=img]", folder.id.to_s, count: 0
-    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(run), count: 1 do
-      assert_select "a[href^=?]", workflow_path(workflow, run: run.id, node: step.id), text: step.label
-      assert_select "button[popovertarget^=?]", dom_id(media, :quick_view)
-    end
     assert_select "#workflow_palette", 1
     assert_select "a[href^=?]", admin_workflow_run_path(run)
     get admin_workflow_run_url(run)
@@ -229,7 +225,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "dl", 0
       assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
       assert_select "section[aria-label=Outputs] p", 0
-      assert_select "header button[aria-label='Remove from workflow']"
+      assert_select "header [id^=#{dom_id(step)}-admin-links] a[data-turbo-method=patch][data-workflow-target=remove]", text: /Delete/
       assert_select "section[aria-label=Outputs] ~ section[aria-label=Settings]"
     end
     popovers = css_select("[popover]").map { it["id"] }
@@ -283,12 +279,31 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, generate.id.to_s, dom_id(photo, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
+    available = -> { JSON.parse(css_select("[data-controller=flow]").sole["data-flow-edges-value"]).to_h { [ it[0..1], it[2]["available"] ] } }
+    expected = { [ folder.id, generate.id ] => true, [ generate.id, crop.id ] => true, [ crop.id, again.id ] => false }
+    assert_equal expected, available.()
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: crop.id } }
     assert_equal [ made.generated_media ], run.step_runs.find_by!(workflow_node: crop).source_media
     follow_redirect!
     assert_select "a[data-id=?] button[form=workflow_play]", crop.id.to_s, count: 0
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+
+    # A run that hasn't run the step yet would reuse its step run: the same input, its transformation unchanged.
+    draft = workflow.runs.create!
+    get workflow_url(workflow, account: admin.id, run: draft.id)
+    assert_equal expected, available.()
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
+    assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", crop.id.to_s
+    # Playing it copies in the step run it reuses first.
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id, run: draft.id), params: { node_id: crop.id } }
+    assert_equal made.generated_media, draft.step_runs.find_by!(workflow_node: generate).generated_media
+    assert_equal [ made.generated_media ], draft.step_runs.find_by!(workflow_node: crop).source_media
+
+    transformations(:cinematic).touch
+    get workflow_url(workflow, account: admin.id, run: workflow.runs.create!.id)
+    assert_equal expected.merge([ generate.id, crop.id ] => false), available.()
+    assert_select "a[data-id=?] button[form=workflow_play]", crop.id.to_s, count: 0
   end
 
   test "a folder's arrow shows the media it will give before a step takes any" do
@@ -333,7 +348,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     get workflow_url(workflow, account: admin.id)
     assert_select "button[form=workflow_play]:not([name])", text: /Run/, count: 2
-    assert_select "section[aria-label=Runs] a[aria-current=page] + details + div button[form=workflow_play]"
+    assert_select "section[aria-label=Runs] a[aria-current=page] + div button[form=workflow_play]"
 
     post run_workflow_url(workflow, account: admin.id)
     assert_equal [ [ photo ], [ other ] ], workflow.runs.sole.step_runs.map(&:source_media)
@@ -377,17 +392,15 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_select "form[action=?][id=workflow_play]", run_workflow_path(workflow, run: second.id)
-    assert_select "section[aria-label=Runs] details", 2 do |rows|
+    assert_select "section[aria-label=Runs] [id^=workflow_run_]", 2 do |rows|
       assert_equal [ dom_id(second), dom_id(first) ], rows.map { it["id"] }
     end
-    assert_select "section[aria-label=Runs] details[open]", 0
     assert_select "section[aria-label=Runs] a[aria-current=page]", 1
     assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
 
     get workflow_url(workflow, account: admin.id)
-    assert_select "section[aria-label=Runs] details", 2
+    assert_select "section[aria-label=Runs] [id^=workflow_run_]", 2
     assert_select "section[aria-label=Runs] a[aria-current=page][href^=?]", workflow_path(workflow, run: second.id)
-    assert_select "section[aria-label=Runs] details[id=?] tbody tr", dom_id(first), count: 1
     assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, second)
     assert_select "[popover] a[href^=?][data-turbo-method=delete]", workflow_run_path(workflow, first), count: 0
 
@@ -403,7 +416,6 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     first.step_runs.sole.update!(status: "failed", error: "Model refused the prompt")
     get workflow_url(workflow, account: admin.id, run: first.id)
     assert_select "section[aria-label=Runs] a[href^=?] span.text-signal-red", workflow_path(workflow, run: first.id), "Model refused the prompt"
-    assert_select "section[aria-label=Runs] details[id=?] tbody td p", dom_id(first), "Model refused the prompt"
 
     assert_difference -> { workflow.runs.count } => -1, -> { TransformationRun.count } => -1, -> { LibraryMedia.count } => 0 do
       delete workflow_run_url(workflow, first, account: admin.id)

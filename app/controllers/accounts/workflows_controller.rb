@@ -5,7 +5,7 @@ module Accounts
   # update. `?node=` or `?edge=` selects a node or connection for the inspector. The runs are listed below the canvas, each
   # with its step runs; `?run=` selects one (the latest by default), highlighted, whose step runs the canvas shows, and the
   # inspector shows the selected node's inputs and outputs in it above its settings. Play on a start folder or media (run)
-  # replays the selected run from it, Run all from every one; play on a step whose feeding steps are complete in the run starts it there, or reruns it (see WorkflowRun).
+  # replays the selected run from it, Run all from every one; play on a step whose arrows in are all available (green) starts it there, or reruns it (see WorkflowRun).
   class WorkflowsController < ApplicationController
     layout "app"
 
@@ -131,16 +131,19 @@ module Accounts
           end
         end
         @start_nodes = @workflow.start_nodes
-        complete = @graph_nodes.select { |node| runs_of.(node).then { it.any? && it.all?(&:complete?) } }.map(&:id)
+        by_id = @graph_nodes.index_by(&:id)
+        # What each node gives in the run, a step's cache hits included (WorkflowRun#gives); an edge out of one that gives
+        # anything is available, drawn green.
+        # ponytail: each node's gives walks every step before it again; memoize inside WorkflowRun if canvases get slow.
+        gives = Hash.new { |memo, id| memo[id] = @run.gives(by_id[id], Current.account) }
         @nodes = @graph_nodes.to_h do |node|
           input = node.folder && @graph_edges.any? { it.from_id == node.id }
           icon = input ? "inbox" : "photo" if node.folder
           shape = node.step? ? :step : node.note? ? :note : node.library_media ? :media : :folder
           runs = runs_of.(node)
-          # A step not running can start once every step feeding it is complete in the run; folders and media always feed.
+          # A step not running can start once all its arrows in are available.
           feeds = @graph_edges.select { it.to_id == node.id }
-          ready = node.step? && runs.none?(&:running?) && feeds.any? &&
-            feeds.all? { |edge| @graph_nodes.find { it.id == edge.from_id }.then { !it.step? || complete.include?(it.id) } }
+          ready = node.step? && runs.none?(&:running?) && feeds.any? && feeds.all? { gives[it.from_id].any? }
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
@@ -149,20 +152,20 @@ module Accounts
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
         # What last went along an edge in the run: a step's result out of it, or what a step took from a folder or media;
-        # until a step takes from a folder, what the folder gives in the run (its picks, else its pins, else its newest).
-        by_id = @graph_nodes.index_by(&:id)
+        # until then, what the step or folder gives.
         carried = ->(edge) do
           from = by_id[edge.from_id]
-          media = if from.step? then runs_of.(from).last&.generated_media
+          media = if from.step? then runs_of.(from).last&.generated_media || gives[from.id].first
           else runs_of.(by_id[edge.to_id]).last&.source_media&.find { from.library_media ? it == from.library_media : it.folder_id == from.folder_id } ||
-            (@run.picked(from, Current.account).first if from.folder)
+            (gives[from.id].first if from.folder)
           end
           media if media&.file&.attached?
         end
         @edges = @graph_edges.map do |edge|
           media = carried.(edge)
           [ edge.from_id, edge.to_id, { id: edge.id, slot: edge.slot, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
-                                        current: edge == @selected_edge, media:, pinned: media && by_id[edge.from_id].pinned_media_ids.include?(media.id) } ]
+                                        current: edge == @selected_edge, available: gives[edge.from_id].any?,
+                                        media:, pinned: media && by_id[edge.from_id].pinned_media_ids.include?(media.id) } ]
         end
       end
   end

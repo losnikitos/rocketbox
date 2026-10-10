@@ -46,6 +46,11 @@ export default class extends Controller {
     this.removeTarget.click()
   }
 
+  // The runs panel's handle collapses it to the canvas's bottom edge, and opens it back.
+  toggle({ currentTarget: handle }) {
+    handle.setAttribute("aria-expanded", handle.getAttribute("aria-expanded") === "false")
+  }
+
   // Run links keep the selected node or connection, which the inspector frame puts in the page's URL.
   keep({ currentTarget: link }) {
     link.href = this.kept(link.href)

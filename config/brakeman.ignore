@@ -43,6 +43,29 @@
         79
       ],
       "note": "Crawl normalizes screenshot_url to nil unless it is http(s)."
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "de78ab7d394d6d5120275c829784b6a03dab775f1ffd0ef77fcf5ff5151f84a1",
+      "check_name": "SendFile",
+      "message": "Model attribute used in file name",
+      "file": "app/controllers/accounts/transformations_controller.rb",
+      "line": 41,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "send_file(Transformation::Type.find(params[:kind]).original, :type => \"video/mp4\", :disposition => \"inline\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Accounts::TransformationsController",
+        "method": "original"
+      },
+      "user_input": "Transformation::Type.find(params[:kind]).original",
+      "confidence": "Medium",
+      "cwe_id": [
+        22
+      ],
+      "note": "Type.find only matches a code-defined type's slug; original is that class's fixed file under the app."
     }
   ],
   "brakeman_version": "8.0.6"
