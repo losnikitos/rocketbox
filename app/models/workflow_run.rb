@@ -38,10 +38,14 @@ class WorkflowRun < ApplicationRecord
     run_steps(Array(nodes).flat_map { next_steps(it) }.uniq, user)
   end
 
-  # Drops `step`'s step runs and the ones after them, and starts it afresh from what its inputs give now.
+  # Drops `step`'s step runs and the ones after them, and starts it afresh from what its inputs give now, the steps
+  # feeding it that haven't run here reusing their step runs from other runs first.
   def rerun!(step, user)
     update!(error: nil, status: "started", updated_at: Time.current)
-    with_lock { runs_of(step).each { drop(it) } }
+    with_lock do
+      reuse_inputs(step, user)
+      runs_of(step).each { drop(it) }
+    end
     run_steps([ step ], user, fresh: step)
   end
 
@@ -55,6 +59,10 @@ class WorkflowRun < ApplicationRecord
     media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.take)
     media.order(created_at: :desc).to_a
   end
+
+  # What `node` gives in this run (see output_of), a step's batches not run here counting what another run's step run
+  # would give through `reuse`: what the canvas draws as ready to go along its arrows.
+  def gives(node, user) = output_of(node, user, cached: true)
 
   private
 
@@ -100,12 +108,27 @@ class WorkflowRun < ApplicationRecord
     # A complete step run of the step's transformation, from any run, that took `media` and stands, copied into this one
     # with its result shared, so the steps after it reuse theirs too; nil when there's none.
     def reuse(step, media)
-      transformation = step.transformation
-      prior = transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
-        .includes(inputs: :library_media).find { it.source_media == media } or return
+      prior = prior(step, media) or return
       copy = prior.dup
       copy.assign_attributes(workflow_run: self, workflow_node: step, cost: nil, inputs: prior.inputs.map(&:dup))
       copy if copy.save
+    end
+
+    # Copies in the step runs each step feeding `step` would reuse (see gives), the steps feeding those first, so `step`
+    # can start here from cached results.
+    def reuse_inputs(step, user)
+      edges.select { it.to_id == step.id && it.from.step? }.map(&:from).each do |from|
+        next if output_of(from, user).any?
+        reuse_inputs(from, user)
+        batches_of(from, user).each { |batch| runs_of(from).any? { it.source_media == batch } || reuse(from, batch) }
+      end
+    end
+
+    # A complete step run of the step's transformation, from any run, that took `media` and stands.
+    def prior(step, media)
+      transformation = step.transformation
+      transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
+        .includes(inputs: :library_media).find { it.source_media == media }
     end
 
     # Its result goes, unless another step run shares it, and before it the step runs here that took it, as their
@@ -116,25 +139,28 @@ class WorkflowRun < ApplicationRecord
     end
 
     # Each input's media, slot by slot in the type's order, then in the order they were connected.
-    def inputs_of(step, user)
+    def inputs_of(step, user, cached: false)
       slots = step.transformation.slots
-      edges.select { it.to_id == step.id }.sort_by { [ slots&.index(it.slot).to_i, it.id ] }.map { output_of(it.from, user) }
+      edges.select { it.to_id == step.id }.sort_by { [ slots&.index(it.slot).to_i, it.id ] }.map { output_of(it.from, user, cached:) }
     end
 
     # The media of each step run the step makes from what its inputs give now, none while an input gives nothing.
-    def batches_of(step, user)
-      inputs = inputs_of(step, user)
+    def batches_of(step, user, cached: false)
+      inputs = inputs_of(step, user, cached:)
       return [] if inputs.empty? || inputs.any?(&:empty?)
       return [ inputs.flatten ] if step.transformation.reel?
       Array.new(inputs.map(&:size).max) { |i| inputs.map { it[i] || it.last } }
     end
 
     # A node's output in this run: a folder what's picked of it, a media itself, a step what its step runs made, in its
-    # batches' order, once they're all complete.
-    def output_of(node, user)
+    # batches' order, once they're all complete. `cached` counts a batch's prior step run (see gives); running never
+    # does, or a rerun! step's old result would start the steps after it.
+    def output_of(node, user, cached: false)
       if node.step?
         runs = runs_of(node).select(&:complete?)
-        made = batches_of(node, user).map { |batch| runs.find { it.source_media == batch }&.generated_media }
+        made = batches_of(node, user, cached:).map do |batch|
+          runs.find { it.source_media == batch }&.generated_media || (prior(node, batch)&.generated_media if cached)
+        end
         made.all? ? made : []
       elsif node.library_media then [ node.library_media ]
       else picked(node, user)

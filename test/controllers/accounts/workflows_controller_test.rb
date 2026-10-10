@@ -63,7 +63,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false } ] }.to_json
+      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false, available: false } ] }.to_json
     assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 1
     end
@@ -279,12 +279,31 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, generate.id.to_s, dom_id(photo, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
     assert_select "button[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
+    available = -> { JSON.parse(css_select("[data-controller=flow]").sole["data-flow-edges-value"]).to_h { [ it[0..1], it[2]["available"] ] } }
+    expected = { [ folder.id, generate.id ] => true, [ generate.id, crop.id ] => true, [ crop.id, again.id ] => false }
+    assert_equal expected, available.()
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: crop.id } }
     assert_equal [ made.generated_media ], run.step_runs.find_by!(workflow_node: crop).source_media
     follow_redirect!
     assert_select "a[data-id=?] button[form=workflow_play]", crop.id.to_s, count: 0
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
+
+    # A run that hasn't run the step yet would reuse its step run: the same input, its transformation unchanged.
+    draft = workflow.runs.create!
+    get workflow_url(workflow, account: admin.id, run: draft.id)
+    assert_equal expected, available.()
+    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
+    assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", crop.id.to_s
+    # Playing it copies in the step run it reuses first.
+    assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id, run: draft.id), params: { node_id: crop.id } }
+    assert_equal made.generated_media, draft.step_runs.find_by!(workflow_node: generate).generated_media
+    assert_equal [ made.generated_media ], draft.step_runs.find_by!(workflow_node: crop).source_media
+
+    transformations(:cinematic).touch
+    get workflow_url(workflow, account: admin.id, run: workflow.runs.create!.id)
+    assert_equal expected.merge([ generate.id, crop.id ] => false), available.()
+    assert_select "a[data-id=?] button[form=workflow_play]", crop.id.to_s, count: 0
   end
 
   test "a folder's arrow shows the media it will give before a step takes any" do
