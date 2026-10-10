@@ -62,7 +62,7 @@ flowchart LR
 <% t = node.transformation %>
 ### n<%= node.id %> · Step "<%= node.label %>"<%= " (selected)" if node == @selected %>
 
-- Type: <%= t.type_label %> (`<%= t.kind %>`), <%= t.reel? ? "takes all its inputs in one step run" : "one step run per input item" %>
+- Type: <%= t.type_label %> (`<%= t.kind %>`), <%= t.inputs == 1 ? "one input, one step run per media" : "takes all its inputs' media in one step run" %>
 - Options: <%= t.options_label %> `<%= t.options.to_json %>`
 - Tags it sets on what it makes: <%= hashtags.(node.tags) || "none" %>
 - From: <%= ins.(node).join(", ").presence || "nothing yet" %>

@@ -3,9 +3,9 @@
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
 # feeding the step outputs media. Played from a start folder or media, whose pinned or newest media feed the steps
 # downstream; a step run starts the steps its step feeds when it completes; a run of one media (autorun, a media page's
-# Run in workflow) holds it in `picks`, in place of the folder's. Every node gives a list: a reel step takes all of it in one step run, its
-# slots in order; any other step takes one item per step run, its shorter inputs repeating their last media (ComfyUI's
-# lists), and gives what they all made once they're all complete. A step run stands across plays while it stands (see
+# Run in workflow) holds it in `picks`, in place of the folder's. Every node gives a list: a step taking many inputs
+# (`Transformation::Type.inputs`, e.g. a video or a reel) takes all of them in one step run, its slots in order; a
+# single-input step takes one media per step run, and gives what they all made once they're all complete. A step run stands across plays while it stands (see
 # `stands?`), so a replay reruns only the step runs whose inputs or transformation changed and the ones after them, and
 # a step run that stands in another run is reused, sharing its result (`reuse`), so a new run makes only what's new;
 # `rerun!` forces a step afresh anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
@@ -144,12 +144,12 @@ class WorkflowRun < ApplicationRecord
       edges.select { it.to_id == step.id }.sort_by { [ slots&.index(it.slot).to_i, it.id ] }.map { output_of(it.from, user, cached:) }
     end
 
-    # The media of each step run the step makes from what its inputs give now, none while an input gives nothing.
+    # The media of each step run the step makes from what its inputs give now, none while an input gives nothing: a
+    # single-input step's one per media, any other's all of them in one.
     def batches_of(step, user, cached: false)
       inputs = inputs_of(step, user, cached:)
       return [] if inputs.empty? || inputs.any?(&:empty?)
-      return [ inputs.flatten ] if step.transformation.reel?
-      Array.new(inputs.map(&:size).max) { |i| inputs.map { it[i] || it.last } }
+      step.transformation.inputs == 1 ? inputs.flatten.map { [ it ] } : [ inputs.flatten ]
     end
 
     # A node's output in this run: a folder what's picked of it, a media itself, a step what its step runs made, in its

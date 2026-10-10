@@ -53,11 +53,11 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal "generate_image_#{run.id}.jpg", media.file.filename.to_s
   end
 
-  test "a video animates its one input into a video" do
+  test "a video animates its inputs into a video" do
     assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
     calls = []
     RubyLLM.define_singleton_method(:animate) do |prompt, with:, **|
-      calls << [ prompt, with.filename.to_s ]
+      calls << [ prompt, *with.map { it.filename.to_s } ]
       Struct.new(:to_blob).new("mp4-bytes")
     end
     source = photo("room.jpg", :interior)

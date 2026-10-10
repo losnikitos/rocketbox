@@ -6,6 +6,8 @@ class Transformation::Generation < Transformation::Type
 
   def self.ai? = true
 
+  def self.inputs = nil
+
   private
 
     def images = source_media.map { it.file.blob }

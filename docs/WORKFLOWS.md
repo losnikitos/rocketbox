@@ -14,7 +14,7 @@ Workflows borrow from [n8n](https://n8n.io), [ComfyUI](https://github.com/comfya
 
 Where we stand:
 - Every node gives a list of media, like n8n's items and ComfyUI's lists: a folder its pinned media or newest N, a media itself, a step what its step runs made.
-- A reel step takes its whole inputs in one step run (ComfyUI's `INPUT_IS_LIST`); any other step runs once per item, its shorter inputs repeating their last media (ComfyUI's rule), so a product list with one style media gives one step run per product. The next step waits for them all, like Airflow's `.expand()`.
+- Each type says how many inputs it takes (`Transformation::Type.inputs`), like ComfyUI's `INPUT_IS_LIST`. An Image, Video or reel step takes any number and all their media in one step run, so a folder with Take 2 into Video makes one video from both. A single-input step (crops, edits, overlays) takes one arrow in and runs once per media it gives; the next step waits for them all, like Airflow's `.expand()`.
 - A reel type can name its inputs (`Transformation::Type.slots`, e.g. GM Visuals' exterior, interior, features, customers), like ComfyUI's sockets and Dagster's `ins`: its media reach the run slot by slot in that order.
 - Keeping unchanged step runs is ComfyUI's caching, per item and across runs: a step run is matched by the media it took, so a folder's new media reruns only its own, and a new run reuses what any run already made from the same media (sharing that result, so the steps after it match too).
 - Autorun's trigger is the start folder itself, like n8n's trigger node: it passes the new media on, as the run's picks, rather than just starting a run that reads the folder's pinned or newest.
@@ -27,6 +27,7 @@ Where we stand:
 - A folder node can have tags and a media type (`WorkflowNode#media_type`: images, videos, or any by default): it holds only its media with all of them and of that type, and gives its pinned media (`WorkflowNode#pinned_media_ids`), else its newest N (`WorkflowNode#take`, 1 by default).
 - A step can have tags: what it makes gets them all. Its result doesn't inherit its source's tags, so a horizontal render of a `#vertical` photo gets only the step's, e.g. `#horizontal`. Steps writing one folder can tag their results apart.
 - An edge into a step with slots goes into one of them (`slot`); edges in one slot keep the order they were connected in, so media nodes there give a hand-picked order.
+- A single-input step takes one edge in; any other step without slots takes any number, in the order they were connected.
 - A media node is a source that always gives that one media: it feeds steps, nothing connects into it.
 - A note node is a sticky note: Markdown text (links show as plain text on the canvas) on a card in one of the folder colors, amber by default. It never connects, so runs pass it by.
 
@@ -35,7 +36,7 @@ Where we stand:
 - Drag (or click) folders and transformation types in from the + Add popover over the canvas, its tabs Folders (with a search) and the types' groups: Generation, Transform, Overlay and Reels; folders from the sidebar; and a selected folder's media from the inspector.
 - Drag nodes around (positions saved; Alt-drag drops a copy, a step's with its own copy of the transformation, without connections). Scroll to pan and pinch to zoom.
 - Drag the empty canvas to select every node the rectangle touches; dragging any of them moves them all.
-- Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one.
+- Drag from a node's dot to another node to connect (nodes it can connect to light up); into a step with slots, drop on a labelled port, or anywhere on it for the first free one. A many-input step shows one empty port below its connections, where the next one goes; a single-input step shows one port and doesn't light up once connected.
 - A selected folder's inspector sets how many of its newest media it gives (Take) and of which type (Media: any, images or videos).
 - Drag (or click) Note, under Notes in + Add, to drop a sticky note; its inspector edits its Markdown (saved when you click away) and color.
 - Click a node to open the inspector on the right, top to bottom: its name (a step's editable in place) with a bin to remove it, its Inputs and Outputs in the selected run (see Running), its tags (a folder's "Filter by tag" (only its media with all of them), a step's "Set tags", which its results get), its Settings (a step's transformation settings, saved as you edit; a folder's Take and Media type; a note's Markdown and color), then its media (a folder's, or a media node's own). Click a connection to remove it with the bin or drag its ends to other nodes.
@@ -85,5 +86,5 @@ It's read-only: change a workflow in code or on the canvas. Opening it never cre
 - **Autorun** (`Workflow#autorun`) — a workflow setting: media landing in a start folder starts a run with it (`Workflow.autorun!`).
 - **Run** (`WorkflowRun`) — one execution of a workflow. A **draft** run hasn't been played yet.
 - **Pin** (`WorkflowNode#pinned_media_ids`) — a start folder's media it gives in every run in place of its newest N, until Reset pins.
-- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one item, or a reel's whole inputs); its result lands in the step's output folder. A reused one (`reused_from`) shares another run's result.
+- **Step run** (`TransformationRun` in a run, `WorkflowRun#step_runs`) — one execution of a step on one batch of media (one media for a single-input step, else all its inputs' media); its result lands in the step's output folder. A reused one (`reused_from`) shares another run's result.
 - **Slot** — a named input of a step whose type declares them (`Transformation::Type.slots`); an edge into it carries its `slot`.

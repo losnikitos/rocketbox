@@ -90,6 +90,21 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_nil second.step_runs.first.reused_from
   end
 
+  test "a many-input step takes a folder's newest media in one step run, and a single-input step takes one arrow in" do
+    user = users(:lazaro_nixon)
+    older, newer = [ 1.day.ago, 1.hour.ago ].map { user.library_media.create!(kind: "photo", folder: folders(:exterior), created_at: it, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
+    workflow = Workflow.create!(name: "Pair")
+    exterior, interior, video, crop = [ { folder: folders(:exterior), take: 2 }, { folder: folders(:interior) },
+      { transformation_attributes: { kind: "generate_video", body: "Pan" } }, { transformation_attributes: { kind: "smart_crop" } } ].map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: exterior, to: video)
+    workflow.edges.create!(from: exterior, to: crop)
+    assert_includes workflow.edges.new(from: interior, to: crop).tap(&:validate).errors[:base], "#{crop.label} takes one input."
+
+    workflow.latest_run.start!(exterior, user)
+    assert_equal [ [ video, [ newer, older ] ], [ crop, [ newer ] ], [ crop, [ older ] ] ],
+      workflow.latest_run.step_runs.reload.map { [ it.workflow_node, it.source_media ] }
+  end
+
   test "a folder's newest media each get a step run, and a reel takes them all once complete, slot by slot, rerunning only a new one's" do
     user = users(:lazaro_nixon)
     photo = ->(folder, created_at) { user.library_media.create!(kind: "photo", folder: folders(folder), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }

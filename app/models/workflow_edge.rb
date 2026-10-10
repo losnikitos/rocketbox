@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Media flows from a folder, a media or a step to a step or a folder of the same workflow; one end is always a step.
-# Into a step whose type has slots, it goes into one of them (`slot`).
+# Into a step whose type has slots, it goes into one of them (`slot`); a single-input step takes just one.
 class WorkflowEdge < ApplicationRecord
   belongs_to :workflow, touch: true
   belongs_to :from, class_name: "WorkflowNode"
@@ -20,5 +20,6 @@ class WorkflowEdge < ApplicationRecord
     slots = to.transformation&.slots
     errors.add(:base, "Connect into one of #{to.label}'s inputs: #{slots.to_sentence}.") if slots && !slots.include?(slot)
     errors.add(:slot, "only goes into a transformation with inputs") if slot && !slots
+    errors.add(:base, "#{to.label} takes one input.") if to.transformation&.inputs == 1 && workflow.edges.where(to:).where.not(id:).exists?
   end
 end

@@ -15,6 +15,8 @@ class Transformation::Scripted < Transformation::Type
 
   def self.reel? = true
 
+  def self.inputs = nil
+
   def self.dir = Rails.root.join("reels", slug)
 
   # The reel it's cut from, or nil.

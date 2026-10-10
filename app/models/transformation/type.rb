@@ -42,6 +42,10 @@ class Transformation::Type
   # A workflow step's named inputs, in the order their media reach the run (see WorkflowRun), or nil for one open input.
   def self.slots = nil
 
+  # How many arrows can come into a workflow step: 1, each media its own step run, or nil for any number, all their
+  # media going into one step run.
+  def self.inputs = 1
+
   def self.takes_review? = false
 
   # A non-AI type's own options in place of the model's: allowed values per key, the first the default; nil for none.

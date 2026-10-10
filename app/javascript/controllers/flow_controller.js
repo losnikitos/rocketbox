@@ -222,7 +222,7 @@ export default class extends Controller {
     if (!l) return
     const node = this.droppable(event)
     this.nodeTargets.forEach(el => el.toggleAttribute("data-flow-drop", el === node?.el))
-    const port = node && l.side > 0 ? node.inputs[node.slots.indexOf(this.slotAt(event, node, l.edge))] : undefined
+    const port = node && l.side > 0 ? node.inputs[node.slots.length ? node.slots.indexOf(this.slotAt(event, node, l.edge)) : this.others(node, l.edge).length] : undefined
     const loose = node ? anchor(node, -l.side, port) : this.point(event)
     this.draw()
     this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${curve(l.side > 0 ? [l.start, loose] : [loose, l.start])}" class="stroke-rocket" />`)
@@ -246,8 +246,8 @@ export default class extends Controller {
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
-  // end, no arrow into a source (data-source), no note (data-note) at either end, and not connected that way already,
-  // unless by the edge being moved.
+  // end, no arrow into a source (data-source), no note (data-note) at either end, no second arrow into a single-input
+  // step (data-single), and not connected that way already, unless by the edge being moved.
   droppable({ clientX, clientY }) {
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
@@ -255,7 +255,13 @@ export default class extends Controller {
     if (v === w || (g.hasEdge(v, w) && !(edge?.v === v && edge?.w === w)) || "source" in g.node(w).el.dataset) return
     if ([v, w].some(id => "note" in g.node(id).el.dataset)) return
     if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
+    if ("single" in g.node(w).el.dataset && this.others(g.node(w), edge).length) return
     return g.node(el.dataset.id)
+  }
+
+  // The arrows into `node` besides `moving`.
+  others(node, moving) {
+    return this.graph.inEdges(node.el.dataset.id).filter(e => !(e.v === moving?.v && e.w === moving?.w))
   }
 
   // The slot an arrow dropped on `node` goes into: the port's under the pointer, else the first no other arrow
@@ -264,7 +270,7 @@ export default class extends Controller {
     if (!node.slots.length) return
     const port = document.elementFromPoint(clientX, clientY)?.closest("[data-slot]")
     if (port && node.el.contains(port)) return port.dataset.slot
-    const g = this.graph, taken = g.inEdges(node.el.dataset.id).filter(e => !(e.v === moving?.v && e.w === moving?.w)).map(e => g.edge(e).slot)
+    const taken = this.others(node, moving).map(e => this.graph.edge(e).slot)
     return node.slots.find(slot => !taken.includes(slot)) ?? node.slots[0]
   }
 

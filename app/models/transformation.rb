@@ -16,7 +16,7 @@ class Transformation < ApplicationRecord
   has_many :workflow_nodes, dependent: :restrict_with_error
   belongs_to :style, optional: true
 
-  delegate :ai?, :video?, :single?, :reel?, :slots, :layer, :takes_review?, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :slots, :inputs, :layer, :takes_review?, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 

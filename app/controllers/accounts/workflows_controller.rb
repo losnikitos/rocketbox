@@ -147,7 +147,8 @@ module Accounts
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
-                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input), inputs: feeds.size, slots: node.transformation&.slots,
+                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input), single: node.transformation&.inputs == 1,
+                       inputs: feeds.size + (node.step? && !node.transformation.inputs ? 1 : 0), slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
