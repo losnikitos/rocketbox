@@ -276,9 +276,9 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, run: run.id)
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?][title='Run from here']", crop.id.to_s, crop.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play]", again.id.to_s, count: 0
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", folder.id.to_s, generate.id.to_s, dom_id(photo, :quick_view)
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
-    assert_select "button[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?]", folder.id.to_s, generate.id.to_s, dom_id(photo, :quick_view)
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
+    assert_select "[data-flow-target=output][data-v=?]", crop.id.to_s, count: 0
     available = -> { JSON.parse(css_select("[data-controller=flow]").sole["data-flow-edges-value"]).to_h { [ it[0..1], it[2]["available"] ] } }
     expected = { [ folder.id, generate.id ] => true, [ generate.id, crop.id ] => true, [ crop.id, again.id ] => false }
     assert_equal expected, available.()
@@ -293,7 +293,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     draft = workflow.runs.create!
     get workflow_url(workflow, account: admin.id, run: draft.id)
     assert_equal expected, available.()
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?]", generate.id.to_s, crop.id.to_s, dom_id(made.generated_media, :quick_view)
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", crop.id.to_s
     # Playing it copies in the step run it reuses first.
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id, run: draft.id), params: { node_id: crop.id } }
@@ -315,11 +315,16 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     workflow.edges.create!(from: folder, to: step)
 
     get workflow_url(workflow, account: admin.id)
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?][aria-label='View media']", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?][aria-label='View media']", folder.id.to_s, step.id.to_s, dom_id(newer, :quick_view)
+    assert_select "[data-flow-target=output] button", 1
+
+    folder.update!(take: 2)
+    get workflow_url(workflow, account: admin.id)
+    assert_equal [ newer, older ].map { dom_id(it, :quick_view) }, css_select("[data-flow-target=output][data-v='#{folder.id}'] button").map { it["popovertarget"] }
 
     folder.update!(pinned_media_ids: [ older.id ])
     get workflow_url(workflow, account: admin.id)
-    assert_select "button[data-flow-target=output][data-v=?][data-w=?][popovertarget=?][aria-label='View pinned media']", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?][aria-label='View pinned media']", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
   end
 
   test "play on a media node runs the latest run from that media" do
