@@ -63,7 +63,14 @@
             </nav>
           <% end %>
         </div>
-        <p class="mt-8 text-center text-sm text-ink-500">© <%= Time.current.year %> Rocketbox</p>
+        <div class="mt-8 space-y-1 text-center text-sm text-ink-500">
+          <p>© <%= Time.current.year %> Rocketbox by <%= link_to "TADAAA! LTD", "https://tadaaa.co.uk", target: "_blank", rel: "noopener", class: "hover:text-ink-900" %></p>
+          <p>
+            Registered in England and Wales, company no.
+            <%= link_to "14928714", "https://find-and-update.company-information.service.gov.uk/company/14928714", target: "_blank", rel: "noopener", class: "underline decoration-dotted hover:text-ink-900" %>
+          </p>
+          <p>415 Wick Lane, Hackney Wick, London E3 2JG, United Kingdom</p>
+        </div>
       </div>
     </footer>
     <%= render "shared/flashes" %>
