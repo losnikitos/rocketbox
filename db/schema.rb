@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -88,6 +88,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   create_table "folders", force: :cascade do |t|
     t.string "color", default: "sky", null: false
     t.datetime "created_at", null: false
+    t.string "kind", default: "media", null: false
     t.string "name", null: false
     t.integer "parent_id"
     t.string "slug", null: false
@@ -196,9 +197,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   create_table "prompts", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.string "folder", default: "Shots", null: false
+    t.integer "folder_id", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["folder_id"], name: "index_prompts_on_folder_id"
+    t.index ["user_id"], name: "index_prompts_on_user_id"
   end
 
   create_table "reviews", force: :cascade do |t|
@@ -206,10 +210,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
     t.text "body"
     t.datetime "created_at", null: false
     t.string "customer_name", null: false
+    t.integer "folder_id", null: false
     t.integer "rating", null: false
     t.string "source", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.index ["folder_id"], name: "index_reviews_on_folder_id"
     t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
@@ -397,10 +403,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   end
 
   create_table "transformation_run_inputs", force: :cascade do |t|
-    t.integer "library_media_id", null: false
+    t.integer "item_id", null: false
+    t.string "item_type", null: false
     t.integer "position", default: 0, null: false
     t.integer "transformation_run_id", null: false
-    t.index ["library_media_id"], name: "index_transformation_run_inputs_on_library_media_id"
+    t.index ["item_type", "item_id"], name: "index_transformation_run_inputs_on_item"
     t.index ["transformation_run_id", "position"], name: "idx_on_transformation_run_id_position_5552ff8e6c", unique: true
     t.index ["transformation_run_id"], name: "index_transformation_run_inputs_on_transformation_run_id"
   end
@@ -409,20 +416,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
     t.decimal "cost", precision: 10, scale: 6
     t.datetime "created_at", null: false
     t.text "error"
-    t.integer "generated_media_id", null: false
     t.json "options", default: {}, null: false
-    t.integer "prompt_id"
     t.text "prompt_text"
-    t.integer "review_id"
+    t.integer "result_id", null: false
+    t.string "result_type", null: false
     t.string "status", default: "running", null: false
     t.integer "style_id"
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
     t.integer "workflow_node_id"
     t.integer "workflow_run_id"
-    t.index ["generated_media_id"], name: "index_transformation_runs_on_generated_media_id"
-    t.index ["prompt_id"], name: "index_transformation_runs_on_prompt_id"
-    t.index ["review_id"], name: "index_transformation_runs_on_review_id"
+    t.index ["result_type", "result_id"], name: "index_transformation_runs_on_result"
     t.index ["style_id"], name: "index_transformation_runs_on_style_id"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
     t.index ["workflow_node_id"], name: "index_transformation_runs_on_workflow_node_id"
@@ -436,7 +440,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
     t.json "layer_steps", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
-    t.string "prompt_folder"
     t.integer "style_id"
     t.datetime "updated_at", null: false
     t.index ["style_id"], name: "index_transformations_on_style_id"
@@ -538,6 +541,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
+  add_foreign_key "prompts", "folders"
+  add_foreign_key "prompts", "users"
+  add_foreign_key "reviews", "folders"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "users"
   add_foreign_key "sessions", "users"
@@ -547,11 +553,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
   add_foreign_key "smm_slides", "smm_posts"
   add_foreign_key "subscriptions", "users"
   add_foreign_key "suggestions", "crawls"
-  add_foreign_key "transformation_run_inputs", "library_media", on_delete: :cascade
   add_foreign_key "transformation_run_inputs", "transformation_runs", on_delete: :cascade
-  add_foreign_key "transformation_runs", "library_media", column: "generated_media_id"
-  add_foreign_key "transformation_runs", "prompts", on_delete: :nullify
-  add_foreign_key "transformation_runs", "reviews", on_delete: :nullify
   add_foreign_key "transformation_runs", "styles", on_delete: :nullify
   add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
   add_foreign_key "transformation_runs", "workflow_nodes", on_delete: :nullify

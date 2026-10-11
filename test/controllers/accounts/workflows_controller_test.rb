@@ -185,6 +185,49 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     credentials.singleton_class.remove_method(:agent_token)
   end
 
+  test "prompt and review folders show on the canvas, in its Markdown and in the library with what they give and take" do
+    credentials = Rails.application.credentials
+    credentials.define_singleton_method(:agent_token) { "secret" }
+    admin = sign_in_as(users(:admin_user))
+    shot = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: folders(:prompts_shots))
+    review = admin.reviews.create!(source: "google", customer_name: "Dana", rating: 5, body: "Best fade.")
+    photo = admin.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Items")
+    shots, llm, ready, interior, image, reviews, praise = [ { folder: folders(:prompts_shots) }, { transformation_attributes: { kind: "llm", body: "Blend." } },
+      { folder: folders(:prompts_ready) }, { folder: folders(:interior) }, { transformation_attributes: { kind: "generate_image", body: "Paint." } },
+      { folder: folders(:reviews) }, { transformation_attributes: { kind: "review" } } ].map { workflow.nodes.create!(it) }
+    [ [ shots, llm ], [ llm, ready ], [ ready, image ], [ interior, image ], [ interior, praise ], [ reviews, praise ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    run = workflow.latest_run
+    run.start!([ shots, interior ], admin)
+    written = run.step_runs.find_by!(workflow_node: llm)
+    written.result.update!(body: "A chair, empty.") && written.update!(status: "complete")
+
+    [ shots, llm, ready, image, reviews, praise ].each do |node|
+      get workflow_url(workflow, account: admin.id, node: node.id)
+      assert_response :success
+      assert_select "[data-id=?][data-gives=?]", node.id.to_s, node.item_kind.to_s
+    end
+    assert_select "[data-id=?][data-takes='media review']", praise.id.to_s
+    get workflow_url(workflow, account: admin.id, node: ready.id)
+    assert_select "section[aria-label=Prompts] a[href=?]", edit_prompt_path(written.result, account: admin.id), text: written.result.name
+
+    get workflow_url(workflow, format: :md), headers: { "Authorization" => "Bearer secret" }
+    assert_response :success
+    assert_includes response.body, %(### n#{reviews.id} · Folder Reviews (review))
+    assert_includes response.body, "- Takes: prompts (main); makes: prompts"
+    assert_includes response.body, %(- In: prompt #{shot.id} "Empty Chair" in #{folders(:prompts_shots).path}: The empty chair.)
+    assert_includes response.body, %(- In: [media #{photo.id}]#{''})
+    assert_includes response.body, "review #{review.id} by Dana, 5★: Best fade."
+    assert_includes response.body, %(- Out: prompt #{written.result.id} "#{written.result.name}" in #{folders(:prompts_ready).path}: A chair, empty.)
+
+    get library_folders_url("prompts", "shots", account: admin.id)
+    assert_select "##{dom_id(shot)}", text: /The empty chair/
+    get library_folders_url("reviews", account: admin.id)
+    assert_redirected_to reviews_url(account: admin.id)
+  ensure
+    credentials.singleton_class.remove_method(:agent_token)
+  end
+
   test "play on a start folder runs the latest run from its newest media and the selected run lists the steps" do
     admin = sign_in_as(users(:admin_user))
     workflow = Workflow.create!(name: "Play")

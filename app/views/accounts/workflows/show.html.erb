@@ -30,7 +30,13 @@
 <% thumbs = ->(media, limit = 4) { capture do %>
   <span class="flex items-center gap-0.5">
     <% media.first(limit).each do |media| %>
-      <span class="block size-5 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+      <% if media.is_a?(LibraryMedia) %>
+        <span class="block size-5 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+      <% else %>
+        <span title="<%= media.try(:name) || media.try(:customer_name) %>" class="flex size-5 shrink-0 items-center justify-center rounded bg-ink-900/5 text-ink-500">
+          <%= heroicon media.is_a?(Prompt) ? "chat-bubble-bottom-center-text" : "star", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>
+        </span>
+      <% end %>
     <% end %>
     <% if media.size > limit %><span class="pl-0.5 text-xs text-ink-500 tabular-nums">+<%= media.size - limit %></span><% end %>
   </span>
@@ -229,11 +235,11 @@
       <% end %>
 
       <% unless node.note? %>
-        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, media| %>
+        <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, items| %>
           <section aria-label="<%= label %>" class="<%= panel %>">
             <h3 class="<%= panel_heading %>"><%= label %></h3>
-            <% if media.any? %>
-              <%= render "media", media:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
+            <% if items.any? %>
+              <%= render "items", items:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
             <% else %>
               <p class="text-sm text-ink-500">None in this run.</p>
             <% end %>
@@ -241,7 +247,7 @@
         <% end %>
       <% end %>
 
-      <% if (node.step? || node.folder) && Tag.exists? %>
+      <% if (node.step? || node.media_folder?) && Tag.exists? %>
         <section aria-label="Tags" class="<%= panel %>">
           <h3 class="<%= panel_heading %>"><%= node.step? ? "Set tags" : "Filter by tag" %></h3>
           <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
@@ -283,6 +289,10 @@
           <% end %>
         <% elsif (media = node.library_media) %>
           <%= link_to "Open in library", library_item_path(media), data: top, class: "rb-btn-ghost-on-light inline-block px-3.5 py-1.5 text-sm" %>
+        <% elsif node.folder.prompt? %>
+          <p class="text-sm text-ink-600">Gives all its prompts: an LLM step takes them all, any other step one at random per step run.</p>
+        <% elsif node.folder.review? %>
+          <p class="text-sm text-ink-600">Gives your 5-star reviews; each step run takes the newest.</p>
         <% else %>
           <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "flex gap-3" do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
@@ -307,7 +317,7 @@
             <%= render "accounts/library/quick_view", media: %>
           </div>
         </section>
-      <% elsif node.folder && start %>
+      <% elsif node.media_folder? && start %>
         <section aria-label="Pins" class="<%= panel %>">
           <div class="flex items-center justify-between gap-2">
             <h3 class="<%= panel_heading %>">
@@ -342,6 +352,16 @@
             <% end %>
           <% else %>
             <p class="text-sm text-ink-500"><%= node.tag_ids.any? || node.media_type ? "No media in this folder matches." : "This folder is empty." %></p>
+          <% end %>
+        </section>
+      <% elsif node.folder && !node.media_folder? %>
+        <% label = node.folder.kind.pluralize.capitalize %>
+        <section aria-label="<%= label %>" class="<%= panel %>">
+          <h3 class="<%= panel_heading %>"><%= label %></h3>
+          <% if @folder_items.any? %>
+            <%= render "items", items: @folder_items, css: "" %>
+          <% else %>
+            <p class="text-sm text-ink-500">This folder gives none.</p>
           <% end %>
         </section>
       <% elsif node.folder %>

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Its layer is filled from a 5-star review each run picks.
+# Its layer is filled from the review each run picks: the newest 5-star one the Reviews folder feeding it gives.
 class Transformation::Review < Transformation::Overlay
   def self.label = "Review"
 
@@ -8,5 +8,5 @@ class Transformation::Review < Transformation::Overlay
 
   def self.layer = Layer.find("review")
 
-  def self.takes_review? = true
+  def self.takes = %i[media review]
 end

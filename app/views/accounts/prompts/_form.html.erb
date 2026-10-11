@@ -1,7 +1,7 @@
 <%# locals: (prompt:) %>
 <div class="@container space-y-4">
   <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
-    <%= link_to "Prompts", prompts_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <%= link_to prompt.folder&.path || "Prompts", folder_path(prompt.folder || Folder.prompts), class: "underline underline-offset-2 hover:text-ink-900" %>
     <span class="mx-1">/</span>
     <span aria-current="page"><%= prompt.new_record? ? "New prompt" : prompt.name_was %></span>
   </nav>
@@ -24,13 +24,8 @@
       </div>
 
       <div class="max-w-md">
-        <%= f.label :folder, class: tw_label_classes %>
-        <%= f.text_field :folder, required: true, list: "prompt_folders", placeholder: "Shots", class: tw_input_classes %>
-        <datalist id="prompt_folders">
-          <% Prompt.folders.each do |folder| %>
-            <option value="<%= folder %>"></option>
-          <% end %>
-        </datalist>
+        <%= f.label :folder_id, "Folder", class: tw_label_classes %>
+        <%= f.select :folder_id, Folder.grouped_options(roots: Folder.roots.prompt), {}, class: tw_input_classes %>
       </div>
 
       <div>
@@ -49,7 +44,7 @@
             class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red transition hover:bg-signal-red/10" %>
     <% end %>
     <div class="ml-auto flex items-center gap-2">
-      <%= link_to "Cancel", prompts_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
+      <%= link_to "Cancel", folder_path(prompt.folder || Folder.prompts), class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-900/5 hover:text-ink-900" %>
       <button type="submit" form="prompt_form" class="rb-btn-primary px-3.5 py-2 text-sm">Save</button>
     </div>
   </div>

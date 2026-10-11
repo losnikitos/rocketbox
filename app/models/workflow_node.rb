@@ -2,10 +2,12 @@
 
 # A workflow's folder, media, transformation step or note, placed at x, y (its centre) on the canvas. A step owns its
 # transformation, made from a type added from + Add, named after it, and deleted with the step.
-# A folder's role comes from its edges: one feeding a step is an input, one a step feeds is an output.
-# A folder's tags filter what it gives to its media with all of them, and its `media_type` (nil for any) to images or
-# videos; it gives its pinned media (`pinned_media_ids`, every run until reset), else its newest `take` media. A step's
-# tags go on what it makes. A media is a source that always gives that one media.
+# Every node but a note gives items of one kind (`item_kind`): a folder its kind's (media, prompts or reviews), a media
+# itself, a step what its type makes. A folder's role comes from its edges: one feeding a step is an input, one a step
+# feeds is an output.
+# A media folder's tags filter what it gives to its media with all of them, and its `media_type` (nil for any) to images
+# or videos; it gives its pinned media (`pinned_media_ids`, every run until reset), else its newest `take` media. A
+# prompt folder gives its prompts, the Reviews folder its 5-star reviews. A step's tags go on what it makes.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow, touch: true
@@ -19,7 +21,7 @@ class WorkflowNode < ApplicationRecord
 
   before_validation { transformation.name = transformation.type&.label if transformation&.new_record? && transformation.name.blank? }
   validate { errors.add(:base, "Pick a folder, a media, a transformation or a note.") unless [ folder, library_media, transformation, note ].compact.one? }
-  validate { errors.add(:tag_ids, "only go on a folder or a step") if tag_ids.any? && !folder && !transformation }
+  validate { errors.add(:tag_ids, "only go on a media folder or a step") if tag_ids.any? && !media_folder? && !transformation }
   validate { errors.add(:tag_ids, "include an unknown tag") unless Tag.where(id: tag_ids).count == tag_ids.size }
   validates :take, numericality: { only_integer: true, greater_than: 0 }
   validates :media_type, inclusion: { in: %w[image video] }, allow_nil: true
@@ -29,6 +31,16 @@ class WorkflowNode < ApplicationRecord
 
   def note? = !note.nil?
 
+  def media_folder? = !!folder&.media?
+
+  # The kind of items it gives: :media, :prompt or :review; nil for a note.
+  def item_kind
+    if step? then transformation&.makes
+    elsif folder then folder.kind.to_sym
+    elsif library_media then :media
+    end
+  end
+
   def tags = Tag.where(id: tag_ids).ordered
 
   # Whether `media` is in this folder with all its tags, of its media type.
@@ -37,8 +49,9 @@ class WorkflowNode < ApplicationRecord
       (media_type.nil? || (media_type == "image" ? media.story_image? : media.video?))
   end
 
-  # A folder's media type and how many it gives, e.g. "Videos · take 3".
+  # A media folder's media type and how many it gives, e.g. "Videos · take 3".
   def gives
+    return unless media_folder?
     [ media_type&.pluralize&.capitalize, pinned_media_ids.any? ? "#{pinned_media_ids.size} pinned" : ("take #{take}" if take.to_i > 1) ].compact.join(" · ").presence
   end
 

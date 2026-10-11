@@ -8,6 +8,8 @@ class Transformation::Generation < Transformation::Type
 
   def self.inputs = nil
 
+  def self.takes = %i[media prompt]
+
   private
 
     def images = source_media.map { it.file.blob }

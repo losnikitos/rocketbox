@@ -21,6 +21,8 @@ class User < ApplicationRecord
   has_many :outgoing_messages, dependent: :destroy
   has_many :links, dependent: :destroy
   has_many :reviews, dependent: :destroy
+  # The prompts their step runs wrote.
+  has_many :prompts, dependent: :destroy
   has_many :services, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
   has_one_attached :logo

@@ -45,13 +45,7 @@ module AppHelper
     when "accounts/admin"
       [ :admin, "Admin", [] ]
     when "accounts/prompts"
-      index = action_name == "index"
-      counts = Prompt.group(:folder).count
-      [ :prompts, "Prompts", [
-        [ prompts_path, "All", index && params[:folder].blank?, counts.values.sum ],
-        :separator,
-        *counts.sort.map { |folder, count| [ prompts_path(folder:), folder, index && params[:folder] == folder, count ] }
-      ] ]
+      [ :folders, @prompt&.folder&.name || "Prompts", [] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
     when "accounts/styles"
@@ -68,7 +62,7 @@ module AppHelper
   end
 
   def delete_folder_confirm(folder)
-    "Delete #{folder.name}? " + (folder.parent ? "Its media moves to #{folder.parent.name}." : "Only empty folders can be deleted.")
+    "Delete #{folder.name}? " + (folder.parent ? "Its #{folder.media? ? "media" : folder.kind.pluralize} move to #{folder.parent.name}." : "Only empty folders can be deleted.")
   end
 
   FOLDER_COLORS = { "sky" => "text-sky-400", "emerald" => "text-emerald-500", "amber" => "text-amber-400",

@@ -10,21 +10,26 @@ module Accounts
 
     # ponytail: @folder_media loads every media in the listed folders just to count them and preview the newest few.
     # Upgrade = a COUNT query plus a per-folder LIMIT (window function) once accounts hold thousands of media.
+    # A prompt folder lists its prompts (shared or the account's); Reviews holds the account's reviews, browsed on their page.
     def show
+      return redirect_to(reviews_path) if @folder&.review?
+
       media = Current.account.library_media.with_attached_file.includes(:transformation_run).order(created_at: :desc)
       if @folder
+        @prompts = @folder.prompts.where(user_id: [ nil, Current.account.id ]).with_attached_examples.ordered if @folder.prompt?
         @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
-          .includes(:tags, transformation_run: { inputs: { library_media: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
+          .includes(:tags, transformation_run: { inputs: { item: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
           .order(created_at: :desc)
         # One end of an edge is always a step, so a folder node an edge leaves is an input, one it enters an output.
         nodes = WorkflowNode.includes(:workflow, :folder).where(folder: @folder)
         @read_nodes = nodes.where(id: WorkflowEdge.select(:from_id)).to_a
         @write_nodes = nodes.where(id: WorkflowEdge.select(:to_id)).to_a
-        # A step with no output folder lands its results in Ready.
-        if @folder == Folder.ready
+        # A step with no output folder lands its results in Ready, for what it makes.
+        if @folder == Folder.ready(@folder.kind)
           @write_nodes += WorkflowNode.includes(:workflow, :transformation).where.not(transformation_id: nil)
-            .where.not(id: WorkflowEdge.joins(:to).where(workflow_nodes: { transformation_id: nil }).select(:from_id)).to_a
+            .where.not(id: WorkflowEdge.joins(:to).where(workflow_nodes: { transformation_id: nil }).select(:from_id))
+            .select { it.transformation.makes.to_s == @folder.kind }
         end
       else
         @folder_media = media.includes(:folder).group_by { it.folder.parent_id || it.folder_id }

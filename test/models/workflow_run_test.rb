@@ -158,6 +158,67 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ [ newest ] ], run.step_runs.reload.map(&:source_media)
   end
 
+  test "an LLM writes one prompt from two prompt folders into its own, which an image step then picks; a replay keeps it, a new prompt rewrites it" do
+    user = users(:lazaro_nixon)
+    daily = Folder.create!(name: "Daily", parent: folders(:prompts))
+    chair, carpet = [ [ "Empty Chair", folders(:prompts_shots) ], [ "Red Carpet", daily ] ].map { |name, folder| Prompt.create!(name:, body: "#{name}.", folder:) }
+    Prompt.create!(name: "Theirs", body: "Theirs.", folder: daily, user: users(:admin_user))
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Writer")
+    shots, today, llm, ready, interior, image = [ { folder: folders(:prompts_shots) }, { folder: daily }, { transformation_attributes: { kind: "llm", body: "Blend." } },
+      { folder: folders(:prompts_ready) }, { folder: folders(:interior) }, { transformation_attributes: { kind: "generate_image", body: "Paint." } } ].map { workflow.nodes.create!(it) }
+    [ [ shots, llm ], [ today, llm ], [ llm, ready ], [ ready, image ], [ interior, image ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    run = workflow.latest_run
+    write = ->(step_run, body) { step_run.result.update!(body:) && step_run.update!(status: "complete") }
+
+    run.start!([ shots, today ], user)
+    written = run.step_runs.sole
+    assert_equal [ llm, [ chair, carpet ], folders(:prompts_ready), "" ], [ written.workflow_node, written.sources, written.result.folder, written.result.body ]
+    write.(written, "An empty chair on a red carpet.")
+    painted = run.step_runs.reload.last
+    assert_equal [ image, [ photo, written.result ], "Paint.\n\nAn empty chair on a red carpet." ], [ painted.workflow_node, painted.sources, painted.prompt_text ]
+
+    assert_no_difference -> { TransformationRun.count } do
+      run.start!(interior, user)
+    end
+
+    newer = Prompt.create!(name: "Mirror", body: "Mirror.", folder: daily)
+    run.start!(today, user)
+    rewritten = run.step_runs.reload.sole
+    assert_equal [ [ chair, carpet, newer ], false ], [ rewritten.sources, Prompt.exists?(written.result.id) ]
+    write.(rewritten, "A mirror.")
+    assert_equal [ photo, rewritten.result ], run.step_runs.reload.last.sources
+  end
+
+  test "Reviews give their newest 5-star review to a review step" do
+    user = users(:lazaro_nixon)
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    _older, newest = 2.times.map { user.reviews.create!(source: "google", customer_name: "Dana", rating: 5, body: "Great #{it}.") }
+    user.reviews.create!(source: "google", customer_name: "Meh", rating: 4, body: "Fine.")
+    workflow = Workflow.create!(name: "Praise")
+    interior, reviews, step = [ { folder: folders(:interior) }, { folder: folders(:reviews) }, { transformation_attributes: { kind: "review" } } ].map { workflow.nodes.create!(it) }
+    [ [ interior, step ], [ reviews, step ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+
+    workflow.latest_run.start!(interior, user)
+    assert_equal [ photo, newest ], workflow.latest_run.step_runs.sole.sources
+  end
+
+  test "an arrow carries a kind its end takes" do
+    workflow = Workflow.create!(name: "Kinds")
+    prompts, reviews, interior, llm, crop, image = [ { folder: folders(:prompts_shots) }, { folder: folders(:reviews) }, { folder: folders(:interior) },
+      { transformation_attributes: { kind: "llm", body: "x" } }, { transformation_attributes: { kind: "smart_crop" } }, { transformation_attributes: { kind: "generate_image", body: "x" } } ]
+      .map { workflow.nodes.create!(it) }
+    rejected = ->(from, to) { workflow.edges.new(from:, to:).tap(&:validate).errors[:base].first }
+
+    assert_equal "#{crop.label} takes media, not prompts.", rejected.(prompts, crop)
+    assert_equal "#{image.label} takes media or prompts, not reviews.", rejected.(reviews, image)
+    assert_equal "#{llm.label} takes prompts, not media.", rejected.(interior, llm)
+    assert_equal "#{llm.label} makes prompts; connect it to a prompt folder.", rejected.(llm, interior)
+    assert_equal "Reviews only feed transformations; nothing connects into them.", rejected.(crop, reviews)
+    assert_nil rejected.(prompts, image)
+    assert_nil rejected.(llm, prompts)
+  end
+
   test "a step dropped blank from an AI type doesn't start until it has a prompt" do
     user = users(:lazaro_nixon)
     user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })

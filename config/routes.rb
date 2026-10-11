@@ -60,7 +60,7 @@ Rails.application.routes.draw do
       get "calendar", to: "calendar#show", as: :calendar
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
-      resources :prompts, except: :show
+      resources :prompts, except: %i[index show]
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end

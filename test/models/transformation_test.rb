@@ -11,12 +11,14 @@ class TransformationTest < ActiveSupport::TestCase
     @original_paint = RubyLLM.method(:paint)
     @original_animate = RubyLLM.method(:animate)
     @original_screenshot = Layer.method(:screenshot)
+    @original_chat = RubyLLM.method(:chat)
   end
 
   teardown do
     RubyLLM.define_singleton_method(:paint, @original_paint)
     RubyLLM.define_singleton_method(:animate, @original_animate)
     Layer.define_singleton_method(:screenshot, @original_screenshot)
+    RubyLLM.define_singleton_method(:chat, @original_chat)
   end
 
   test "run! rejects duplicates and another account's photos" do
@@ -61,7 +63,7 @@ class TransformationTest < ActiveSupport::TestCase
       Struct.new(:to_blob).new("mp4-bytes")
     end
     source = photo("room.jpg", :interior)
-    run = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior))
+    run = transformations(:cinematic).run!(items: [ source ], folder: folders(:photobank_interior))
 
     assert_equal [ folders(:photobank_interior), "video" ], [ run.generated_media.folder, run.generated_media.kind ]
     run.run!
@@ -72,8 +74,7 @@ class TransformationTest < ActiveSupport::TestCase
   end
 
   test "steps joins its inputs into a video, 1 second each, without a prompt" do
-    steps = Transformation.create!(name: "Reel", kind: "steps", prompt_folder: "Shots")
-    assert_nil steps.prompt_folder
+    steps = Transformation.create!(name: "Reel", kind: "steps")
     run = start(steps, attach_logo(@interior, @customer))
 
     run.run!
@@ -150,34 +151,54 @@ class TransformationTest < ActiveSupport::TestCase
     Transformation::Type.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
-  test "a prompt folder needs a prompt from it, and paints the prompt and its fixed style after the body" do
+  test "a picked prompt paints after the body, before its fixed style; a shared or own prompt only, one at most" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
     end
     style = Style.create!(name: "Film", body: "35mm grain.")
-    @collage.update!(prompt_folder: "Shots", style:)
-    prompt = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: "Shots")
-    other = Prompt.create!(name: "Red Carpet", body: "A premiere.", folder: "Events")
+    @collage.update!(style:)
+    prompt = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: folders(:prompts_shots))
+    other = Prompt.create!(name: "Red Carpet", body: "A premiere.", folder: folders(:prompts_shots))
+    stranger = Prompt.create!(name: "Theirs", body: "Theirs.", folder: folders(:prompts_shots), user: users(:admin_user))
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media) }
-    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, media, prompt: other) }
-    run = start(@collage, media, prompt:)
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ *media, prompt, other ]) }
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ *media, stranger ]) }
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ prompt ]) }
+    run = start(@collage, [ *media, prompt ])
     run.run!
 
     assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
-    assert_equal [ prompts.first, prompt, style ], [ run.reload.prompt_text, run.prompt, run.style ]
+    assert_equal [ prompts.first, prompt, style, media ], [ run.reload.prompt_text, run.prompt, run.style, run.source_media ]
+  end
+
+  test "an LLM writes one prompt from the prompts fed to it into the given folder, its body the instruction" do
+    llm = Transformation.create!(name: "Mix", kind: "llm", body: "Blend these into one shot.", style: Style.create!(name: "Film", body: "35mm grain."))
+    assert_equal [ %i[prompt], :prompt, nil ], [ llm.takes, llm.makes, llm.style ]
+    shots = [ "The empty chair.", "A premiere." ].map.with_index { |body, i| Prompt.create!(name: "Shot #{i}", body:, folder: folders(:prompts_shots)) }
+    asked = stub_chat("An empty chair at a premiere.")
+
+    assert_raises(ActiveRecord::RecordInvalid) { llm.run!(items: [ @interior ], folder: folders(:prompts_ready), user: @user) }
+    run = llm.run!(items: shots, folder: folders(:prompts_ready), user: @user)
+    written = run.generated_prompt
+    assert_equal [ folders(:prompts_ready), @user, "" ], [ written.folder, written.user, written.body ]
+    run.run!
+
+    assert_equal [ "complete", "An empty chair at a premiere.", 0.01 ], [ run.reload.status, written.reload.body, run.cost ]
+    instructions, message = asked.sole
+    assert_includes instructions, "Blend these into one shot."
+    assert_equal "## Shot 0\n\nThe empty chair.\n\n## Shot 1\n\nA premiere.", message
   end
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
     style = Style.create!(name: "Film", body: "35mm grain.")
-    review = Transformation.create!(name: "Reviews", kind: "review", style:, prompt_folder: "Shots")
-    assert_equal [ nil, nil, true, "review" ], [ review.style, review.prompt_folder, review.takes_review?, review.layer.slug ]
+    review = Transformation.create!(name: "Reviews", kind: "review", style:)
+    assert_equal [ nil, %i[media review], "review" ], [ review.style, review.takes, review.layer.slug ]
 
-    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:, prompt_folder: "Shots")
-    assert_equal [ style, "Shots", false, nil ], [ image.style, image.prompt_folder, image.takes_review?, image.layer ]
+    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:)
+    assert_equal [ style, %i[media prompt], nil ], [ image.style, image.takes, image.layer ]
 
     assert_not review.update(kind: "generate_image")
     assert_includes review.errors.full_messages, "Kind can't be changed"
@@ -223,8 +244,8 @@ class TransformationTest < ActiveSupport::TestCase
       file: { io: file_fixture("logo.png").open, filename: "ready.png", content_type: "image/png" })
     rendered = stub_screenshot
 
-    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(media: [ photo ], folder: folders(:photobank_logo), user: users(:admin_user)) }
-    run = feature.run!(media: [ photo ], folder: folders(:photobank_logo))
+    assert_raises(ActiveRecord::RecordInvalid) { feature.run!(items: [ photo ], folder: folders(:photobank_logo), user: users(:admin_user)) }
+    run = feature.run!(items: [ photo ], folder: folders(:photobank_logo))
     run.run!
 
     html, size = rendered.sole
@@ -283,7 +304,7 @@ class TransformationTest < ActiveSupport::TestCase
     photo = LibraryMedia.create!(kind: "photo", folder: folders(:ready), user: @user, file: { io: File.open(still.path), filename: "still.png", content_type: "image/png" })
 
     [ [ video, "video", "video/mp4", 2 ], [ photo, "photo", "image/jpeg", 1 ] ].each do |source, kind, content_type, streams|
-      run = crop.run!(media: [ source ], folder: folders(:photobank_logo))
+      run = crop.run!(items: [ source ], folder: folders(:photobank_logo))
       run.run!
 
       assert_equal "complete", run.reload.status, run.error
@@ -316,7 +337,7 @@ class TransformationTest < ActiveSupport::TestCase
 
     [ [ photo, "in", "1", 1 ], [ video, "out", "2", 2 ] ].each do |source, direction, seconds, streams|
       zoom.update!(options: { "zoom" => direction, "duration" => seconds })
-      run = zoom.run!(media: [ source ], folder: folders(:photobank_logo))
+      run = zoom.run!(items: [ source ], folder: folders(:photobank_logo))
       run.run!
 
       assert_equal "complete", run.reload.status, run.error
@@ -352,7 +373,7 @@ class TransformationTest < ActiveSupport::TestCase
 
     [ [ photo, "kodak_2393", "photo", "image/jpeg", 1 ], [ video, "fujifilm_3510", "video", "video/mp4", 2 ] ].each do |media, look, kind, content_type, streams|
       grade.update!(options: { "look" => look })
-      run = grade.run!(media: [ media ], folder: folders(:photobank_logo))
+      run = grade.run!(items: [ media ], folder: folders(:photobank_logo))
       run.run!
 
       assert_equal "complete", run.reload.status, run.error
@@ -379,8 +400,8 @@ class TransformationTest < ActiveSupport::TestCase
 
     assert_equal [ review ], @user.reviews.postable.to_a
     assert_raises(ActiveRecord::RecordInvalid) { start(feature, [ photo ]) }
-    assert_raises(ActiveRecord::RecordInvalid) { start(feature, [ photo ], review: users(:admin_user).reviews.create!(source: "google", customer_name: "X", rating: 5, body: "Hi.")) }
-    run = start(feature, [ photo ], review:)
+    assert_raises(ActiveRecord::RecordInvalid) { start(feature, [ photo, users(:admin_user).reviews.create!(source: "google", customer_name: "X", rating: 5, body: "Hi.") ]) }
+    run = start(feature, [ photo, review ])
     run.run!
 
     html, = rendered.sole
@@ -392,7 +413,18 @@ class TransformationTest < ActiveSupport::TestCase
 
   private
 
-    def start(transformation, media, **) = transformation.run!(media:, folder: folders(:ready), **)
+    def start(transformation, items, **) = transformation.run!(items:, folder: folders(:ready), **)
+
+    # Collects each chat's instructions and message; it replies with `reply` at a cent.
+    def stub_chat(reply)
+      asked = []
+      chat = Object.new
+      chat.define_singleton_method(:with_instructions) { |text| asked << [ text ] and self }
+      chat.define_singleton_method(:ask) { |message| asked.last << message and Struct.new(:content).new(reply) }
+      chat.define_singleton_method(:cost) { Struct.new(:total).new(0.01) }
+      RubyLLM.define_singleton_method(:chat) { |**| chat }
+      asked
+    end
 
     def attach_logo(*media) = media.each { it.file.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png") }
 

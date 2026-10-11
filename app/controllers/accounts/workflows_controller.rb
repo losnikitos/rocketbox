@@ -39,7 +39,7 @@ module Accounts
           @runs = @workflow.runs.includes(:step_runs).reverse
           @run = @runs.find { it.id == params[:run].to_i } || @runs.first
           media = [ :folder, :tags, { file_attachment: :blob } ]
-          @step_runs = @run ? @run.step_runs.includes(:workflow_node, :prompt, inputs: { library_media: media }, generated_media: media) : []
+          @step_runs = @run ? @run.step_runs.includes(:workflow_node, inputs: { item: media }, result: media) : []
           @selected = @workflow.nodes.find { it.id == params[:node].to_i }
         end
       end
@@ -103,30 +103,32 @@ module Accounts
       def set_graph
         # The runs panel: each run with its step runs, what went in and came out, newest first; there's always one to show.
         @workflow.latest_run
-        @runs = @workflow.runs.includes(step_runs: [ :workflow_node, :transformation, { inputs: { library_media: { file_attachment: :blob } } },
-          { generated_media: { file_attachment: :blob } } ]).reverse
+        @runs = @workflow.runs.includes(step_runs: [ :workflow_node, :transformation, { inputs: { item: { file_attachment: :blob } } },
+          { result: { file_attachment: :blob } } ]).reverse
         @run = @runs.find { it.id == params[:run].to_i } || @runs.first
         @step_runs = @run.step_runs
         @graph_nodes = @workflow.nodes.select(&:persisted?)
         @graph_edges = @workflow.edges.select(&:persisted?)
         @selected = @graph_nodes.find { it.id == params[:node].to_i }
         @selected_edge = @graph_edges.find { it.id == params[:edge].to_i }
-        if @selected&.folder
+        @folder_items = @run.picked(@selected, Current.account) if @selected&.folder && !@selected.media_folder?
+        if @selected&.media_folder?
           @folder_media = Current.account.library_media.where(folder: @selected.folder).tagged_all(@selected.tags.ids).of_type(@selected.media_type).with_attached_file
             .includes(:transformation_run).order(created_at: :desc)
         end
         # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
         runs_of = ->(node) { @step_runs.select { it.workflow_node_id == node.id } }
-        # What the selected node took and gave in the run: a step its step runs' sources and results, a folder what the
-        # step runs feeding it made and what of it the step runs it feeds took (a media node only the latter).
+        # What the selected node took and gave in the run (media, prompts, reviews): a step its step runs' inputs and
+        # results, a folder what the step runs feeding it made and what of it the step runs it feeds took (a media node
+        # only the latter).
         if @selected
           @node_runs = runs_of.(@selected)
           linked = ->(from, to) { @graph_edges.any? { it.from_id == from && it.to_id == to } }
           @run_inputs, @run_outputs = if @selected.step?
-            [ @node_runs.flat_map(&:source_media).uniq, @node_runs.map(&:generated_media) ]
+            [ @node_runs.flat_map(&:sources).uniq, @node_runs.map(&:result) ]
           else
-            [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:generated_media),
-              @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:source_media)
+            [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:result),
+              @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:sources)
                 .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
           end
         end
@@ -138,7 +140,7 @@ module Accounts
         gives = Hash.new { |memo, id| memo[id] = @run.gives(by_id[id], Current.account) }
         @nodes = @graph_nodes.to_h do |node|
           input = node.folder && @graph_edges.any? { it.from_id == node.id }
-          icon = input ? "inbox" : "photo" if node.folder
+          icon = { "prompt" => "chat-bubble-bottom-center-text", "review" => "star" }[node.folder.kind] || (input ? "inbox" : "photo") if node.folder
           shape = node.step? ? :step : node.note? ? :note : node.library_media ? :media : :folder
           runs = runs_of.(node)
           # A step not running can start once all its arrows in are available.
@@ -148,19 +150,20 @@ module Accounts
                        current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
                        kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input), single: node.transformation&.inputs == 1,
+                       gives: node.item_kind, takes: node.transformation&.takes&.join(" "),
                        inputs: feeds.size + (node.step? && !node.transformation.inputs ? 1 : 0), slots: node.transformation&.slots,
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
-        # What went along an edge in the run: a step's results out of it, or what its step runs took from a folder or media;
-        # until then, what the step or folder gives.
+        # The media that went along an edge in the run: a step's results out of it, or what its step runs took from a
+        # folder or media; until then, what the step or folder gives. Prompts and reviews show in the inspector only.
         carried = ->(edge) do
           from = by_id[edge.from_id]
-          media = if from.step? then runs_of.(from).filter_map(&:generated_media).presence || gives[from.id]
-          else runs_of.(by_id[edge.to_id]).flat_map(&:source_media).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
+          items = if from.step? then runs_of.(from).map(&:result).presence || gives[from.id]
+          else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
             (from.folder ? gives[from.id] : [])
           end
-          media.select { it.file.attached? }
+          items.grep(LibraryMedia).select { it.file.attached? }
         end
         @edges = @graph_edges.map do |edge|
           [ edge.from_id, edge.to_id, { id: edge.id, slot: edge.slot, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",

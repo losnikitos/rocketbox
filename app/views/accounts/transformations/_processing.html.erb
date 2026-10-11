@@ -35,8 +35,10 @@
 <% end %>
 <% if transformation.ai? %>
   <div>
-    <%= tf.label :body, "Prompt", class: field_label %>
-    <%= tf.text_area :body, rows: 6, placeholder: "Compose a collage from the interior, the barber and the client…", class: tw_input_classes %>
+    <% writes = transformation.makes == :prompt %>
+    <%= tf.label :body, writes ? "Instruction" : "Prompt", class: field_label %>
+    <%= tf.text_area :body, rows: 6, class: tw_input_classes,
+          placeholder: writes ? "Write one new shot that mixes the moods of these prompts…" : "Compose a collage from the interior, the barber and the client…" %>
   </div>
 <% end %>
 <% if transformation.ai? || type&.options %>

@@ -1,0 +1,21 @@
+<%# locals: (items:, css:) %>
+<%# A node's items in the inspector: media as thumbnails (see _media), prompts and reviews as text cards. %>
+<% media, texts = items.partition { it.is_a?(LibraryMedia) } %>
+<% if media.any? %>
+  <%= render "accounts/workflows/media", media:, css: %>
+<% end %>
+<% if texts.any? %>
+  <ul class="space-y-1.5">
+    <% texts.each do |item| %>
+      <li class="rounded-lg border border-ink-900/10 bg-white p-2.5 text-sm">
+        <% if item.is_a?(Prompt) %>
+          <%= link_to item.name, edit_prompt_path(item), data: { turbo_frame: "_top" }, class: "flex items-center gap-1.5 font-medium text-ink-900 hover:underline" %>
+          <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body.presence || "Writing…" %></p>
+        <% else %>
+          <p class="font-medium text-ink-900"><%= item.customer_name %> · <%= "★" * item.rating %></p>
+          <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body %></p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

@@ -19,3 +19,21 @@ photobank_<%= key %>:
   slug: <%= key.dasherize %>
   parent: photobank
 <% end %>
+prompts:
+  name: Prompts
+  slug: prompts
+  color: violet
+  kind: prompt
+<% %w[shots ready].each do |key| %>
+prompts_<%= key %>:
+  name: <%= key.humanize %>
+  slug: <%= key %>
+  parent: prompts
+  color: violet
+  kind: prompt
+<% end %>
+reviews:
+  name: Reviews
+  slug: reviews
+  color: amber
+  kind: review
