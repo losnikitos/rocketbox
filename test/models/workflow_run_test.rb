@@ -143,14 +143,14 @@ class WorkflowRunTest < ActiveSupport::TestCase
     run = workflow.latest_run
     assert_equal "draft", run.state
 
-    folder.update!(pinned_media_ids: [ older.id ])
+    folder.update!(pinned_ids: [ older.id ])
     run.start!(folder, user)
     assert_equal [ [ older ] ], run.step_runs.map(&:source_media)
     assert_equal [ "started", "running" ], [ run.status, run.state ]
     assert_equal [ older ], workflow.runs.create!.picked(folder, user)
     assert_equal "#{folders(:interior).path} · 1 pinned", folder.label
 
-    folder.update!(pinned_media_ids: [ "" ])
+    folder.update!(pinned_ids: [ "" ])
     run = WorkflowRun.find(run.id)
     run.start!(folder, user)
     assert_equal [ [ newest ] ], run.step_runs.reload.map(&:source_media)
@@ -174,7 +174,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal [ llm, [ chair, carpet ], folders(:prompts_ready), "" ], [ written.workflow_node, written.sources, written.result.folder, written.result.body ]
     write.(written, "An empty chair on a red carpet.")
     painted = run.step_runs.reload.last
-    assert_equal [ image, [ photo, written.result ], "Paint.\n\nAn empty chair on a red carpet." ], [ painted.workflow_node, painted.sources, painted.prompt_text ]
+    assert_equal [ image, [ photo, written.result ], "Paint.\n\n# Ready\n\nAn empty chair on a red carpet." ], [ painted.workflow_node, painted.sources, painted.prompt_text ]
 
     assert_no_difference -> { TransformationRun.count } do
       run.start!(interior, user)
@@ -183,9 +183,32 @@ class WorkflowRunTest < ActiveSupport::TestCase
     newer = Prompt.create!(name: "Mirror", body: "Mirror.", folder: daily)
     run.start!(today, user)
     rewritten = run.step_runs.reload.sole
-    assert_equal [ [ chair, carpet, newer ], false ], [ rewritten.sources, Prompt.exists?(written.result.id) ]
+    assert_equal [ [ chair, newer ], false ], [ rewritten.sources, Prompt.exists?(written.result.id) ]
     write.(rewritten, "A mirror.")
     assert_equal [ photo, rewritten.result ], run.step_runs.reload.last.sources
+  end
+
+  test "an image step picks one prompt from each prompt folder feeding it, in the order they were connected; a replay keeps them" do
+    user = users(:lazaro_nixon)
+    shots, styles = [ folders(:prompts_shots), folders(:prompts_styles) ].map do |folder|
+      2.times.map { Prompt.create!(name: "#{folder.name} #{it}", body: "#{folder.name} #{it}.", folder:) }
+    end
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Styled")
+    interior, styled, shot, image = [ { folder: folders(:interior) }, { folder: folders(:prompts_styles) }, { folder: folders(:prompts_shots) },
+      { transformation_attributes: { kind: "generate_image", body: "Paint." } } ].map { workflow.nodes.create!(it) }
+    [ [ interior, image ], [ styled, image ], [ shot, image ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    run = workflow.latest_run
+
+    run.start!(interior, user)
+    painted = run.step_runs.sole
+    _, style, scene = painted.sources
+    assert_equal [ photo, true, true ], [ painted.sources.first, styles.include?(style), shots.include?(scene) ]
+    assert_equal "Paint.\n\n# Styles\n\n#{style.body}\n\n# Shots\n\n#{scene.body}", painted.prompt_text
+
+    assert_no_difference -> { TransformationRun.count } do
+      run.start!(interior, user)
+    end
   end
 
   test "Reviews give their newest 5-star review to a review step" do
@@ -199,6 +222,25 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
     workflow.latest_run.start!(interior, user)
     assert_equal [ photo, newest ], workflow.latest_run.step_runs.sole.sources
+  end
+
+  test "a prompt folder gives its newest N, else its pins; Reviews its pinned review" do
+    user = users(:lazaro_nixon)
+    older, newer = 2.times.map { Prompt.create!(name: "Style #{it}", body: "Style #{it}.", folder: folders(:prompts_styles)) }
+    workflow = Workflow.create!(name: "Pinned prompts")
+    styles, reviews = [ folders(:prompts_styles), folders(:reviews) ].map { workflow.nodes.create!(folder: it) }
+    run = workflow.latest_run
+
+    assert_equal [ newer ], run.picked(styles, user)
+    styles.update!(take: 2)
+    assert_equal [ newer, older ], run.picked(styles, user)
+    styles.update!(pinned_ids: [ older.id ])
+    assert_equal [ [ older ], "#{folders(:prompts_styles).path} · 1 pinned" ], [ run.picked(styles, user), styles.label ]
+
+    pinned, newest = 2.times.map { user.reviews.create!(source: "google", customer_name: "Dana", rating: 5, body: "Great #{it}.") }
+    assert_equal [ newest ], run.picked(reviews, user)
+    reviews.update!(pinned_ids: [ pinned.id ])
+    assert_equal [ pinned ], run.picked(reviews, user)
   end
 
   test "an arrow carries a kind its end takes" do

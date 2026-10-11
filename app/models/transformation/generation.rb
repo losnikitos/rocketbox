@@ -6,7 +6,7 @@ class Transformation::Generation < Transformation::Type
 
   def self.ai? = true
 
-  def self.inputs = { image: 1.., prompt: 0..1 }
+  def self.inputs = { image: 1.., prompt: 0.. }
 
   private
 

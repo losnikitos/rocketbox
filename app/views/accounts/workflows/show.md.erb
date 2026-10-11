@@ -34,12 +34,12 @@
 - Selected node: <%= ref.(@selected) %>
 <% end %>
 
-How to read it (more in docs/WORKFLOWS.md): every node gives items of one kind: media, prompts or reviews. A media folder
-gives its pinned media, else its newest N, having all its tags; a prompt folder all its prompts; Reviews its 5-star
-reviews; a media node itself. A step's inputs each take a kind (images, videos, media, prompts or reviews) and a count
-(0..1, 1..1, 1..n, 0..n): a media input of 1 makes one step run per item; a prompt or review input of at most one picks
-one per step run (a prompt at random, the newest review); any other input takes all its items in each step run
-(Image, Video, reels, LLM). An image or video input skips media that isn't one. Each step run makes one item of the
+How to read it (more in docs/WORKFLOWS.md): every node gives items of one kind: media, prompts or reviews. A folder
+gives its pinned items, else its newest N: a media folder its media having all its tags, a prompt folder its prompts,
+Reviews its 5-star reviews; a media node itself. A step's inputs each take a kind (images, videos, media, prompts or reviews) and a count
+(0..1, 1..1, 1..n, 0..n): a media input of 1 makes one step run per item; a prompt or review input picks one per arrow
+into it per step run (a prompt at random, the newest review), except an LLM's; any other input takes all its items in
+each step run (Image, Video, reels, an LLM's prompts). An image or video input skips media that isn't one. Each step run makes one item of the
 kind its step makes, landing in its first output folder, else <%= Folder.ready.path %> (media) or
 <%= Folder.ready("prompt").path %> (prompts), media with the step's tags. Results don't inherit their source's tags. A
 step starts once every node feeding it gives something and each input gets at least its minimum; a step taking
@@ -90,18 +90,10 @@ flowchart LR
 <% end %>
 <% if t.ai? %>
 
-<%= t.makes == :prompt ? "Instruction (the input prompts and images are the message):" : "Prompt (a picked prompt's text is appended):" %>
+<%= t.makes == :prompt ? "Instruction (the input prompts and images are the message):" : "Prompt (each picked prompt's text is appended under a `# <folder name>` header):" %>
 
 ~~~text
 <%= t.body %>
-~~~
-<% end %>
-<% if t.style %>
-
-Style "<%= t.style.name %>", appended to the prompt:
-
-~~~text
-<%= t.style.body %>
 ~~~
 <% end %>
 <% elsif node.library_media %>
@@ -113,13 +105,8 @@ Style "<%= t.style.name %>", appended to the prompt:
 ### n<%= node.id %> · Folder <%= node.label %> (<%= node.folder.kind %>)<%= " (selected)" if node == @selected %>
 
 <% if outs.(node).any? %>
-<% if node.media_folder? %>
-- Gives: <%= node.pinned_media_ids.any? ? "its pinned media #{node.pinned_media_ids.join(", ")}" : "its newest #{node.take} media" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %><%= ", only #{node.media_type.pluralize}" if node.media_type %>
-<% elsif node.folder.prompt? %>
-- Gives: all its prompts (<%= node.folder.prompts.written.count %>, shared ones plus the account's)
-<% else %>
-- Gives: the account's 5-star reviews, newest first
-<% end %>
+<% noun = { "prompt" => "written prompts (shared ones plus the account's)", "review" => "5-star reviews" }.fetch(node.folder.kind, "media") %>
+- Gives: <%= node.pinned_ids.any? ? "its pinned #{node.folder.kind.pluralize} #{node.pinned_ids.join(", ")}" : "its newest #{node.take} #{noun}" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %><%= ", only #{node.media_type.pluralize}" if node.media_type %>
 <% end %>
 - From: <%= ins.(node).join(", ").presence || "nothing" %>
 - To: <%= outs.(node).join(", ").presence || "nothing" %>

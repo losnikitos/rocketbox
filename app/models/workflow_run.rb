@@ -2,13 +2,13 @@
 
 # One go of a workflow: each step it runs is a step run (its `step_runs`, a TransformationRun), started once every node
 # feeding the step outputs items. Played from a start node (a folder or media), whose items feed the steps downstream:
-# a media folder its pinned or newest media, a prompt folder its prompts, Reviews its 5-star reviews. A step run starts
+# a folder its pinned or newest items: media, prompts or Reviews' 5-star reviews. A step run starts
 # the steps its step feeds when it completes; a run of one media (autorun, a media page's Run in workflow) holds it in
 # `picks`, in place of the folder's. A step taking nothing it isn't given (an LLM writing from its instruction alone)
 # is a start node itself. Every node gives a list of items of one kind, each going into the step's input of that kind
 # (`Transformation::Type.inputs`): a media input of 1 takes one item per step run, the step giving what they all made
-# once they're all complete; a prompt or review input of at most one picks one per step run (a prompt at random, the
-# newest review); any other input takes all its items in each step run (e.g. a video, a reel, an LLM). A step run
+# once they're all complete; a prompt or review input picks one per arrow into it per step run (a prompt at random,
+# the newest review), except an LLM's; any other input takes all its items in each step run (e.g. a video, a reel). A step run
 # stands across plays while it stands (see `stands?`), so a replay keeps its picks and reruns only the step runs whose
 # inputs or transformation changed and the ones after them, and a step run that stands in another run is reused, sharing its result (`reuse`), so a new run makes only what's new;
 # `rerun!` forces a step afresh anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
@@ -55,19 +55,21 @@ class WorkflowRun < ApplicationRecord
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
-  # What a folder node gives in this run, as the user. A media folder: the media picked for it in `picks` (node id =>
-  # media ids), else its pinned media, else its newest N; only the user's media still in the folder (with all its tags,
-  # of its type), newest first. A prompt folder: its written prompts, shared or the user's, oldest first. Reviews: the
-  # user's 5-star reviews, newest first.
+  # What a folder node gives in this run, as the user: its items picked in `picks` (node id => media ids, a media
+  # folder's), else its pinned items, else its newest N, of its candidates.
   def picked(node, user)
+    items = candidates(node, user)
+    ((ids = picks[node.id.to_s] || node.pinned_ids.presence) ? items.where(id: ids) : items.limit(node.take)).to_a
+  end
+
+  # What a folder node can give, newest first. A media folder: the user's media still in it (with all its tags, of its
+  # type). A prompt folder: its written prompts, shared or the user's. Reviews: the user's 5-star reviews.
+  def candidates(node, user)
     folder = node.folder
     case folder.kind
-    when "prompt" then folder.prompts.written.where(user_id: [ nil, user.id ]).order(:id).to_a
-    when "review" then user.reviews.postable.where(folder:).order(id: :desc).to_a
-    else
-      media = user.library_media.where(folder:).tagged_all(node.tags.ids).of_type(node.media_type)
-      media = (ids = picks[node.id.to_s] || node.pinned_media_ids.presence) ? media.where(id: ids) : media.limit(node.take)
-      media.order(created_at: :desc).to_a
+    when "prompt" then folder.prompts.written.where(user_id: [ nil, user.id ]).order(id: :desc)
+    when "review" then user.reviews.postable.where(folder:).order(id: :desc)
+    else user.library_media.where(folder:).tagged_all(node.tags.ids).of_type(node.media_type).order(created_at: :desc)
     end
   end
 
@@ -114,14 +116,13 @@ class WorkflowRun < ApplicationRecord
 
     # A step run stands while it hasn't failed, took the batch and its picks are still given, and its transformation
     # wasn't saved since it started.
-    # ponytail: a style's text doesn't count; rerun! covers it.
     def stands?(run, batch, sides) = !run.failed? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
 
-    # Whether the step run took `batch`, and one item of each kind it picks that's still given.
+    # Whether the step run took `batch`, and one item per arrow it picks from that's still given there.
     def matches?(run, batch, sides)
       transformation = run.transformation
       picked, items = run.sources.partition { transformation.picks?(it.item_kind) }
-      items == batch && picked.map(&:item_kind).sort == sides.keys.sort && picked.all? { sides[it.item_kind].include?(it) }
+      items == batch && picked.size == sides.size && picked.zip(sides).all? { |item, given| given.include?(item) }
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands, copied into this one
@@ -173,9 +174,12 @@ class WorkflowRun < ApplicationRecord
       transformation.inputs.keys.index_with { |kind| given.flatten.select { transformation.fits?(kind, it) }.uniq }
     end
 
-    # What the inputs a step run picks one item of give, by kind, e.g. { prompt: [...] }.
+    # What each arrow a step run picks one item of gives, in the order they were connected, e.g. [[shot, ...], [style, ...]].
     def sides_of(step, user, cached: false)
-      given_to(step, user, cached:).to_h.select { |kind, items| step.transformation.picks?(kind) && items.any? }
+      edges.select { it.to_id == step.id }.filter_map do |edge|
+        items = output_of(edge.from, user, cached:)
+        items if items.any? && step.transformation.picks?(items.first.item_kind)
+      end
     end
 
     # The items of each step run the step makes from what its arrows give now, its picks aside, inputs in the type's
@@ -211,10 +215,10 @@ class WorkflowRun < ApplicationRecord
       edges.find { it.from_id == step.id && !it.to.step? }&.to&.folder || Folder.ready(step.transformation.makes)
     end
 
-    # The result, with the step's tags, lands in its output folder. Each side kind gives one pick: a prompt at random,
-    # the newest review.
+    # The result, with the step's tags, lands in its output folder. Each side gives one pick: a prompt at random, the
+    # newest review.
     def start_step(step, batch, sides, user)
-      picks = sides.map { |kind, items| kind == :prompt ? items.sample : items.first }
+      picks = sides.map { it.first.is_a?(Prompt) ? it.sample : it.first }
       step.transformation.run!(items: batch + picks, user:, folder: output_folder(step), tags: step.tags, workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e
       update!(error: "#{step.label}: #{e.record.errors.full_messages.to_sentence}")

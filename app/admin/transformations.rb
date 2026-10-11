@@ -1,14 +1,13 @@
 ActiveAdmin.register Transformation do
   actions :index, :show
 
-  includes :style, workflow_nodes: :workflow
+  includes workflow_nodes: :workflow
 
   index do
     id_column
     column :name
     column :type_label
     column(:workflows) { safe_join(it.workflow_nodes.map { auto_link(it.workflow) }, ", ") }
-    column :style
     column("Runs") { it.runs.count }
     column :updated_at
     actions
@@ -22,7 +21,6 @@ ActiveAdmin.register Transformation do
       row(:workflows) do
         safe_join(it.workflow_nodes.map { link_to it.workflow.name, workflow_path(it.workflow, node: it.id) }, ", ")
       end
-      row :style
       row :body
       row(:layer_steps) { pre JSON.pretty_generate(it.layer_steps) }
       row(:options) { pre JSON.pretty_generate(it.options) }

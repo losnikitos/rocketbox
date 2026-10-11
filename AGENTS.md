@@ -20,9 +20,9 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **SMM media pipeline:** How SMM media gets produced: workflows read media from folders, run it through transformation steps and land the results in folders (Ready by default).
 
-**Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table; each folder's `kind` says what it holds: media, prompts or reviews. Top-level folders (Inbox, Photobank, Prompts and Reviews are seeded) hold subfolders one level below of their kind (`inbox/interior`, `photobank/logo`, `prompts/shots`); Reviews holds every review itself. Ready is `photobank/ready` (or `prompts/ready` for prompts), where a step with no output folder lands. Every media, prompt and review is in exactly one folder; workflow folder nodes point at folders, and a folder's page lists the workflows reading and writing it.
+**Folders** ([model](/app/models/folder.rb), browsed at `/app/library/:root(/:child)`): one global table; each folder's `kind` says what it holds: media, prompts or reviews. Top-level folders (Inbox, Photobank, Prompts and Reviews are seeded) hold subfolders one level below of their kind (`inbox/interior`, `photobank/logo`, `prompts/shots`, `prompts/styles`); Reviews holds every review itself. Ready is `photobank/ready` (or `prompts/ready` for prompts), where a step with no output folder lands. Every media, prompt and review is in exactly one folder; workflow folder nodes point at folders, and a folder's page lists the workflows reading and writing it.
 
-**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, style, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created, and says which item kinds it takes and makes (an LLM takes prompts and writes one). Every run is a `TransformationRun` of polymorphic input items and result; a generated media's page links to the step that made it.
+**Transformations** ([model](/app/models/transformation.rb), types under [transformation/](/app/models/transformation/)): a named processing step (type, prompt, options, layer steps), owned by one workflow step and edited in the workflow's inspector ([controller](/app/controllers/accounts/transformations_controller.rb)). Its type is picked from the workflow's + Add popover and fixed once created, and says which item kinds it takes and makes (an LLM takes prompts and writes one). Every run is a `TransformationRun` of polymorphic input items and result; a generated media's page links to the step that made it.
 
 **Workflows:** the media pipeline — a graph of folder (media, prompt or review), media and transformation step nodes, typed edges carrying items of one kind, with colored Markdown sticky notes beside them, edited and run on a flow canvas at `/app/workflows` (laid out with dagre in [flow_controller](/app/javascript/controllers/flow_controller.js)); inspired by n8n, ComfyUI, Zapier and friends. A media's page can run it in a workflow starting from its folder. See [WORKFLOWS.md](./docs/WORKFLOWS.md). Given a workflow URL, curl its `.md` first: graph, step settings and runs in one page ([how](./docs/WORKFLOWS.md#reading-a-workflow-agents)).
 
@@ -31,8 +31,7 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 ```mermaid
 flowchart LR
  Inbox[/Inbox/] --> InboxSteps[Steps] --> Photobank[/Photobank/] --> Steps --> Ready[/Ready/] --> Scripted[Scripted steps] --> Stories[/Stories/]
- Styles[/Styles/] --> Steps
- Prompts[/Prompts/] --> Steps
+ Prompts[/Prompts: shots, styles/] --> Steps
  Prompts --> LLM[LLM steps] --> Prompts
  Layers[/Layers/] --> Scripted
  Reviews[/Reviews/] --> Scripted

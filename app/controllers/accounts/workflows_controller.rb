@@ -95,7 +95,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_media_ids: [] }, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_ids: [] }, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
       end
 
@@ -111,10 +111,9 @@ module Accounts
         @graph_edges = @workflow.edges.select(&:persisted?)
         @selected = @graph_nodes.find { it.id == params[:node].to_i }
         @selected_edge = @graph_edges.find { it.id == params[:edge].to_i }
-        @folder_items = @run.picked(@selected, Current.account) if @selected&.folder && !@selected.media_folder?
-        if @selected&.media_folder?
-          @folder_media = Current.account.library_media.where(folder: @selected.folder).tagged_all(@selected.tags.ids).of_type(@selected.media_type).with_attached_file
-            .includes(:transformation_run).order(created_at: :desc)
+        if @selected&.folder
+          @folder_items = @run.candidates(@selected, Current.account)
+          @folder_items = @folder_items.with_attached_file.includes(:transformation_run) if @selected.media_folder?
         end
         # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
         runs_of = ->(node) { @step_runs.select { it.workflow_node_id == node.id } }
@@ -167,7 +166,7 @@ module Accounts
         @edges = @graph_edges.map do |edge|
           [ edge.from_id, edge.to_id, { id: edge.id, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
                                         current: edge == @selected_edge, available: gives[edge.from_id].any?,
-                                        items: carried.(edge), pinned: by_id[edge.from_id].pinned_media_ids } ]
+                                        items: carried.(edge), pinned: by_id[edge.from_id].pinned_ids } ]
         end
       end
   end

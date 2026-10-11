@@ -6,14 +6,13 @@
 # one photo or video, as the same, or as a video (Zoom); a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs, or its type's own (see GenerationOptions).
-# Its type `takes` items of some kinds and `makes` one kind; besides them, an AI kind making media has a fixed `style`.
+# Its type `takes` items of some kinds and `makes` one kind.
 class Transformation < ApplicationRecord
   include GenerationOptions
 
   # Runs outlive their transformation.
   has_many :runs, class_name: "TransformationRun", dependent: :nullify
   has_many :workflow_nodes, dependent: :restrict_with_error
-  belongs_to :style, optional: true
 
   delegate :ai?, :video?, :single?, :reel?, :inputs, :takes, :fits?, :picks?, :makes, :layer, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
@@ -22,10 +21,7 @@ class Transformation < ApplicationRecord
   # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
 
-  before_validation do
-    self.style = nil unless styled?
-    self.layer_steps = [] unless layer_steps?
-  end
+  before_validation { self.layer_steps = [] unless layer_steps? }
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
   # The type is picked once, on create.
@@ -36,9 +32,6 @@ class Transformation < ApplicationRecord
 
   # Whether its layer is filled from `layer_steps`; the review type fills it from a review.
   def layer_steps? = layer.present? && !takes.include?(:review)
-
-  # Whether it takes a style: an AI kind making media.
-  def styled? = ai? && makes == :media
 
   # "Generation · Image", or "Overlay · Fully booked".
   def type_label = type&.then { "#{it.group.label} · #{it.label}" }
@@ -58,13 +51,13 @@ class Transformation < ApplicationRecord
     end.join(" · ").presence || type_label
   end
 
-  # `items` are the run's inputs, in order: its main items, then the prompt and review it picked. The result lands in
+  # `items` are the run's inputs, in order: its main items, then the prompts and review it picked. The result lands in
   # `folder` with `tags` (media). `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
   # `user` owns the result.
   # Runs the transformation as it is in memory, unsaved edits included (see TransformationRun#start!).
   # Raises ActiveRecord::RecordInvalid when the items don't fit or an option isn't available.
   def run!(items:, folder:, user: items.first&.user, tags: [], workflow_run: nil, workflow_node: nil)
-    runs.new(style:, workflow_run:, workflow_node:,
+    runs.new(workflow_run:, workflow_node:,
              inputs: items.each_with_index.map { |item, position| TransformationRunInput.new(item:, position:) })
       .start!(user, folder:, tags:)
   end

@@ -4,7 +4,6 @@
   <tbody class="divide-y divide-ink-900/10">
     <% [
          *rows,
-         [ "Style", record.style&.name ],
          [ "Model", options["model"] ],
          [ "Aspect ratio", options["aspect_ratio"].presence || "Auto" ],
          [ "Size", options["resolution"]&.upcase ],
