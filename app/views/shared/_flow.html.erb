@@ -6,8 +6,9 @@
 <%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked); available draws it green. %>
 <%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
 <%# gives (the kind of items a node gives) and takes (a :step's kinds, space-separated) decide what may connect. %>
-<%# An edge's optional media (a list of what went along it) shows on its middle: one as a thumbnail opening in a lightbox, more as a stack %>
-<%# that opens them all in a popover, each opening in a lightbox from there; pinned (media ids) badges those with a pin. %>
+<%# An edge's optional items (a list of what went along it, all of one kind) show on its middle: one media as a thumbnail opening in a %>
+<%# lightbox, more as a stack that opens them all in a popover, each opening in a lightbox from there; pinned (media ids) badges those %>
+<%# with a pin. Prompts and reviews show as small text cards, stacked the same way, opening their full text in a popover. %>
 <%# A :note is a sticky note: its Markdown note on a card in its color, connecting to nothing. %>
 <%# play (a start node's, or a :step's whose inputs are complete; or a run :step's rerun) adds a play button on the node's top-left corner that submits the page's #workflow_play form with node_id. %>
 <% thumb = ->(media, pinned, css) { capture do %>
@@ -23,7 +24,19 @@
     <% end %>
   </button>
 <% end } %>
-<div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.map { |from, to, edge| [ from, to, edge&.except(:media, :pinned) ].compact }.to_json %>"
+<% card = ->(item) { capture do %>
+  <span class="flex aspect-2/3 h-24 flex-col gap-0.5 overflow-hidden rounded-md border border-ink-900/10 bg-white p-1.5 text-left text-[0.5rem] leading-tight font-normal text-ink-600 shadow-sm">
+    <% if item.is_a?(Prompt) %>
+      <span class="line-clamp-2 font-semibold text-ink-900"><%= item.name %></span>
+      <span class="line-clamp-6"><%= item.body.presence || "Writing…" %></span>
+    <% else %>
+      <span class="truncate font-semibold text-ink-900"><%= item.customer_name %></span>
+      <span class="text-signal-yellow"><%= "★" * item.rating %></span>
+      <span class="line-clamp-5"><%= item.body %></span>
+    <% end %>
+  </span>
+<% end } %>
+<div class="<%= height %> overflow-auto" data-controller="flow" data-flow-edges-value="<%= edges.map { |from, to, edge| [ from, to, edge&.except(:items, :pinned) ].compact }.to_json %>"
      data-action="click->flow#clear wheel->flow#wheel:!passive gesturestart->flow#gesture:!passive gesturechange->flow#gesture:!passive scroll->flow#remember
                   pointerdown->flow#lasso pointermove->flow#sweep pointerup->flow#stop pointercancel->flow#stop">
   <%# Laid out by flow_controller; hidden until the nodes are placed. %>
@@ -37,24 +50,28 @@
     </svg>
     <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from starting a selection or deselecting. %>
     <% edges.each do |from, to, edge| %>
-      <% next if edge&.dig(:media).blank? %>
+      <% items = edge&.dig(:items) %>
+      <% next if items.blank? %>
+      <% media = items.first.is_a?(LibraryMedia) %>
       <span data-flow-target="output" data-v="<%= from %>" data-w="<%= to %>" class="absolute -translate-1/2">
-        <% if edge[:media].one? %>
-          <%= thumb.(edge[:media].first, edge[:pinned], "h-24 w-auto rounded-md border-2 border-white shadow-sm") %>
+        <% if media && items.one? %>
+          <%= thumb.(items.first, edge[:pinned], "h-24 w-auto rounded-md border-2 border-white shadow-sm") %>
         <% else %>
-          <% label = "View #{edge[:media].size} media" %>
+          <% label = "View #{media ? "#{items.size} media" : pluralize(items.size, items.first.item_kind.to_s)}" %>
           <%# The first three fanned out, the first on top. %>
-          <button type="button" popovertarget="flow_edge_<%= from %>_<%= to %>_media" aria-label="<%= label %>" title="<%= label %>"
+          <button type="button" popovertarget="flow_edge_<%= from %>_<%= to %>_items" aria-label="<%= label %>" title="<%= label %>"
                   style="anchor-name: --flow-edge-<%= from %>-<%= to %>"
                   class="relative grid cursor-pointer place-items-center rounded-md *:col-start-1 *:row-start-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
-            <% edge[:media].first(3).each_with_index.reverse_each do |media, i| %>
+            <% items.first(3).each_with_index.reverse_each do |item, i| %>
               <span class="block <%= [ "", "rotate-6", "-rotate-6" ][i] %>">
-                <%= render "accounts/library/file", media:, play: i.zero?, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm" %>
+                <%= media ? render("accounts/library/file", media: item, play: i.zero?, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm") : card.(item) %>
               </span>
             <% end %>
-            <span class="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink-900 px-1.5 text-xs font-semibold text-white tabular-nums ring-2 ring-white">
-              <%= edge[:media].size %>
-            </span>
+            <% if items.many? %>
+              <span class="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink-900 px-1.5 text-xs font-semibold text-white tabular-nums ring-2 ring-white">
+                <%= items.size %>
+              </span>
+            <% end %>
           </button>
         <% end %>
       </span>
@@ -158,14 +175,23 @@
 <%# Outside the canvas, so its zoom and the flow's clicks leave them be. A stack opens centred on itself, shrinking to %>
 <%# stay centred near the screen's edges; a lightbox opened from it nests, so closing the lightbox goes back to the stack. %>
 <% edges.each do |from, to, edge| %>
-  <% next unless edge&.dig(:media).to_a.many? %>
-  <ul id="flow_edge_<%= from %>_<%= to %>_media" popover aria-label="Media" style="position-anchor: --flow-edge-<%= from %>-<%= to %>"
-      class="inset-0 m-0 open:flex max-h-96 max-w-md flex-wrap justify-center gap-2 overflow-y-auto rounded-2xl border border-ink-900/10 bg-white p-3 shadow-xl [align-self:anchor-center] [justify-self:anchor-center]">
-    <% edge[:media].each do |media| %>
-      <li><%= thumb.(media, edge[:pinned], "h-28 w-auto rounded-lg") %></li>
+  <% items = edge&.dig(:items).to_a %>
+  <% media = items.first.is_a?(LibraryMedia) %>
+  <% next unless media ? items.many? : items.any? %>
+  <div id="flow_edge_<%= from %>_<%= to %>_items" popover aria-label="<%= media ? "Media" : items.first.item_kind.to_s.pluralize.capitalize %>"
+       style="position-anchor: --flow-edge-<%= from %>-<%= to %>"
+       class="inset-0 m-0 max-h-96 overflow-y-auto rounded-2xl border border-ink-900/10 bg-white p-3 shadow-xl [align-self:anchor-center] [justify-self:anchor-center] <%= media ? "max-w-md" : "w-80" %>">
+    <% if media %>
+      <ul class="flex flex-wrap justify-center gap-2">
+        <% items.each do |item| %>
+          <li><%= thumb.(item, edge[:pinned], "h-28 w-auto rounded-lg") %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <%= render "accounts/workflows/items", items:, css: nil %>
     <% end %>
-  </ul>
+  </div>
 <% end %>
-<% edges.flat_map { it[2]&.dig(:media).to_a }.uniq.each do |media| %>
+<% edges.flat_map { it[2]&.dig(:items).to_a }.grep(LibraryMedia).uniq.each do |media| %>
   <%= render "accounts/library/quick_view", media:, button: false, id: dom_id(media, :quick_view) %>
 <% end %>
