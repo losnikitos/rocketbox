@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # AI request options in an `options` JSON column: the model (one of `models`, enabled in Active Admin) picks the
-# provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS. New records start from `inherited_options`
+# provider, the rest are that provider's IMAGE_OPTIONS or VIDEO_OPTIONS (none for an LLM's chat model). New records start from `inherited_options`
 # (a transformation run from its transformation), then the defaults below. Includers define `video?` and `type`.
 module GenerationOptions
   extend ActiveSupport::Concern
@@ -45,6 +45,8 @@ module GenerationOptions
       "duration" => %w[4 6 8]
     }
   }.freeze
+  # A prompt-writing type picks just the model.
+  CHAT_OPTIONS = { "xai" => {}, "openai" => {}, "gemini" => {} }.freeze
   # Offered by every provider.
   IMAGE_DEFAULTS = { "aspect_ratio" => "9:16", "resolution" => "2k" }.freeze
   VIDEO_DEFAULTS = { "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "8" }.freeze
@@ -59,11 +61,14 @@ module GenerationOptions
 
   def inherited_options = {}
 
-  def option_sets = video? ? VIDEO_OPTIONS : IMAGE_OPTIONS
+  # The RubyLLM model type it picks from.
+  def model_type = video? ? :video : type&.makes == :prompt ? :chat : :image
+
+  def option_sets = { video: VIDEO_OPTIONS, chat: CHAT_OPTIONS }.fetch(model_type, IMAGE_OPTIONS)
 
   def models
-    (@models ||= {})[video?] ||= RubyLLM::ActiveRecord::Model.enabled.where(provider: option_sets.keys)
-      .select { it.type == (video? ? :video : :image) }
+    (@models ||= {})[model_type] ||= RubyLLM::ActiveRecord::Model.enabled.where(provider: option_sets.keys)
+      .select { it.type == model_type }
       .sort_by.with_index { |model, i| [ model.price_band || 4, i ] } # cheapest first, unbanded last
   end
 
