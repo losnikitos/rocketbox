@@ -133,7 +133,7 @@
           <% end %>
           <% if run.transformation ? run.transformation.ai? : run.prompt_text.present? %>
             <%= render "accounts/transformation_runs/options", record: run, rows: [
-                  [ "Prompt", run.prompt && link_to(run.prompt.name, edit_prompt_path(run.prompt), class: "underline hover:text-ink-600") ]
+                  [ "Prompts", safe_join(run.prompts.map { link_to(it.name, edit_prompt_path(it), class: "underline hover:text-ink-600") }, ", ") ]
                 ] %>
           <% end %>
           <% if run.prompt_text.present? %>

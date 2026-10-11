@@ -7,14 +7,13 @@
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt_text` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps
-# the text as sent, as the transformation, prompt and style may change later.
+# the text as sent, as the transformation and prompts may change later.
 class TransformationRun < ApplicationRecord
   include GenerationOptions
 
   STATUSES = %w[running complete failed].freeze
 
   belongs_to :transformation, optional: true
-  belongs_to :style, optional: true
   belongs_to :workflow_run, optional: true
   belongs_to :workflow_node, optional: true
   # Not its `transformation_run`: a step run reusing it shares it.
@@ -50,8 +49,7 @@ class TransformationRun < ApplicationRecord
   # Every item it took, in order; also before save.
   def sources = inputs.map(&:item)
   def source_media = sources.grep(LibraryMedia)
-  # The prompt and review it picked: the last of its kind, as an LLM takes all its prompts.
-  def prompt = sources.grep(Prompt).last
+  def prompts = sources.grep(Prompt)
   def review = sources.grep(Review).last
 
   # Its result when that's a media or a prompt.
@@ -66,8 +64,8 @@ class TransformationRun < ApplicationRecord
     else
       LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
     end
-    picked = (prompt if transformation.picks?(:prompt))
-    self.prompt_text = [ transformation.body, picked&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
+    picked = transformation.picks?(:prompt) ? prompts : []
+    self.prompt_text = [ transformation.body, *picked.map { "# #{it.folder.name}\n\n#{it.body}" } ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
     self

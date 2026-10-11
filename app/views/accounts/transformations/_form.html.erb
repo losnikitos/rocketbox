@@ -16,12 +16,6 @@
 
   <%= render "accounts/transformations/processing", tf: f, transformation:, scope:, refresh_url: transformation_path(transformation) %>
 
-  <% if transformation.styled? %>
-    <div>
-      <%= f.label :style_id, "Style", class: field_label %>
-      <%= f.select :style_id, Style.ordered.pluck(:name, :id), { include_blank: "None" }, class: tw_input_classes %>
-    </div>
-  <% end %>
   <% if transformation.layer_steps? %>
     <div>
       <p class="<%= field_label %>">Layer · <%= transformation.layer.name %></p>

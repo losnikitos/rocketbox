@@ -6,7 +6,7 @@ import dagre from "@dagrejs/dagre"
 // arrows, solid green when available (media ready to go along them); an edge with a path is clicked like a node's link.
 // Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
 // centres, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or scrolled to pan; zoom and scroll
-// survive reloads of the page. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
+// survive reloads of the page. Double-clicking a node with data-open opens that URL in a new tab. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
 // data-v and data-w) sit on the middle of their edge.
@@ -161,6 +161,12 @@ export default class extends Controller {
     if (this.dragged) event.preventDefault()
     else this.select(event.currentTarget)
     this.dragged = false
+  }
+
+  // A double-click opens the node's data-open, if any, in a new tab.
+  open(event) {
+    const url = event.currentTarget.dataset.open
+    if (url) window.open(url, "_blank", "noopener")
   }
 
   pick(event) {

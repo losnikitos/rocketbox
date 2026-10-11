@@ -24,7 +24,7 @@ prompts:
   slug: prompts
   color: violet
   kind: prompt
-<% %w[shots ready].each do |key| %>
+<% %w[shots styles ready].each do |key| %>
 prompts_<%= key %>:
   name: <%= key.humanize %>
   slug: <%= key %>

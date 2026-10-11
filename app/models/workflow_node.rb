@@ -5,9 +5,10 @@
 # Every node but a note gives items of one kind (`item_kind`): a folder its kind's (media, prompts or reviews), a media
 # itself, a step what its type makes. A folder's role comes from its edges: one feeding a step is an input, one a step
 # feeds is an output.
-# A media folder's tags filter what it gives to its media with all of them, and its `media_type` (nil for any) to images
-# or videos; it gives its pinned media (`pinned_media_ids`, every run until reset), else its newest `take` media. A
-# prompt folder gives its prompts, the Reviews folder its 5-star reviews. A step's tags go on what it makes.
+# A folder gives its pinned items (`pinned_ids`, every run until reset), else its newest `take`: a media folder of its
+# media, a prompt folder of its prompts, the Reviews folder of its 5-star reviews. A media folder's tags filter what it
+# gives to its media with all of them, and its `media_type` (nil for any) to images or videos. A step's tags go on what
+# it makes.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow, touch: true
@@ -16,7 +17,7 @@ class WorkflowNode < ApplicationRecord
   belongs_to :transformation, optional: true, dependent: :destroy
   accepts_nested_attributes_for :transformation
 
-  normalizes :tag_ids, :pinned_media_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
+  normalizes :tag_ids, :pinned_ids, with: ->(ids) { Array(ids).compact_blank.map(&:to_i).uniq }
   normalizes :media_type, with: -> { it.presence }
 
   before_validation { transformation.name = transformation.type&.label if transformation&.new_record? && transformation.name.blank? }
@@ -49,10 +50,10 @@ class WorkflowNode < ApplicationRecord
       (media_type.nil? || (media_type == "image" ? media.story_image? : media.video?))
   end
 
-  # A media folder's media type and how many it gives, e.g. "Videos · take 3".
+  # A folder's media type and how many it gives, e.g. "Videos · take 3".
   def gives
-    return unless media_folder?
-    [ media_type&.pluralize&.capitalize, pinned_media_ids.any? ? "#{pinned_media_ids.size} pinned" : ("take #{take}" if take.to_i > 1) ].compact.join(" · ").presence
+    return unless folder
+    [ media_type&.pluralize&.capitalize, pinned_ids.any? ? "#{pinned_ids.size} pinned" : ("take #{take}" if take.to_i > 1) ].compact.join(" · ").presence
   end
 
   def label

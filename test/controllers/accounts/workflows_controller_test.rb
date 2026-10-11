@@ -214,10 +214,16 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#flow_edge_#{reviews.id}_#{praise.id}_items[popover]", text: /Best fade\./
     get workflow_url(workflow, account: admin.id, node: ready.id)
     assert_select "section[aria-label=Prompts] a[href=?]", edit_prompt_path(written.result, account: admin.id), text: written.result.name
+    reviews.update!(pinned_ids: [ review.id ])
+    get workflow_url(workflow, account: admin.id, node: reviews.id)
+    assert_select "turbo-frame#inspector input[name='workflow[nodes_attributes][0][take]']"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] input[type=radio][name='workflow[nodes_attributes][0][pinned_ids][]'][value='#{review.id}'][checked]"
+    assert_select "[data-flow-target=output][data-v=?] [title=Pinned]", reviews.id.to_s
 
     get workflow_url(workflow, format: :md), headers: { "Authorization" => "Bearer secret" }
     assert_response :success
-    assert_includes response.body, %(### n#{reviews.id} · Folder Reviews (review))
+    assert_includes response.body, %(### n#{reviews.id} · Folder Reviews · 1 pinned (review))
+    assert_includes response.body, "- Gives: its pinned reviews #{review.id}"
     assert_includes response.body, "- Takes: prompts 0..n, images 0..n; makes: prompts"
     assert_includes response.body, "- Takes: media 1..1, reviews 1..1; makes: media"
     assert_includes response.body, %(- In: prompt #{shot.id} "Empty Chair" in #{folders(:prompts_shots).path}: The empty chair.)
@@ -280,7 +286,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal popovers.uniq, popovers
 
     get workflow_url(workflow, account: admin.id, run: run.id, node: folder.id)
-    pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_media_ids][]'][value='#{media.id}']"
+    pin = "turbo-frame#inspector section[aria-label=Pins] input[name='workflow[nodes_attributes][0][pinned_ids][]'][value='#{media.id}']"
     assert_select "#{pin}[type=radio]:not([checked]):not([disabled])"
     assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins", count: 0
     folder.update!(take: 2)
@@ -289,16 +295,16 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     folder.update!(take: 1)
     assert_select "a[data-id=?] button[title='Run again']", step.id.to_s, count: 0
 
-    pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_media_ids: [ "", *ids ] } } } } }
+    pins = ->(ids) { patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: folder.id, pinned_ids: [ "", *ids ] } } } } }
     pins.([ media.id ])
-    assert_equal [ media.id ], folder.reload.pinned_media_ids
+    assert_equal [ media.id ], folder.reload.pinned_ids
     draft = workflow.runs.create!
     get workflow_url(workflow, account: admin.id, run: draft.id, node: folder.id)
     assert_select "span", text: "Draft"
     assert_select "#{pin}[checked]"
     assert_select "turbo-frame#inspector section[aria-label=Pins] button", text: "Reset pins"
     pins.([])
-    assert_empty folder.reload.pinned_media_ids
+    assert_empty folder.reload.pinned_ids
 
     run.step_runs.sole.update!(status: "complete")
     get workflow_url(workflow, account: admin.id, run: run.id)
@@ -372,7 +378,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-flow-target=output][data-v=?] button[popovertarget=?][aria-label='View 2 media']", folder.id.to_s, stack
     assert_equal [ newer, older ].map { dom_id(it, :quick_view) }, css_select("##{stack}[popover] li button").map { it["popovertarget"] }
 
-    folder.update!(pinned_media_ids: [ older.id ])
+    folder.update!(pinned_ids: [ older.id ])
     get workflow_url(workflow, account: admin.id)
     assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?][aria-label='View pinned media']", folder.id.to_s, step.id.to_s, dom_id(older, :quick_view)
   end

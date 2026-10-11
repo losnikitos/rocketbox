@@ -9,6 +9,9 @@ class Transformation::Llm < Transformation::Generation
 
   def self.inputs = { prompt: 0.., image: 0.. }
 
+  # Takes all its prompts.
+  def self.picks?(kind) = false
+
   def self.makes = :prompt
 
   def body

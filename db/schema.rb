@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_230000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -364,13 +364,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
     t.index ["smm_post_id"], name: "index_smm_slides_on_smm_post_id"
   end
 
-  create_table "styles", force: :cascade do |t|
-    t.text "body", null: false
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "subscriptions", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.datetime "created_at", null: false
@@ -421,13 +414,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
     t.integer "result_id", null: false
     t.string "result_type", null: false
     t.string "status", default: "running", null: false
-    t.integer "style_id"
     t.integer "transformation_id"
     t.datetime "updated_at", null: false
     t.integer "workflow_node_id"
     t.integer "workflow_run_id"
     t.index ["result_type", "result_id"], name: "index_transformation_runs_on_result"
-    t.index ["style_id"], name: "index_transformation_runs_on_style_id"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
     t.index ["workflow_node_id"], name: "index_transformation_runs_on_workflow_node_id"
     t.index ["workflow_run_id"], name: "index_transformation_runs_on_workflow_run_id"
@@ -440,9 +431,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
     t.json "layer_steps", default: [], null: false
     t.string "name", null: false
     t.json "options", default: {}, null: false
-    t.integer "style_id"
     t.datetime "updated_at", null: false
-    t.index ["style_id"], name: "index_transformations_on_style_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -493,7 +482,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
     t.integer "library_media_id"
     t.string "media_type"
     t.text "note"
-    t.json "pinned_media_ids", default: [], null: false
+    t.json "pinned_ids", default: [], null: false
     t.json "tag_ids", default: [], null: false
     t.integer "take", default: 1, null: false
     t.integer "transformation_id"
@@ -553,11 +542,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_200000) do
   add_foreign_key "subscriptions", "users"
   add_foreign_key "suggestions", "crawls"
   add_foreign_key "transformation_run_inputs", "transformation_runs", on_delete: :cascade
-  add_foreign_key "transformation_runs", "styles", on_delete: :nullify
   add_foreign_key "transformation_runs", "transformations", on_delete: :nullify
   add_foreign_key "transformation_runs", "workflow_nodes", on_delete: :nullify
   add_foreign_key "transformation_runs", "workflow_runs", on_delete: :cascade
-  add_foreign_key "transformations", "styles", on_delete: :nullify
   add_foreign_key "workflow_edges", "workflow_nodes", column: "from_id", on_delete: :cascade
   add_foreign_key "workflow_edges", "workflow_nodes", column: "to_id", on_delete: :cascade
   add_foreign_key "workflow_edges", "workflows", on_delete: :cascade

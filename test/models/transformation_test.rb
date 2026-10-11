@@ -154,32 +154,29 @@ class TransformationTest < ActiveSupport::TestCase
     Transformation::Type.all.each { assert Rails.root.join("app/assets/images", it.cover).exist?, it.slug }
   end
 
-  test "a picked prompt paints after the body, before its fixed style; a shared or own prompt only, one at most" do
+  test "picked prompts paint after the body in order, each under its folder's name; shared or own prompts only" do
     prompts = []
     RubyLLM.define_singleton_method(:paint) do |prompt, **|
       prompts << prompt
       RubyLLM::Image.new(data: Base64.strict_encode64("jpeg-bytes"))
     end
-    style = Style.create!(name: "Film", body: "35mm grain.")
-    @collage.update!(style:)
     prompt = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: folders(:prompts_shots))
-    other = Prompt.create!(name: "Red Carpet", body: "A premiere.", folder: folders(:prompts_shots))
+    style = Prompt.create!(name: "Film", body: "35mm grain.", folder: folders(:prompts_styles))
     stranger = Prompt.create!(name: "Theirs", body: "Theirs.", folder: folders(:prompts_shots), user: users(:admin_user))
     media = [ @interior, @customer ]
 
-    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ *media, prompt, other ]) }
     assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ *media, stranger ]) }
     assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ prompt ]) }
-    run = start(@collage, [ *media, prompt ])
+    run = start(@collage, [ *media, prompt, style ])
     run.run!
 
-    assert_equal [ "Compose a collage.\n\nThe empty chair.\n\n35mm grain." ], prompts
-    assert_equal [ prompts.first, prompt, style, media ], [ run.reload.prompt_text, run.prompt, run.style, run.source_media ]
+    assert_equal [ "Compose a collage.\n\n# Shots\n\nThe empty chair.\n\n# Styles\n\n35mm grain." ], prompts
+    assert_equal [ prompts.first, [ prompt, style ], media ], [ run.reload.prompt_text, run.prompts, run.source_media ]
   end
 
   test "an LLM writes one prompt from the prompts and images fed to it, or none, into the given folder, its body the instruction" do
-    llm = Transformation.create!(name: "Mix", kind: "llm", body: "Blend these into one shot.", style: Style.create!(name: "Film", body: "35mm grain."))
-    assert_equal [ { prompt: 0.., image: 0.. }, %i[prompt media], :prompt, nil ], [ llm.inputs, llm.takes, llm.makes, llm.style ]
+    llm = Transformation.create!(name: "Mix", kind: "llm", body: "Blend these into one shot.")
+    assert_equal [ { prompt: 0.., image: 0.. }, %i[prompt media], :prompt, false ], [ llm.inputs, llm.takes, llm.makes, llm.picks?(:prompt) ]
     assert_equal [ { "model" => "grok-4.6" }, [ "grok-4.6" ] ], [ llm.options, llm.models.map(&:model_id) ]
     shots = [ "The empty chair.", "A premiere." ].map.with_index { |body, i| Prompt.create!(name: "Shot #{i}", body:, folder: folders(:prompts_shots)) }
     asked = stub_chat("An empty chair at a premiere.")
@@ -201,12 +198,11 @@ class TransformationTest < ActiveSupport::TestCase
   end
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
-    style = Style.create!(name: "Film", body: "35mm grain.")
-    review = Transformation.create!(name: "Reviews", kind: "review", style:)
-    assert_equal [ nil, %i[media review], "review" ], [ review.style, review.takes, review.layer.slug ]
+    review = Transformation.create!(name: "Reviews", kind: "review")
+    assert_equal [ %i[media review], "review" ], [ review.takes, review.layer.slug ]
 
-    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x", style:)
-    assert_equal [ style, %i[media prompt], nil ], [ image.style, image.takes, image.layer ]
+    image = Transformation.create!(name: "Collage", kind: "generate_image", body: "x")
+    assert_equal [ %i[media prompt], nil ], [ image.takes, image.layer ]
 
     assert_not review.update(kind: "generate_image")
     assert_includes review.errors.full_messages, "Kind can't be changed"
