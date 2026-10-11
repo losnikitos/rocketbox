@@ -320,7 +320,9 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     folder.update!(take: 2)
     get workflow_url(workflow, account: admin.id)
-    assert_equal [ newer, older ].map { dom_id(it, :quick_view) }, css_select("[data-flow-target=output][data-v='#{folder.id}'] button").map { it["popovertarget"] }
+    stack = "flow_edge_#{folder.id}_#{step.id}_media"
+    assert_select "[data-flow-target=output][data-v=?] button[popovertarget=?][aria-label='View 2 media']", folder.id.to_s, stack
+    assert_equal [ newer, older ].map { dom_id(it, :quick_view) }, css_select("##{stack}[popover] li button").map { it["popovertarget"] }
 
     folder.update!(pinned_media_ids: [ older.id ])
     get workflow_url(workflow, account: admin.id)
