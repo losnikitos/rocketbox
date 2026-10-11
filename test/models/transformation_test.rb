@@ -82,6 +82,7 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal [ "complete", nil ], [ run.reload.status, run.prompt_text ]
     file = run.generated_media.reload.file
     assert_equal [ "video", "video/mp4", "steps_#{run.id}.mp4" ], [ run.generated_media.kind, file.content_type, file.filename.to_s ]
+    return unless render_media?
     duration = file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", it.path).first.to_f }
     assert_in_delta 2.0, duration, 0.1
   end
@@ -93,6 +94,7 @@ class TransformationTest < ActiveSupport::TestCase
       run.run!
 
       assert_equal "complete", run.reload.status, run.error
+      return unless render_media?
       probe = run.generated_media.reload.file.open do
         Open3.capture2("ffprobe", "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "csv=p=0", it.path).first
       end
@@ -102,6 +104,7 @@ class TransformationTest < ActiveSupport::TestCase
   end
 
   test "gm_visuals speed-ramps videos shorter than their cuts without coming up short" do
+    skip "needs RENDER_MEDIA=1" unless render_media?
     gm = Transformation.create!(name: "GM", kind: "gm_visuals")
     Dir.mktmpdir do |dir|
       clip = File.join(dir, "clip.mp4")
@@ -285,6 +288,7 @@ class TransformationTest < ActiveSupport::TestCase
     assert_not_includes htmls.sole, "background-image: url("
     media = run.generated_media.reload
     assert_equal [ "video", "video/mp4" ], [ media.kind, media.file.content_type ]
+    return unless render_media?
     probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "csv=p=0", it.path).first }
     assert_equal "1080,1920", probe.lines.first.strip
     assert_in_delta 1.0, probe.lines.last.to_f, 0.1
@@ -310,6 +314,7 @@ class TransformationTest < ActiveSupport::TestCase
       assert_equal "complete", run.reload.status, run.error
       media = run.generated_media.reload
       assert_equal [ kind, content_type ], [ media.kind, media.file.content_type ]
+      next unless render_media?
       probe = media.file.open { Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", it.path).first }
       assert_equal [ "1080,1920", streams ], [ probe.lines.first.strip, probe.lines.size ]
       red = media.file.open do |file|
@@ -343,6 +348,7 @@ class TransformationTest < ActiveSupport::TestCase
       assert_equal "complete", run.reload.status, run.error
       media = run.generated_media.reload
       assert_equal [ "video", "video/mp4" ], [ media.kind, media.file.content_type ]
+      next unless render_media?
       probe, (first, last) = media.file.open do |file|
         [ Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration", "-of", "csv=p=0", file.path).first,
           [ %w[-ss 0], %w[-sseof -0.1] ].map do |seek|
@@ -379,6 +385,7 @@ class TransformationTest < ActiveSupport::TestCase
       assert_equal "complete", run.reload.status, run.error
       graded = run.generated_media.reload
       assert_equal [ kind, content_type ], [ graded.kind, graded.file.content_type ]
+      next unless render_media?
       probe, average = graded.file.open do |file|
         frame = kind == "video" ? Open3.capture2("ffmpeg", "-loglevel", "error", "-i", file.path, "-frames:v", "1", "-f", "image2pipe", "-c:v", "png", "-").first : File.binread(file.path)
         [ Open3.capture2("ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", file.path).first,

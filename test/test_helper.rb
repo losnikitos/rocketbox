@@ -4,6 +4,12 @@ require "rails/test_help"
 
 Dir[Rails.root.join("test/support/**/*.rb")].sort.each { |f| require f }
 
+# ffmpeg is mocked unless RENDER_MEDIA=1: each call copies a canned file of its output's extension to its output path.
+module MockFfmpeg
+  def ffmpeg!(*args) = FileUtils.cp(Rails.root.join("test/fixtures/files/rendered#{File.extname(args.last)}"), args.last)
+end
+Transformation::Type.prepend(MockFfmpeg) unless ENV["RENDER_MEDIA"].present?
+
 class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
   parallelize(workers: :number_of_processors)
@@ -12,6 +18,8 @@ class ActiveSupport::TestCase
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+  def render_media? = ENV["RENDER_MEDIA"].present?
+
   def sign_in_as(user)
     previous_cache = Rails.cache
     Rails.cache = ActiveSupport::Cache::MemoryStore.new
