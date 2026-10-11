@@ -63,8 +63,8 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: step.id)
     edge_in, edge_out = workflow.edges.order(:id).to_a
     assert_select "[data-controller=flow][data-flow-edges-value=?]", [ edge_in, edge_out ].map { [ it.from_id, it.to_id,
-      { id: it.id, slot: nil, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false, available: false } ] }.to_json
-    assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]:not([data-single])", step.id.to_s do
+      { id: it.id, path: workflow_path(workflow, edge: it.id, run: workflow.runs.sole.id), frame: "inspector", current: false, available: false } ] }.to_json
+    assert_select "a[data-id=?][data-x='320'][data-y='140'][data-turbo-frame=inspector][aria-current=true]", step.id.to_s do
       assert_select "[data-flow-input]", 2
     end
     assert_select "turbo-frame#inspector turbo-frame#transformation[src^=?]", transformation_path(step.transformation)
@@ -214,7 +214,8 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, format: :md), headers: { "Authorization" => "Bearer secret" }
     assert_response :success
     assert_includes response.body, %(### n#{reviews.id} · Folder Reviews (review))
-    assert_includes response.body, "- Takes: prompts (main); makes: prompts"
+    assert_includes response.body, "- Takes: prompts 0..n, images 0..n; makes: prompts"
+    assert_includes response.body, "- Takes: media 1..1, reviews 1..1; makes: media"
     assert_includes response.body, %(- In: prompt #{shot.id} "Empty Chair" in #{folders(:prompts_shots).path}: The empty chair.)
     assert_includes response.body, %(- In: [media #{photo.id}]#{''})
     assert_includes response.body, "review #{review.id} by Dana, 5★: Best fade."

@@ -39,16 +39,25 @@ class Transformation::Type
 
   def self.reel? = false
 
-  # A workflow step's named inputs, in the order their media reach the run (see WorkflowRun), or nil for one open input.
-  def self.slots = nil
+  # What a step run takes: input kind => how many, as a Range (1..1, 0..1, 1.. or 0..). Kinds: :image, :video, :media
+  # (either), :prompt, :review. In a workflow, a media input of 1 runs once per item it's given; a prompt or review input
+  # of at most one picks one (a prompt at random, the newest review); any other input gets all its items in each step
+  # run. An :image or :video input skips the media that isn't one.
+  def self.inputs = { media: 1..1 }
 
-  # How many arrows of its main kind can come into a workflow step: 1, each item its own step run, or nil for any
-  # number, all their items going into one step run.
-  def self.inputs = 1
+  # The item kinds its inputs take (:media, :prompt, :review): what an arrow in may carry.
+  def self.takes = inputs.keys.map { item_kind(it) }.uniq
 
-  # The item kinds a workflow step takes, its main kind first (batched by `inputs`); each step run picks one item of
-  # each other kind: a prompt at random, the newest review.
-  def self.takes = %i[media]
+  # The item kind an input of `kind` takes.
+  def self.item_kind(kind) = kind.in?(%i[image video]) ? :media : kind
+
+  # Whether `item` fits an input of `kind`.
+  def self.fits?(kind, item)
+    item.item_kind == item_kind(kind) && (kind != :image || item.story_image?) && (kind != :video || item.video?)
+  end
+
+  # Whether an input of `kind` picks one item per step run instead of taking them as given.
+  def self.picks?(kind) = kind.in?(%i[prompt review]) && inputs[kind]&.end == 1
 
   # The item kind its step runs make.
   def self.makes = :media

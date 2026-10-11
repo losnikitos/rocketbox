@@ -15,7 +15,10 @@ class Transformation::Scripted < Transformation::Type
 
   def self.reel? = true
 
-  def self.inputs = nil
+  def self.inputs = { media: 1.. }
+
+  # Whether its cuts take the inputs in order, round again once they run out, rather than at random.
+  def self.in_order? = false
 
   def self.dir = Rails.root.join("reels", slug)
 
@@ -56,13 +59,13 @@ class Transformation::Scripted < Transformation::Type
   end
 
   # [[media, frames], ...], one per cut, ending at beats.csv's cut ends, each a random input other than the one before,
-  # or, for a type with slots, the inputs in order, round again once they run out.
+  # or the inputs in order (`in_order?`).
   # Ends are rounded to frames, not durations, so cuts don't drift off the beat.
   def cuts
     media = source_media
     ends = CSV.foreach(self.class.dir.join("beats.csv"), headers: true).map { (it["end"].to_f * FPS).round }
     lengths = ends.zip([ 0, *ends ]).map { |stop, start| stop - start }
-    return lengths.each_with_index.map { |frames, i| [ media[i % media.size], frames ] } if self.class.slots
+    return lengths.each_with_index.map { |frames, i| [ media[i % media.size], frames ] } if self.class.in_order?
     lengths.each_with_object([]) { |frames, acc| acc << [ (media - [ acc.last&.first ]).sample || media.first, frames ] }
   end
 

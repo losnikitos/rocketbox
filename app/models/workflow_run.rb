@@ -4,13 +4,13 @@
 # feeding the step outputs items. Played from a start node (a folder or media), whose items feed the steps downstream:
 # a media folder its pinned or newest media, a prompt folder its prompts, Reviews its 5-star reviews. A step run starts
 # the steps its step feeds when it completes; a run of one media (autorun, a media page's Run in workflow) holds it in
-# `picks`, in place of the folder's. Every node gives a list of items of one kind. A step's main kind (the first its
-# type takes) is batched: a step taking many inputs (`Transformation::Type.inputs`, e.g. a video, a reel, an LLM) takes
-# all of them in one step run, its slots in order; a single-input step takes one item per step run, and gives what they
-# all made once they're all complete. Each step run also picks one item of each other kind fed to it: a prompt at
-# random, the newest review. A step run stands across plays while it stands (see `stands?`), so a replay keeps its
-# picks and reruns only the step runs whose inputs or transformation changed and the ones after them, and
-# a step run that stands in another run is reused, sharing its result (`reuse`), so a new run makes only what's new;
+# `picks`, in place of the folder's. A step taking nothing it isn't given (an LLM writing from its instruction alone)
+# is a start node itself. Every node gives a list of items of one kind, each going into the step's input of that kind
+# (`Transformation::Type.inputs`): a media input of 1 takes one item per step run, the step giving what they all made
+# once they're all complete; a prompt or review input of at most one picks one per step run (a prompt at random, the
+# newest review); any other input takes all its items in each step run (e.g. a video, a reel, an LLM). A step run
+# stands across plays while it stands (see `stands?`), so a replay keeps its picks and reruns only the step runs whose
+# inputs or transformation changed and the ones after them, and a step run that stands in another run is reused, sharing its result (`reuse`), so a new run makes only what's new;
 # `rerun!` forces a step afresh anyway, e.g. once its type's code changed, or starts one whose inputs completed. A step that can't start leaves its reason in
 # `error`. A workflow has as many as were added, each named Run N. A run is a draft until it's first played (from a start
 # node or a step); then it's started.
@@ -38,7 +38,7 @@ class WorkflowRun < ApplicationRecord
   # `nodes` are start nodes; `user` owns what the step runs make.
   def start!(nodes, user)
     update!(error: nil, status: "started", updated_at: Time.current)
-    run_steps(Array(nodes).flat_map { next_steps(it) }.uniq, user)
+    run_steps(Array(nodes).flat_map { it.step? ? [ it ] : next_steps(it) }.uniq, user)
   end
 
   # Drops `step`'s step runs and the ones after them, and starts it afresh from what its inputs give now, the steps
@@ -117,10 +117,10 @@ class WorkflowRun < ApplicationRecord
     # ponytail: a style's text doesn't count; rerun! covers it.
     def stands?(run, batch, sides) = !run.failed? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
 
-    # Whether the step run took `batch` as its main items, and one item of each side kind fed to it that's still given.
+    # Whether the step run took `batch`, and one item of each kind it picks that's still given.
     def matches?(run, batch, sides)
-      main = run.transformation.takes.first
-      items, picked = run.sources.partition { it.item_kind == main }
+      transformation = run.transformation
+      picked, items = run.sources.partition { transformation.picks?(it.item_kind) }
       items == batch && picked.map(&:item_kind).sort == sides.keys.sort && picked.all? { sides[it.item_kind].include?(it) }
     end
 
@@ -163,33 +163,32 @@ class WorkflowRun < ApplicationRecord
       result&.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
     end
 
-    def main_edges(step)
-      main = step.transformation.takes.first
-      edges.select { it.to_id == step.id && it.from.item_kind == main }
+    # What the arrows into the step give now, by its type's input kind, in the order they were connected, each input
+    # only the items that fit it (an image input skips videos), e.g. { image: [...], prompt: [...] }; nil while an
+    # arrow gives nothing.
+    def given_to(step, user, cached: false)
+      transformation = step.transformation
+      given = edges.select { it.to_id == step.id }.map { output_of(it.from, user, cached:) }
+      return if given.any?(&:empty?)
+      transformation.inputs.keys.index_with { |kind| given.flatten.select { transformation.fits?(kind, it) }.uniq }
     end
 
-    def side_edges(step)
-      main = step.transformation.takes.first
-      edges.select { it.to_id == step.id && it.from.item_kind != main }
-    end
-
-    # Each main input's items, slot by slot in the type's order, then in the order they were connected.
-    def inputs_of(step, user, cached: false)
-      slots = step.transformation.slots
-      main_edges(step).sort_by { [ slots&.index(it.slot).to_i, it.id ] }.map { output_of(it.from, user, cached:) }
-    end
-
-    # What the side inputs give, by kind, e.g. { prompt: [...] }.
+    # What the inputs a step run picks one item of give, by kind, e.g. { prompt: [...] }.
     def sides_of(step, user, cached: false)
-      side_edges(step).group_by { it.from.item_kind }.transform_values { |inputs| inputs.flat_map { output_of(it.from, user, cached:) }.uniq }
+      given_to(step, user, cached:).to_h.select { |kind, items| step.transformation.picks?(kind) && items.any? }
     end
 
-    # The main items of each step run the step makes from what its inputs give now, none while an input gives nothing:
-    # a single-input step's one per item, any other's all of them in one.
+    # The items of each step run the step makes from what its arrows give now, its picks aside, inputs in the type's
+    # order: a media input of 1 one step run per item, any other input all its items in each. None while an arrow
+    # gives nothing or an input gets fewer than it takes; one with no items for a step taking none and given nothing.
     def batches_of(step, user, cached: false)
-      inputs = inputs_of(step, user, cached:)
-      return [] if inputs.empty? || inputs.any?(&:empty?) || side_edges(step).any? { output_of(it.from, user, cached:).empty? }
-      step.transformation.inputs == 1 ? inputs.flatten.map { [ it ] } : [ inputs.flatten ]
+      transformation = step.transformation
+      given = given_to(step, user, cached:) or return []
+      return [] if transformation.inputs.any? { |kind, count| given[kind].size < count.begin }
+      fixed = given.reject { |kind, _| transformation.picks?(kind) }
+      fans = fixed.keys.select { transformation.inputs[it].end == 1 }
+      runs = fans.reduce([ {} ]) { |acc, kind| acc.flat_map { |run| fixed[kind].map { run.merge(kind => [ it ]) } } }
+      runs.map { |run| fixed.flat_map { |kind, items| run[kind] || items } }
     end
 
     # A node's output in this run: a folder what's picked of it, a media itself, a step what its step runs made, in its

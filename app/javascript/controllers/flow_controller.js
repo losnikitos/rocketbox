@@ -8,8 +8,7 @@ import dagre from "@dagrejs/dagre"
 // centres, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or scrolled to pan; zoom and scroll
 // survive reloads of the page. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
-// the selected edge (one with an id) onto another node dispatches it with the edge's id too. Into a node with slots
-// (ports with data-slot) it carries the slot of the port under the pointer, else the first one free. Output targets (with
+// the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
 // data-v and data-w) sit on the middle of their edge.
 export default class extends Controller {
   static targets = ["canvas", "node", "edges", "ends", "output", "marquee"]
@@ -27,9 +26,8 @@ export default class extends Controller {
       el.querySelectorAll("[data-flow-handle]").forEach(it => it.style.top = `${anchor}px`)
       el.querySelectorAll("[data-flow-play]").forEach(it => Object.assign(it.style, { top: `${first.offsetTop}px`, left: `${first.offsetLeft}px` }))
       // Ports sit in a column flush with the node's top.
-      const ports = [...el.querySelectorAll("[data-flow-input]")]
-      const inputs = ports.map(port => port.offsetTop + port.offsetHeight / 2), slots = ports.map(port => port.dataset.slot).filter(Boolean)
-      g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs, slots })
+      const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
+      g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
     })
     this.edgesValue.forEach(([from, to, edge]) => g.setEdge(from, to, { ...edge }))
     dagre.layout(g)
@@ -222,7 +220,7 @@ export default class extends Controller {
     if (!l) return
     const node = this.droppable(event)
     this.nodeTargets.forEach(el => el.toggleAttribute("data-flow-drop", el === node?.el))
-    const port = node && l.side > 0 ? node.inputs[node.slots.length ? node.slots.indexOf(this.slotAt(event, node, l.edge)) : this.others(node, l.edge).length] : undefined
+    const port = node && l.side > 0 ? node.inputs[this.others(node, l.edge).length] : undefined
     const loose = node ? anchor(node, -l.side, port) : this.point(event)
     this.draw()
     this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${curve(l.side > 0 ? [l.start, loose] : [loose, l.start])}" class="stroke-rocket" />`)
@@ -241,15 +239,13 @@ export default class extends Controller {
     this.draw()
     if (!node) return
     const [from, to] = l.side > 0 ? [l.fixed, node.el.dataset.id] : [node.el.dataset.id, l.fixed]
-    const main = this.graph.node(from).el.dataset.gives === this.takes(this.graph.node(to).el.dataset)[0]
-    const slot = l.side > 0 ? main ? this.slotAt(event, node, l.edge) : undefined : l.edge && this.graph.edge(l.edge).slot
-    this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to, slot } })
+    this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to } })
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
   // end, no arrow into a source (data-source), no note (data-note) at either end, the kind of items the start gives
-  // (data-gives) one a step takes (data-takes) or a folder holds, no second main-kind arrow into a single-input step
-  // (data-single), and not connected that way already, unless by the edge being moved.
+  // (data-gives) one a step takes (data-takes) or a folder holds, and not connected that way already, unless by the
+  // edge being moved.
   droppable({ clientX, clientY }) {
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
@@ -258,30 +254,13 @@ export default class extends Controller {
     if ([v, w].some(id => "note" in g.node(id).el.dataset)) return
     if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
     const gives = g.node(v).el.dataset.gives, into = g.node(w).el.dataset
-    if ("step" in into ? !this.takes(into).includes(gives) : into.gives !== gives) return
-    const main = this.takes(into)[0]
-    if ("single" in into && gives === main && this.others(g.node(w), edge).some(e => g.node(e.v).el.dataset.gives === main)) return
+    if ("step" in into ? !into.takes?.split(" ").includes(gives) : into.gives !== gives) return
     return g.node(el.dataset.id)
-  }
-
-  // The item kinds a step takes, its main kind first.
-  takes(dataset) {
-    return dataset.takes?.split(" ") ?? []
   }
 
   // The arrows into `node` besides `moving`.
   others(node, moving) {
     return this.graph.inEdges(node.el.dataset.id).filter(e => !(e.v === moving?.v && e.w === moving?.w))
-  }
-
-  // The slot an arrow dropped on `node` goes into: the port's under the pointer, else the first no other arrow
-  // (besides `moving`) goes into, else the first; none for a node without slots.
-  slotAt({ clientX, clientY }, node, moving) {
-    if (!node.slots.length) return
-    const port = document.elementFromPoint(clientX, clientY)?.closest("[data-slot]")
-    if (port && node.el.contains(port)) return port.dataset.slot
-    const taken = this.others(node, moving).map(e => this.graph.edge(e).slot)
-    return node.slots.find(slot => !taken.includes(slot)) ?? node.slots[0]
   }
 
   // The pointer in canvas coordinates.
@@ -290,12 +269,11 @@ export default class extends Controller {
     return { x: (this.element.scrollLeft + clientX - box.left) / this.scale, y: (this.element.scrollTop + clientY - box.top) / this.scale }
   }
 
-  // Where an edge leaves its source and enters its target. Edges in take their slot's port, or else the target's ports
-  // top to bottom in their sources' order, so they don't cross.
+  // Where an edge leaves its source and enters its target. Edges in take the target's ports top to bottom in their
+  // sources' order, so they don't cross.
   anchors({ v, w }) {
     const g = this.graph, target = g.node(w)
-    const port = target.slots.length ? target.slots.indexOf(g.edge(v, w).slot)
-      : g.inEdges(w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(v)
+    const port = g.inEdges(w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(v)
     return [anchor(g.node(v), 1), anchor(target, -1, target.inputs[port])]
   }
 

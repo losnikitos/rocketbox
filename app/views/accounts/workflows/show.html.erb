@@ -134,9 +134,7 @@
     <%= form_with model: @workflow, class: "hidden", data: { workflow_target: "connect" } do %>
       <%= hidden_field_tag "workflow[edges_attributes][0][id]", nil, id: nil, data: { workflow_target: "edge" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
-      <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
-      <%= hidden_field_tag "workflow[edges_attributes][0][slot]", nil, id: nil, data: { workflow_target: "slot" } %>
-    <% end %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>    <% end %>
     <%= form_with url: copy_workflow_path(@workflow, run: @run.id), class: "hidden", data: { workflow_target: "copy" } do %>
       <%= hidden_field_tag :node_id, nil, id: nil, data: { workflow_target: "copyNode" } %>
       <%= hidden_field_tag :x, nil, id: nil, data: { workflow_target: "copyX" } %>

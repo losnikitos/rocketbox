@@ -24,10 +24,14 @@ class Workflow < ApplicationRecord
 
   def latest_run = runs.last || runs.create!
 
-  # Saved folders and media that feed steps and that nothing feeds.
+  # Saved folders and media that feed steps and that nothing feeds, and steps nothing feeds that take nothing they
+  # aren't given (an LLM writing from its instruction alone).
   def start_nodes
     saved = edges.select(&:persisted?)
-    nodes.select { |node| node.persisted? && !node.step? && saved.any? { it.from_id == node.id } && saved.none? { it.to_id == node.id } }
+    nodes.select do |node|
+      node.persisted? && saved.none? { it.to_id == node.id } &&
+        (node.step? ? node.transformation.inputs.values.all? { it.begin.zero? } : saved.any? { it.from_id == node.id })
+    end
   end
 
   # The start folders `media` fits (see WorkflowNode#takes?), as [[workflow, node], ...].

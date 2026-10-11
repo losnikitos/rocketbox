@@ -2,10 +2,10 @@
 <%# nodes: { id => { label:, icon:, cover:, media:, note:, path:, shape: (:folder, :media, :step or :note), color:, x:, y:, frame:, current:, linkable: } }, edges: [[from id, to id, { id:, path:, frame:, current: }], ...] %>
 <%# Optional: x and y (centre) pin a node instead of laying it out; frame opens path in that turbo frame; current marks the %>
 <%# selected node; linkable adds a port to drag arrows from (flow:linked). A :step is a card with its type's cover left of its label and kind %>
-<%# (its options, e.g. model and aspect ratio), its optional tags on a line below, and an input port on the left per arrow in (inputs, at least one), or, with slots, a labelled port per slot; single takes one arrow in. A :folder is the same card with a folder drawing in its color instead of a cover. A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
-<%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked); its optional slot is the port it goes into; available draws it green. %>
+<%# (its options, e.g. model and aspect ratio), its optional tags on a line below, and an input port on the left per arrow in (inputs, at least one). A :folder is the same card with a folder drawing in its color instead of a cover. A :media is its thumbnail, a source nothing links into. An edge's optional path makes it %>
+<%# clickable, like a node's; its optional id lets its ends be dragged to other nodes once selected (flow:linked); available draws it green. %>
 <%# A :step's optional status (running, complete or failed) badges its corner, its optional error in the badge's title. %>
-<%# gives (the kind of items a node gives) and takes (a :step's kinds, its main one first, space-separated) decide what may connect. %>
+<%# gives (the kind of items a node gives) and takes (a :step's kinds, space-separated) decide what may connect. %>
 <%# An edge's optional media (a list of what went along it) shows on its middle: one as a thumbnail opening in a lightbox, more as a stack %>
 <%# that opens them all in a popover, each opening in a lightbox from there; pinned (media ids) badges those with a pin. %>
 <%# A :note is a sticky note: its Markdown note on a card in its color, connecting to nothing. %>
@@ -61,13 +61,12 @@
     <% end %>
     <% nodes.each do |id, n| %>
       <%= content_tag(n[:path] ? :a : :span, href: n[:path], draggable: "false", aria: { current: ("true" if n[:current]) },
-            data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), single: (true if n[:single]), gives: n[:gives], takes: n[:takes], source: (true if n[:shape] == :media), note: (true if n[:shape] == :note), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
+            data: { flow_target: "node", id:, x: n[:x], y: n[:y], step: (true if n[:shape] == :step), gives: n[:gives], takes: n[:takes], source: (true if n[:shape] == :media), note: (true if n[:shape] == :note), turbo_frame: n[:frame], turbo_action: ("advance" if n[:frame]),
                     action: "pointerdown->flow#grab pointermove->flow#drag pointerup->flow#drop pointercancel->flow#drop click->flow#click" },
             class: "#{"group" if n[:path]} absolute flex #{n[:shape] == :media ? "w-28" : "w-56"} cursor-grab touch-none flex-col items-center gap-1.5 text-center text-sm font-semibold text-ink-900 select-none active:cursor-grabbing") do %>
         <% port = "relative size-4 shrink-0 rounded-full border-2 border-ink-900/30 bg-white group-data-[flow-drop]:border-rocket" %>
         <% if n[:shape].in?(%i[step folder]) %>
-          <span style="<%= "min-height: #{n[:slots].size * 2}rem" if n[:slots] %>"
-                class="relative flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left hover:border-ink-900/20 hover:bg-stone-50 group-aria-[current=true]:border-rocket group-aria-[current=true]:hover:border-rocket-press group-aria-[current=true]:hover:bg-rocket/5 group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
+          <span class="relative flex w-full items-center gap-3 rounded-2xl border-2 border-ink-900/10 bg-white p-2 text-left hover:border-ink-900/20 hover:bg-stone-50 group-aria-[current=true]:border-rocket group-aria-[current=true]:hover:border-rocket-press group-aria-[current=true]:hover:bg-rocket/5 group-data-[flow-drop]:border-rocket group-data-[flow-drop]:bg-rocket/5">
             <% if n[:cover] %>
               <%= image_tag n[:cover], alt: "", draggable: "false", class: "aspect-2/3 w-14 shrink-0 rounded-lg object-cover" %>
             <% else %>
@@ -104,19 +103,10 @@
               </span>
             <% end %>
           </span>
-          <%# Arrows in attach to these, their slot's or else top to bottom in their sources' order (flow_controller). %>
+          <%# Arrows in attach to these, top to bottom in their sources' order (flow_controller). %>
           <span class="absolute inset-y-0 -left-2 flex flex-col justify-evenly" aria-hidden="true">
-            <% if n[:slots] %>
-              <% n[:slots].each do |slot| %>
-                <%# Its label sits above the arrow coming in. %>
-                <span data-flow-input data-slot="<%= slot %>" class="<%= port %> hover:border-rocket hover:bg-rocket/10">
-                  <span class="absolute right-full bottom-full text-xs font-normal whitespace-nowrap text-ink-500"><%= slot.humanize %></span>
-                </span>
-              <% end %>
-            <% else %>
-              <% [ n[:inputs].to_i, 1 ].max.times do %>
-                <span data-flow-input class="<%= port %>"></span>
-              <% end %>
+            <% [ n[:inputs].to_i, 1 ].max.times do %>
+              <span data-flow-input class="<%= port %>"></span>
             <% end %>
           </span>
         <% elsif n[:shape] == :note %>

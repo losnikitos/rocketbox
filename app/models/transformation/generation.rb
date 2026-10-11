@@ -6,9 +6,7 @@ class Transformation::Generation < Transformation::Type
 
   def self.ai? = true
 
-  def self.inputs = nil
-
-  def self.takes = %i[media prompt]
+  def self.inputs = { image: 1.., prompt: 0..1 }
 
   private
 
