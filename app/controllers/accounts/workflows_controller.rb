@@ -154,20 +154,20 @@ module Accounts
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
-        # The media that went along an edge in the run: a step's results out of it, or what its step runs took from a
-        # folder or media; until then, what the step or folder gives. Prompts and reviews show in the inspector only.
+        # The items that went along an edge in the run: a step's results out of it, or what its step runs took from a
+        # folder or media; until then, what the step or folder gives.
         carried = ->(edge) do
           from = by_id[edge.from_id]
           items = if from.step? then runs_of.(from).map(&:result).presence || gives[from.id]
           else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
             (from.folder ? gives[from.id] : [])
           end
-          items.grep(LibraryMedia).select { it.file.attached? }
+          items.reject { it.is_a?(LibraryMedia) && !it.file.attached? }
         end
         @edges = @graph_edges.map do |edge|
           [ edge.from_id, edge.to_id, { id: edge.id, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
                                         current: edge == @selected_edge, available: gives[edge.from_id].any?,
-                                        media: carried.(edge), pinned: by_id[edge.from_id].pinned_media_ids } ]
+                                        items: carried.(edge), pinned: by_id[edge.from_id].pinned_media_ids } ]
         end
       end
   end

@@ -208,6 +208,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
       assert_select "[data-id=?][data-gives=?]", node.id.to_s, node.item_kind.to_s
     end
     assert_select "[data-id=?][data-takes='media review']", praise.id.to_s
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[popovertarget=?]", shots.id.to_s, llm.id.to_s, "flow_edge_#{shots.id}_#{llm.id}_items"
+    assert_select "#flow_edge_#{shots.id}_#{llm.id}_items[popover]", text: /Empty Chair/
+    assert_select "[data-flow-target=output][data-v=?][data-w=?] button[aria-label='View 1 review']", reviews.id.to_s, praise.id.to_s
+    assert_select "#flow_edge_#{reviews.id}_#{praise.id}_items[popover]", text: /Best fade\./
     get workflow_url(workflow, account: admin.id, node: ready.id)
     assert_select "section[aria-label=Prompts] a[href=?]", edit_prompt_path(written.result, account: admin.id), text: written.result.name
 
@@ -364,7 +368,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
 
     folder.update!(take: 2)
     get workflow_url(workflow, account: admin.id)
-    stack = "flow_edge_#{folder.id}_#{step.id}_media"
+    stack = "flow_edge_#{folder.id}_#{step.id}_items"
     assert_select "[data-flow-target=output][data-v=?] button[popovertarget=?][aria-label='View 2 media']", folder.id.to_s, stack
     assert_equal [ newer, older ].map { dom_id(it, :quick_view) }, css_select("##{stack}[popover] li button").map { it["popovertarget"] }
 
