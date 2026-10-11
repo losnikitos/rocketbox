@@ -1,13 +1,13 @@
 ActiveAdmin.register TransformationRun do
   actions :index, :show
 
-  includes :transformation, :workflow_run, :generated_media
+  includes :transformation, :workflow_run, :result
 
   index do
     id_column
     column :transformation
     column :workflow_run
-    column :generated_media
+    column :result
     column :status
     column :created_at
     actions
@@ -19,9 +19,8 @@ ActiveAdmin.register TransformationRun do
       row :transformation
       row :workflow_run
       row(:step) { |run| run.workflow_node && link_to(run.workflow_node.label, workflow_path(run.workflow_run.workflow, node: run.workflow_node_id, run: run.workflow_run_id)) }
-      row(:source_media) { |run| safe_join(run.source_media.map { auto_link(it) }, ", ") }
-      row :generated_media
-      row :prompt
+      row(:inputs) { |run| safe_join(run.sources.map { auto_link(it) }, ", ") }
+      row :result
       row :prompt_text
       row :status
       row :error

@@ -241,13 +241,15 @@ export default class extends Controller {
     this.draw()
     if (!node) return
     const [from, to] = l.side > 0 ? [l.fixed, node.el.dataset.id] : [node.el.dataset.id, l.fixed]
-    const slot = l.side > 0 ? this.slotAt(event, node, l.edge) : l.edge && this.graph.edge(l.edge).slot
+    const main = this.graph.node(from).el.dataset.gives === this.takes(this.graph.node(to).el.dataset)[0]
+    const slot = l.side > 0 ? main ? this.slotAt(event, node, l.edge) : undefined : l.edge && this.graph.edge(l.edge).slot
     this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to, slot } })
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
-  // end, no arrow into a source (data-source), no note (data-note) at either end, no second arrow into a single-input
-  // step (data-single), and not connected that way already, unless by the edge being moved.
+  // end, no arrow into a source (data-source), no note (data-note) at either end, the kind of items the start gives
+  // (data-gives) one a step takes (data-takes) or a folder holds, no second main-kind arrow into a single-input step
+  // (data-single), and not connected that way already, unless by the edge being moved.
   droppable({ clientX, clientY }) {
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
@@ -255,8 +257,16 @@ export default class extends Controller {
     if (v === w || (g.hasEdge(v, w) && !(edge?.v === v && edge?.w === w)) || "source" in g.node(w).el.dataset) return
     if ([v, w].some(id => "note" in g.node(id).el.dataset)) return
     if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
-    if ("single" in g.node(w).el.dataset && this.others(g.node(w), edge).length) return
+    const gives = g.node(v).el.dataset.gives, into = g.node(w).el.dataset
+    if ("step" in into ? !this.takes(into).includes(gives) : into.gives !== gives) return
+    const main = this.takes(into)[0]
+    if ("single" in into && gives === main && this.others(g.node(w), edge).some(e => g.node(e.v).el.dataset.gives === main)) return
     return g.node(el.dataset.id)
+  }
+
+  // The item kinds a step takes, its main kind first.
+  takes(dataset) {
+    return dataset.takes?.split(" ") ?? []
   }
 
   // The arrows into `node` besides `moving`.

@@ -67,7 +67,7 @@ class LibraryMediaController < ApplicationController
 
       media = Current.account.library_media.create!(kind:, folder:)
       media.file.attach(file)
-      TransformationRun.create!(generated_media: media, status: "complete", inputs: [ TransformationRunInput.new(library_media: source) ]) if source
+      TransformationRun.create!(result: media, status: "complete", inputs: [ TransformationRunInput.new(item: source) ]) if source
       media
     end
 

@@ -2,6 +2,10 @@
 
 class Review < ApplicationRecord
   belongs_to :user
+  belongs_to :folder
+  before_validation(on: :create) { self.folder ||= Folder.reviews }
+  # Step runs outlive the reviews they took; only the input rows go.
+  has_many :transformation_run_inputs, as: :item, dependent: :delete_all
   has_one_attached :avatar
   has_many_attached :media
 
@@ -18,6 +22,8 @@ class Review < ApplicationRecord
   scope :with_media, -> { where(id: ActiveStorage::Attachment.where(record_type: name, name: "media").select(:record_id)) }
 
   def self.media_attachments = ActiveStorage::Attachment.where(record: all, name: "media")
+
+  def item_kind = :review
 
   def archived? = archived_at.present?
 

@@ -26,10 +26,10 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     source.file.attach(io: StringIO.new("img"), filename: "room.jpg", content_type: "image/jpeg")
     generated = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user)
     generated.file.attach(io: StringIO.new("img"), filename: "film.jpg", content_type: "image/jpeg")
-    TransformationRun.create!(generated_media: generated, status: "complete", inputs: [ TransformationRunInput.new(library_media: source) ])
+    TransformationRun.create!(result: generated, status: "complete", inputs: [ TransformationRunInput.new(item: source) ])
     workflow = create_workflow("Cinematic shop reel", input: folders(:interior), transformation: transformations(:cinematic), output: folders(:photobank_interior))
     step, workflow_run = workflow.nodes.find(&:step?), workflow.runs.create!
-    failed = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior), workflow_run:, workflow_node: step)
+    failed = transformations(:cinematic).run!(items: [ source ], folder: folders(:photobank_interior), workflow_run:, workflow_node: step)
     get library_item_url(failed.generated_media)
     assert_select "#transformation-run-heading + span", text: "running"
     failed.update!(status: "failed", error: "content policy")
@@ -59,7 +59,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     assert_select "details:has(#transformation-run-heading) tr", text: /Model\s*\S+/
 
     grandchild = LibraryMedia.create!(kind: "photo", folder: folders(:photobank_interior), user: @user, created_at: 2.days.ago)
-    TransformationRun.create!(generated_media: grandchild, status: "complete", inputs: [ TransformationRunInput.new(library_media: generated) ])
+    TransformationRun.create!(result: grandchild, status: "complete", inputs: [ TransformationRunInput.new(item: generated) ])
     get library_item_url(grandchild)
     assert_select "nav[aria-label=Versions] a" do |links|
       assert_equal [ source, failed.generated_media, generated, grandchild ].map { library_item_path(it) }, links.map { it["href"] }
@@ -93,7 +93,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
     collage, poster = { "Collage" => "Compose a collage.", "Poster" => "Make a poster." }.map do |name, body|
       workflow = create_workflow(name, input: folders(:photobank_interior), transformation: Transformation.create!(name:, kind: "generate_image", body:))
       step = workflow.nodes.find(&:step?)
-      ->(workflow_run = workflow.runs.create!) { step.transformation.run!(media: [ source ], folder: folders(:ready), workflow_run:, workflow_node: step) }
+      ->(workflow_run = workflow.runs.create!) { step.transformation.run!(items: [ source ], folder: folders(:ready), workflow_run:, workflow_node: step) }
     end
     run, sibling, other = collage.(), collage.(), poster.()
 

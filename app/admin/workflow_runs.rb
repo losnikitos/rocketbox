@@ -33,11 +33,11 @@ ActiveAdmin.register WorkflowRun do
     end
 
     panel "Step runs (transformation_runs)" do
-      table_for workflow_run.step_runs.includes(:transformation, :workflow_node, :generated_media) do
+      table_for workflow_run.step_runs.includes(:transformation, :workflow_node, :result) do
         column(:id) { link_to it.id, admin_transformation_run_path(it) }
         column(:node) { "##{it.workflow_node_id} #{it.workflow_node&.label}" }
         column :transformation
-        column :generated_media
+        column :result
         column :status
         column :error
         column :created_at

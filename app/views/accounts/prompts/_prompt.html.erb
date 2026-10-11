@@ -1,0 +1,19 @@
+<%# locals: (prompt:) %>
+<%# A prompt's card in its library folder: its examples scrubbed on hover, else its text; links to its edit page. %>
+<% covered = prompt.examples.any? %>
+<li id="<%= dom_id(prompt) %>" class="relative aspect-2/3 overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900/5 hover:border-ink-900/30"
+    data-controller="scrub" data-action="mousemove->scrub#scrub mouseleave->scrub#reset">
+  <% prompt.examples.each_with_index do |example, index| %>
+    <div class="absolute inset-0 <%= "hidden" if index.positive? %>" data-scrub-target="slide">
+      <%= render "shared/example", example:, css: "size-full object-cover" %>
+    </div>
+  <% end %>
+  <%= link_to edit_prompt_path(prompt), class: "absolute inset-0 flex flex-col items-start" do %>
+    <span class="w-full p-4 text-sm font-semibold <%= covered ? "bg-linear-to-b from-black/60 to-transparent pb-10 text-white" : "text-ink-900" %>">
+      <%= prompt.name %>
+    </span>
+    <% unless covered %>
+      <span class="line-clamp-8 px-4 text-sm text-ink-600"><%= prompt.body.presence || "Writing…" %></span>
+    <% end %>
+  <% end %>
+</li>

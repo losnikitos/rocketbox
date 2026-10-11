@@ -84,7 +84,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
     admin = sign_in_as(users(:admin_user))
     source = LibraryMedia.create!(kind: "photo", folder: folders(:interior), user: admin)
     source.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
-    generation = transformations(:cinematic).run!(media: [ source ], folder: folders(:photobank_interior))
+    generation = transformations(:cinematic).run!(items: [ source ], folder: folders(:photobank_interior))
     generation.update!(status: "failed", error: "content policy")
 
     get "/app/library/media/#{generation.generated_media.id}?account=#{admin.id}", headers: @ua

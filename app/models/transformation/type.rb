@@ -7,7 +7,7 @@
 # type is a subclass plus a line in `all`, whose order is the groups' order.
 class Transformation::Type
   def self.all = [
-    Transformation::GenerateImage, Transformation::GenerateVideo,
+    Transformation::GenerateImage, Transformation::GenerateVideo, Transformation::Llm,
     Transformation::SmartCrop, Transformation::Zoom, Transformation::ColorGrade,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Transformation::Caption, Transformation::Text,
@@ -42,11 +42,16 @@ class Transformation::Type
   # A workflow step's named inputs, in the order their media reach the run (see WorkflowRun), or nil for one open input.
   def self.slots = nil
 
-  # How many arrows can come into a workflow step: 1, each media its own step run, or nil for any number, all their
-  # media going into one step run.
+  # How many arrows of its main kind can come into a workflow step: 1, each item its own step run, or nil for any
+  # number, all their items going into one step run.
   def self.inputs = 1
 
-  def self.takes_review? = false
+  # The item kinds a workflow step takes, its main kind first (batched by `inputs`); each step run picks one item of
+  # each other kind: a prompt at random, the newest review.
+  def self.takes = %i[media]
+
+  # The item kind its step runs make.
+  def self.makes = :media
 
   # A non-AI type's own options in place of the model's: allowed values per key, the first the default; nil for none.
   def self.options = nil
@@ -72,7 +77,7 @@ class Transformation::Type
         photo = source_media.first.file.variant(resize_to_fill: layer.size, format: :jpeg).processed
         background = "data:image/jpeg;base64,#{Base64.strict_encode64(photo.download)}"
       end
-      html = Current.set(account: run.generated_media.user) do
+      html = Current.set(account: run.result.user) do
         ApplicationController.render("accounts/layers/canvas", layout: false,
           assigns: { layer:, values: layer.values(values) }, locals: { background: })
       end

@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-# How media is made from given media: a workflow step's processing, owned by its step.
+# How items are made from given items: a workflow step's processing, owned by its step.
 # `kind` is how, the slug of its `type` (see Transformation::Type), fixed once created, which fixes its layer: a Generation is one AI call
-# making an image or a video; an Overlay lays its layer, filled from its first layer step, over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
+# making an image or a video (or a prompt, LLM); an Overlay lays its layer, filled from its first layer step, over one photo or video, as the same; an Edit (e.g. SmartCrop) edits
 # one photo or video, as the same, or as a video (Zoom); a Scripted type cuts the
 # media (photos or videos) into a reel, its layer over the cuts filled from `layer_steps` (see Transformation::Scripted).
 # `options` are the defaults for its AI runs, or its type's own (see GenerationOptions).
-# Inputs besides media: a fixed `style` and a `prompt_folder` its runs pick a prompt from (AI kinds); a review its runs
-# pick (the review type).
+# Its type `takes` items of some kinds and `makes` one kind; besides them, an AI kind making media has a fixed `style`.
 class Transformation < ApplicationRecord
   include GenerationOptions
 
@@ -16,17 +15,15 @@ class Transformation < ApplicationRecord
   has_many :workflow_nodes, dependent: :restrict_with_error
   belongs_to :style, optional: true
 
-  delegate :ai?, :video?, :single?, :reel?, :slots, :inputs, :layer, :takes_review?, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :slots, :inputs, :takes, :makes, :layer, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
   # Blank values fall back to the layer's defaults; an all-blank step stays, keeping later steps on their cuts.
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
-  # nil takes no prompt.
-  normalizes :prompt_folder, with: ->(value) { value.strip.presence }
 
   before_validation do
-    self.prompt_folder, self.style = nil, nil unless ai?
+    self.style = nil unless styled?
     self.layer_steps = [] unless layer_steps?
   end
   validates :name, presence: true
@@ -38,7 +35,10 @@ class Transformation < ApplicationRecord
   def type = Type.find(kind)
 
   # Whether its layer is filled from `layer_steps`; the review type fills it from a review.
-  def layer_steps? = layer.present? && !takes_review?
+  def layer_steps? = layer.present? && !takes.include?(:review)
+
+  # Whether it takes a style: an AI kind making media.
+  def styled? = ai? && makes == :media
 
   # "Generation · Image", or "Overlay · Fully booked".
   def type_label = type&.then { "#{it.group.label} · #{it.label}" }
@@ -60,14 +60,14 @@ class Transformation < ApplicationRecord
 
   def takes?(media) = media.story_image? || (!ai? && media.video?)
 
-  # `media` are the run's source media, in order; the result lands in `folder` with `tags`. `prompt` is from the prompt
-  # folder, `review` for the review type, `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
+  # `items` are the run's inputs, in order: its main items, then the prompt and review it picked. The result lands in
+  # `folder` with `tags` (media). `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
   # `user` owns the result.
   # Runs the transformation as it is in memory, unsaved edits included (see TransformationRun#start!).
-  # Raises ActiveRecord::RecordInvalid when the media, prompt or review don't fit or an option isn't available.
-  def run!(media:, folder:, user: media.first&.user, tags: [], prompt: nil, review: nil, workflow_run: nil, workflow_node: nil)
-    runs.new(prompt:, style:, review:, workflow_run:, workflow_node:,
-             inputs: media.each_with_index.map { |item, position| TransformationRunInput.new(library_media: item, position:) })
+  # Raises ActiveRecord::RecordInvalid when the items don't fit or an option isn't available.
+  def run!(items:, folder:, user: items.first&.user, tags: [], workflow_run: nil, workflow_node: nil)
+    runs.new(style:, workflow_run:, workflow_node:,
+             inputs: items.each_with_index.map { |item, position| TransformationRunInput.new(item:, position:) })
       .start!(user, folder:, tags:)
   end
 end

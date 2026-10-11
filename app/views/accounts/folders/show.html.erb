@@ -7,11 +7,16 @@
 <% name_css = "mt-2 flex items-center justify-center gap-1 text-sm font-medium text-ink-900" %>
 
 <% content_for(:header_actions) do %>
-  <% if @folder %>
+  <% if @folder&.media? %>
     <label for="library-upload-input" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
       <%= heroicon "arrow-up-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
       Upload
     </label>
+  <% elsif @folder&.prompt? && admin %>
+    <%= link_to new_prompt_path(folder_id: @folder.id), class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+      <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+      Add prompt
+    <% end %>
   <% end %>
   <% if admin && !@folder&.parent_id %>
     <button type="button" popovertarget="new-folder" style="anchor-name: --new-folder" class="rb-btn-ghost-on-light cursor-pointer gap-1.5 px-3.5 py-1.5 text-sm">
@@ -33,7 +38,7 @@
   <% end %>
 <% end %>
 
-<% if @folder %>
+<% if @folder&.media? %>
   <%= form_with url: library_media_index_path, multipart: true, class: "hidden", data: { controller: "drop-upload", action: "dragstart@document->drop-upload#internalStart dragend@document->drop-upload#internalEnd" } do %>
     <%= hidden_field_tag :folder_id, @folder.id %>
     <%= hidden_field_tag :source_id, nil, data: { drop_upload_target: "source" } %>
@@ -65,7 +70,7 @@
       <% end %>
     </nav>
 
-    <% if folders.any? || media_groups.any? %>
+    <% if folders.any? || media_groups.any? || @prompts.present? %>
       <ul aria-label="Folders and files" class="grid grid-cols-2 gap-3 @lg:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6">
         <% folders.each do |folder| %>
           <% previews = @folder_media[folder.id].to_a.first(12) %>
@@ -99,6 +104,10 @@
             <% end %>
             <div class="<%= tile_menu_css %>"><%= render "shared/admin_links/folder", folder: %></div>
           </li>
+        <% end %>
+
+        <% if @prompts.present? %>
+          <%= render partial: "accounts/prompts/prompt", collection: @prompts, as: :prompt %>
         <% end %>
 
         <%# A source with versions spans a full row, its tiles on the same columns; dropping onto it attaches a version. %>
@@ -145,6 +154,8 @@
           <% end %>
         <% end %>
       </ul>
+    <% elsif @folder&.prompt? %>
+      <p class="text-sm text-ink-600">This folder is empty. Add a prompt — text a workflow step can take.</p>
     <% elsif @folder %>
       <p class="text-sm text-ink-600">This folder is empty. Drop photos or videos anywhere here to upload.</p>
     <% end %>

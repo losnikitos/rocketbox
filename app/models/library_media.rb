@@ -8,14 +8,14 @@ class LibraryMedia < ApplicationRecord
   # Posts outlive their source media; only the join rows go.
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the input rows go.
-  has_many :transformation_run_inputs, dependent: :delete_all
+  has_many :transformation_run_inputs, as: :item, dependent: :delete_all
   # Versions are the runs this media is the first input of, as in #original; other inputs only fill a slot.
-  has_many :source_inputs, -> { where(position: 0) }, class_name: "TransformationRunInput"
+  has_many :source_inputs, -> { where(position: 0) }, class_name: "TransformationRunInput", as: :item
   has_many :source_runs, through: :source_inputs, source: :transformation_run
-  has_many :generated_media, through: :source_runs
+  has_many :generated_media, through: :source_runs, source: :result, source_type: "LibraryMedia"
   # The run that made this media; it has a status and an error. Later step runs reusing it share it (see WorkflowRun).
-  has_one :transformation_run, -> { order(:id) }, foreign_key: :generated_media_id, inverse_of: :generated_media
-  has_many :transformation_runs, foreign_key: :generated_media_id, inverse_of: false, dependent: :destroy
+  has_one :transformation_run, -> { order(:id) }, as: :result
+  has_many :transformation_runs, as: :result, dependent: :destroy
   # Lands once it has its file, or moves folder with one. Declared before the attachment, whose own after_commit clears
   # attachment_changes. ponytail: a tag added later doesn't land it, so a tag-filtered start folder misses it.
   after_commit -> { AutorunWorkflowsJob.perform_later(self) },
@@ -44,10 +44,13 @@ class LibraryMedia < ApplicationRecord
   scope :of_type, ->(type) { type ? joins(file_attachment: :blob).where("active_storage_blobs.content_type LIKE ?", "#{type}/%") : all }
 
   validates :kind, presence: true
+  validate { errors.add(:folder, "must be a media folder") unless folder&.media? }
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
   # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; photobank/ready is where steps with no output folder land.
+  def item_kind = :media
+
   def business_card? = folder.slug == "business-card"
   def ready? = folder.slug == "ready" && folder.parent&.slug == "photobank"
 

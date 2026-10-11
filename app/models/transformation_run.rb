@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# A transformation applied to library media, e.g. a workflow step's batch. The result lands in the given folder,
-# created up front so a running or failed run already has a page; GenerateJob attaches its file once the
-# transformation's type makes it. As a step run it has its `workflow_run` and step `workflow_node`, and may share
-# another run's result instead (`reused_from`).
+# A transformation applied to items (media, prompts, reviews), e.g. a workflow step's batch. Its result, an item of the
+# kind its type makes (a media, or a prompt for an LLM), lands in the given folder, created up front so a running or
+# failed run already has a page; GenerateJob fills its file or text once the transformation's type makes it. As a step
+# run it has its `workflow_run` and step `workflow_node`, and may share another run's result instead (`reused_from`).
 # A run without a transformation records a version the owner dropped onto a media themselves; it never runs.
 # `options` start from the transformation's (see GenerationOptions).
 # `prompt_text` is set on start from the transformation as given, so a run with unsaved edits sends them; it also keeps
@@ -14,21 +14,19 @@ class TransformationRun < ApplicationRecord
   STATUSES = %w[running complete failed].freeze
 
   belongs_to :transformation, optional: true
-  belongs_to :prompt, optional: true
   belongs_to :style, optional: true
-  belongs_to :review, optional: true
   belongs_to :workflow_run, optional: true
   belongs_to :workflow_node, optional: true
   # Not its `transformation_run`: a step run reusing it shares it.
-  belongs_to :generated_media, class_name: "LibraryMedia", inverse_of: false
+  belongs_to :result, polymorphic: true, autosave: true
   has_many :inputs, -> { order(:position) }, class_name: "TransformationRunInput", inverse_of: :transformation_run, dependent: :delete_all
 
   validates :status, inclusion: { in: STATUSES }
-  validate :media_fit_transformation, on: :create, if: :transformation
+  validate :items_fit_transformation, on: :create, if: :transformation
 
   after_update_commit :broadcast_refresh, if: :saved_change_to_status?
   after_update_commit -> {
-    workflow_run.advance!(workflow_node, generated_media.user) if complete? && workflow_node
+    workflow_run.advance!(workflow_node, result.user) if complete? && workflow_node
     workflow_run.broadcast_refresh_later
   }, if: -> { workflow_run && saved_change_to_status? }
 
@@ -45,26 +43,40 @@ class TransformationRun < ApplicationRecord
   def duration = (updated_at - created_at unless running?)
 
   # The step run that made its result, when this one reuses it from another run (see WorkflowRun#reuse).
-  def reused_from = generated_media.transformation_run.then { it unless it == self }
+  def reused_from = result.transformation_run.then { it unless it == self }
 
   def inherited_options = transformation&.options
 
-  # In the order picked; also before save.
-  def source_media = inputs.map(&:library_media)
+  # Every item it took, in order; also before save.
+  def sources = inputs.map(&:item)
+  def source_media = sources.grep(LibraryMedia)
+  # The prompt and review it picked: the last of its kind, as an LLM's main items are prompts too.
+  def prompt = sources.grep(Prompt).last
+  def review = sources.grep(Review).last
 
-  # `user` owns the result, made in `folder` with `tags`. Raises ActiveRecord::RecordInvalid when the media don't fit,
-  # the prompt doesn't fit or an option isn't available.
+  # Its result when that's a media or a prompt.
+  def generated_media = (result if result.is_a?(LibraryMedia))
+  def generated_prompt = (result if result.is_a?(Prompt))
+
+  # `user` owns the result, made in `folder` with `tags` (media). Raises ActiveRecord::RecordInvalid when the items
+  # don't fit or an option isn't available.
   def start!(user, folder:, tags: [])
-    build_generated_media(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
-    self.prompt_text = [ transformation.body, prompt&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
+    self.result = if transformation.makes == :prompt
+      Prompt.new(user:, folder:, name: "#{transformation.name} · #{Time.current.to_fs(:short)}", body: "")
+    else
+      LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
+    end
+    picked = (prompt unless transformation.takes.first == :prompt)
+    self.prompt_text = [ transformation.body, picked&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
     self
   end
 
-  # Makes the file the transformation's type's way (see Transformation::Type).
+  # Makes the file or text the transformation's type's way (see Transformation::Type).
   def run!
-    generated_media.update!(file: transformation.type.new(self).file)
+    made = transformation.type.new(self)
+    result.update!(transformation.makes == :prompt ? { body: made.body } : { file: made.file })
     update!(status: "complete", error: nil)
   rescue StandardError => e
     Rails.logger.error("[TransformationRun] id=#{id} #{e.class}: #{e.message}")
@@ -75,13 +87,19 @@ class TransformationRun < ApplicationRecord
 
     def single_over_video? = transformation.single? && source_media.first&.video?
 
-    def media_fit_transformation
-      media = source_media
-      fits = media.any? && media.all? && media.uniq.size == media.size &&
-        media.all? { it.user_id == generated_media&.user_id && transformation.takes?(it) }
-      errors.add(:base, "Pick the right media for every input.") unless fits
-      errors.add(:base, "Pick a prompt from the prompt folder.") unless prompt&.folder == transformation.prompt_folder
+    # Its main items (of the type's first kind) fit, it has at most one item of each other kind it takes, and every item
+    # is the result's owner's (a prompt may be shared).
+    def items_fit_transformation
+      main, *side = transformation.takes
+      items = sources
+      main_items, side_items = items.partition { it&.item_kind == main }
+      owner = result&.user_id
+      fits = main_items.any? && items.all? && items.uniq.size == items.size &&
+        items.all? { it.user_id == owner || (it.is_a?(Prompt) && it.user_id.nil?) } &&
+        side_items.map(&:item_kind).then { |kinds| kinds.uniq == kinds && (kinds - side).empty? } &&
+        (main != :media || main_items.all? { transformation.takes?(it) })
+      errors.add(:base, "Pick the right #{main.to_s.pluralize} for every input.") unless fits
       errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
-      errors.add(:base, "Pick a review.") unless review.present? == transformation.takes_review? && (review.nil? || review.user_id == generated_media&.user_id)
+      errors.add(:base, "Pick a review.") if side.include?(:review) && !review
     end
 end
