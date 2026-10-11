@@ -147,7 +147,7 @@ module Accounts
           feeds = @graph_edges.select { it.to_id == node.id }
           ready = node.step? && runs.none?(&:running?) && feeds.any? && feeds.all? { gives[it.from_id].any? }
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
-                       current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
+                       open: (helpers.folder_path(node.folder) if node.folder), current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
                        kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input),
                        gives: node.item_kind, takes: node.transformation&.takes&.join(" "), inputs: feeds.size + (node.step? ? 1 : 0),
