@@ -1,0 +1,67 @@
+<%# locals: (rubric:) %>
+<%# No authenticity token field: Turbo sends it as a header, and Preview GETs the form so it would land in the URL. %>
+<%= form_with model: rubric, authenticity_token: false, class: "space-y-4" do |f| %>
+  <% if rubric.errors.any? %>
+    <p class="<%= tw_alert_error_classes %>" role="alert"><%= rubric.errors.full_messages.to_sentence %></p>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: tw_label_classes %>
+    <%= f.text_field :name, required: true, autofocus: rubric.new_record?, placeholder: "Morning story", class: tw_input_classes %>
+  </div>
+
+  <div>
+    <%= f.label :schedule, class: tw_label_classes %>
+    <%= f.text_field :schedule, required: true, placeholder: "every weekday at 9am", aria: { describedby: "rubric_schedule_hint" }, class: tw_input_classes %>
+    <p id="rubric_schedule_hint" class="mt-1 text-xs text-ink-500">
+      Plain English like <code>every weekday at 9am</code> or a cron line like <code>0 18 * * 5</code>. At most once an hour.
+    </p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <%= f.label :format, class: tw_label_classes %>
+      <%= f.select :format, Rubric.formats.keys.map { [ it.capitalize, it ] }, {}, class: tw_input_classes %>
+    </div>
+    <div>
+      <%= f.label :folder_id, "From folder", class: tw_label_classes %>
+      <%= f.select :folder_id, Folder.grouped_options, {}, class: tw_input_classes %>
+    </div>
+  </div>
+
+  <fieldset>
+    <legend class="<%= tw_label_classes %>">Color</legend>
+    <div class="flex gap-2">
+      <% Rubric.colors.each_key do |color| %>
+        <label title="<%= color.humanize %>"
+               class="size-8 cursor-pointer rounded-full border-2 <%= AppHelper::NOTE_COLORS[color] %> has-checked:ring-2 has-checked:ring-rocket has-checked:ring-offset-2 has-focus-visible:ring-2 has-focus-visible:ring-rocket/30">
+          <%= f.radio_button :color, color, class: "sr-only" %>
+          <span class="sr-only"><%= color.humanize %></span>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <div>
+    <label class="flex items-start gap-2 text-sm text-ink-900">
+      <%= f.check_box :auto_publish, class: "mt-0.5 size-4 rounded border-ink-900/30 text-rocket focus:ring-rocket/30" %>
+      <span>
+        <span class="font-medium">Auto-publish to Instagram</span>
+        <span class="block text-xs text-ink-500">
+          Off: it only shows on the calendar.
+          <% unless Current.account.instagram_authorized? %>
+            <%= link_to "Connect Instagram", instagram_profile_path, class: "font-medium text-rocket underline underline-offset-2" %> first.
+          <% end %>
+        </span>
+      </span>
+    </label>
+  </div>
+
+  <div class="flex items-center justify-end gap-2">
+    <%= link_to "Cancel", rubrics_path, class: "rounded-lg px-3.5 py-2 text-sm font-medium text-ink-600 hover:bg-ink-900/5 hover:text-ink-900" %>
+    <%= f.button "Preview", type: :submit, name: nil, formmethod: :get,
+          formaction: rubric.new_record? ? new_rubric_path : edit_rubric_path(rubric),
+          class: "rb-btn-ghost-on-light bg-white px-3.5 py-2 text-sm hover:bg-ink-900/5" %>
+    <%= f.button "Save", type: :submit, class: "rb-btn-primary px-3.5 py-2 text-sm" %>
+  </div>
+<% end %>

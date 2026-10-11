@@ -14,20 +14,19 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     @media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")
   end
 
-  test "owner deletes media and posts made from it stay" do
+  test "owner deletes media and rubric posts made from it stay" do
     user = sign_in_as(users(:lazaro_nixon))
     media = user.library_media.create!(kind: "photo")
     media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg")
-    post = user.smm_posts.create!(smm_post_media_items: [ SmmPostMediaItem.new(library_media: media) ])
+    post = user.rubrics.create!(name: "Daily", schedule: "every day at 9am", folder: folders(:inbox)).posts.create!(library_media: media)
 
-    assert_difference -> { LibraryMedia.count } => -1, -> { SmmPostMediaItem.count } => -1, -> { SmmPost.count } => 0 do
+    assert_difference -> { LibraryMedia.count } => -1, -> { RubricPost.count } => 0 do
       delete library_media_url(media)
     end
 
     assert_redirected_to library_folders_url("inbox")
     assert_equal "Media deleted.", flash[:notice]
-    assert_empty post.reload.library_media
-    post.update!(status: "ready")
+    assert_nil post.reload.library_media
   end
 
   test "cannot delete another account's media" do

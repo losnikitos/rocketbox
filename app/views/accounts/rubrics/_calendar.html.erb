@@ -1,0 +1,64 @@
+<%# locals: (rubrics:, posts:, month:, days:, draft: nil) %>
+<%# Past days show what each rubric posted; from now on, when each is scheduled to. The draft (dashed) stands in for its saved self. %>
+<%
+  now = Time.current
+  rubrics = rubrics.map { it.id && it.id == draft&.id ? draft : it }
+  rubrics += [ draft ] if draft&.new_record?
+  upcoming = [ days.first.beginning_of_day, now ].max..days.last.end_of_day
+  entries = posts.map { [ it.created_at.in_time_zone, it.rubric, it ] }
+  if upcoming.begin < upcoming.end
+    rubrics.reject { it.errors[:schedule].any? }.each do |rubric|
+      entries += rubric.occurrences(upcoming).map { [ it, rubric, nil ] }
+    end
+  end
+  by_day = entries.sort_by(&:first).group_by { it.first.to_date }
+  month_link = ->(date) { url_for(request.query_parameters.merge(month: date.strftime("%Y-%m"))) }
+%>
+<section aria-label="Calendar" class="rounded-2xl border border-ink-900/10 bg-white p-4">
+  <div class="mb-3 flex items-center gap-1">
+    <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900"><%= month.strftime("%B %Y") %></h2>
+    <%= link_to month_link.(month.prev_month), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Previous month" } do %>
+      <%= heroicon "chevron-left", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+    <% end %>
+    <%= link_to "Today", month_link.(Date.current), class: "rounded-lg px-2.5 py-1 text-sm font-medium text-ink-700 hover:bg-ink-900/5" %>
+    <%= link_to month_link.(month.next_month), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Next month" } do %>
+      <%= heroicon "chevron-right", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+    <% end %>
+  </div>
+
+  <div class="overflow-x-auto">
+    <div class="grid min-w-2xl grid-cols-7 gap-px overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/10">
+      <% %w[Mon Tue Wed Thu Fri Sat Sun].each do |weekday| %>
+        <div class="bg-white py-1.5 text-center text-xs font-medium uppercase tracking-wide text-ink-500"><%= weekday %></div>
+      <% end %>
+      <% days.each do |date| %>
+        <% day_entries = by_day.fetch(date, []) %>
+        <div class="min-h-28 p-1.5 <%= date.month == month.month ? "bg-white" : "bg-stone-50" %>">
+          <div class="mb-1 text-right text-xs font-semibold tabular-nums <%= date == Date.current ? "text-rocket" : date.month == month.month ? "text-ink-700" : "text-ink-400" %>">
+            <%= date.day %>
+          </div>
+          <ul class="space-y-0.5">
+            <% day_entries.first(4).each do |time, rubric, post| %>
+              <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, post&.status, post&.error_message ].compact.join(" · ") %>"
+                  class="flex items-center gap-1 rounded border px-1 py-0.5 text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %> <%= "opacity-50" unless post || rubric.auto_publish? %>">
+                <% if post %>
+                  <% media = post.library_media %>
+                  <% if media&.file&.representable? %>
+                    <%= image_tag media.file.representation(:thumb), alt: "", class: "size-4 shrink-0 rounded-sm object-cover" %>
+                  <% end %>
+                  <%= heroicon post.status == "failed" ? "x-mark" : "check", variant: :micro,
+                        options: { class: "size-3 shrink-0 #{post.status == "failed" ? "text-signal-red" : "text-ink-500"}", "aria-hidden": true } %>
+                <% end %>
+                <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
+                <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
+              </li>
+            <% end %>
+            <% if day_entries.size > 4 %>
+              <li class="px-1 text-xs text-ink-500">+<%= day_entries.size - 4 %> more</li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

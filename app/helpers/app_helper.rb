@@ -8,8 +8,8 @@ module AppHelper
       [ :recent, "Recent", [] ]
     when "accounts/folders", "accounts/library"
       [ :folders, (@folder || @media&.folder)&.name || "Media", [] ]
-    when "accounts/posts"
-      [ :posts, "Posts", posts_tabs ]
+    when "accounts/rubrics"
+      [ :schedule, "Schedule", [] ]
     when "accounts/business"
       [ :business, "Business", [] ]
     when "accounts/calendar"
@@ -71,34 +71,11 @@ module AppHelper
 
   def folder_color(folder) = FOLDER_COLORS[folder&.color || "sky"]
 
-  def posts_tabs
-    index = action_name == "index"
-    [
-      [ instagram_posts_path, "All", index && params[:kind].blank? ],
-      :separator,
-      *Accounts::PostsController::KINDS.map { |kind| [ instagram_posts_path(kind:), kind.capitalize, index && params[:kind] == kind ] }
-    ]
-  end
-
-  def smm_post_status_text_class(status)
-    case status.to_s
-    when "ready" then "text-signal-green"
-    when "published" then "text-rocket"
-    when "failed" then "text-signal-red"
-    when "generating" then "text-ink-700"
-    else "text-ink-500"
-    end
-  end
-
-  def smm_post_status_pill_class(status)
-    bg = case status.to_s
-    when "ready" then "bg-signal-green/15"
-    when "published" then "bg-rocket/15"
-    when "failed" then "bg-signal-red/15"
-    when "generating" then "bg-signal-yellow/30"
-    else "bg-ink-900/5"
-    end
-    "#{bg} #{smm_post_status_text_class(status)}"
+  # A rubric post's status: publishing, published or failed.
+  def rubric_post_status_pill_class(status)
+    color = { "publishing" => "bg-signal-yellow/20 text-ink-700", "published" => "bg-rocket/15 text-rocket",
+              "failed" => "bg-signal-red/10 text-signal-red" }[status.to_s]
+    "rounded-full px-2 py-0.5 text-xs font-medium #{color}"
   end
 
   # A workflow run's or step run's status: draft, running, complete or failed.

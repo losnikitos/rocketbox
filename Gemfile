@@ -102,5 +102,8 @@ gem "mission_control-jobs", "~> 1.3"
 
 gem "rqrcode", "~> 3.2"
 
+# Cron and plain-English schedules for rubrics
+gem "fugit", "~> 1.11"
+
 # Headless Chrome for rendering layer templates to PNG
 gem "ferrum", "~> 0.18"

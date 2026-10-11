@@ -47,17 +47,12 @@ Rails.application.routes.draw do
     scope path: "instagram", module: :accounts, as: :instagram do
       get "profile", to: "instagram#show"
       delete "profile", to: "instagram#destroy"
-      resources :posts, only: %i[index show destroy] do
-        member do
-          post :publish
-          post :react
-        end
-      end
     end
 
     scope module: :accounts do
       get "recent", to: "recent#show", as: :recent
       get "calendar", to: "calendar#show", as: :calendar
+      resources :rubrics, path: "schedule", except: :show
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
       resources :prompts, except: %i[index show]

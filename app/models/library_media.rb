@@ -5,8 +5,8 @@ class LibraryMedia < ApplicationRecord
   belongs_to :folder
   has_and_belongs_to_many :tags
   before_validation(on: :create) { self.folder ||= Folder.inbox }
-  # Posts outlive their source media; only the join rows go.
-  has_many :smm_post_media_items, dependent: :delete_all
+  # Rubric posts outlive their media, as history.
+  has_many :rubric_posts, dependent: :nullify
   # Generated media outlive their source; only the input rows go.
   has_many :transformation_run_inputs, as: :item, dependent: :delete_all
   # Versions are the runs this media is the first input of, as in #original; other inputs only feed it.

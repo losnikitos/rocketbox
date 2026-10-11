@@ -1,0 +1,54 @@
+<% content_for(:title, "Schedule — Rocketbox") %>
+<% content_for :header_actions do %>
+  <%= link_to new_rubric_path, class: "rb-btn-ghost-on-light gap-1.5 bg-white px-3.5 py-1.5 hover:bg-ink-900/5" do %>
+    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    New rubric
+  <% end %>
+<% end %>
+
+<div class="space-y-6">
+  <%= render "calendar", rubrics: @rubrics, posts: @posts, month: @month, days: @days %>
+
+  <% if @rubrics.any? %>
+    <ul aria-label="Rubrics" class="divide-y divide-ink-900/5 rounded-2xl border border-ink-900/10 bg-white">
+      <% @rubrics.each do |rubric| %>
+        <% last_post = rubric.posts.first %>
+        <% next_media = rubric.next_media %>
+        <li id="<%= dom_id(rubric) %>">
+          <%= link_to edit_rubric_path(rubric), class: "flex items-center gap-3 px-4 py-3 hover:bg-ink-900/3" do %>
+            <span class="size-3 shrink-0 rounded-full border-2 <%= AppHelper::NOTE_COLORS[rubric.color] %>" aria-hidden="true"></span>
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center gap-2">
+                <span class="truncate text-sm font-semibold text-ink-900"><%= rubric.name %></span>
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium <%= rubric.auto_publish? ? "bg-rocket/15 text-rocket" : "bg-ink-900/5 text-ink-500" %>">
+                  <%= rubric.auto_publish? ? "Auto-publish" : "Off" %>
+                </span>
+              </span>
+              <span class="block truncate text-xs text-ink-500">
+                <%= [ rubric.schedule, rubric.format.capitalize, rubric.folder.path ].join(" · ") %>
+              </span>
+              <span class="block truncate text-xs text-ink-500">
+                <% next_time = rubric.next_occurrence %>
+                <%= [ ("Next #{next_time.strftime("%a %-d %b, %H:%M")}" if next_time),
+                      ("last posted #{time_ago_in_words(last_post.created_at)} ago" if last_post) ].compact.join(" · ").upcase_first %>
+              </span>
+            </span>
+            <% if next_media&.file&.representable? %>
+              <span class="shrink-0 text-right text-xs text-ink-500">
+                <%= image_tag next_media.file.representation(:thumb), alt: "Next up", title: "Next up",
+                      class: "size-10 rounded-md bg-ink-900/5 object-cover" %>
+              </span>
+            <% elsif next_media.nil? %>
+              <span class="shrink-0 text-xs text-ink-400">Folder is empty</span>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <div class="rounded-2xl border border-ink-900/10 bg-white p-6 text-center text-sm text-ink-500">
+      A rubric posts from a folder on a schedule, e.g. a story from Ready every weekday at 9am.
+      <%= link_to "Add your first rubric", new_rubric_path, class: "font-medium text-rocket underline underline-offset-2" %>.
+    </div>
+  <% end %>
+</div>

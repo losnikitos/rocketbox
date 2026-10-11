@@ -1,0 +1,50 @@
+<% content_for(:title, "#{@rubric.name_was} — Rocketbox") %>
+
+<div class="grid items-start gap-6 lg:grid-cols-3">
+  <div class="space-y-6">
+    <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+      <h2 class="mb-4 font-manrope text-lg font-bold tracking-tight text-ink-900"><%= @rubric.name_was %></h2>
+      <%= render "form", rubric: @rubric %>
+    </div>
+
+    <section aria-labelledby="rubric_posts_heading" class="rounded-2xl border border-ink-900/10 bg-white p-6">
+      <h2 id="rubric_posts_heading" class="mb-3 text-sm font-semibold text-ink-900">Posted</h2>
+      <% posts = @rubric.posts.includes(library_media: { file_attachment: :blob }).limit(20) %>
+      <% if posts.any? %>
+        <ul class="space-y-2">
+          <% posts.each do |post| %>
+            <li class="flex items-center gap-3">
+              <% if (media = post.library_media) %>
+                <%= link_to library_item_path(media), class: "shrink-0" do %>
+                  <% if media.file.representable? %>
+                    <%= image_tag media.file.representation(:thumb), alt: "Media", class: "size-10 rounded-md bg-ink-900/5 object-cover" %>
+                  <% else %>
+                    <span class="block size-10 rounded-md bg-ink-900/5"></span>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-ink-900/5 text-xs text-ink-400" title="Media deleted">—</span>
+              <% end %>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm text-ink-900"><%= post.created_at.strftime("%a %-d %b, %H:%M") %></span>
+                <% if post.error_message %>
+                  <span class="block truncate text-xs text-signal-red" title="<%= post.error_message %>"><%= post.error_message %></span>
+                <% end %>
+              </span>
+              <span class="<%= rubric_post_status_pill_class(post.status) %>"><%= post.status.capitalize %></span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-sm text-ink-500">Nothing posted yet.</p>
+      <% end %>
+    </section>
+
+    <%= button_to "Delete rubric", rubric_path(@rubric), method: :delete,
+          form: { data: { turbo_confirm: "Delete #{@rubric.name_was}? Its post history goes too." } },
+          class: "rounded-lg px-3.5 py-2 text-sm font-medium text-signal-red hover:bg-signal-red/10" %>
+  </div>
+  <div class="lg:col-span-2">
+    <%= render "calendar", rubrics: @rubrics, posts: @posts, month: @month, days: @days, draft: @rubric %>
+  </div>
+</div>

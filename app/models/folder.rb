@@ -18,6 +18,7 @@ class Folder < ApplicationRecord
   has_many :prompts, dependent: :restrict_with_error
   has_many :reviews, dependent: :restrict_with_error
   has_many :workflow_nodes, dependent: :restrict_with_error
+  has_many :rubrics, dependent: :restrict_with_error
 
   enum :color, %w[sky emerald amber rose violet slate].index_by(&:itself), validate: true
   enum :kind, %w[media prompt review].index_by(&:itself), validate: true

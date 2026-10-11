@@ -14,8 +14,7 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 8, maximum: 72 }, allow_nil: true
 
   has_many :sessions, dependent: :destroy
-  # smm_posts before library_media: post media items reference library media.
-  has_many :smm_posts, dependent: :destroy
+  has_many :rubrics, dependent: :destroy
   has_many :library_media, dependent: :destroy
   has_many :incoming_messages, dependent: :destroy
   has_many :outgoing_messages, dependent: :destroy
