@@ -1,6 +1,6 @@
 # Model price bands
 
-Every enabled image or video model carries a rough price band: `price_band` on `ruby_llm_models`, 1–3, shown as £ / ££ / £££. It is set by hand in Active Admin ([admin](/app/admin/ruby_llm_models.rb), RubyLLM → Models → Edit).
+Every enabled image, video or chat model carries a rough price band: `price_band` on `ruby_llm_models`, 1–3, shown as £ / ££ / £££. It is set by hand in Active Admin ([admin](/app/admin/ruby_llm_models.rb), RubyLLM → Models → Edit).
 
 The band sorts the model picker cheapest first, with unbanded models last ([GenerationOptions#models](/app/models/concerns/generation_options.rb)). It also draws the coins in the picker ([view](/app/views/shared/_generation_options.html.erb)). New records default to the first model, which is the cheapest.
 
@@ -10,14 +10,15 @@ Compare providers on what one generation costs at **our defaults** (`IMAGE_DEFAU
 
 - **Image:** cost of one **2K** image at the **highest quality the app offers** (OpenAI: `high`). Output only.
 - **Video:** price **per second at 720p**. Our default 8 s clip costs 8× that.
+- **Chat (LLM steps):** cost of one typical step run, **2,000 input + 500 output tokens** (an instruction, a few prompts and one image in, one prompt out).
 
-| Band | Image (per 2K image) | Video (per second, 720p) |
-| --- | --- | --- |
-| £ | under ~$0.04 | ~$0.05 |
-| ££ | ~$0.04–0.11 | ~$0.10 |
-| £££ | ~$0.12 and up | ~$0.40 |
+| Band | Image (per 2K image) | Video (per second, 720p) | Chat (per step run) |
+| --- | --- | --- | --- |
+| £ | under ~$0.04 | ~$0.05 | under ~$0.002 |
+| ££ | ~$0.04–0.11 | ~$0.10 | ~$0.002–0.006 |
+| £££ | ~$0.12 and up | ~$0.40 | ~$0.006 and up |
 
-Don't use the `pricing` column on the model row. It is per token, missing for many models, and can't be compared across providers.
+For images and video, don't use the `pricing` column on the model row. It is per token, missing for many models, and can't be compared across providers. Chat models are billed per token, so their row's `text_tokens` input and output rates are the basis; check them against the provider's pricing page.
 
 ### Sources
 
@@ -40,12 +41,20 @@ Don't use the `pricing` column on the model row. It is per token, missing for ma
 | `grok-imagine-video` | $0.07 / s | £ |
 | `veo-3.1-fast-generate-preview`, `gemini-omni-1.1-flash` | $0.10 / s | ££ |
 | `veo-3.1-generate-preview` | $0.40 / s | £££ |
+| `gpt-6-luna` | $0.10 / $0.50 per M tokens, $0.0005 / run | £ |
+| `gpt-5.6-luna` | $0.20 / $1.20 per M tokens, $0.0010 / run | £ |
+| `gemini-3.1-flash-lite` | $0.25 / $1.50 per M tokens, $0.0013 / run | £ |
+| `gemini-3.5-flash-lite` | $0.30 / $2.50 per M tokens, $0.0019 / run | £ |
+| `gemini-3.8-flash` | $0.75 / $3.75 per M tokens, $0.003 / run | ££ |
+| `grok-4.7` | $2 / $6 per M tokens, $0.007 / run | £££ |
+| `gpt-6.1-sol` | $2 / $10 per M tokens, $0.009 / run | £££ |
 
 ## Known gaps
 
 - **Reference photos are not counted.** Edits and step runs also pay input tokens. These are cheap on Gemini, but `gpt-image-2` always reads input at high fidelity, which makes it even pricier than its band shows.
 - **Lower quality settings are cheaper.** At OpenAI `medium` or `low`, the 2.5 models cost less than flash-lite. The band reflects the worst case.
 - **Gemini thinking/text output** is billed too. It is small and varies per call.
+- **Chat reasoning tokens** bill as output, so a thinking model's real run can cost several times its band's estimate. Image input tokens also vary by provider.
 - **Real cost** of every call is in RubyLLM's usage table ([admin](/app/admin/ruby_llm_usages.rb), RubyLLM → Usages). Check it against the band once a model has real traffic.
 
 ## Enabling a new model

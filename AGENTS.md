@@ -62,7 +62,7 @@ No CSS transitions on hover (`transition`, `transition-colors`, `duration-*`, â€
 # Documentation Index
 
 ### [WORKFLOWS.md](./docs/WORKFLOWS.md)
-Workflow graphs, the canvas editor, runs and step runs, reading one as Markdown (agents); prior art (n8n, ComfyUI, Zapier).
+Workflow graphs, the canvas editor, runs and step runs; prior art (n8n, ComfyUI, Zapier).
 
 ### [STRIPE.md](./docs/STRIPE.md)
 Payments and billing via Stripe.

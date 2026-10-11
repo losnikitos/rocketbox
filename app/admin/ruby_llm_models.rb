@@ -64,7 +64,7 @@ ActiveAdmin.register RubyLLM::ActiveRecord::Model, as: "Model" do
     f.inputs do
       f.input :name
       f.input :enabled
-      f.input :price_band, as: :select, collection: { "£" => 1, "££" => 2, "£££" => 3 }, hint: "Cost of a 2K image; sorts the model picker, cheapest first"
+      f.input :price_band, as: :select, collection: { "£" => 1, "££" => 2, "£££" => 3 }, hint: "Cost of a 2K image, or a typical chat call; sorts the model picker, cheapest first"
     end
     f.actions
   end

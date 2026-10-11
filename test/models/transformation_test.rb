@@ -180,6 +180,7 @@ class TransformationTest < ActiveSupport::TestCase
   test "an LLM writes one prompt from the prompts and images fed to it, or none, into the given folder, its body the instruction" do
     llm = Transformation.create!(name: "Mix", kind: "llm", body: "Blend these into one shot.", style: Style.create!(name: "Film", body: "35mm grain."))
     assert_equal [ { prompt: 0.., image: 0.. }, %i[prompt media], :prompt, nil ], [ llm.inputs, llm.takes, llm.makes, llm.style ]
+    assert_equal [ { "model" => "grok-4.6" }, [ "grok-4.6" ] ], [ llm.options, llm.models.map(&:model_id) ]
     shots = [ "The empty chair.", "A premiere." ].map.with_index { |body, i| Prompt.create!(name: "Shot #{i}", body:, folder: folders(:prompts_shots)) }
     asked = stub_chat("An empty chair at a premiere.")
 
@@ -190,12 +191,13 @@ class TransformationTest < ActiveSupport::TestCase
     run.run!
 
     assert_equal [ "complete", "An empty chair at a premiere.", 0.01 ], [ run.reload.status, written.reload.body, run.cost ]
-    instructions, message, images = asked.sole
+    opened, instructions, message, images = asked.sole
+    assert_equal({ model: "grok-4.6", provider: :xai }, opened)
     assert_includes instructions, "Blend these into one shot."
     assert_equal [ "## Shot 0\n\nThe empty chair.\n\n## Shot 1\n\nA premiere.", [ @interior ] ], [ message, images.map(&:record) ]
 
     llm.run!(items: [], folder: folders(:prompts_ready), user: @user).run!
-    assert_equal [ "Write it.", [] ], asked.last.drop(1)
+    assert_equal [ "Write it.", [] ], asked.last.drop(2)
   end
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
@@ -426,14 +428,14 @@ class TransformationTest < ActiveSupport::TestCase
 
     def start(transformation, items, **) = transformation.run!(items:, folder: folders(:ready), **)
 
-    # Collects each chat's instructions, message and attachments; it replies with `reply` at a cent.
+    # Collects each chat's model and provider, instructions, message and attachments; it replies with `reply` at a cent.
     def stub_chat(reply)
       asked = []
       chat = Object.new
-      chat.define_singleton_method(:with_instructions) { |text| asked << [ text ] and self }
+      chat.define_singleton_method(:with_instructions) { |text| asked.last << text and self }
       chat.define_singleton_method(:ask) { |message, with: nil| asked.last.push(message, with) and Struct.new(:content).new(reply) }
       chat.define_singleton_method(:cost) { Struct.new(:total).new(0.01) }
-      RubyLLM.define_singleton_method(:chat) { |**| chat }
+      RubyLLM.define_singleton_method(:chat) { |**opened| asked << [ opened ] and chat }
       asked
     end
 
