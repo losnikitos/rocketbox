@@ -15,7 +15,7 @@ class Transformation < ApplicationRecord
   has_many :workflow_nodes, dependent: :restrict_with_error
   belongs_to :style, optional: true
 
-  delegate :ai?, :video?, :single?, :reel?, :slots, :inputs, :takes, :makes, :layer, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :inputs, :takes, :fits?, :picks?, :makes, :layer, :cover, to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
@@ -57,8 +57,6 @@ class Transformation < ApplicationRecord
       end
     end.join(" · ").presence || type_label
   end
-
-  def takes?(media) = media.story_image? || (!ai? && media.video?)
 
   # `items` are the run's inputs, in order: its main items, then the prompt and review it picked. The result lands in
   # `folder` with `tags` (media). `workflow_run` and its step `workflow_node` the run it's a step run of, if any.

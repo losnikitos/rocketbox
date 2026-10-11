@@ -177,22 +177,25 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal [ prompts.first, prompt, style, media ], [ run.reload.prompt_text, run.prompt, run.style, run.source_media ]
   end
 
-  test "an LLM writes one prompt from the prompts fed to it into the given folder, its body the instruction" do
+  test "an LLM writes one prompt from the prompts and images fed to it, or none, into the given folder, its body the instruction" do
     llm = Transformation.create!(name: "Mix", kind: "llm", body: "Blend these into one shot.", style: Style.create!(name: "Film", body: "35mm grain."))
-    assert_equal [ %i[prompt], :prompt, nil ], [ llm.takes, llm.makes, llm.style ]
+    assert_equal [ { prompt: 0.., image: 0.. }, %i[prompt media], :prompt, nil ], [ llm.inputs, llm.takes, llm.makes, llm.style ]
     shots = [ "The empty chair.", "A premiere." ].map.with_index { |body, i| Prompt.create!(name: "Shot #{i}", body:, folder: folders(:prompts_shots)) }
     asked = stub_chat("An empty chair at a premiere.")
 
-    assert_raises(ActiveRecord::RecordInvalid) { llm.run!(items: [ @interior ], folder: folders(:prompts_ready), user: @user) }
-    run = llm.run!(items: shots, folder: folders(:prompts_ready), user: @user)
+    assert_raises(ActiveRecord::RecordInvalid) { llm.run!(items: [ @user.reviews.create!(source: "google", customer_name: "Dana", rating: 5, body: "Great.") ], folder: folders(:prompts_ready), user: @user) }
+    run = llm.run!(items: [ *shots, @interior ], folder: folders(:prompts_ready), user: @user)
     written = run.generated_prompt
-    assert_equal [ folders(:prompts_ready), @user, "" ], [ written.folder, written.user, written.body ]
+    assert_equal [ folders(:prompts_ready), @user, "", "Blend these into one shot." ], [ written.folder, written.user, written.body, run.prompt_text ]
     run.run!
 
     assert_equal [ "complete", "An empty chair at a premiere.", 0.01 ], [ run.reload.status, written.reload.body, run.cost ]
-    instructions, message = asked.sole
+    instructions, message, images = asked.sole
     assert_includes instructions, "Blend these into one shot."
-    assert_equal "## Shot 0\n\nThe empty chair.\n\n## Shot 1\n\nA premiere.", message
+    assert_equal [ "## Shot 0\n\nThe empty chair.\n\n## Shot 1\n\nA premiere.", [ @interior ] ], [ message, images.map(&:record) ]
+
+    llm.run!(items: [], folder: folders(:prompts_ready), user: @user).run!
+    assert_equal [ "Write it.", [] ], asked.last.drop(1)
   end
 
   test "a type drops the inputs it doesn't take, and is fixed once saved" do
@@ -276,8 +279,9 @@ class TransformationTest < ActiveSupport::TestCase
     Open3.capture2e("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=1:rate=30", "-pix_fmt", "yuv420p", clip.path)
     video = LibraryMedia.create!(kind: "video", folder: folders(:ready), user: @user,
       file: { io: File.open(clip.path), filename: "clip.mp4", content_type: "video/mp4" })
-    assert feature.takes?(video)
-    assert_not @collage.takes?(video)
+    assert feature.fits?(:media, video)
+    assert_not @collage.fits?(:image, video)
+    assert_raises(ActiveRecord::RecordInvalid) { start(@collage, [ video ]) }
     png, htmls = file_fixture("logo.png").binread, []
     Layer.define_singleton_method(:screenshot) { |html, size:| htmls << html and png }
 
@@ -422,12 +426,12 @@ class TransformationTest < ActiveSupport::TestCase
 
     def start(transformation, items, **) = transformation.run!(items:, folder: folders(:ready), **)
 
-    # Collects each chat's instructions and message; it replies with `reply` at a cent.
+    # Collects each chat's instructions, message and attachments; it replies with `reply` at a cent.
     def stub_chat(reply)
       asked = []
       chat = Object.new
       chat.define_singleton_method(:with_instructions) { |text| asked << [ text ] and self }
-      chat.define_singleton_method(:ask) { |message| asked.last << message and Struct.new(:content).new(reply) }
+      chat.define_singleton_method(:ask) { |message, with: nil| asked.last.push(message, with) and Struct.new(:content).new(reply) }
       chat.define_singleton_method(:cost) { Struct.new(:total).new(0.01) }
       RubyLLM.define_singleton_method(:chat) { |**| chat }
       asked

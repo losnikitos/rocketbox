@@ -8,5 +8,5 @@ class Transformation::Review < Transformation::Overlay
 
   def self.layer = Layer.find("review")
 
-  def self.takes = %i[media review]
+  def self.inputs = { media: 1..1, review: 1..1 }
 end

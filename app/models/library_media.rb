@@ -9,7 +9,7 @@ class LibraryMedia < ApplicationRecord
   has_many :smm_post_media_items, dependent: :delete_all
   # Generated media outlive their source; only the input rows go.
   has_many :transformation_run_inputs, as: :item, dependent: :delete_all
-  # Versions are the runs this media is the first input of, as in #original; other inputs only fill a slot.
+  # Versions are the runs this media is the first input of, as in #original; other inputs only feed it.
   has_many :source_inputs, -> { where(position: 0) }, class_name: "TransformationRunInput", as: :item
   has_many :source_runs, through: :source_inputs, source: :transformation_run
   has_many :generated_media, through: :source_runs, source: :result, source_type: "LibraryMedia"

@@ -2,14 +2,11 @@
 
 # Items flow from a folder, a media or a step to a step or a folder of the same workflow; one end is always a step.
 # It carries what its start gives (media, prompts or reviews): into a step, a kind the step takes; into a folder, the
-# folder's kind. Into a step whose type has slots, it goes into one of them (`slot`); a single-input step takes just
-# one of its main kind.
+# folder's kind.
 class WorkflowEdge < ApplicationRecord
   belongs_to :workflow, touch: true
   belongs_to :from, class_name: "WorkflowNode"
   belongs_to :to, class_name: "WorkflowNode"
-
-  normalizes :slot, with: ->(slot) { slot.presence }
 
   validates :to_id, uniqueness: { scope: :from_id, message: "These nodes are already connected." }
   validate do
@@ -25,12 +22,5 @@ class WorkflowEdge < ApplicationRecord
       errors.add(:base, "#{to.label} takes #{takes.map { it.to_s.pluralize }.to_sentence(two_words_connector: " or ", last_word_connector: " or ")}, not #{kind.to_s.pluralize}.")
     end
     errors.add(:base, "#{from.label} makes #{kind.to_s.pluralize}; connect it to a #{kind} folder.") if from.step? && to.folder && to.item_kind != kind
-    slots = to.transformation&.slots
-    main = kind == takes&.first
-    errors.add(:base, "Connect into one of #{to.label}'s inputs: #{slots.to_sentence}.") if slots && main && !slots.include?(slot)
-    errors.add(:slot, "only goes into a transformation with inputs") if slot && !(slots && main)
-    if main && to.transformation.inputs == 1 && workflow.edges.where(to:).where.not(id:).any? { it.from.item_kind == kind }
-      errors.add(:base, "#{to.label} takes one input.")
-    end
   end
 end

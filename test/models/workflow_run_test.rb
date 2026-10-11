@@ -90,22 +90,21 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_nil second.step_runs.first.reused_from
   end
 
-  test "a many-input step takes a folder's newest media in one step run, and a single-input step takes one arrow in" do
+  test "a many-media step takes a folder's newest media in one step run, and a one-media step runs once per media of every arrow in" do
     user = users(:lazaro_nixon)
     older, newer = [ 1.day.ago, 1.hour.ago ].map { user.library_media.create!(kind: "photo", folder: folders(:exterior), created_at: it, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
+    inside = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
     workflow = Workflow.create!(name: "Pair")
     exterior, interior, video, crop = [ { folder: folders(:exterior), take: 2 }, { folder: folders(:interior) },
       { transformation_attributes: { kind: "generate_video", body: "Pan" } }, { transformation_attributes: { kind: "smart_crop" } } ].map { workflow.nodes.create!(it) }
-    workflow.edges.create!(from: exterior, to: video)
-    workflow.edges.create!(from: exterior, to: crop)
-    assert_includes workflow.edges.new(from: interior, to: crop).tap(&:validate).errors[:base], "#{crop.label} takes one input."
+    [ [ exterior, video ], [ exterior, crop ], [ interior, crop ] ].each { |from, to| workflow.edges.create!(from:, to:) }
 
-    workflow.latest_run.start!(exterior, user)
-    assert_equal [ [ video, [ newer, older ] ], [ crop, [ newer ] ], [ crop, [ older ] ] ],
+    workflow.latest_run.start!([ exterior, interior ], user)
+    assert_equal [ [ video, [ newer, older ] ], [ crop, [ newer ] ], [ crop, [ older ] ], [ crop, [ inside ] ] ],
       workflow.latest_run.step_runs.reload.map { [ it.workflow_node, it.source_media ] }
   end
 
-  test "a folder's newest media each get a step run, and a reel takes them all once complete, slot by slot, rerunning only a new one's" do
+  test "a folder's newest media each get a step run, and a reel takes them all once complete, in arrow order, rerunning only a new one's" do
     user = users(:lazaro_nixon)
     photo = ->(folder, created_at) { user.library_media.create!(kind: "photo", folder: folders(folder), created_at:, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
     photo.(:exterior, 2.days.ago)
@@ -113,8 +112,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     workflow = Workflow.create!(name: "Batch")
     interior, exterior, crop, reel = [ { folder: folders(:interior) }, { folder: folders(:exterior), take: 2 },
       { transformation_attributes: { kind: "smart_crop" } }, { transformation_attributes: { kind: "gm_visuals" } } ].map { workflow.nodes.create!(it) }
-    assert_not workflow.edges.new(from: interior, to: reel).valid?
-    [ [ interior, reel, "interior" ], [ exterior, crop, nil ], [ crop, reel, "exterior" ] ].each { |from, to, slot| workflow.edges.create!(from:, to:, slot:) }
+    [ [ exterior, crop ], [ crop, reel ], [ interior, reel ] ].each { |from, to| workflow.edges.create!(from:, to:) }
     run = workflow.latest_run
     complete = ->(step_run) { step_run.generated_media.file.attach(io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg") && step_run.update!(status: "complete") }
 
@@ -212,11 +210,30 @@ class WorkflowRunTest < ActiveSupport::TestCase
 
     assert_equal "#{crop.label} takes media, not prompts.", rejected.(prompts, crop)
     assert_equal "#{image.label} takes media or prompts, not reviews.", rejected.(reviews, image)
-    assert_equal "#{llm.label} takes prompts, not media.", rejected.(interior, llm)
+    assert_equal "#{llm.label} takes prompts or media, not reviews.", rejected.(reviews, llm)
     assert_equal "#{llm.label} makes prompts; connect it to a prompt folder.", rejected.(llm, interior)
     assert_equal "Reviews only feed transformations; nothing connects into them.", rejected.(crop, reviews)
     assert_nil rejected.(prompts, image)
+    assert_nil rejected.(interior, llm)
     assert_nil rejected.(llm, prompts)
+  end
+
+  test "an LLM takes all the prompts and images fed to it in one step run, skipping videos, or nothing at all as a start node" do
+    user = users(:lazaro_nixon)
+    shot = Prompt.create!(name: "Empty Chair", body: "The empty chair.", folder: folders(:prompts_shots))
+    photo, = [ [ "photo", "image/jpeg" ], [ "video", "video/mp4" ] ].map do |kind, content_type|
+      user.library_media.create!(kind:, folder: folders(:interior), file: { io: StringIO.new("x"), filename: "a", content_type: })
+    end
+    workflow = Workflow.create!(name: "Captions")
+    prompts, interior, llm, alone = [ { folder: folders(:prompts_shots) }, { folder: folders(:interior), take: 2 },
+      { transformation_attributes: { kind: "llm", body: "Caption." } }, { transformation_attributes: { kind: "llm", body: "Invent." } } ].map { workflow.nodes.create!(it) }
+    [ [ prompts, llm ], [ interior, llm ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    assert_equal [ prompts, interior, alone ], workflow.start_nodes
+
+    run = workflow.latest_run
+    run.start!(workflow.start_nodes, user)
+    assert_equal [ [ llm, [ shot, photo ], "Caption." ], [ alone, [], "Invent." ] ],
+      run.step_runs.reload.map { [ it.workflow_node, it.sources, it.prompt_text ] }
   end
 
   test "a step dropped blank from an AI type doesn't start until it has a prompt" do

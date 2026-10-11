@@ -96,7 +96,7 @@ module Accounts
 
       def workflow_params
         params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_media_ids: [] }, transformation_attributes: [ :kind ] ] ],
-                                         edges_attributes: [ [ :id, :from_id, :to_id, :slot, :_destroy ] ] ])
+                                         edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
       end
 
       # Saved nodes and edges only, so a rejected edit doesn't draw.
@@ -149,9 +149,8 @@ module Accounts
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
-                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input), single: node.transformation&.inputs == 1,
-                       gives: node.item_kind, takes: node.transformation&.takes&.join(" "),
-                       inputs: feeds.size + (node.step? && !node.transformation.inputs ? 1 : 0), slots: node.transformation&.slots,
+                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input),
+                       gives: node.item_kind, takes: node.transformation&.takes&.join(" "), inputs: feeds.size + (node.step? ? 1 : 0),
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
@@ -166,7 +165,7 @@ module Accounts
           items.grep(LibraryMedia).select { it.file.attached? }
         end
         @edges = @graph_edges.map do |edge|
-          [ edge.from_id, edge.to_id, { id: edge.id, slot: edge.slot, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
+          [ edge.from_id, edge.to_id, { id: edge.id, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
                                         current: edge == @selected_edge, available: gives[edge.from_id].any?,
                                         media: carried.(edge), pinned: by_id[edge.from_id].pinned_media_ids } ]
         end

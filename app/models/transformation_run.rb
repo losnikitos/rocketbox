@@ -50,7 +50,7 @@ class TransformationRun < ApplicationRecord
   # Every item it took, in order; also before save.
   def sources = inputs.map(&:item)
   def source_media = sources.grep(LibraryMedia)
-  # The prompt and review it picked: the last of its kind, as an LLM's main items are prompts too.
+  # The prompt and review it picked: the last of its kind, as an LLM takes all its prompts.
   def prompt = sources.grep(Prompt).last
   def review = sources.grep(Review).last
 
@@ -66,7 +66,7 @@ class TransformationRun < ApplicationRecord
     else
       LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
     end
-    picked = (prompt unless transformation.takes.first == :prompt)
+    picked = (prompt if transformation.picks?(:prompt))
     self.prompt_text = [ transformation.body, picked&.body, style&.body ].compact_blank.join("\n\n") if transformation.ai?
     save!
     GenerateJob.perform_later(self)
@@ -87,19 +87,18 @@ class TransformationRun < ApplicationRecord
 
     def single_over_video? = transformation.single? && source_media.first&.video?
 
-    # Its main items (of the type's first kind) fit, it has at most one item of each other kind it takes, and every item
-    # is the result's owner's (a prompt may be shared).
+    # Every item fits one of the type's inputs, each input gets as many as it takes, and every item is the result's
+    # owner's (a prompt may be shared).
     def items_fit_transformation
-      main, *side = transformation.takes
-      items = sources
-      main_items, side_items = items.partition { it&.item_kind == main }
-      owner = result&.user_id
-      fits = main_items.any? && items.all? && items.uniq.size == items.size &&
+      items, inputs, owner = sources, transformation.inputs, result&.user_id
+      fits = items.all? && items.uniq.size == items.size &&
         items.all? { it.user_id == owner || (it.is_a?(Prompt) && it.user_id.nil?) } &&
-        side_items.map(&:item_kind).then { |kinds| kinds.uniq == kinds && (kinds - side).empty? } &&
-        (main != :media || main_items.all? { transformation.takes?(it) })
-      errors.add(:base, "Pick the right #{main.to_s.pluralize} for every input.") unless fits
+        items.all? { |item| inputs.keys.any? { transformation.fits?(it, item) } } &&
+        inputs.all? { |kind, count| count.cover?(items.count { transformation.fits?(kind, it) }) }
+      unless fits
+        wanted = inputs.map { |kind, count| "#{count.begin}..#{count.end || "n"} #{kind.to_s.pluralize}" }.to_sentence
+        errors.add(:base, "Give it #{wanted.presence || "nothing"}.")
+      end
       errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?
-      errors.add(:base, "Pick a review.") if side.include?(:review) && !review
     end
 end

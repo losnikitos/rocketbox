@@ -4,7 +4,8 @@
   ready = ->(step) { Folder.ready(step.transformation.makes) }
   hashtags = ->(tags) { tags.map { "##{it.name}" }.join(" ").presence }
   ref = ->(node) { "n#{node.id} #{node.step? ? %("#{node.label}") : node.label}" }
-  ins = ->(node) { edges.select { it.to_id == node.id }.map { [ ref.(by_id[it.from_id]), (" (slot #{it.slot})" if it.slot) ].join } }
+  ins = ->(node) { edges.select { it.to_id == node.id }.map { ref.(by_id[it.from_id]) } }
+  count = ->(range) { "#{range.begin}..#{range.end || "n"}" }
   outs = ->(node) { edges.select { it.from_id == node.id }.map { ref.(by_id[it.to_id]) } }
   output_folder = ->(step) { edges.map { by_id[it.to_id] if it.from_id == step.id }.find { it && !it.step? } }
   media_line = ->(media) do
@@ -35,11 +36,14 @@
 
 How to read it (more in docs/WORKFLOWS.md): every node gives items of one kind: media, prompts or reviews. A media folder
 gives its pinned media, else its newest N, having all its tags; a prompt folder all its prompts; Reviews its 5-star
-reviews; a media node itself. A step batches its main kind (the first it takes): once per item, or all of them in one
-step run (Image, Video, reels, LLM); each step run also picks one item of each other kind fed to it (a prompt at random,
-the newest review). Each step run makes one item of the kind its step makes, landing in its first output folder, else
-<%= Folder.ready.path %> (media) or <%= Folder.ready("prompt").path %> (prompts), media with the step's tags. Results
-don't inherit their source's tags. A step starts once every node feeding it gives something.
+reviews; a media node itself. A step's inputs each take a kind (images, videos, media, prompts or reviews) and a count
+(0..1, 1..1, 1..n, 0..n): a media input of 1 makes one step run per item; a prompt or review input of at most one picks
+one per step run (a prompt at random, the newest review); any other input takes all its items in each step run
+(Image, Video, reels, LLM). An image or video input skips media that isn't one. Each step run makes one item of the
+kind its step makes, landing in its first output folder, else <%= Folder.ready.path %> (media) or
+<%= Folder.ready("prompt").path %> (prompts), media with the step's tags. Results don't inherit their source's tags. A
+step starts once every node feeding it gives something and each input gets at least its minimum; a step taking
+nothing it isn't given (an LLM) is a start node itself.
 
 ## Graph
 
@@ -55,7 +59,7 @@ flowchart LR
 <% end %>
 <% end %>
 <% edges.each do |edge| %>
-  n<%= edge.from_id %> --><%= "|#{mermaid.(edge.slot)}|" if edge.slot %> n<%= edge.to_id %>
+  n<%= edge.from_id %> --> n<%= edge.to_id %>
 <% end %>
 <% graph.select { it.step? && !output_folder.(it) }.group_by { ready.(it) }.each do |folder, steps| %>
   ready<%= folder.id %>[/<%= mermaid.("#{folder.path} (no output folder)") %>/]
@@ -72,15 +76,12 @@ flowchart LR
 <% t = node.transformation %>
 ### n<%= node.id %> · Step "<%= node.label %>"<%= " (selected)" if node == @selected %>
 
-- Type: <%= t.type_label %> (`<%= t.kind %>`), <%= t.inputs == 1 ? "one input, one step run per #{t.takes.first}" : "takes all its inputs' #{t.takes.first.to_s.pluralize} in one step run" %>
-- Takes: <%= t.takes.first.to_s.pluralize %> (main)<%= t.takes.drop(1).map { ", one #{it} per step run" }.join %>; makes: <%= t.makes.to_s.pluralize %>
+- Type: <%= t.type_label %> (`<%= t.kind %>`)
+- Takes: <%= t.inputs.map { |kind, range| "#{kind.to_s.pluralize} #{count.(range)}" }.join(", ").presence || "nothing" %>; makes: <%= t.makes.to_s.pluralize %>
 - Options: <%= t.options_label %> `<%= t.options.to_json %>`
 - Tags it sets on what it makes: <%= hashtags.(node.tags) || "none" %>
 - From: <%= ins.(node).join(", ").presence || "nothing yet" %>
 - To: <%= outs.(node).join(", ").presence || "nothing" %><%= ", results land in #{ready.(node).path}" unless output_folder.(node) %>
-<% if t.slots %>
-- Slots, in the order their media reach a step run: <%= t.slots.join(", ") %>
-<% end %>
 <% if t.layer %>
 - Layer: <%= t.layer.name %>
 <% end %>
@@ -89,7 +90,7 @@ flowchart LR
 <% end %>
 <% if t.ai? %>
 
-<%= t.makes == :prompt ? "Instruction (the input prompts are the message):" : "Prompt (a picked prompt's text is appended):" %>
+<%= t.makes == :prompt ? "Instruction (the input prompts and images are the message):" : "Prompt (a picked prompt's text is appended):" %>
 
 ~~~text
 <%= t.body %>
