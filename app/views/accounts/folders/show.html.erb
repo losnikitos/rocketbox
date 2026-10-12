@@ -126,8 +126,11 @@
                 <% generated = media.generated_media.select { it.file.attached? }.sort_by(&:created_at).reverse %>
                 <span class="relative block">
                   <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover", play: true %>
-                  <% if media.tags.any? %>
-                    <span class="absolute top-1.5 left-1.5 right-10 flex flex-wrap gap-1"><%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %></span>
+                  <% if media.job || media.tags.any? %>
+                    <span class="absolute top-1.5 left-1.5 right-10 flex flex-wrap gap-1">
+                      <%= render "accounts/jobs/job", job: media.job if media.job %>
+                      <%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %>
+                    </span>
                   <% end %>
                   <% if generated.any? %>
                     <span class="absolute inset-x-1.5 bottom-1.5 flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-hidden="true">

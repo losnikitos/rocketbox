@@ -77,6 +77,31 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_empty @media.reload.tags
   end
 
+  test "sets and clears its job from the account's jobs" do
+    job = @admin.jobs.create!
+    get library_item_url(@media, account: @admin.id)
+    assert_select "aside form[onchange*=requestSubmit] input[name='library_media[job_id]']"
+    assert_select "aside [data-pick-target=option][value='#{job.id}']", text: /job_1\s+Job 1/
+
+    patch library_media_url(@media), params: { library_media: { job_id: job.id } }
+    assert_response :no_content
+    assert_equal job, @media.reload.job
+
+    patch library_media_url(@media), params: { library_media: { job_id: users(:lazaro_nixon).jobs.create!.id } }
+    assert_equal "Job belongs to another account", flash[:alert]
+    assert_equal job, @media.reload.job
+
+    patch library_media_url(@media), params: { library_media: { job_id: "" } }
+    assert_nil @media.reload.job
+
+    get library_item_url(@media, account: @admin.id)
+    assert_select "aside button[form=new-job]", text: "New job"
+    post jobs_url, params: { library_media_id: @media.id }
+    assert_redirected_to library_item_url(@media, account: @admin.id)
+    assert_equal "Added to @job_2.", flash[:notice]
+    assert_equal "Job 2", @media.reload.job.name
+  end
+
   test "applies extracted business card fields and logo to the account" do
     @admin.update!(business_name: "Old name", address: "1 Old St")
     @media.update!(folder: folders(:business_card), extracted_info: {

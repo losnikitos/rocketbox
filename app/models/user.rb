@@ -16,6 +16,7 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :rubrics, dependent: :destroy
   has_many :library_media, dependent: :destroy
+  has_many :jobs, dependent: :destroy
   has_many :incoming_messages, dependent: :destroy
   has_many :outgoing_messages, dependent: :destroy
   has_many :links, dependent: :destroy

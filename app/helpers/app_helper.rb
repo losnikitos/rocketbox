@@ -33,6 +33,8 @@ module AppHelper
         :separator,
         [ reviews_path(archived: 1), "Archived", params[:archived].present?, Current.account.reviews.archived.count ]
       ] ]
+    when "accounts/jobs"
+      [ :jobs, "Jobs", [] ]
     when "accounts/instagram"
       [ :instagram, "Your profile", [] ]
     when "accounts/whatsapp"
