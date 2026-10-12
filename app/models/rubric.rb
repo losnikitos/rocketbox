@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A recurring series of Instagram posts, e.g. "a story from ready/ready every weekday at 9am". When auto-publish is on,
+# A recurring series of Instagram posts, e.g. "a story from ready/stories every weekday at 9am". When auto-publish is on,
 # each scheduled time publishes the folder's media posted longest ago (or never) as one RubricPost; otherwise the
 # rubric only shows on the Schedule calendar.
 class Rubric < ApplicationRecord

@@ -70,7 +70,7 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     landed = create_workflow("No output", input: folders(:interior), transformation: transformations(:cinematic))
     filed = create_workflow("Filed", input: folders(:interior), transformation: transformations(:before_after), output: folders(:photobank_interior))
 
-    get library_folders_url("ready", "ready")
+    get library_folders_url("ready")
     assert_select "section[aria-labelledby=folder-workflows-write] a[href=?]", workflow_path(landed, node: landed.nodes.find(&:step?).id), text: /No output/
     assert_select "section[aria-labelledby=folder-workflows-write] a[href^=?]", workflow_path(filed), count: 0
     assert_select "section[aria-labelledby=folder-workflows-read] a", count: 0

@@ -18,8 +18,9 @@ class FolderTest < ActiveSupport::TestCase
     assert Folder.create!(name: "Clients").destroy_into_parent
   end
 
-  test "ready is ready/ready for media and prompts/ready for prompts" do
-    assert_equal [ folders(:ready), folders(:prompts_ready) ], [ Folder.ready, Folder.ready("prompt") ]
+  test "ready is the top-level Ready for media and Prompts for prompts; top-level folders stay top-level" do
+    assert_equal [ folders(:ready), folders(:prompts) ], [ Folder.ready, Folder.ready("prompt") ]
+    assert_not folders(:ready).update(parent: folders(:photobank))
   end
 
   test "media is a reserved slug" do
