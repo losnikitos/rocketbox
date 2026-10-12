@@ -4,6 +4,7 @@ require "test_helper"
 
 class Accounts::RubricsControllerTest < ActionDispatch::IntegrationTest
   test "calendar shows a week, or a month from its tab" do
+    travel_to Time.zone.local(2029, 12, 30, 8)
     user = sign_in_as(users(:lazaro_nixon))
     user.rubrics.create!(name: "Morning story", schedule: "every day at 9am", folder: folders(:ready))
 
@@ -14,7 +15,7 @@ class Accounts::RubricsControllerTest < ActionDispatch::IntegrationTest
       assert_select "h2", "7 – 13 Jan 2030"
       assert_select "a[aria-label='Previous week'][href*=?]", "date=2030-01-02"
       assert_select "li[title]", text: /Morning story/, count: 7
-      assert_select "ul[aria-label='Running short']", /Morning story\s+has nothing to post/
+      assert_select "li[title] [aria-label='No fresh media']", count: 7
     end
 
     get rubrics_url(view: "month", date: "2030-01-09")

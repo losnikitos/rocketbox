@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # A recurring series of Instagram posts, e.g. "a story from ready/stories every weekday at 9am". When auto-publish is on,
-# each scheduled time publishes the folder's media posted longest ago (or never) as one RubricPost; otherwise the
-# rubric only shows on the Schedule calendar. With tags, it only takes the folder's media with all of them.
+# each scheduled time publishes the folder's oldest media no rubric has posted yet as one RubricPost, and skips once
+# there's none; otherwise the rubric only shows on the Schedule calendar. With tags, it only takes the folder's media
+# with all of them.
 class Rubric < ApplicationRecord
   belongs_to :user
   belongs_to :folder
@@ -35,31 +36,29 @@ class Rubric < ApplicationRecord
   # Where it posts from, e.g. "Ready / Stories #barber".
   def source = [ folder&.path, *tags.map { "##{it.name}" } ].compact.join(" ")
 
-  # Media posted by any rubric count, so a photo isn't a story and a post on the same day.
+  # The oldest media no rubric has posted (or scheduled) yet, so a photo is never both a story and a post; nil once there's none.
   def next_media
     user.library_media.where(folder:).tagged_all(tag_ids).of_type(("video" if reel?)).where.associated(:file_attachment)
-      .left_joins(:rubric_posts).group(:id)
-      .order(Arel.sql("MAX(rubric_posts.scheduled_at) IS NOT NULL, MAX(rubric_posts.scheduled_at), library_media.id")).first
+      .where.missing(:rubric_posts).order(:id).first
   end
 
-  # Each of `rubrics`' times from now until `upto` as [time, rubric, media, fresh]: the media #next_media would pick then,
-  # had every earlier time posted its pick; fresh if it was never posted. Times that already have a post are left out.
+  # Each of `rubrics`' times from now until `upto` as [time, rubric, media]: the media #next_media would pick then, had
+  # every earlier time posted its pick; nil once nothing fresh is left. Times that already have a post are left out.
   # ponytail: assumes the folders don't change meanwhile.
   def self.plan(rubrics, upto)
     pool = LibraryMedia.where(user_id: rubrics.map(&:user_id), folder_id: rubrics.map(&:folder_id)).with_attached_file
-      .includes(:tags).select { it.file.attached? }
-    last = RubricPost.where(library_media: pool).group(:library_media_id).maximum(:scheduled_at)
+      .includes(:tags).select { it.file.attached? }.sort_by(&:id)
+    posted = RubricPost.where(library_media: pool).distinct.pluck(:library_media_id).to_set
     by_folder = pool.group_by { [ it.user_id, it.folder_id ] }
     taken = RubricPost.where(rubric_id: rubrics.map(&:id)).pluck(:rubric_id, :scheduled_at).to_set { |id, time| [ id, time.to_i ] }
 
     rubrics.flat_map { |rubric| rubric.occurrences(Time.current..upto).map { [ it, rubric ] } }
       .reject { |time, rubric| taken.include?([ rubric.id, time.to_i ]) }.sort_by(&:first).map do |time, rubric|
-      media = by_folder.fetch([ rubric.user_id, rubric.folder_id ], [])
-        .select { (!rubric.reel? || it.file.content_type.start_with?("video/")) && (rubric.tag_ids - it.tag_ids).empty? }
-        .min_by { [ last[it.id] ? 1 : 0, last[it.id].to_i, it.id ] }
-      fresh = media && !last[media.id]
-      last[media.id] = time if media
-      [ time, rubric, media, fresh ]
+      media = by_folder.fetch([ rubric.user_id, rubric.folder_id ], []).find do
+        !posted.include?(it.id) && (!rubric.reel? || it.file.content_type.start_with?("video/")) && (rubric.tag_ids - it.tag_ids).empty?
+      end
+      posted << media.id if media
+      [ time, rubric, media ]
     end
   end
 

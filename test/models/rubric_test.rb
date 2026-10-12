@@ -18,29 +18,28 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal 9, @user.rubrics.create!(name: "Cron", schedule: "0 9 * * 1-5", folder: folders(:ready)).next_run_at.in_time_zone.hour
   end
 
-  test "next_media picks never-posted media, then the one posted longest ago" do
-    a, b, c = 3.times.map { photo }
-    travel_to(2.days.ago) { @rubric.posts.create!(library_media: b) }
-    travel_to(1.day.ago) { @rubric.posts.create!(library_media: a) }
+  test "next_media picks the oldest never-posted media, then nothing" do
+    a, b = 2.times.map { photo }
+    @rubric.posts.create!(library_media: a)
 
-    assert_equal c, @rubric.next_media
-    @rubric.posts.create!(library_media: c)
     assert_equal b, @rubric.next_media
+    @rubric.posts.create!(library_media: b)
+    assert_nil @rubric.next_media
   end
 
-  test "plan picks fresh media until it has to repeat, and nothing from an empty folder" do
+  test "plan picks fresh media until none is left, and nothing from an empty folder" do
     travel_to Time.zone.local(2026, 1, 1, 8)
-    assert_equal [ [ nil, nil ] ] * 3, Rubric.plan([ @rubric ], 3.days.from_now).map { it.last(2) }
+    assert_equal [ nil ] * 3, Rubric.plan([ @rubric ], 3.days.from_now).map(&:last)
 
     a, b = 2.times.map { photo }
     plan = Rubric.plan([ @rubric ], 3.days.from_now)
     assert_equal [ 1, 2, 3 ], plan.map { it.first.day }
-    assert_equal [ [ a, true ], [ b, true ], [ a, false ] ], plan.map { it.last(2) }
+    assert_equal [ a, b, nil ], plan.map(&:last)
 
     @rubric.posts.create!(library_media: a, scheduled_at: plan.first.first)
     plan = Rubric.plan([ @rubric ], 3.days.from_now)
     assert_equal [ 2, 3 ], plan.map { it.first.day }
-    assert_equal [ [ b, true ], [ a, false ] ], plan.map { it.last(2) }
+    assert_equal [ b, nil ], plan.map(&:last)
   end
 
   test "tags narrow the folder to media with all of them" do
@@ -51,7 +50,7 @@ class RubricTest < ActiveSupport::TestCase
 
     assert_equal [ tags(:before).id ], @rubric.tag_ids
     assert_equal tagged, @rubric.next_media
-    assert_equal [ tagged ] * 2, Rubric.plan([ @rubric ], 2.days.from_now).map { it[2] }
+    assert_equal [ tagged, nil ], Rubric.plan([ @rubric ], 2.days.from_now).map(&:last)
     assert_not @rubric.update(tag_ids: [ 0 ])
   end
 
@@ -65,6 +64,15 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal [ media ], @rubric.posts.map(&:library_media)
     assert_operator @rubric.reload.next_run_at, :>, Time.current
     assert_empty off.posts
+  end
+
+  test "a due rubric with nothing fresh skips and moves on" do
+    @rubric.posts.create!(library_media: photo, scheduled_at: 1.day.ago)
+    @rubric.update_columns(next_run_at: 1.minute.ago)
+
+    assert_no_enqueued_jobs(only: PublishRubricPostJob) { @rubric.run! }
+    assert_equal 1, @rubric.posts.count
+    assert_operator @rubric.reload.next_run_at, :>, Time.current
   end
 
   test "a post already made for the due time goes out instead of a new one" do
