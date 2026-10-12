@@ -67,10 +67,10 @@ module AppHelper
     "Delete #{folder.name}? " + (folder.parent ? "Its #{folder.media? ? "media" : folder.kind.pluralize} move to #{folder.parent.name}." : "Only empty folders can be deleted.")
   end
 
-  FOLDER_COLORS = { "sky" => "text-sky-400", "emerald" => "text-emerald-500", "amber" => "text-amber-400",
+  FOLDER_COLORS = { "sky" => "text-sky-400", "emerald" => "text-emerald-500", "amber" => "text-amber-400", "red" => "text-red-500",
                     "rose" => "text-rose-400", "violet" => "text-violet-400", "slate" => "text-slate-400" }.freeze
 
-  NOTE_COLORS = { "sky" => "border-sky-200 bg-sky-50", "emerald" => "border-emerald-200 bg-emerald-50", "amber" => "border-amber-200 bg-amber-50",
+  NOTE_COLORS = { "sky" => "border-sky-200 bg-sky-50", "emerald" => "border-emerald-200 bg-emerald-50", "amber" => "border-amber-200 bg-amber-50", "red" => "border-red-200 bg-red-50",
                   "rose" => "border-rose-200 bg-rose-50", "violet" => "border-violet-200 bg-violet-50", "slate" => "border-slate-200 bg-slate-50" }.freeze
 
   def folder_color(folder) = FOLDER_COLORS[folder&.color || "sky"]
