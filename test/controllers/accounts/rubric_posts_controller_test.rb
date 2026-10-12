@@ -43,7 +43,7 @@ class Accounts::RubricPostsControllerTest < ActionDispatch::IntegrationTest
   test "a planned calendar post locks in with its media, once and only at a planned time" do
     travel_to Time.zone.local(2026, 1, 1, 8)
     user = sign_in_as(users(:lazaro_nixon))
-    rubric = user.rubrics.create!(name: "Morning story", schedule: "every day at 9am", folder: folders(:ready), auto_publish: true)
+    rubric = user.rubrics.create!(name: "Morning story", schedule: "every day at 9am", folder: folders(:ready))
     media = user.library_media.create!(kind: "photo", folder: folders(:ready),
       file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
     nine = Time.zone.local(2026, 1, 1, 9)

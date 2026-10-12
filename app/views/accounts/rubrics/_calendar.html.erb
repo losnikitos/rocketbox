@@ -63,9 +63,9 @@
               <% end %>
               <% thumb = media&.file&.representable? %>
               <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, label, post&.error_message, shortage ].compact.join(" · ") %>"
-                  class="overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %>">
+                  class="group overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %>">
                 <% entry = capture do %>
-                  <% if thumb || short %>
+                  <% if media || short %>
                     <div class="relative">
                       <% if thumb %>
                         <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
@@ -75,19 +75,20 @@
                         </div>
                       <% end %>
                       <div class="absolute top-1 right-1"><%= badge %></div>
+                      <% if !post && media && rubric.persisted? && !rubric.changed? %>
+                        <%= button_to rubric_posts_path(rubric), params: { scheduled_at: time.iso8601 }, form: { class: "absolute inset-x-1 bottom-1" },
+                              class: "flex w-full items-center justify-center gap-1 rounded bg-white/90 p-1 font-medium text-ink-700 opacity-0 shadow-sm group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100 hover:bg-white hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket",
+                              title: "Keep this media for this time", aria: { label: "Lock in this post" } do %>
+                          <%= heroicon "lock-closed", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
+                          Lock in
+                        <% end %>
+                      <% end %>
                     </div>
                   <% end %>
                   <div class="flex items-center gap-1 px-1 py-0.5">
-                    <%= badge unless thumb || short %>
+                    <%= badge unless media || short %>
                     <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
                     <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
-                    <% if !post && media && rubric.auto_publish? && rubric.persisted? && !rubric.changed? %>
-                      <%= button_to rubric_posts_path(rubric), params: { scheduled_at: time.iso8601 }, form: { class: "ml-auto shrink-0" },
-                            class: "flex rounded p-0.5 text-ink-500 hover:bg-ink-900/10 hover:text-ink-900", title: "Lock in this post",
-                            aria: { label: "Lock in this post" } do %>
-                        <%= heroicon "lock-closed", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
-                      <% end %>
-                    <% end %>
                   </div>
                 <% end %>
                 <%= post ? link_to(entry, rubric_post_path(rubric, post), class: "block hover:bg-ink-900/5") : entry %>
