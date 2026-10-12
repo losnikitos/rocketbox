@@ -87,19 +87,20 @@
         <div class="border-b border-ink-900/10 p-2">
           <label class="relative block w-fit">
             <%= heroicon "magnifying-glass", variant: :mini, options: search_icon %>
-            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", aria: { label: "Search" },
+            <%= search_field_tag nil, nil, id: nil, autocomplete: "off", autofocus: true, aria: { label: "Search" },
                   data: { action: "input->workflow#filter" }, class: search %>
           </label>
         </div>
         <div class="max-h-96 overflow-y-auto">
           <section aria-labelledby="palette_folders">
             <h3 id="palette_folders" class="<%= section_heading %>">Folders</h3>
-            <div class="<%= tiles %>">
+            <div class="grid grid-cols-2 gap-1 p-3">
               <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
                 <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
-                      title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" }, class: tile do %>
-                  <%= heroicon "folder", options: { class: "size-7 #{folder_color(folder)}", "aria-hidden": true } %>
-                  <span class="line-clamp-2"><%= folder.path %></span>
+                      title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" },
+                      class: "flex min-w-0 cursor-grab items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5 active:cursor-grabbing" do %>
+                  <%= heroicon "folder", variant: :mini, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
+                  <span class="truncate"><%= folder.path %></span>
                 <% end %>
               <% end %>
             </div>
