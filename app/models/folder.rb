@@ -44,6 +44,8 @@ class Folder < ApplicationRecord
   def root? = parent_id.nil?
   def root = parent || self
   def path = [ parent&.name, name ].compact.join(" / ")
+  # Its id and its subfolders' ids: what a workflow node on it reads from.
+  def tree_ids = @tree_ids ||= [ id, *children.ids ]
 
   # Its items: media, prompts or reviews.
   def items = { "media" => library_media, "prompt" => prompts, "review" => reviews }.fetch(kind)

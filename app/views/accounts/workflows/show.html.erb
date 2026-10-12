@@ -244,7 +244,7 @@
       <% unless node.note? %>
         <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, items| %>
           <section aria-label="<%= label %>" class="<%= panel %>">
-            <h3 class="<%= panel_heading %>"><%= label %></h3>
+            <h3 id="node_<%= label.downcase %>" class="<%= panel_heading %>"><a href="#node_<%= label.downcase %>" data-turbo-frame="_top" class="hover:underline"><%= label %></a></h3>
             <% if items.any? %>
               <%= render "items", items:, css: "h-36 w-auto max-w-full rounded-lg object-contain" %>
             <% else %>
@@ -256,7 +256,7 @@
 
       <% if (node.step? || node.media_folder?) && Tag.exists? %>
         <section aria-label="Tags" class="<%= panel %>">
-          <h3 class="<%= panel_heading %>"><%= node.step? ? "Set tags" : "Filter by tag" %></h3>
+          <h3 id="node_tags" class="<%= panel_heading %>"><a href="#node_tags" data-turbo-frame="_top" class="hover:underline"><%= node.step? ? "Set tags" : "Filter by tag" %></a></h3>
           <%= form_with model: @workflow, data: top, html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" } do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
             <div class="flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30">
@@ -267,7 +267,7 @@
       <% end %>
 
       <section aria-label="Settings" class="<%= panel %>">
-        <h3 class="<%= panel_heading %>">Settings</h3>
+        <h3 id="node_settings" class="<%= panel_heading %>"><a href="#node_settings" data-turbo-frame="_top" class="hover:underline">Settings</a></h3>
         <% if node.step? %>
           <%= turbo_frame_tag "transformation", src: transformation_path(node.transformation), target: "_top", class: "block" do %>
             <p class="text-sm text-ink-500">Loading…</p>
@@ -321,7 +321,7 @@
 
       <% if (media = node.library_media) %>
         <section aria-label="Media" class="<%= panel %>">
-          <h3 class="<%= panel_heading %>">Media</h3>
+          <h3 id="node_media" class="<%= panel_heading %>"><a href="#node_media" data-turbo-frame="_top" class="hover:underline">Media</a></h3>
           <div class="group relative w-40">
             <%= render "accounts/library/file", media:, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
             <%= tag_pills.(media) %>
@@ -332,8 +332,8 @@
         <% noun = node.media_folder? ? "media" : node.folder.kind.pluralize %>
         <section aria-label="Pins" class="<%= panel %>">
           <div class="flex items-center justify-between gap-2">
-            <h3 class="<%= panel_heading %>">
-              <%= node.pinned_ids.any? ? "Pinned #{noun}" : "Play takes its newest #{node.take}; pin #{noun} to take them instead" %>
+            <h3 id="node_pins" class="<%= panel_heading %>">
+              <a href="#node_pins" data-turbo-frame="_top" class="hover:underline"><%= node.pinned_ids.any? ? "Pinned #{noun}" : "Play takes its newest #{node.take}; pin #{noun} to take them instead" %></a>
             </h3>
             <% if node.pinned_ids.any? %>
               <%= button_to "Reset pins", workflow_path(@workflow), method: :patch, form: { data: top },
@@ -375,7 +375,7 @@
       <% elsif node.folder && !node.media_folder? %>
         <% label = node.folder.kind.pluralize.capitalize %>
         <section aria-label="<%= label %>" class="<%= panel %>">
-          <h3 class="<%= panel_heading %>"><%= label %></h3>
+          <h3 id="node_<%= label.downcase %>" class="<%= panel_heading %>"><a href="#node_<%= label.downcase %>" data-turbo-frame="_top" class="hover:underline"><%= label %></a></h3>
           <% if @folder_items.any? %>
             <%= render "items", items: @folder_items, css: "" %>
           <% else %>
@@ -384,7 +384,7 @@
         </section>
       <% elsif node.folder %>
         <section aria-label="Media" class="<%= panel %>">
-          <h3 class="<%= panel_heading %>">Media</h3>
+          <h3 id="node_media" class="<%= panel_heading %>"><a href="#node_media" data-turbo-frame="_top" class="hover:underline">Media</a></h3>
           <% if @folder_items.any? %>
             <ul aria-label="Media" class="grid grid-cols-3 gap-2">
               <% @folder_items.each do |media| %>

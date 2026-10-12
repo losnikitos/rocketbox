@@ -129,7 +129,7 @@ module Accounts
           else
             [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:result),
               @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:sources)
-                .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
+                .select { @selected.library_media ? it == @selected.library_media : @selected.folder.tree_ids.include?(it.folder_id) }.uniq ]
           end
         end
         @start_nodes = @workflow.start_nodes
@@ -159,7 +159,7 @@ module Accounts
         carried = ->(edge) do
           from = by_id[edge.from_id]
           items = if from.step? then runs_of.(from).map(&:result).presence || gives[from.id]
-          else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
+          else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : from.folder.tree_ids.include?(it.folder_id) }.uniq.presence ||
             (from.folder ? gives[from.id] : [])
           end
           items.reject { it.is_a?(LibraryMedia) && !it.file.attached? }

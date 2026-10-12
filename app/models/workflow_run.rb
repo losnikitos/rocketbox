@@ -62,14 +62,15 @@ class WorkflowRun < ApplicationRecord
     ((ids = picks[node.id.to_s] || node.pinned_ids.presence) ? items.where(id: ids) : items.limit(node.take)).to_a
   end
 
-  # What a folder node can give, newest first. A media folder: the user's media still in it (with all its tags, of its
-  # type). A prompt folder: its written prompts, shared or the user's. Reviews: the user's 5-star reviews.
+  # What a folder node can give from the folder and its subfolders, newest first. A media folder: the user's media still
+  # in them (with all its tags, of its type). A prompt folder: their written prompts, shared or the user's. Reviews: the
+  # user's 5-star reviews.
   def candidates(node, user)
-    folder = node.folder
-    case folder.kind
-    when "prompt" then folder.prompts.written.where(user_id: [ nil, user.id ]).order(id: :desc)
-    when "review" then user.reviews.postable.where(folder:).order(id: :desc)
-    else user.library_media.where(folder:).tagged_all(node.tags.ids).of_type(node.media_type).order(created_at: :desc)
+    folder_id = node.folder.tree_ids
+    case node.folder.kind
+    when "prompt" then Prompt.where(folder_id:).written.where(user_id: [ nil, user.id ]).order(id: :desc)
+    when "review" then user.reviews.postable.where(folder_id:).order(id: :desc)
+    else user.library_media.where(folder_id:).tagged_all(node.tags.ids).of_type(node.media_type).order(created_at: :desc)
     end
   end
 

@@ -44,6 +44,19 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_empty Workflow.starts_for(users(:lazaro_nixon).library_media.create!(kind: "photo", folder: folders(:ready)))
   end
 
+  test "a start folder takes and gives its subfolders' media, filtered by its tags" do
+    workflow = Workflow.create!(name: "Nested")
+    inbox = workflow.nodes.create!(folder: folders(:inbox), tag_ids: [ tags(:before).id ])
+    workflow.edges.create!(from: inbox, to: workflow.nodes.create!(transformation: Transformation.create!(name: "Smart crop", kind: "smart_crop")))
+    user = users(:lazaro_nixon)
+    tagged, plain = 2.times.map { user.library_media.create!(kind: "photo", folder: folders(:interior)) }
+    tagged.tags << tags(:before)
+
+    assert_equal [ [ workflow, inbox ] ], Workflow.starts_for(tagged.reload)
+    assert_empty Workflow.starts_for(plain)
+    assert_equal [ tagged ], workflow.runs.create!.picked(inbox, user)
+  end
+
   test "a start folder's media type filters what it takes and gives" do
     workflow = Workflow.create!(name: "Types")
     images, videos = %w[image video].map { workflow.nodes.create!(folder: folders(:interior), media_type: it) }
