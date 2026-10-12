@@ -47,10 +47,10 @@ module Accounts
     end
 
     def update
-      if @folder.update(params.expect(folder: %i[name color]))
-        redirect_to helpers.folder_path(@folder), notice: "Folder updated."
+      if @folder.update(params.expect(folder: %i[name color parent_id]))
+        redirect_to helpers.folder_path(@folder), notice: @folder.saved_change_to_parent_id? ? "Moved to #{@folder.parent.name}." : "Folder updated."
       else
-        redirect_to helpers.folder_path(@folder), alert: @folder.errors.full_messages.to_sentence
+        redirect_to helpers.folder_path(@folder.tap(&:restore_attributes)), alert: @folder.errors.full_messages.to_sentence
       end
     end
 

@@ -34,11 +34,7 @@
         <% end %>
       </nav>
     <% end %>
-    <% if (movable = Current.user&.admin?) %>
-      <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
-        <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "value" } %>
-      <% end %>
-    <% end %>
+    <% movable = Current.user&.admin? %>
     <%= tag.div class: "relative flex min-w-0 items-center justify-center rounded-lg bg-white md:m-2 md:flex-1 md:@container-size",
           draggable: ("true" if movable), data: { move_url: (library_media_path(@media) if movable) } do %>
       <% if blob&.image? %>
