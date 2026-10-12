@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-# One post of a rubric: the media it published (or tried to) and when.
+# One post of a rubric: the media it publishes (or published, or tried to) and when.
 class RubricPost < ApplicationRecord
   belongs_to :rubric
   belongs_to :library_media, optional: true
 
-  def status = published_at ? "published" : error_message ? "failed" : "publishing"
+  attribute :scheduled_at, default: -> { Time.current }
+
+  def status = published_at ? "published" : error_message ? "failed" : scheduled_at.future? ? "scheduled" : "publishing"
 
   def publish!
     media = library_media

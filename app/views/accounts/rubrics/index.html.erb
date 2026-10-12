@@ -12,7 +12,7 @@
   <% if @rubrics.any? %>
     <ul aria-label="Rubrics" class="divide-y divide-ink-900/5 rounded-2xl border border-ink-900/10 bg-white">
       <% @rubrics.each do |rubric| %>
-        <% last_post = rubric.posts.first %>
+        <% last_post = rubric.posts.where(scheduled_at: ..Time.current).first %>
         <% next_media = rubric.next_media %>
         <li id="<%= dom_id(rubric) %>">
           <%= link_to edit_rubric_path(rubric), class: "flex items-center gap-3 px-4 py-3 hover:bg-ink-900/3" do %>
@@ -30,7 +30,7 @@
               <span class="block truncate text-xs text-ink-500">
                 <% next_time = rubric.next_occurrence %>
                 <%= [ ("Next #{next_time.strftime("%a %-d %b, %H:%M")}" if next_time),
-                      ("last posted #{time_ago_in_words(last_post.created_at)} ago" if last_post) ].compact.join(" · ").upcase_first %>
+                      ("last posted #{time_ago_in_words(last_post.scheduled_at)} ago" if last_post) ].compact.join(" · ").upcase_first %>
               </span>
             </span>
             <% if next_media&.file&.representable? %>

@@ -6,7 +6,7 @@
 class Rubric < ApplicationRecord
   belongs_to :user
   belongs_to :folder
-  has_many :posts, -> { order(created_at: :desc) }, class_name: "RubricPost", dependent: :delete_all
+  has_many :posts, -> { order(scheduled_at: :desc) }, class_name: "RubricPost", dependent: :delete_all
 
   enum :format, %w[post story reel].index_by(&:itself), validate: true
   enum :color, Folder.colors, validate: true
@@ -39,18 +39,21 @@ class Rubric < ApplicationRecord
   def next_media
     user.library_media.where(folder:).tagged_all(tag_ids).of_type(("video" if reel?)).where.associated(:file_attachment)
       .left_joins(:rubric_posts).group(:id)
-      .order(Arel.sql("MAX(rubric_posts.created_at) IS NOT NULL, MAX(rubric_posts.created_at), library_media.id")).first
+      .order(Arel.sql("MAX(rubric_posts.scheduled_at) IS NOT NULL, MAX(rubric_posts.scheduled_at), library_media.id")).first
   end
 
   # Each of `rubrics`' times from now until `upto` as [time, rubric, media, fresh]: the media #next_media would pick then,
-  # had every earlier time posted its pick; fresh if it was never posted. ponytail: assumes the folders don't change meanwhile.
+  # had every earlier time posted its pick; fresh if it was never posted. Times that already have a post are left out.
+  # ponytail: assumes the folders don't change meanwhile.
   def self.plan(rubrics, upto)
     pool = LibraryMedia.where(user_id: rubrics.map(&:user_id), folder_id: rubrics.map(&:folder_id)).with_attached_file
       .includes(:tags).select { it.file.attached? }
-    last = RubricPost.where(library_media: pool).group(:library_media_id).maximum(:created_at)
+    last = RubricPost.where(library_media: pool).group(:library_media_id).maximum(:scheduled_at)
     by_folder = pool.group_by { [ it.user_id, it.folder_id ] }
+    taken = RubricPost.where(rubric_id: rubrics.map(&:id)).pluck(:rubric_id, :scheduled_at).to_set { |id, time| [ id, time.to_i ] }
 
-    rubrics.flat_map { |rubric| rubric.occurrences(Time.current..upto).map { [ it, rubric ] } }.sort_by(&:first).map do |time, rubric|
+    rubrics.flat_map { |rubric| rubric.occurrences(Time.current..upto).map { [ it, rubric ] } }
+      .reject { |time, rubric| taken.include?([ rubric.id, time.to_i ]) }.sort_by(&:first).map do |time, rubric|
       media = by_folder.fetch([ rubric.user_id, rubric.folder_id ], [])
         .select { (!rubric.reel? || it.file.content_type.start_with?("video/")) && (rubric.tag_ids - it.tag_ids).empty? }
         .min_by { [ last[it.id] ? 1 : 0, last[it.id].to_i, it.id ] }
@@ -60,11 +63,13 @@ class Rubric < ApplicationRecord
     end
   end
 
-  # Advances first, so a failure never loops and missed times after downtime post once.
+  # Advances first, so a failure never loops and missed times after downtime post once. A post already made for the due
+  # time goes out instead of a new one.
   def run!
+    due = next_run_at
     update!(next_run_at: next_occurrence)
-    media = next_media or return
-    PublishRubricPostJob.perform_later(posts.create!(library_media: media))
+    post = posts.find_by(scheduled_at: due) || next_media&.then { posts.create!(library_media: it) } or return
+    PublishRubricPostJob.perform_later(post)
   end
 
   private

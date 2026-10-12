@@ -36,6 +36,11 @@ class RubricTest < ActiveSupport::TestCase
     plan = Rubric.plan([ @rubric ], 3.days.from_now)
     assert_equal [ 1, 2, 3 ], plan.map { it.first.day }
     assert_equal [ [ a, true ], [ b, true ], [ a, false ] ], plan.map { it.last(2) }
+
+    @rubric.posts.create!(library_media: a, scheduled_at: plan.first.first)
+    plan = Rubric.plan([ @rubric ], 3.days.from_now)
+    assert_equal [ 2, 3 ], plan.map { it.first.day }
+    assert_equal [ [ b, true ], [ a, false ] ], plan.map { it.last(2) }
   end
 
   test "tags narrow the folder to media with all of them" do
@@ -60,6 +65,15 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal [ media ], @rubric.posts.map(&:library_media)
     assert_operator @rubric.reload.next_run_at, :>, Time.current
     assert_empty off.posts
+  end
+
+  test "a post already made for the due time goes out instead of a new one" do
+    photo
+    made = @rubric.posts.create!(scheduled_at: @rubric.next_run_at)
+    travel_to(@rubric.next_run_at + 1.minute)
+
+    assert_enqueued_with(job: PublishRubricPostJob, args: [ made ]) { @rubric.run! }
+    assert_equal [ made ], @rubric.posts.to_a
   end
 
   private

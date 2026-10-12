@@ -8,7 +8,7 @@
   scheduled = rubrics.reject { it.errors[:schedule].any? }
   plan = Rubric.plan(scheduled, horizon)
   shortages = plan.reject(&:last).uniq { it[1] }
-  entries = posts.map { [ it.created_at.in_time_zone, it.rubric, it, it.library_media, false ] }
+  entries = posts.map { [ it.scheduled_at.in_time_zone, it.rubric, it, it.library_media, false ] }
   entries += plan.filter_map { |time, rubric, media, fresh| [ time, rubric, nil, media, !fresh ] if days.cover?(time.to_date) }
   later = [ days.first.beginning_of_day, horizon ].max..days.last.end_of_day
   if later.begin < later.end
@@ -66,6 +66,7 @@
               <% icon, tone, label = case post&.status
                    when "published" then [ "check", "bg-signal-green", "Published" ]
                    when "failed" then [ "x-mark", "bg-signal-red", "Failed" ]
+                   when "scheduled" then [ "clock", "bg-ink-500", "Scheduled" ]
                    when "publishing" then [ "arrow-path", "bg-ink-500", "Publishing" ]
                    else short ? [ "exclamation-triangle", "bg-amber-500", "Running short" ]
                      : rubric.auto_publish? ? [ "clock", "bg-ink-500", "Scheduled" ] : [ "pause", "bg-ink-400", "Auto-publish off" ]
@@ -78,17 +79,20 @@
               <% thumb = media&.file&.representable? %>
               <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, label, post&.error_message, shortage ].compact.join(" · ") %>"
                   class="overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %>">
-                <% if thumb %>
-                  <div class="relative">
-                    <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
-                    <div class="absolute top-1 right-1"><%= badge %></div>
+                <% entry = capture do %>
+                  <% if thumb %>
+                    <div class="relative">
+                      <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
+                      <div class="absolute top-1 right-1"><%= badge %></div>
+                    </div>
+                  <% end %>
+                  <div class="flex items-center gap-1 px-1 py-0.5">
+                    <%= badge unless thumb %>
+                    <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
+                    <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
                   </div>
                 <% end %>
-                <div class="flex items-center gap-1 px-1 py-0.5">
-                  <%= badge unless thumb %>
-                  <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
-                  <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
-                </div>
+                <%= post ? link_to(entry, rubric_post_path(rubric, post), class: "block hover:bg-ink-900/5") : entry %>
               </li>
             <% end %>
             <% if day_entries.size > shown.size %>
