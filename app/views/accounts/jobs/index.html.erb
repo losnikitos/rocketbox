@@ -9,22 +9,22 @@
   <% end %>
 <% end %>
 
-<div class="mx-auto max-w-3xl">
+<div class="@container">
   <% if @jobs.any? %>
     <%= form_with url: merge_jobs_path, id: "merge-jobs" do %>
       <ul class="divide-y divide-ink-900/5 rounded-2xl border border-ink-900/10 bg-white">
         <% @jobs.each do |job| %>
-          <li id="<%= dom_id(job) %>" class="flex items-center gap-4 p-4 has-checked:bg-rocket/5">
-            <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+          <li id="<%= dom_id(job) %>" class="space-y-3 p-4 has-checked:bg-rocket/5">
+            <label class="flex min-w-0 cursor-pointer items-center gap-3">
               <%= check_box_tag "job_ids[]", job.id, false, id: nil, class: "size-4 shrink-0 accent-rocket" %>
               <%= render "accounts/jobs/job", job: %>
               <span class="truncate text-sm font-medium text-ink-900"><%= job.name %></span>
             </label>
-            <ul aria-label="Media" class="flex max-w-1/2 flex-wrap justify-end gap-1.5">
+            <ul aria-label="Media" class="grid grid-cols-2 gap-3 @lg:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-5 @6xl:grid-cols-6">
               <% job.library_media.sort_by(&:created_at).each do |media| %>
                 <li>
-                  <%= link_to library_item_path(media), class: "block w-12 overflow-hidden rounded-md" do %>
-                    <%= render "accounts/library/file", media:, variant: :small, css: "aspect-2/3 w-full object-cover" %>
+                  <%= link_to library_item_path(media), class: "block" do %>
+                    <%= render "accounts/library/file", media:, css: "aspect-2/3 w-full rounded-lg object-cover", play: true %>
                   <% end %>
                 </li>
               <% end %>
