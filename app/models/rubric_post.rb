@@ -7,6 +7,8 @@ class RubricPost < ApplicationRecord
 
   attribute :scheduled_at, default: -> { Time.current }
 
+  after_create { Job.increment_counter(:posts_count, library_media.job_id) if library_media&.job_id }
+
   def status = published_at ? "published" : error_message ? "failed" : scheduled_at.future? ? "scheduled" : "publishing"
 
   def publish!

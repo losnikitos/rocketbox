@@ -8,12 +8,16 @@ class Accounts::RubricPostsControllerTest < ActionDispatch::IntegrationTest
   test "a scheduled post shows and publishes now, only for its owner" do
     user = sign_in_as(users(:lazaro_nixon))
     rubric = user.rubrics.create!(name: "Morning story", schedule: "every day at 9am", folder: folders(:ready))
-    post_ = rubric.posts.create!(scheduled_at: 1.day.from_now)
+    media = user.library_media.create!(kind: "photo", folder: folders(:ready), job: user.jobs.create!, tags: [ tags(:before) ],
+      file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
+    post_ = rubric.posts.create!(scheduled_at: 1.day.from_now, library_media: media)
 
     get rubric_post_url(rubric, post_)
     assert_select "h2", /Morning story/
     assert_select "span", "Scheduled"
     assert_select "button", /Publish now/
+    assert_select "#post-media[href=?]", library_item_path(media), /a\.jpg/
+    assert_select "section", text: /job_1.*#{tags(:before).name}/m
 
     assert_enqueued_with(job: PublishRubricPostJob, args: [ post_ ]) { post publish_rubric_post_url(rubric, post_) }
     assert_redirected_to rubric_post_url(rubric, post_)

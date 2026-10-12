@@ -61,6 +61,29 @@ module AppHelper
     end
   end
 
+  # [label, path, section, icon] rows of the sidebar's Business group, also listed in the command panel.
+  def business_sections = [
+    [ "Onboarding", onboarding_path, :onboarding, "clipboard-document-check" ],
+    [ "Instagram", instagram_profile_path, :instagram, "brands/instagram.svg" ],
+    [ "WhatsApp", whatsapp_path, :whatsapp, "brands/whatsapp.svg" ],
+    [ "Business", business_path, :business, "building-storefront" ],
+    [ "Calendar", calendar_path, :calendar, "calendar-days" ],
+    [ "Services", services_path, :services, "tag" ],
+    [ "Links", links_path, :links, "link" ],
+    [ "Reviews", reviews_path, :reviews, "star" ],
+    [ "Jobs", jobs_path, :jobs, "at-symbol" ],
+    [ "Subscription", subscription_path, :subscription, "credit-card" ],
+    [ "Profile", profile_settings_path, :profile, "user" ]
+  ]
+
+  def section_icon(icon, css = "size-5 shrink-0")
+    if icon.end_with?(".svg")
+      image_tag icon, class: css, alt: "", aria: { hidden: true }
+    else
+      heroicon icon, options: { class: css, "aria-hidden": true }
+    end
+  end
+
   def folder_path(folder, **params)
     library_folders_path(*[ folder.root.slug, (folder.slug unless folder.root?) ].compact, **params)
   end

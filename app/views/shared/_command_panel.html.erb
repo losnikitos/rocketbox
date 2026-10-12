@@ -1,0 +1,35 @@
+<%
+  admin = Current.user&.admin?
+  rows = [
+    [ "Recent", recent_path, section_icon("clock") ],
+    *Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }
+      .map { [ it.path, folder_path(it), heroicon("folder", options: { class: "size-5 shrink-0 #{folder_color(it)}", "aria-hidden": true }), "Folder" ] },
+    *([ [ "Workflows", workflows_path, lucide_icon("workflow", class: "size-5 shrink-0", "stroke-width": 1.5, "aria-hidden": true) ],
+        *Workflow.order(updated_at: :desc).map { [ it.name, workflow_path(it), lucide_icon("workflow", class: "size-5 shrink-0 text-ink-400", "stroke-width": 1.5, "aria-hidden": true), "Workflow" ] },
+        [ "Layers", layers_path, section_icon("square-3-stack-3d") ] ] if admin),
+    [ "Schedule", rubrics_path, section_icon("calendar") ],
+    *business_sections.map { |label, path, _, icon| [ label, path, section_icon(icon) ] },
+    *([ [ "Admin", admin_path, section_icon("wrench-screwdriver") ] ] if admin)
+  ]
+%>
+<dialog id="command-panel" aria-label="Command panel"
+        data-command-panel-target="dialog" data-action="click->command-panel#backdrop"
+        class="mx-auto mt-32 w-full max-w-lg overflow-hidden rounded-2xl bg-white p-0 text-ink-900 shadow-2xl backdrop:bg-ink-900/40">
+  <div class="relative">
+    <input type="text" placeholder="Go to…" autocomplete="off" spellcheck="false" aria-label="Go to"
+           data-command-panel-target="search" data-action="input->command-panel#filter keydown->command-panel#navigate"
+           class="peer w-full border-0 border-b border-ink-900/10 px-4 py-3 pr-14 text-base placeholder:text-ink-400 focus:outline-none focus:ring-0">
+    <kbd class="pointer-events-none absolute inset-y-0 right-4 hidden items-center font-sans text-sm text-ink-400 peer-placeholder-shown:flex" aria-hidden="true">⌘P</kbd>
+  </div>
+  <div role="listbox" class="max-h-96 space-y-0.5 overflow-y-auto p-1.5">
+    <% rows.each do |label, path, icon, hint| %>
+      <%= link_to path, role: "option", data: { command_panel_target: "item", label:, action: "command-panel#close" },
+            class: "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-selected:bg-ink-900/10 aria-selected:text-ink-900" do %>
+        <%= icon %>
+        <span class="truncate"><%= label %></span>
+        <% if hint %><span class="ml-auto text-xs text-ink-400"><%= hint %></span><% end %>
+      <% end %>
+    <% end %>
+    <p data-command-panel-target="empty" hidden class="px-3 py-6 text-center text-sm text-ink-500">No matches</p>
+  </div>
+</dialog>

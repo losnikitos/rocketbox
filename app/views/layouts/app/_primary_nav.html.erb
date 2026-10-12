@@ -107,36 +107,19 @@
         <% end %>
       </ol>
     </li>
-    <% business_sections = {
-      "Onboarding" => [ onboarding_path, :onboarding, "clipboard-document-check" ],
-      "Instagram" => [ instagram_profile_path, :instagram, "brands/instagram.svg" ],
-      "WhatsApp" => [ whatsapp_path, :whatsapp, "brands/whatsapp.svg" ],
-      "Business" => [ business_path, :business, "building-storefront" ],
-      "Calendar" => [ calendar_path, :calendar, "calendar-days" ],
-      "Services" => [ services_path, :services, "tag" ],
-      "Links" => [ links_path, :links, "link" ],
-      "Reviews" => [ reviews_path, :reviews, "star" ],
-      "Jobs" => [ jobs_path, :jobs, "at-symbol" ],
-      "Subscription" => [ subscription_path, :subscription, "credit-card" ],
-      "Profile" => [ profile_settings_path, :profile, "user" ]
-    } %>
     <li class="mt-2 border-t border-ink-900/10 pt-2">
-      <details class="group" <%= "open" if business_sections.values.any? { |_, key| key == section } %>>
+      <details class="group" <%= "open" if business_sections.any? { |_, _, key| key == section } %>>
         <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
           Business
           <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>
         </summary>
         <ul class="flex flex-col gap-0.5">
-          <% business_sections.each do |label, (path, key, icon)| %>
+          <% business_sections.each do |label, path, key, icon| %>
             <li>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>
-                <% if icon.end_with?(".svg") %>
-                  <%= image_tag icon, class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-                <% else %>
-                  <%= heroicon icon, options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-                <% end %>
+                <%= section_icon icon %>
                 <%= label %>
               <% end %>
             </li>

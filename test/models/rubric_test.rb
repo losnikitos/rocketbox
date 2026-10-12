@@ -42,6 +42,18 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal [ b, nil ], plan.map(&:last)
   end
 
+  test "posts count against their media's job, and picks go to the least-posted job first" do
+    travel_to Time.zone.local(2026, 1, 1, 8)
+    marco, ana = 2.times.map { @user.jobs.create! }
+    used, *marcos = 3.times.map { photo(job: marco) }
+    anas = 2.times.map { photo(job: ana) }
+
+    @rubric.posts.create!(library_media: used, scheduled_at: 1.day.ago)
+    assert_equal [ 1, 0 ], [ marco, ana ].map { it.reload.posts_count }
+    assert_equal anas.first, @rubric.next_media
+    assert_equal [ anas[0], marcos[0], anas[1], marcos[1], nil ], Rubric.plan([ @rubric ], 5.days.from_now).map(&:last)
+  end
+
   test "tags narrow the folder to media with all of them" do
     travel_to Time.zone.local(2026, 1, 1, 8)
     plain, tagged = 2.times.map { photo }
@@ -85,8 +97,8 @@ class RubricTest < ActiveSupport::TestCase
   end
 
   private
-    def photo
-      @user.library_media.create!(kind: "photo", folder: folders(:ready),
+    def photo(job: nil)
+      @user.library_media.create!(kind: "photo", folder: folders(:ready), job:,
         file: { io: StringIO.new("x"), filename: "a.jpg", content_type: "image/jpeg" })
     end
 end
