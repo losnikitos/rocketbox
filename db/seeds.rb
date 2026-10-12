@@ -12,7 +12,7 @@ end
     root.children.find_or_create_by!(slug: key.dasherize) { it.name = key.humanize }
   end
 end
-Folder.photobank.children.find_or_create_by!(slug: "ready") { it.name = "Ready" }
+Folder.roots.find_by!(slug: "ready").children.find_or_create_by!(slug: "ready") { it.name = "Ready" }
 { "prompts" => [ "violet", "prompt" ], "reviews" => [ "amber", "review" ] }.each do |slug, (color, kind)|
   Folder.roots.find_or_create_by!(slug:) { it.assign_attributes(name: slug.humanize, color:, kind:) }
 end

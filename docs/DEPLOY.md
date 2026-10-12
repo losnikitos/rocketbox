@@ -14,7 +14,7 @@ Production runs on a single VPS via **Kamal** + **Docker**. There is no Heroku (
 - Config: [`config/deploy.yml`](/config/deploy.yml)
 - CLI: [`bin/kamal`](/bin/kamal) (gem `kamal` in [`Gemfile`](/Gemfile))
 - Image: `ghcr.io/<KAMAL_REGISTRY_USERNAME>/rocketbox`, built amd64 from [`Dockerfile`](/Dockerfile)
-- Runtime: Thruster → Rails (`./bin/thrust ./bin/rails server`); [`bin/docker-entrypoint`](/bin/docker-entrypoint) runs `db:prepare` before boot
+- Runtime: Thruster → Rails (`./bin/thrust ./bin/rails server`); [`bin/docker-entrypoint`](/bin/docker-entrypoint) runs `db:prepare data:migrate` before boot
 - Persistent volume: `rocketbox_storage` → `/rails/storage` (SQLite + app storage)
 
 Useful aliases: `bin/kamal console`, `shell`, `logs`, `dbc`.

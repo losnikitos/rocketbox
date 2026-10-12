@@ -4,10 +4,14 @@
   slug: <%= root %>
   color: <%= root == "inbox" ? "emerald" : "sky" %>
 <% end %>
+ready_root:
+  name: Ready
+  slug: ready
+  color: red
 ready:
   name: Ready
   slug: ready
-  parent: photobank
+  parent: ready_root
 <% %w[business_card interior exterior logo customer misc working].each do |key| %>
 <%= key %>:
   name: <%= key.humanize %>

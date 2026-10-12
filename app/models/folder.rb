@@ -5,7 +5,7 @@
 # its parent's. Top-level folders hold subfolders one level below, except Reviews, which holds every review.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
 # ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
-# (card extraction, WhatsApp onboarding), photobank/ready and prompts/ready (default step output), prompts and reviews
+# (card extraction, WhatsApp onboarding), ready/ready and prompts/ready (default step output), prompts and reviews
 # by slug, so deleting or moving those rows breaks them. Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
@@ -42,7 +42,7 @@ class Folder < ApplicationRecord
   def self.prompts = roots.find_by!(slug: "prompts")
   def self.reviews = roots.find_by!(slug: "reviews")
   # Where a step with no output folder lands its results of `kind`.
-  def self.ready(kind = "media") = (kind.to_s == "prompt" ? prompts : photobank).children.find_by!(slug: "ready")
+  def self.ready(kind = "media") = (kind.to_s == "prompt" ? prompts : roots.find_by!(slug: "ready")).children.find_by!(slug: "ready")
 
   def root? = parent_id.nil?
   def root = parent || self
