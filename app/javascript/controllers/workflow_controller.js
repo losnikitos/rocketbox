@@ -108,10 +108,10 @@ export default class extends Controller {
   // Before an add: the drop point, or the middle of the view for a click, in canvas coordinates.
   place() {
     const flow = this.element.querySelector("[data-controller~='flow']"), box = flow.getBoundingClientRect()
-    const scale = parseFloat(flow.querySelector("[data-flow-target='canvas']").style.zoom) || 1
+    const { zoom, marginLeft, marginTop } = flow.querySelector("[data-flow-target='canvas']").style, scale = parseFloat(zoom) || 1
     const { clientX, clientY } = this.point || { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
     this.point = null
-    this.xTarget.value = Math.round((flow.scrollLeft + clientX - box.left) / scale)
-    this.yTarget.value = Math.round((flow.scrollTop + clientY - box.top) / scale)
+    this.xTarget.value = Math.round((flow.scrollLeft + clientX - box.left) / scale - parseFloat(marginLeft))
+    this.yTarget.value = Math.round((flow.scrollTop + clientY - box.top) / scale - parseFloat(marginTop))
   }
 }
