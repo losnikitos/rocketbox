@@ -145,6 +145,30 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "emerald", folders(:inbox).children.find_by!(slug: "team").color
   end
 
+  test "admin drags a subfolder in the sidebar to another top-level media folder" do
+    admin = sign_in_as(users(:admin_user))
+    folder = folders(:inbox).children.create!(name: "Team")
+
+    get library_folders_url(account: admin.id)
+    assert_select "[aria-label='Folder tree'] a[data-move-url=?][data-move-from=?][data-move-field='folder[parent_id]']",
+      library_folders_path("inbox", "team"), folders(:inbox).id.to_s
+    assert_select "[aria-label='Folder tree'] a[data-move-parent=?]", folders(:photobank).id.to_s
+    assert_select "[aria-label='Folder tree'] a[data-move-parent=?]", folders(:prompts).id.to_s, count: 0
+    assert_select "[aria-label='Folder tree'] a[data-move-url=?]", library_folders_path("inbox"), count: 0
+
+    patch library_folders_url("inbox", "team"), params: { folder: { parent_id: folders(:prompts).id } }
+    assert_redirected_to library_folders_url("inbox", "team", account: admin.id)
+    assert_equal folders(:inbox), folder.reload.parent
+
+    patch library_folders_url("inbox", "interior"), params: { folder: { parent_id: folders(:photobank).id } }
+    assert_redirected_to library_folders_url("inbox", "interior", account: admin.id)
+    assert_equal "Photobank already has a folder named Interior", flash[:alert]
+
+    patch library_folders_url("inbox", "team"), params: { folder: { parent_id: folders(:photobank).id } }
+    assert_redirected_to library_folders_url("photobank", "team", account: admin.id)
+    assert_equal folders(:photobank), folder.reload.parent
+  end
+
   test "a folder that's a workflow's output can't be deleted" do
     admin = sign_in_as(users(:admin_user))
     create_workflow("Cinematic", input: folders(:interior), transformation: transformations(:cinematic), output: folders(:photobank_interior))

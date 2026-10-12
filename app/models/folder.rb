@@ -6,11 +6,12 @@
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
 # ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
 # (card extraction, WhatsApp onboarding), photobank/ready and prompts/ready (default step output), prompts and reviews
-# by slug, so deleting those rows breaks them. Upgrade = a locked flag on those rows.
+# by slug, so deleting or moving those rows breaks them. Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
 
   friendly_id :name, use: %i[slugged scoped], scope: :parent
+  def should_generate_new_friendly_id? = slug.blank?
 
   belongs_to :parent, class_name: "Folder", optional: true
   has_many :children, -> { order(:name) }, class_name: "Folder", foreign_key: :parent_id, inverse_of: :parent, dependent: :restrict_with_error
@@ -26,6 +27,8 @@ class Folder < ApplicationRecord
   validates :name, presence: true
   validate { errors.add(:parent, "must be a top-level folder") if parent&.parent_id }
   validate { errors.add(:parent, "holds every review itself") if parent&.review? }
+  validate { errors.add(:parent, "holds #{parent.kind.pluralize}") if parent && parent.kind != kind }
+  validate { errors.add(:base, "#{parent.name} already has a folder named #{name}") if parent && parent_id_changed? && Folder.exists?(parent_id:, slug:) }
   before_validation(on: :create) do
     self.color = parent.color if parent && !color_changed?
     self.kind = parent.kind if parent
