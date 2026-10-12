@@ -1,0 +1,37 @@
+<%# locals: (name:, selected:, jobs:, new_form:) %>
+<%# Searchable job dropdown on the pick controller, like shared/_tag_pick: one job id (blank is none) into `name`.
+    "New job" submits `new_form`, a form outside this one (forms can't nest). %>
+<% option_css = "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" %>
+<%= tag.div class: "group min-w-0 flex-1", data: { controller: "pick" } do %>
+  <%= hidden_field_tag name, selected, id: nil, data: { pick_target: "input" } %>
+  <template data-pick-target="placeholder"><span class="text-ink-500">No job</span></template>
+  <button type="button" data-pick-target="trigger" aria-label="Job"
+          class="flex w-full min-w-0 cursor-pointer items-center gap-1 py-1.5 pr-2 pl-2.5 text-left text-sm focus:outline-none">
+    <span data-pick-target="preview" class="flex min-h-5.5 min-w-0 flex-1 flex-wrap items-center gap-1"></span>
+    <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4 shrink-0 text-ink-400 transition group-has-[:popover-open]:rotate-180", "aria-hidden": true } %>
+  </button>
+  <div popover data-pick-target="popover" data-action="toggle->pick#opened"
+       class="inset-auto m-0 top-[calc(anchor(bottom)+4px)] left-[calc(anchor(left))] [position-try-fallbacks:flip-block,flip-inline,flip-block_flip-inline] max-h-96 w-[anchor-size(width)] min-w-60 overflow-y-auto rounded-xl border border-ink-900/15 bg-white p-1 shadow-lg">
+    <div class="sticky -top-1 z-10 -mx-1 -mt-1 mb-1 border-b border-ink-900/10 bg-white p-1">
+      <input type="search" placeholder="Search jobs" aria-label="Search jobs" autocomplete="off"
+             data-pick-target="search" data-action="input->pick#filter keydown.enter->pick#pickFirst"
+             class="w-full rounded-md px-2 py-1.5 text-sm placeholder:text-ink-400 focus:outline-none">
+    </div>
+    <button type="submit" form="<%= new_form %>" class="<%= option_css %>">
+      <%= heroicon "plus", variant: :mini, options: { class: "size-4 shrink-0 text-ink-400", "aria-hidden": true } %>
+      <span>New job</span>
+    </button>
+    <button type="button" value="" data-pick-target="option" data-action="pick#pick" class="<%= option_css %>">
+      <span class="text-ink-500">No job</span>
+    </button>
+    <div data-pick-target="separator" class="mx-2 my-1 h-px bg-ink-900/10" aria-hidden="true"></div>
+    <% jobs.each do |job| %>
+      <button type="button" value="<%= job.id %>" data-pick-target="option" data-action="pick#pick" class="<%= option_css %>">
+        <span class="flex min-w-0 items-center gap-1.5">
+          <%= render "accounts/jobs/job", job: %>
+          <span class="truncate text-ink-500"><%= job.name %></span>
+        </span>
+      </button>
+    <% end %>
+  </div>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_165000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -126,12 +126,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_150000) do
     t.index ["user_id"], name: "index_incoming_messages_on_user_id"
   end
 
+  create_table "jobs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "slug"], name: "index_jobs_on_user_id_and_slug", unique: true
+  end
+
   create_table "library_media", force: :cascade do |t|
     t.integer "chat_id"
     t.datetime "created_at", null: false
     t.json "extracted_info"
     t.integer "folder_id", null: false
     t.integer "from_id"
+    t.integer "job_id"
     t.string "kind", null: false
     t.string "source_url"
     t.string "telegram_file_id"
@@ -141,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_150000) do
     t.string "whatsapp_from"
     t.string "whatsapp_media_id"
     t.index ["folder_id"], name: "index_library_media_on_folder_id"
+    t.index ["job_id"], name: "index_library_media_on_job_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
     t.index ["user_id", "source_url"], name: "index_library_media_on_user_id_and_source_url"
     t.index ["user_id"], name: "index_library_media_on_user_id"
@@ -518,7 +529,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_150000) do
   add_foreign_key "crawls", "links"
   add_foreign_key "folders", "folders", column: "parent_id"
   add_foreign_key "incoming_messages", "users"
+  add_foreign_key "jobs", "users"
   add_foreign_key "library_media", "folders"
+  add_foreign_key "library_media", "jobs"
   add_foreign_key "library_media", "users"
   add_foreign_key "library_media_tags", "library_media", on_delete: :cascade
   add_foreign_key "library_media_tags", "tags", on_delete: :cascade

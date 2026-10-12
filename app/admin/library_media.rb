@@ -1,5 +1,5 @@
 ActiveAdmin.register LibraryMedia do
-  permit_params :kind, :folder_id, :user_id, :telegram_file_id, :telegram_file_unique_id,
+  permit_params :kind, :folder_id, :user_id, :job_id, :telegram_file_id, :telegram_file_unique_id,
                 :chat_id, :from_id, :whatsapp_media_id, :whatsapp_from, tag_ids: []
 
   form do |f|
@@ -7,6 +7,7 @@ ActiveAdmin.register LibraryMedia do
       f.input :user
       f.input :kind
       f.input :folder
+      f.input :job, collection: f.object.user ? f.object.user.jobs.ordered : Job.none
       f.input :tags, as: :check_boxes, collection: Tag.ordered
       f.input :telegram_file_id
       f.input :telegram_file_unique_id

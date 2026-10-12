@@ -34,7 +34,7 @@ export default class extends Controller {
   }
 
   filter() {
-    const query = this.searchTarget.value.trim().toLowerCase().replace(/^#/, "")
+    const query = this.searchTarget.value.trim().toLowerCase().replace(/^[#@]/, "")
     this.optionTargets.forEach((option) => (option.hidden = !option.textContent.toLowerCase().includes(query)))
     this.separatorTargets.forEach((separator) => (separator.hidden = query !== ""))
     if (!this.hasCreateTarget) return

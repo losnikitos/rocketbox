@@ -10,7 +10,7 @@ module Accounts
     def index
     end
 
-    # new and edit take unsaved rubric params too: the form's Preview button GETs them back to draw the calendar.
+    # new takes unsaved rubric params too: the form's Preview button GETs them back to draw the calendar.
     def new
       @rubric = Current.account.rubrics.new(folder: Folder.ready)
       preview
@@ -27,16 +27,18 @@ module Accounts
     end
 
     def edit
-      preview
     end
 
+    # The edit form autosaves: redraw its heading and the calendar.
     def update
-      if @rubric.update(rubric_params)
-        redirect_to rubrics_path, notice: "Rubric saved."
-      else
-        set_calendar
-        render :edit, status: :unprocessable_entity
-      end
+      return render_autosave_error(@rubric) unless @rubric.update(rubric_params)
+
+      set_calendar
+      render turbo_stream: [
+        turbo_stream.update("rubric_name", @rubric.name),
+        turbo_stream.replace("rubric_calendar", partial: "calendar",
+          locals: { rubrics: @rubrics, posts: @posts, date: @date, days: @days, week: @week, draft: @rubric })
+      ]
     end
 
     def destroy

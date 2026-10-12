@@ -31,6 +31,7 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Library media | [`_library_media`](/app/views/shared/admin_links/_library_media.html.erb) | Move to (opt-in submenu), Admin, Remove |
 | Folder | [`_folder`](/app/views/shared/admin_links/_folder.html.erb) | Rename (submenu), Color (submenu), Admin, Delete |
 | SMM post | [`_smm_post`](/app/views/shared/admin_links/_smm_post.html.erb) | Admin, Remove |
+| Rubric post | [`_rubric_post`](/app/views/shared/admin_links/_rubric_post.html.erb) | Admin, Media admin, Delete |
 | Review | [`_review`](/app/views/shared/admin_links/_review.html.erb) | Admin, Remove |
 | Transformation run | [`_transformation_run`](/app/views/shared/admin_links/_transformation_run.html.erb) | Admin |
 | Workflow | [`_workflow`](/app/views/shared/admin_links/_workflow.html.erb) | Admin, Delete |

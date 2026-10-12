@@ -3,6 +3,8 @@
 class LibraryMedia < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :folder
+  # The customer work it shows; media of one customer share a job.
+  belongs_to :job, optional: true
   has_and_belongs_to_many :tags
   before_validation(on: :create) { self.folder ||= Folder.inbox }
   # Rubric posts outlive their media, as history.
@@ -47,6 +49,7 @@ class LibraryMedia < ApplicationRecord
 
   validates :kind, presence: true
   validate { errors.add(:folder, "must be a media folder") unless folder&.media? }
+  validate { errors.add(:job, "belongs to another account") if job && job.user_id != user_id }
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 

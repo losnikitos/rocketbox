@@ -1,5 +1,6 @@
 <% content_for(:title, "#{@rubric.name} — #{@post.scheduled_at.strftime("%-d %b")} — Rocketbox") %>
 <% media = @post.library_media %>
+<% content_for(:header_actions) { render "shared/admin_links/rubric_post", rubric_post: @post } %>
 
 <% content_for(:breadcrumbs) do %>
   <%= link_to edit_rubric_path(@rubric), class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>

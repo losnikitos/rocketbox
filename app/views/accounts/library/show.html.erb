@@ -73,12 +73,19 @@
       <h2 class="text-sm font-semibold text-ink-900">Media</h2>
     </summary>
     <div class="mt-3 space-y-4">
+      <% box_css = "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" %>
       <% if Tag.exists? %>
         <%= form_with url: library_media_path(@media), method: :patch,
-              html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" },
-              class: "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" do %>
+              html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" }, class: box_css do %>
           <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
         <% end %>
+      <% end %>
+      <%= form_with url: library_media_path(@media), method: :patch,
+            html: { onchange: "event.target.type == 'hidden' && this.requestSubmit()" }, class: box_css do %>
+        <%= render "accounts/jobs/pick", name: "library_media[job_id]", selected: @media.job_id, jobs: Current.account.jobs.ordered, new_form: "new-job" %>
+      <% end %>
+      <%= form_with url: jobs_path, id: "new-job", class: "hidden" do %>
+        <%= hidden_field_tag :library_media_id, @media.id, id: nil %>
       <% end %>
       <div class="flex flex-wrap gap-2">
         <% if blob %>

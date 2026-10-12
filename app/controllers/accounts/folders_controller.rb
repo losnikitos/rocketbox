@@ -19,7 +19,7 @@ module Accounts
         @prompts = @folder.prompts.where(user_id: [ nil, Current.account.id ]).with_attached_examples.ordered if @folder.prompt?
         @folder_media = media.where(folder: @folder.children).group_by(&:folder_id)
         @library_media = Current.account.library_media.where(folder: @folder).with_attached_file
-          .includes(:tags, transformation_run: { inputs: { item: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
+          .includes(:tags, :job, transformation_run: { inputs: { item: { file_attachment: :blob } } }, generated_media: { file_attachment: :blob })
           .order(created_at: :desc)
         # One end of an edge is always a step, so a folder node an edge leaves is an input, one it enters an output.
         nodes = WorkflowNode.includes(:workflow, :folder).where(folder: @folder)
