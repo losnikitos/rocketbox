@@ -28,6 +28,16 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal b, @rubric.next_media
   end
 
+  test "plan picks fresh media until it has to repeat, and nothing from an empty folder" do
+    travel_to Time.zone.local(2026, 1, 1, 8)
+    assert_equal [ [ nil, nil ] ] * 3, Rubric.plan([ @rubric ], 3.days.from_now).map { it.last(2) }
+
+    a, b = 2.times.map { photo }
+    plan = Rubric.plan([ @rubric ], 3.days.from_now)
+    assert_equal [ 1, 2, 3 ], plan.map { it.first.day }
+    assert_equal [ [ a, true ], [ b, true ], [ a, false ] ], plan.map { it.last(2) }
+  end
+
   test "due auto-publishing rubrics post their next media and move on" do
     media = photo
     off = @user.rubrics.create!(name: "Off", schedule: "every day at 9am", folder: folders(:ready))

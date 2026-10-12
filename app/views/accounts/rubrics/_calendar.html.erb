@@ -1,31 +1,27 @@
 <%# locals: (rubrics:, posts:, date:, days:, week:, draft: nil) %>
-<%# Past days show what each rubric posted; from now on, when each is scheduled to. The draft (dashed) stands in for its saved self. %>
+<%# Past days show what each rubric posted; the next month, what each is planned to post; later, only when. The draft (dashed) stands in for its saved self. %>
 <%
   now = Time.current
+  horizon = now + 1.month
   rubrics = rubrics.map { it.id && it.id == draft&.id ? draft : it }
   rubrics += [ draft ] if draft&.new_record?
-  upcoming = [ days.first.beginning_of_day, now ].max..days.last.end_of_day
-  entries = posts.map { [ it.created_at.in_time_zone, it.rubric, it ] }
-  if upcoming.begin < upcoming.end
-    rubrics.reject { it.errors[:schedule].any? }.each do |rubric|
-      entries += rubric.occurrences(upcoming).map { [ it, rubric, nil ] }
-    end
+  scheduled = rubrics.reject { it.errors[:schedule].any? }
+  plan = Rubric.plan(scheduled, horizon)
+  shortages = plan.reject(&:last).uniq { it[1] }
+  entries = posts.map { [ it.created_at.in_time_zone, it.rubric, it, it.library_media, false ] }
+  entries += plan.filter_map { |time, rubric, media, fresh| [ time, rubric, nil, media, !fresh ] if days.cover?(time.to_date) }
+  later = [ days.first.beginning_of_day, horizon ].max..days.last.end_of_day
+  if later.begin < later.end
+    scheduled.each { |rubric| entries += rubric.occurrences(later).map { [ it, rubric, nil, nil, false ] } }
   end
   by_day = entries.sort_by(&:first).group_by { it.first.to_date }
-  view = ("week" if week)
-  nav_link = ->(day, view_name = view) { url_for(request.query_parameters.merge("date" => day.iso8601, "view" => view_name).compact) }
+  nav_link = ->(day) { url_for(request.query_parameters.merge("date" => day.iso8601)) }
   step = week ? 1.week : 1.month
   title = week ? "#{days.first.strftime(days.first.month == days.last.month ? "%-d" : "%-d %b")} – #{days.last.strftime("%-d %b %Y")}" : date.strftime("%B %Y")
 %>
 <section aria-label="Calendar" class="rounded-2xl border border-ink-900/10 bg-white p-4">
   <div class="mb-3 flex items-center gap-1">
     <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900"><%= title %></h2>
-    <nav aria-label="Calendar view" class="mr-2 flex rounded-lg border border-ink-900/10 p-0.5 text-sm font-medium">
-      <% { "Month" => nil, "Week" => "week" }.each do |label, view_name| %>
-        <%= link_to label, nav_link.(date, view_name), aria: { current: ("page" if view_name == view) },
-              class: "rounded-md px-2.5 py-0.5 text-ink-500 hover:text-ink-900 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
-      <% end %>
-    </nav>
     <%= link_to nav_link.(date - step), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Previous #{week ? "week" : "month"}" } do %>
       <%= heroicon "chevron-left", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
     <% end %>
@@ -34,6 +30,21 @@
       <%= heroicon "chevron-right", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
     <% end %>
   </div>
+
+  <% if shortages.any? %>
+    <ul aria-label="Running short" class="mb-3 space-y-1 rounded-lg bg-signal-yellow/15 px-3 py-2 text-sm text-ink-900">
+      <% shortages.each do |time, rubric, media, _fresh| %>
+        <li class="flex items-start gap-1.5">
+          <%= heroicon "exclamation-triangle", variant: :mini, options: { class: "mt-0.5 size-4 shrink-0 text-amber-500", "aria-hidden": true } %>
+          <span>
+            <span class="font-medium"><%= rubric.name.presence || "New rubric" %></span>
+            <%= media ? "runs out of fresh media" : "has nothing to post" %> on <%= time.strftime("%a %-d %b") %>.
+            Add more <%= rubric.reel? ? "videos" : "media" %> to <%= rubric.folder.path %>.
+          </span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
 
   <div class="overflow-x-auto">
     <div class="grid min-w-2xl grid-cols-7 gap-px overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900/10">
@@ -48,20 +59,25 @@
           <div class="mb-1 text-right text-xs font-semibold tabular-nums <%= day == Date.current ? "text-rocket" : in_range ? "text-ink-700" : "text-ink-400" %>">
             <%= day.day %>
           </div>
-          <ul class="space-y-0.5">
-            <% shown.each do |time, rubric, post| %>
-              <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, post&.status, post&.error_message ].compact.join(" · ") %>"
-                  class="flex items-center gap-1 rounded border px-1 py-0.5 text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %> <%= "opacity-50" unless post || rubric.auto_publish? %>">
-                <% if post %>
-                  <% media = post.library_media %>
-                  <% if media&.file&.representable? %>
-                    <%= image_tag media.file.representation(:thumb), alt: "", class: "size-4 shrink-0 rounded-sm object-cover" %>
-                  <% end %>
-                  <%= heroicon post.status == "failed" ? "x-mark" : "check", variant: :micro,
-                        options: { class: "size-3 shrink-0 #{post.status == "failed" ? "text-signal-red" : "text-ink-500"}", "aria-hidden": true } %>
+          <ul class="space-y-1">
+            <% shown.each do |time, rubric, post, media, short| %>
+              <% shortage = (media ? "repeat" : "no media in #{rubric.folder.path}") if short %>
+              <% aspect = !week ? "aspect-square" : rubric.post? ? "aspect-4/5" : "aspect-9/16" %>
+              <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, post&.status, post&.error_message, shortage ].compact.join(" · ") %>"
+                  class="overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %> <%= "opacity-50" unless post || rubric.auto_publish? %>">
+                <% if media&.file&.representable? %>
+                  <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
                 <% end %>
-                <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
-                <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
+                <div class="flex items-center gap-1 px-1 py-0.5">
+                  <% if post %>
+                    <%= heroicon post.status == "failed" ? "x-mark" : "check", variant: :micro,
+                          options: { class: "size-3 shrink-0 #{post.status == "failed" ? "text-signal-red" : "text-ink-500"}", "aria-hidden": true } %>
+                  <% elsif short %>
+                    <%= heroicon "exclamation-triangle", variant: :micro, options: { class: "size-3 shrink-0 text-amber-500", "aria-hidden": true } %>
+                  <% end %>
+                  <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
+                  <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
+                </div>
               </li>
             <% end %>
             <% if day_entries.size > shown.size %>

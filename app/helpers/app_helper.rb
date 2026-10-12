@@ -9,7 +9,11 @@ module AppHelper
     when "accounts/folders", "accounts/library"
       [ :folders, (@folder || @media&.folder)&.name || "Media", [] ]
     when "accounts/rubrics"
-      [ :schedule, "Schedule", [] ]
+      view = ->(name) { url_for(request.query_parameters.merge("view" => name).compact) }
+      [ :schedule, "Schedule", [
+        [ view.(nil), "Week", params[:view] != "month" ],
+        [ view.("month"), "Month", params[:view] == "month" ]
+      ] ]
     when "accounts/business"
       [ :business, "Business", [] ]
     when "accounts/calendar"

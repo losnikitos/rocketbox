@@ -35,6 +35,24 @@ class Rubric < ApplicationRecord
       .order(Arel.sql("MAX(rubric_posts.created_at) IS NOT NULL, MAX(rubric_posts.created_at), library_media.id")).first
   end
 
+  # Each of `rubrics`' times from now until `upto` as [time, rubric, media, fresh]: the media #next_media would pick then,
+  # had every earlier time posted its pick; fresh if it was never posted. ponytail: assumes the folders don't change meanwhile.
+  def self.plan(rubrics, upto)
+    pool = LibraryMedia.where(user_id: rubrics.map(&:user_id), folder_id: rubrics.map(&:folder_id)).with_attached_file
+      .select { it.file.attached? }
+    last = RubricPost.where(library_media: pool).group(:library_media_id).maximum(:created_at)
+    by_folder = pool.group_by { [ it.user_id, it.folder_id ] }
+
+    rubrics.flat_map { |rubric| rubric.occurrences(Time.current..upto).map { [ it, rubric ] } }.sort_by(&:first).map do |time, rubric|
+      media = by_folder.fetch([ rubric.user_id, rubric.folder_id ], [])
+        .select { !rubric.reel? || it.file.content_type.start_with?("video/") }
+        .min_by { [ last[it.id] ? 1 : 0, last[it.id].to_i, it.id ] }
+      fresh = media && !last[media.id]
+      last[media.id] = time if media
+      [ time, rubric, media, fresh ]
+    end
+  end
+
   # Advances first, so a failure never loops and missed times after downtime post once.
   def run!
     update!(next_run_at: next_occurrence)
