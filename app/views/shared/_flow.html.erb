@@ -56,7 +56,7 @@
       <pattern id="flow-dots" width="20" height="20" patternUnits="userSpaceOnUse">
         <circle cx="10" cy="10" r="1" class="fill-ink-900/20" />
       </pattern>
-      <rect width="100%" height="100%" fill="url(#flow-dots)" class="pointer-events-none" />
+      <rect data-flow-target="dots" fill="url(#flow-dots)" class="pointer-events-none" />
       <g data-flow-target="edges" data-action="click->flow#pick" class="stroke-ink-900/25 motion-safe:animate-march" fill="none" stroke-width="2" stroke-dasharray="6 4"></g>
     </svg>
     <%# Placed on the middle of their arrows by flow_controller; data-v and data-w keep a press from starting a selection or deselecting. %>

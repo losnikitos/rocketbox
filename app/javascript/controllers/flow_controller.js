@@ -11,7 +11,7 @@ import dagre from "@dagrejs/dagre"
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
 // data-v and data-w) sit on the middle of their edge.
 export default class extends Controller {
-  static targets = ["canvas", "node", "edges", "ends", "output", "marquee"]
+  static targets = ["canvas", "dots", "node", "edges", "ends", "output", "marquee"]
   static values = { edges: Array }
 
   connect() {
@@ -41,7 +41,7 @@ export default class extends Controller {
     if (view) this.canvasTarget.style.zoom = this.scale = view.scale
     this.resize(view?.left, view?.top)
     this.draw()
-    if (view) Object.assign(this.element, { scrollLeft: view.left, scrollTop: view.top })
+    Object.assign(this.element, view ? { scrollLeft: view.left, scrollTop: view.top } : { scrollLeft: this.slack.x, scrollTop: this.slack.y })
     this.canvasTarget.classList.remove("invisible")
   }
 
@@ -62,10 +62,10 @@ export default class extends Controller {
   // Zooms to `scale`, keeping the canvas point under the pointer in place.
   zoom(scale, { clientX, clientY }) {
     const box = this.element.getBoundingClientRect(), mx = clientX - box.left, my = clientY - box.top
-    const x = (this.element.scrollLeft + mx) / this.scale, y = (this.element.scrollTop + my) / this.scale
+    const { x, y } = this.point({ clientX, clientY })
     this.scale = Math.min(2, Math.max(0.2, scale))
     this.canvasTarget.style.zoom = this.scale
-    const left = x * this.scale - mx, top = y * this.scale - my
+    const left = x * this.scale + this.slack.x - mx, top = y * this.scale + this.slack.y - my
     this.resize(left, top)
     Object.assign(this.element, { scrollLeft: left, scrollTop: top })
     this.remember()
@@ -271,9 +271,15 @@ export default class extends Controller {
 
   // The pointer in canvas coordinates.
   point({ clientX, clientY }) {
-    const box = this.element.getBoundingClientRect()
-    return { x: (this.element.scrollLeft + clientX - box.left) / this.scale, y: (this.element.scrollTop + clientY - box.top) / this.scale }
+    const box = this.element.getBoundingClientRect(), { marginLeft, marginTop } = this.canvasTarget.style
+    return {
+      x: (this.element.scrollLeft + clientX - box.left) / this.scale - parseFloat(marginLeft),
+      y: (this.element.scrollTop + clientY - box.top) / this.scale - parseFloat(marginTop)
+    }
   }
+
+  // Room to pan past the nodes on every side, in screen pixels.
+  get slack() { return { x: 0.9 * this.element.clientWidth, y: 0.9 * this.element.clientHeight } }
 
   // Where an edge leaves its source and enters its target. Edges in take the target's ports top to bottom in their
   // sources' order, so they don't cross.
@@ -284,12 +290,14 @@ export default class extends Controller {
   }
 
   // Fits the canvas to its nodes, and at least to the area visible when scrolled to `left`, `top`, so anything can be
-  // dropped anywhere and the scroll isn't clamped.
+  // dropped anywhere and the scroll isn't clamped. A margin of slack on every side, dotted too, pans past the nodes.
   resize(left = this.element.scrollLeft, top = this.element.scrollTop) {
     const nodes = this.graph.nodes().map(id => this.graph.node(id))
-    const width = Math.max((left + this.element.clientWidth) / this.scale, ...nodes.map(n => n.x + n.width / 2 + 4))
-    const height = Math.max((top + this.element.clientHeight) / this.scale, ...nodes.map(n => n.y + n.height / 2 + 4))
-    Object.assign(this.canvasTarget.style, { width: `${width}px`, height: `${height}px` })
+    const mx = this.slack.x / this.scale, my = this.slack.y / this.scale
+    const width = Math.max((left + this.element.clientWidth) / this.scale - mx, ...nodes.map(n => n.x + n.width / 2 + 4))
+    const height = Math.max((top + this.element.clientHeight) / this.scale - my, ...nodes.map(n => n.y + n.height / 2 + 4))
+    Object.assign(this.canvasTarget.style, { width: `${width}px`, height: `${height}px`, margin: `${my}px ${mx}px` })
+    Object.entries({ x: -mx, y: -my, width: width + 2 * mx, height: height + 2 * my }).forEach(([k, v]) => this.dotsTarget.setAttribute(k, v))
   }
 
   draw() {

@@ -81,6 +81,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
     assert_select "turbo-frame#inspector ul[aria-label=Media] li", 1
     assert_select "turbo-frame#inspector ul[aria-label=Media] input[value=?]", tagged.id.to_s
+    assert_select "turbo-frame#inspector ul[aria-label=Media] li span", text: "after"
     input.update!(take: 3, media_type: "video")
     get workflow_url(workflow, account: admin.id, node: output.id)
     assert_select "a[data-id=?]", input.id.to_s do
@@ -257,7 +258,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "#workflow_palette section h3", 6
+    assert_select "#workflow_palette section h3", 8
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole

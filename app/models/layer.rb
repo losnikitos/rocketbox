@@ -68,6 +68,9 @@ class Layer
     browser.set_viewport(width: size.first, height: size.last, scale_factor: 1)
     browser.content = html
     browser.network.wait_for_idle
+    # Web fonts only start downloading once layout needs them, after the network goes idle; reading offsetHeight
+    # forces that layout. Raises rather than shoot fallback fonts if they take over 10s.
+    browser.evaluate_async("document.body.offsetHeight; document.fonts.ready.then(() => arguments[0]())", 10)
     browser.screenshot(format: "png", encoding: :binary, background_color: Ferrum::RGBA.new(0, 0, 0, 0.0))
   ensure
     browser&.quit
