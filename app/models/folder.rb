@@ -20,7 +20,7 @@ class Folder < ApplicationRecord
   has_many :workflow_nodes, dependent: :restrict_with_error
   has_many :rubrics, dependent: :restrict_with_error
 
-  enum :color, %w[sky emerald amber rose violet slate].index_by(&:itself), validate: true
+  enum :color, %w[sky emerald amber red rose violet slate].index_by(&:itself), validate: true
   enum :kind, %w[media prompt review].index_by(&:itself), validate: true
 
   validates :name, presence: true
@@ -44,6 +44,8 @@ class Folder < ApplicationRecord
   def root? = parent_id.nil?
   def root = parent || self
   def path = [ parent&.name, name ].compact.join(" / ")
+  # Its id and its subfolders' ids: what a workflow node on it reads from.
+  def tree_ids = @tree_ids ||= [ id, *children.ids ]
 
   # Its items: media, prompts or reviews.
   def items = { "media" => library_media, "prompt" => prompts, "review" => reviews }.fetch(kind)

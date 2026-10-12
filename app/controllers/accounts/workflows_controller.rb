@@ -129,7 +129,7 @@ module Accounts
           else
             [ @step_runs.select { linked.(it.workflow_node_id, @selected.id) }.map(&:result),
               @step_runs.select { linked.(@selected.id, it.workflow_node_id) }.flat_map(&:sources)
-                .select { @selected.library_media ? it == @selected.library_media : it.folder_id == @selected.folder_id }.uniq ]
+                .select { @selected.library_media ? it == @selected.library_media : @selected.folder.tree_ids.include?(it.folder_id) }.uniq ]
           end
         end
         @start_nodes = @workflow.start_nodes
@@ -149,7 +149,7 @@ module Accounts
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        open: (helpers.folder_path(node.folder) if node.folder), current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
-                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || input),
+                       kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || node.media_folder?),
                        gives: node.item_kind, takes: node.transformation&.takes&.join(" "), inputs: feeds.size + (node.step? ? 1 : 0),
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
@@ -159,7 +159,7 @@ module Accounts
         carried = ->(edge) do
           from = by_id[edge.from_id]
           items = if from.step? then runs_of.(from).map(&:result).presence || gives[from.id]
-          else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : it.folder_id == from.folder_id }.uniq.presence ||
+          else runs_of.(by_id[edge.to_id]).flat_map(&:sources).select { from.library_media ? it == from.library_media : from.folder.tree_ids.include?(it.folder_id) }.uniq.presence ||
             (from.folder ? gives[from.id] : [])
           end
           items.reject { it.is_a?(LibraryMedia) && !it.file.attached? }

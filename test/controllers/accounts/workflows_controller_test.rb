@@ -92,6 +92,10 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_select "#node_#{output.id}_kind", ""
     assert_select "turbo-frame#inspector section[aria-label=Tags] h3", text: "Filter by tag"
+    loose = workflow.nodes.create!(folder: folders(:interior), tag_ids: [ tags(:after).id ])
+    get workflow_url(workflow, account: admin.id)
+    assert_select "a[data-id=?] span", loose.id.to_s, text: "after"
+    loose.destroy!
     patch workflow_url(workflow, account: admin.id), params: { workflow: { nodes_attributes: { "0" => { id: step.id, tag_ids: [ "", tags(:after).id ] } } } }
     assert_equal [ tags(:after).id ], step.reload.tag_ids
     get workflow_url(workflow, account: admin.id, node: step.id)

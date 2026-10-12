@@ -5,8 +5,8 @@
 # Every node but a note gives items of one kind (`item_kind`): a folder its kind's (media, prompts or reviews), a media
 # itself, a step what its type makes. A folder's role comes from its edges: one feeding a step is an input, one a step
 # feeds is an output.
-# A folder gives its pinned items (`pinned_ids`, every run until reset), else its newest `take`: a media folder of its
-# media, a prompt folder of its prompts, the Reviews folder of its 5-star reviews. A media folder's tags filter what it
+# A folder gives its pinned items (`pinned_ids`, every run until reset), else its newest `take` of its and its
+# subfolders' items: a media folder's media, a prompt folder's prompts, Reviews' 5-star reviews. A media folder's tags filter what it
 # gives to its media with all of them, and its `media_type` (nil for any) to images or videos. A step's tags go on what
 # it makes.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
@@ -44,9 +44,9 @@ class WorkflowNode < ApplicationRecord
 
   def tags = Tag.where(id: tag_ids).ordered
 
-  # Whether `media` is in this folder with all its tags, of its media type.
+  # Whether `media` is in this folder or a subfolder, with all its tags, of its media type.
   def takes?(media)
-    folder_id.present? && folder_id == media.folder_id && (tag_ids - media.tag_ids).empty? &&
+    !!folder&.tree_ids&.include?(media.folder_id) && (tag_ids - media.tag_ids).empty? &&
       (media_type.nil? || (media_type == "image" ? media.story_image? : media.video?))
   end
 
