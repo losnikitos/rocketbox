@@ -37,6 +37,13 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/jobs']", count: 0
     assert_select "a[href='/admin']", count: 0
     assert_select "[data-controller='env-switcher']", count: 0
+    assert_select "aside button[aria-label='Search'][data-action='command-panel#open']"
+    assert_select "dialog#command-panel" do
+      [ jobs_path, reviews_path, links_path, services_path, library_folders_path("inbox") ].each { assert_select "a[href=?]", it }
+      assert_select "a[href=?][data-label='Inbox / Interior']", library_folders_path("inbox", "interior")
+      assert_select "a[href=?][data-label='Prompts / Shots']", library_folders_path("prompts", "shots")
+      assert_select "a[href=?]", workflows_path, count: 0
+    end
   end
 
   test "business page shows primary Business nav" do
@@ -69,6 +76,7 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
 
   test "admin sees onboarding link in primary nav" do
     admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Story maker")
 
     get library_folders_url("inbox", account: admin.id)
 
@@ -79,6 +87,8 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Primary'] a[href='/admin']", text: /Active Admin/
     assert_select "select#account_user_id"
     assert_select "[data-controller='env-switcher'][hidden] [data-origin='https://rocketbox.plus']", text: "Production"
+    assert_select "dialog#command-panel a[href=?]", workflows_path(account: admin.id), text: "Workflows"
+    assert_select "dialog#command-panel a[href=?][data-label='Story maker']", workflow_path(workflow, account: admin.id)
   end
 
   test "profile page has no tabs and sidebar log out" do
