@@ -18,33 +18,33 @@
     <% end %>
   </div>
 
-  <div class="space-y-4 rounded-2xl border border-ink-900/10 bg-white p-6">
-    <div class="flex items-center gap-2">
-      <span class="size-3 shrink-0 rounded-full border-2 <%= AppHelper::NOTE_COLORS[@rubric.color] %>" aria-hidden="true"></span>
-      <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900">
-        <%= link_to @rubric.name, edit_rubric_path(@rubric), class: "hover:underline" %>
-      </h2>
-      <span class="<%= rubric_post_status_pill_class(@post.status) %>"><%= @post.status.capitalize %></span>
-    </div>
+  <div class="space-y-6">
+    <div class="space-y-4 rounded-2xl border border-ink-900/10 bg-white p-6">
+      <div class="flex items-center gap-2">
+        <span class="size-3 shrink-0 rounded-full border-2 <%= AppHelper::NOTE_COLORS[@rubric.color] %>" aria-hidden="true"></span>
+        <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900">
+          <%= link_to @rubric.name, edit_rubric_path(@rubric), class: "hover:underline" %>
+        </h2>
+        <span class="<%= rubric_post_status_pill_class(@post.status) %>"><%= @post.status.capitalize %></span>
+      </div>
 
-    <dl class="space-y-2 text-sm">
-      <% [
-           [ @post.published_at ? "Published" : "Scheduled for", (@post.published_at || @post.scheduled_at).strftime("%a %-d %b, %H:%M") ],
-           [ "Format", @rubric.format.capitalize ],
-           [ "From", @rubric.source ]
-         ].each do |label, value| %>
-        <div>
-          <dt class="text-ink-500"><%= label %></dt>
-          <dd class="mt-0.5 text-ink-900"><%= value %></dd>
-        </div>
+      <dl class="space-y-2 text-sm">
+        <% [
+             [ @post.published_at ? "Published" : "Scheduled for", (@post.published_at || @post.scheduled_at).strftime("%a %-d %b, %H:%M") ],
+             [ "Format", @rubric.format.capitalize ],
+             [ "From", @rubric.source ]
+           ].each do |label, value| %>
+          <div>
+            <dt class="text-ink-500"><%= label %></dt>
+            <dd class="mt-0.5 text-ink-900"><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
+
+      <% if @post.error_message %>
+        <p class="text-sm text-signal-red"><%= @post.error_message %></p>
       <% end %>
-    </dl>
 
-    <% if @post.error_message %>
-      <p class="text-sm text-signal-red"><%= @post.error_message %></p>
-    <% end %>
-
-    <div class="flex flex-wrap gap-2">
       <% unless @post.published_at %>
         <%= button_to publish_rubric_post_path(@rubric, @post),
               class: "rb-btn-primary gap-1.5 px-3.5 py-1.5 text-sm" do %>
@@ -52,9 +52,27 @@
           <%= @post.status == "failed" ? "Retry" : "Publish now" %>
         <% end %>
       <% end %>
-      <% if media %>
-        <%= link_to "Open media", library_item_path(media), class: "rb-btn-ghost-on-light px-3.5 py-1.5 text-sm" %>
-      <% end %>
     </div>
+
+    <% if media %>
+      <section aria-labelledby="post-media-heading" class="space-y-3 rounded-2xl border border-ink-900/10 bg-white p-6">
+        <h2 id="post-media-heading" class="font-manrope text-lg font-bold tracking-tight text-ink-900">Media</h2>
+        <%= link_to library_item_path(media), id: "post-media",
+              class: "-mx-2 flex items-center gap-3 rounded-lg p-2 hover:bg-ink-900/5" do %>
+          <%= render "accounts/library/file", media:, play: true, variant: :small, css: "aspect-2/3 w-12 shrink-0 rounded-md object-cover" %>
+          <span class="min-w-0 flex-1 space-y-0.5">
+            <span class="block truncate text-sm font-semibold text-ink-900"><%= media.file.attached? ? media.file.filename : media.kind.capitalize %></span>
+            <span class="block truncate text-xs text-ink-500"><%= media.folder.path %></span>
+          </span>
+          <%= heroicon "chevron-right", variant: :mini, options: { class: "size-4 shrink-0 text-ink-500", "aria-hidden": true } %>
+        <% end %>
+        <% if media.job || media.tags.any? %>
+          <div class="flex flex-wrap gap-1">
+            <%= render "accounts/jobs/job", job: media.job if media.job %>
+            <%= render partial: "accounts/tags/tag", collection: media.tags.sort_by(&:name), as: :tag %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
   </div>
 </div>
