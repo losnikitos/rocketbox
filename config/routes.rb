@@ -52,7 +52,11 @@ Rails.application.routes.draw do
     scope module: :accounts do
       get "recent", to: "recent#show", as: :recent
       get "calendar", to: "calendar#show", as: :calendar
-      resources :rubrics, path: "schedule", except: :show
+      resources :rubrics, path: "schedule", except: :show do
+        resources :posts, controller: "rubric_posts", only: :show do
+          post :publish, on: :member
+        end
+      end
       resource :business, only: [ :show, :update ], controller: "business"
       resources :services, except: :show
       resources :prompts, except: %i[index show]

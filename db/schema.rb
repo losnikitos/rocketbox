@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_150000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -228,9 +228,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_140000) do
     t.integer "library_media_id"
     t.datetime "published_at"
     t.integer "rubric_id", null: false
+    t.datetime "scheduled_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["library_media_id", "created_at"], name: "index_rubric_posts_on_library_media_id_and_created_at"
-    t.index ["rubric_id"], name: "index_rubric_posts_on_rubric_id"
+    t.index ["library_media_id", "scheduled_at"], name: "index_rubric_posts_on_library_media_id_and_scheduled_at"
+    t.index ["rubric_id", "scheduled_at"], name: "index_rubric_posts_on_rubric_id_and_scheduled_at"
   end
 
   create_table "rubrics", force: :cascade do |t|

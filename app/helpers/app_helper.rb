@@ -90,7 +90,7 @@ module AppHelper
 
   # A rubric post's status: publishing, published or failed.
   def rubric_post_status_pill_class(status)
-    color = { "publishing" => "bg-signal-yellow/20 text-ink-700", "published" => "bg-rocket/15 text-rocket",
+    color = { "scheduled" => "bg-ink-900/5 text-ink-600", "publishing" => "bg-signal-yellow/20 text-ink-700", "published" => "bg-rocket/15 text-rocket",
               "failed" => "bg-signal-red/10 text-signal-red" }[status.to_s]
     "rounded-full px-2 py-0.5 text-xs font-medium #{color}"
   end
