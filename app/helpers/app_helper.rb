@@ -71,6 +71,19 @@ module AppHelper
 
   def folder_color(folder) = FOLDER_COLORS[folder&.color || "sky"]
 
+  # A hover badge opening the item in the library in a new tab; its parent needs `group relative`.
+  def open_in_library(item, css = "top-1 right-1")
+    path = case item
+    when LibraryMedia then library_item_path(item)
+    when Prompt then edit_prompt_path(item)
+    when Review then reviews_path(archived: (1 if item.archived?), anchor: dom_id(item))
+    end
+    link_to path, target: "_blank", rel: "noopener", title: "Open in library", aria: { label: "Open in library" },
+      class: "absolute #{css} flex size-6 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm group-hover:opacity-100 focus-visible:opacity-100 hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-rocket" do
+      heroicon "folder", variant: :micro, options: { class: "size-3.5", "aria-hidden": true }
+    end
+  end
+
   # A rubric post's status: publishing, published or failed.
   def rubric_post_status_pill_class(status)
     color = { "publishing" => "bg-signal-yellow/20 text-ink-700", "published" => "bg-rocket/15 text-rocket",
