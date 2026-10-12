@@ -218,6 +218,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     get workflow_url(workflow, account: admin.id, node: reviews.id)
     assert_select "turbo-frame#inspector input[name='workflow[nodes_attributes][0][take]']"
     assert_select "turbo-frame#inspector section[aria-label=Pins] input[type=radio][name='workflow[nodes_attributes][0][pinned_ids][]'][value='#{review.id}'][checked]"
+    assert_select "turbo-frame#inspector section[aria-label=Pins] a[href=?][target=_blank]", reviews_path(account: admin.id, anchor: dom_id(review))
     assert_select "[data-flow-target=output][data-v=?] [title=Pinned]", reviews.id.to_s
 
     get workflow_url(workflow, format: :md), headers: { "Authorization" => "Bearer secret" }
@@ -283,6 +284,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#inspector" do
       assert_select "dl", 0
       assert_select "section[aria-label=Inputs] button[popovertarget^=?]", dom_id(media, :quick_view)
+      assert_select "section[aria-label=Inputs] a[href=?][target=_blank]", library_item_path(media, account: admin.id)
       assert_select "section[aria-label=Outputs] p", 0
       assert_select "header [id^=#{dom_id(step)}-admin-links] a[data-turbo-method=patch][data-workflow-target=remove]", text: /Delete/
       assert_select "section[aria-label=Outputs] ~ section[aria-label=Settings]"

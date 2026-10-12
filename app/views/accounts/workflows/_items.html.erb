@@ -10,7 +10,7 @@
     <% texts.each do |item| %>
       <li>
         <%= content_tag pin ? :label : :div, title: ("Pin" if pin),
-              class: "relative block rounded-lg border border-ink-900/10 bg-white p-2.5 text-sm #{"group/option cursor-pointer pr-9 hover:border-ink-900/30 has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30" if pin}" do %>
+              class: "group relative block rounded-lg border border-ink-900/10 bg-white p-2.5 text-sm #{pin ? "pr-16" : "pr-9"} #{"group/option cursor-pointer hover:border-ink-900/30 has-checked:ring-2 has-checked:ring-rocket has-focus-visible:ring-2 has-focus-visible:ring-rocket/30" if pin}" do %>
           <% if pin %>
             <%# Taking one, a new pin replaces the last. %>
             <%= tag.input type: pin.take > 1 ? "checkbox" : "radio", name: "workflow[nodes_attributes][0][pinned_ids][]", value: item.id,
@@ -30,6 +30,7 @@
             <p class="font-medium text-ink-900"><%= item.customer_name %> · <%= "★" * item.rating %></p>
             <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body %></p>
           <% end %>
+          <%= open_in_library(item, pin ? "top-2 right-9" : "top-2 right-2") %>
           <% if pin %>
             <span class="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-stone-100 text-ink-700 opacity-0 group-hover/option:opacity-100 group-has-focus-visible/option:opacity-100 group-has-checked/option:bg-rocket group-has-checked/option:text-white group-has-checked/option:opacity-100" aria-hidden="true">
               <%= lucide_icon "pin", class: "size-3.5 group-has-checked/option:fill-current", "aria-hidden": true %>
