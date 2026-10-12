@@ -1,5 +1,5 @@
 <%# locals: (items:, css:, pin: nil) %>
-<%# A node's items in the inspector: media as thumbnails (see _media), prompts and reviews as text cards. pin (a folder %>
+<%# A node's items in the inspector: media as thumbnails (see _media), prompts (beside their first example) and reviews as text cards. pin (a folder %>
 <%# node) makes each text card a pin toggle for it, inside the inspector's Pins form. %>
 <% media, texts = items.partition { it.is_a?(LibraryMedia) } %>
 <% if media.any? %>
@@ -17,8 +17,15 @@
                   checked: pin.pinned_ids.include?(item.id), aria: { label: "Pin" }, class: "sr-only" %>
           <% end %>
           <% if item.is_a?(Prompt) %>
-            <%= link_to item.name, edit_prompt_path(item), data: { turbo_frame: "_top" }, class: "flex items-center gap-1.5 font-medium text-ink-900 hover:underline" %>
-            <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body.presence || "Writing…" %></p>
+            <div class="flex gap-2.5">
+              <% if (example = item.examples.first) %>
+                <%= render "shared/example", example:, variant: :small, css: "aspect-2/3 w-16 shrink-0 rounded object-cover" %>
+              <% end %>
+              <div class="min-w-0">
+                <%= link_to item.name, edit_prompt_path(item), data: { turbo_frame: "_top" }, class: "flex items-center gap-1.5 font-medium text-ink-900 hover:underline" %>
+                <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body.presence || "Writing…" %></p>
+              </div>
+            </div>
           <% else %>
             <p class="font-medium text-ink-900"><%= item.customer_name %> · <%= "★" * item.rating %></p>
             <p class="mt-1 line-clamp-4 text-ink-600"><%= item.body %></p>

@@ -22,6 +22,8 @@ class LibraryMedia < ApplicationRecord
     if: -> { file.attached? && (attachment_changes.key?("file") || saved_change_to_folder_id?) }, on: %i[create update]
   has_one_attached :file do |file|
     file.variant :thumb, resize_to_limit: [ 720, 720 ], preprocessed: :video?
+    # Workflow cards and run rows, a few rem tall.
+    file.variant :small, resize_to_limit: [ 256, 256 ]
   end
   has_one_attached :extracted_logo
 

@@ -114,6 +114,7 @@ module Accounts
         if @selected&.folder
           @folder_items = @run.candidates(@selected, Current.account)
           @folder_items = @folder_items.with_attached_file.includes(:transformation_run) if @selected.media_folder?
+          @folder_items = @folder_items.with_attached_examples if @selected.folder.prompt?
         end
         # A step's step runs in the run, one per batch of its inputs (see WorkflowRun).
         runs_of = ->(node) { @step_runs.select { it.workflow_node_id == node.id } }

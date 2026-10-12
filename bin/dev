@@ -13,4 +13,8 @@ export PORT="${PORT:-3003}"
 export RUBY_DEBUG_OPEN="true"
 export RUBY_DEBUG_LAZY="true"
 
+# A previous bin/dev (another terminal) would hold :3003, the Telegram poller and the tunnel; stop it first.
+make -s stop
+echo $$ > tmp/pids/dev.pid
+
 exec foreman start -f Procfile.dev "$@"

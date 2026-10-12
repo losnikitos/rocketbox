@@ -235,6 +235,11 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "##{dom_id(shot)}", text: /The empty chair/
     get library_folders_url("reviews", account: admin.id)
     assert_redirected_to reviews_url(account: admin.id)
+
+    shot.examples.attach(io: StringIO.new("img"), filename: "chair.jpg", content_type: "image/jpeg")
+    get workflow_url(workflow, account: admin.id, node: shots.id)
+    assert_select "section[aria-label=Pins] img[alt='chair.jpg']"
+    assert_select "[data-flow-target=output][data-v=?] img[alt='chair.jpg']", shots.id.to_s
   ensure
     credentials.singleton_class.remove_method(:agent_token)
   end

@@ -10,7 +10,11 @@ class Prompt < ApplicationRecord
   # The step run that wrote it. Later step runs reusing it share it (see WorkflowRun).
   has_one :transformation_run, -> { order(:id) }, as: :result
   has_many :transformation_runs, as: :result, dependent: :destroy
-  has_many_attached :examples
+  has_many_attached :examples do |examples|
+    examples.variant :thumb, resize_to_limit: [ 720, 720 ]
+    # Workflow cards, a few rem tall.
+    examples.variant :small, resize_to_limit: [ 256, 256 ]
+  end
 
   validates :name, presence: true
   # A user's prompt is written by their step run, blank until it's done.

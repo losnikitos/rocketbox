@@ -1,10 +1,11 @@
-<%# locals: (media:, css:, controls: false, play: false) %>
+<%# locals: (media:, css:, controls: false, play: false, variant: nil) %>
+<%# variant (e.g. :small) scales an image too; without it an image shows whole and a video its :thumb. %>
 <% if media.file.attached? %>
   <% if media.story_image? %>
-    <%= image_tag url_for(media.file), alt: media.kind, class: css %>
+    <%= image_tag variant && media.file.variable? ? media.file.representation(variant) : url_for(media.file), alt: media.kind, class: css %>
   <% elsif media.video? && play %>
     <span class="relative block">
-      <%= image_tag media.file.representation(:thumb), alt: "", class: "bg-ink-900/5 #{css}" %>
+      <%= image_tag media.file.representation(variant || :thumb), alt: "", class: "bg-ink-900/5 #{css}" %>
       <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
         <span class="flex aspect-square w-2/5 max-w-10 items-center justify-center rounded-full bg-black/45 text-white">
           <%= heroicon "play", options: { class: "size-1/2 translate-x-px", "aria-hidden": true } %>
@@ -14,7 +15,7 @@
   <% elsif media.video? && controls %>
     <%= video_tag url_for(media.file), controls:, playsinline: true, preload: "metadata", poster: url_for(media.file.representation(:thumb)), class: "bg-ink-900/5 #{css}" %>
   <% elsif media.video? %>
-    <%= image_tag media.file.representation(:thumb), alt: "", class: "bg-ink-900/5 #{css}" %>
+    <%= image_tag media.file.representation(variant || :thumb), alt: "", class: "bg-ink-900/5 #{css}" %>
   <% else %>
     <div class="flex flex-col items-center justify-center gap-2 bg-ink-900/5 px-3 text-center <%= css %>">
       <span class="text-sm font-medium text-ink-900 break-all"><%= media.file.filename %></span>

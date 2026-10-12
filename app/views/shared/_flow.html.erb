@@ -8,7 +8,7 @@
 <%# gives (the kind of items a node gives) and takes (a :step's kinds, space-separated) decide what may connect. %>
 <%# An edge's optional items (a list of what went along it, all of one kind) show on its middle: one media as a thumbnail opening in a %>
 <%# lightbox, more as a stack that opens them all in a popover, each opening in a lightbox from there. Prompts and reviews %>
-<%# show as small text cards, stacked the same way, opening their full text in a popover. pinned (item ids) badges those with a pin. %>
+<%# show as small text cards (a prompt's first example left of its text), stacked the same way, opening their full text in a popover. pinned (item ids) badges those with a pin. %>
 <%# A :note is a sticky note: its Markdown note on a card in its color, connecting to nothing. %>
 <%# play (a start node's, or a :step's whose inputs are complete; or a run :step's rerun) adds a play button on the node's top-left corner that submits the page's #workflow_play form with node_id. %>
 <% thumb = ->(media, pinned, css) { capture do %>
@@ -16,7 +16,7 @@
   <% label = pinned ? "View pinned media" : "View media" %>
   <button type="button" popovertarget="<%= dom_id(media, :quick_view) %>" aria-label="<%= label %>" title="<%= label %>"
           class="relative block cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
-    <%= render "accounts/library/file", media:, play: true, css: %>
+    <%= render "accounts/library/file", media:, play: true, variant: :small, css: %>
     <% if pinned %>
       <span class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-white text-stone-500 shadow-sm">
         <%= lucide_icon "pin", class: "size-3 fill-current", "aria-hidden": true %>
@@ -25,15 +25,21 @@
   </button>
 <% end } %>
 <% card = ->(item, pinned) { capture do %>
-  <span class="relative flex aspect-2/3 h-24 flex-col gap-0.5 overflow-hidden rounded-md border border-ink-900/10 bg-white p-1.5 text-left text-[0.5rem] leading-tight font-normal text-ink-600 shadow-sm">
+  <% example = item.examples.first if item.is_a?(Prompt) %>
+  <span class="relative flex h-24 overflow-hidden rounded-md border border-ink-900/10 bg-white p-1.5 text-left text-[0.5rem] leading-tight font-normal text-ink-600 shadow-sm <%= example ? "w-40 gap-1.5" : "aspect-2/3 flex-col gap-0.5" %>">
     <% if pinned.to_a.include?(item.id) %>
       <span class="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-stone-100 text-stone-500" title="Pinned">
         <%= lucide_icon "pin", class: "size-2.5 fill-current", "aria-hidden": true %>
       </span>
     <% end %>
     <% if item.is_a?(Prompt) %>
-      <span class="line-clamp-2 font-semibold text-ink-900"><%= item.name %></span>
-      <span class="line-clamp-6"><%= item.body.presence || "Writing…" %></span>
+      <% if example %>
+        <%= render "shared/example", example:, variant: :small, css: "aspect-2/3 h-full shrink-0 rounded-sm object-cover" %>
+      <% end %>
+      <span class="flex min-w-0 flex-col gap-0.5">
+        <span class="line-clamp-2 font-semibold text-ink-900"><%= item.name %></span>
+        <span class="line-clamp-6"><%= item.body.presence || "Writing…" %></span>
+      </span>
     <% else %>
       <span class="truncate font-semibold text-ink-900"><%= item.customer_name %></span>
       <span class="text-signal-yellow"><%= "★" * item.rating %></span>
@@ -69,7 +75,7 @@
                   class="relative grid cursor-pointer place-items-center rounded-md *:col-start-1 *:row-start-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
             <% items.first(3).each_with_index.reverse_each do |item, i| %>
               <span class="block <%= [ "", "rotate-6", "-rotate-6" ][i] %>">
-                <%= media ? render("accounts/library/file", media: item, play: i.zero?, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm") : card.(item, edge[:pinned]) %>
+                <%= media ? render("accounts/library/file", media: item, play: i.zero?, variant: :small, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm") : card.(item, edge[:pinned]) %>
               </span>
             <% end %>
             <% if items.many? %>
@@ -149,7 +155,7 @@
           <% size = n[:media].file.attached? ? n[:media].file.metadata.values_at(:width, :height) : [] %>
           <span style="aspect-ratio: <%= size.compact.many? ? size.join(" / ") : "2 / 3" %>"
                 class="block w-20 overflow-hidden rounded-lg border-2 border-ink-900/10 hover:border-ink-900/20 group-aria-[current=true]:border-rocket group-aria-[current=true]:hover:border-rocket-press [&_img]:pointer-events-none">
-            <%= render "accounts/library/file", media: n[:media], play: true, css: "size-full object-cover" %>
+            <%= render "accounts/library/file", media: n[:media], play: true, variant: :small, css: "size-full object-cover" %>
           </span>
           <span class="line-clamp-2 break-all group-aria-[current=true]:text-rocket" title="<%= n[:label] %>"><%= n[:label] %></span>
         <% end %>

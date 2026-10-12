@@ -1,6 +1,2 @@
-<%# locals: (example:, css:) %>
-<% if example.video? %>
-  <%= image_tag example.representation(resize_to_limit: [ 720, 720 ]), alt: example.filename.to_s, class: "bg-ink-900/5 #{css}" %>
-<% else %>
-  <%= image_tag url_for(example), alt: example.filename.to_s, class: css %>
-<% end %>
+<%# locals: (example:, css:, variant: :thumb) %>
+<%= image_tag example.representation(variant), alt: example.filename.to_s, class: "bg-ink-900/5 #{css}" %>
