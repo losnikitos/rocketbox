@@ -31,7 +31,11 @@
   <span class="flex items-center gap-0.5">
     <% media.first(limit).each do |media| %>
       <% if media.is_a?(LibraryMedia) %>
-        <span class="block size-5 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, css: "size-full object-cover" %></span>
+        <span class="block size-5 shrink-0 overflow-hidden rounded"><%= render "accounts/library/file", media:, variant: :small, css: "size-full object-cover" %></span>
+      <% elsif media.is_a?(Prompt) && (example = media.examples.first) %>
+        <span title="<%= media.name %>" class="block size-5 shrink-0 overflow-hidden rounded">
+          <%= render "shared/example", example:, variant: :small, css: "size-full object-cover" %>
+        </span>
       <% else %>
         <span title="<%= media.try(:name) || media.try(:customer_name) %>" class="flex size-5 shrink-0 items-center justify-center rounded bg-ink-900/5 text-ink-500">
           <%= heroicon media.is_a?(Prompt) ? "chat-bubble-bottom-center-text" : "star", variant: :micro, options: { class: "size-3.5", "aria-hidden": true } %>

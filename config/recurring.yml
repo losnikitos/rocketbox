@@ -16,3 +16,6 @@ production:
   db_backup:
     class: DbBackupJob
     schedule: every hour at minute 30
+  publish_rubrics:
+    class: PublishRubricsJob
+    schedule: every 5 minutes

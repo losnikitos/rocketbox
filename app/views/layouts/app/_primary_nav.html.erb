@@ -90,10 +90,10 @@
         </li>
         <% [
           [ "Layers", layers_path, :layers, "square-3-stack-3d" ],
-          [ "Posts", instagram_posts_path, :posts, "squares-2x2" ]
+          [ "Schedule", rubrics_path, :schedule, "calendar" ]
         ].each do |label, path, key, icon| %>
           <li>
-            <% if key == :posts || Current.user&.admin? %>
+            <% if key == :schedule || Current.user&.admin? %>
               <%= link_to path,
                     class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == key } do %>

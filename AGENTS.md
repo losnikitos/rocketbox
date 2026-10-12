@@ -28,6 +28,8 @@ Rocketbox handles marketing for small businesses while owners keep doing their c
 
 **Tags** ([model](/app/models/tag.rb), managed in ActiveAdmin): global labels on media, many per media, shown as `#name` pills ([partial](/app/views/accounts/tags/_tag.html.erb)) and edited on the media page. A workflow node's `tag_ids`: a media folder gives only media with all of them, a step sets them on what it makes. A media folder can also filter by `media_type` (images, videos or any), set beside its Take.
 
+**Schedule** ([model](/app/models/rubric.rb), at `/app/schedule`): rubrics, each a recurring series of Instagram stories, reels or feed posts from one media folder on a cron or plain-English schedule (`every weekday at 9am`), colored and previewed on a month or week calendar. Auto-publish is off by default; when on, each due time publishes the folder's media posted longest ago (or never) as a `RubricPost`, the history of what went out when.
+
 ```mermaid
 flowchart LR
  Inbox[/Inbox/] --> InboxSteps[Steps] --> Photobank[/Photobank/] --> Steps --> Ready[/Ready/] --> Scripted[Scripted steps] --> Stories[/Stories/]
@@ -56,6 +58,7 @@ No CSS transitions on hover (`transition`, `transition-colors`, `duration-*`, �
 
 ## Vocabulary
 - **Island** — a standalone content panel, usually styled `rounded-2xl border border-ink-900/10 bg-white p-6`.
+- **Rubric** — a recurring series of posts (not a single post); **rubric post** — one post it made.
 - Workflow terms (node, step, edge, run, step run): see [WORKFLOWS.md](./docs/WORKFLOWS.md#vocabulary).
 
 # Documentation Index
