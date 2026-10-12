@@ -91,20 +91,23 @@
                   data: { action: "input->workflow#filter" }, class: search %>
           </label>
         </div>
-        <div class="max-h-96 overflow-y-auto">
-          <section aria-labelledby="palette_folders">
-            <h3 id="palette_folders" class="<%= section_heading %>">Folders</h3>
-            <div class="grid grid-cols-2 gap-1 p-3">
-              <% Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.each do |folder| %>
-                <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
-                      title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" },
-                      class: "flex min-w-0 cursor-grab items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5 active:cursor-grabbing" do %>
-                  <%= heroicon "folder", variant: :mini, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
-                  <span class="truncate"><%= folder.path %></span>
+        <div class="max-h-[70dvh] overflow-y-auto">
+          <% by_kind = Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }.group_by(&:kind) %>
+          <% by_kind.slice(*Folder.kinds.keys).each do |kind, folders| %>
+            <section aria-labelledby="palette_folders_<%= kind %>">
+              <h3 id="palette_folders_<%= kind %>" class="<%= section_heading %>"><%= kind.pluralize.capitalize %></h3>
+              <div class="grid grid-cols-2 gap-2 p-3">
+                <% folders.each do |folder| %>
+                  <%= button_tag type: :submit, form: "workflow_add", name: "workflow[nodes_attributes][0][folder_id]", value: folder.id, draggable: "true",
+                        title: folder.path, data: { workflow_target: "item", action: "dragstart->workflow#pick dragend->workflow#unpick" },
+                        class: "flex min-w-0 cursor-grab items-center gap-2 rounded-xl border border-ink-900/10 bg-white px-3 py-2 text-left text-sm font-medium text-ink-900 hover:bg-ink-900/5 active:cursor-grabbing" do %>
+                    <%= heroicon "folder", variant: :mini, options: { class: "size-4 shrink-0 #{folder_color(folder)}", "aria-hidden": true } %>
+                    <span class="truncate"><%= folder.path %></span>
+                  <% end %>
                 <% end %>
-              <% end %>
-            </div>
-          </section>
+              </div>
+            </section>
+          <% end %>
           <% Transformation::Type.all.group_by(&:group).each do |group, types| %>
             <section aria-labelledby="palette_<%= group.slug %>">
               <h3 id="palette_<%= group.slug %>" class="<%= section_heading %>"><%= group.label %></h3>

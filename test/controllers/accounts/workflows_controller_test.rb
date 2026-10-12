@@ -258,7 +258,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "#workflow_palette section h3", 6
+    assert_select "#workflow_palette section h3", 8
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
