@@ -48,7 +48,8 @@
 <% end %>
 
 <% folders = @folder ? @folder.children.to_a : Folder.roots.ordered.to_a %>
-<% media_groups = @library_media.to_a.group_by(&:original) %>
+<%# Only Photobank shows each media's source, grouping its versions; elsewhere media stand alone. %>
+<% media_groups = @library_media.to_a.group_by { @folder.root.slug == "photobank" ? it.original : it } %>
 <% move_targets = Folder.grouped_options if admin && media_groups.any? %>
 <%# Bleeds into main's lg:p-8 so the workflows divider spans the full panel height. %>
 <div class="flex flex-col lg:-m-8 lg:min-h-[calc(100%+4rem)] lg:flex-row">
