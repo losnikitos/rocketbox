@@ -4,9 +4,9 @@
 # Its `kind` says which items it holds: media (inbox and photobank are seeded), prompts or reviews; a subfolder takes
 # its parent's. Top-level folders hold subfolders one level below, except Reviews, which holds every review.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
-# ponytail: code looks up inbox and photobank (new media, onboarding), inbox/business-card, inbox/logo and inbox/interior
-# (card extraction, WhatsApp onboarding), ready/ready and prompts/ready (default step output), prompts and reviews
-# by slug, so deleting or moving those rows breaks them. Upgrade = a locked flag on those rows.
+# Top-level folders never move, so code looks up inbox, photobank, ready, prompts and reviews by slug.
+# ponytail: code also looks up inbox/business-card, inbox/logo and inbox/interior (card extraction, WhatsApp
+# onboarding) by slug, so moving or deleting those rows breaks them. Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
 
@@ -26,6 +26,7 @@ class Folder < ApplicationRecord
 
   validates :name, presence: true
   validate { errors.add(:parent, "must be a top-level folder") if parent&.parent_id }
+  validate { errors.add(:base, "Top-level folders stay top-level") if persisted? && parent_id_changed? && parent_id_was.nil? }
   validate { errors.add(:parent, "holds every review itself") if parent&.review? }
   validate { errors.add(:parent, "holds #{parent.kind.pluralize}") if parent && parent.kind != kind }
   validate { errors.add(:base, "#{parent.name} already has a folder named #{name}") if parent && parent_id_changed? && Folder.exists?(parent_id:, slug:) }
@@ -42,7 +43,7 @@ class Folder < ApplicationRecord
   def self.prompts = roots.find_by!(slug: "prompts")
   def self.reviews = roots.find_by!(slug: "reviews")
   # Where a step with no output folder lands its results of `kind`.
-  def self.ready(kind = "media") = (kind.to_s == "prompt" ? prompts : roots.find_by!(slug: "ready")).children.find_by!(slug: "ready")
+  def self.ready(kind = "media") = kind.to_s == "prompt" ? prompts : roots.find_by!(slug: "ready")
 
   def root? = parent_id.nil?
   def root = parent || self

@@ -50,7 +50,7 @@ class LibraryMedia < ApplicationRecord
   validates :telegram_file_unique_id, uniqueness: true, allow_nil: true
   validates :whatsapp_media_id, uniqueness: true, allow_nil: true
 
-  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; ready/ready is where steps with no output folder land.
+  # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; ready is where steps with no output folder land.
   def item_kind = :media
 
   def business_card? = folder.slug == "business-card"
