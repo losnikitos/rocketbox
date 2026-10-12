@@ -34,7 +34,10 @@ module AppHelper
         [ reviews_path(archived: 1), "Archived", params[:archived].present?, Current.account.reviews.archived.count ]
       ] ]
     when "accounts/jobs"
-      [ :jobs, "Jobs", [] ]
+      [ :jobs, "Jobs", [
+        [ jobs_path, "Grid", params[:view] != "list" ],
+        [ jobs_path(view: "list"), "List", params[:view] == "list" ]
+      ] ]
     when "accounts/instagram"
       [ :instagram, "Your profile", [] ]
     when "accounts/whatsapp"
