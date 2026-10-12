@@ -38,6 +38,18 @@ class RubricTest < ActiveSupport::TestCase
     assert_equal [ [ a, true ], [ b, true ], [ a, false ] ], plan.map { it.last(2) }
   end
 
+  test "tags narrow the folder to media with all of them" do
+    travel_to Time.zone.local(2026, 1, 1, 8)
+    plain, tagged = 2.times.map { photo }
+    tagged.tags << tags(:before)
+    @rubric.update!(tag_ids: [ tags(:before).id, "" ])
+
+    assert_equal [ tags(:before).id ], @rubric.tag_ids
+    assert_equal tagged, @rubric.next_media
+    assert_equal [ tagged ] * 2, Rubric.plan([ @rubric ], 2.days.from_now).map { it[2] }
+    assert_not @rubric.update(tag_ids: [ 0 ])
+  end
+
   test "due auto-publishing rubrics post their next media and move on" do
     media = photo
     off = @user.rubrics.create!(name: "Off", schedule: "every day at 9am", folder: folders(:ready))

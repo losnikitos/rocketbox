@@ -39,7 +39,7 @@
           <span>
             <span class="font-medium"><%= rubric.name.presence || "New rubric" %></span>
             <%= media ? "runs out of fresh media" : "has nothing to post" %> on <%= time.strftime("%a %-d %b") %>.
-            Add more <%= rubric.reel? ? "videos" : "media" %> to <%= rubric.folder.path %>.
+            Add more <%= rubric.reel? ? "videos" : "media" %> to <%= rubric.source %>.
           </span>
         </li>
       <% end %>
@@ -61,7 +61,7 @@
           </div>
           <ul class="space-y-1">
             <% shown.each do |time, rubric, post, media, short| %>
-              <% shortage = (media ? "repeat" : "no media in #{rubric.folder.path}") if short %>
+              <% shortage = (media ? "repeat" : "no media in #{rubric.source}") if short %>
               <% aspect = !week ? "aspect-square" : rubric.post? ? "aspect-4/5" : "aspect-9/16" %>
               <% icon, tone, label = case post&.status
                    when "published" then [ "check", "bg-signal-green", "Published" ]

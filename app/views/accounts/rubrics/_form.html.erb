@@ -18,16 +18,35 @@
     </p>
   </div>
 
-  <div class="grid gap-4 sm:grid-cols-2">
-    <div>
-      <%= f.label :format, class: tw_label_classes %>
-      <%= f.select :format, Rubric.formats.keys.map { [ it.capitalize, it ] }, {}, class: tw_input_classes %>
+  <fieldset>
+    <legend class="<%= tw_label_classes %>">Format</legend>
+    <div class="<%= tw_segments_classes %>">
+      <% { "post" => "image", "reel" => "clapperboard", "story" => "circle-dashed" }.each do |format, icon| %>
+        <label class="<%= tw_segment_classes %> flex flex-col items-center gap-1 p-2 before:inset-y-4">
+          <%= f.radio_button :format, format, class: "sr-only" %>
+          <%= lucide_icon icon, class: "size-5 text-ink-700", "aria-hidden": true %>
+          <span class="text-sm font-medium text-ink-900"><%= format.capitalize %></span>
+        </label>
+      <% end %>
     </div>
-    <div>
-      <%= f.label :folder_id, "From folder", class: tw_label_classes %>
-      <%= f.select :folder_id, Folder.grouped_options, {}, class: tw_input_classes %>
+  </fieldset>
+
+  <% picker = "flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" %>
+  <div>
+    <span class="<%= tw_label_classes %>">From folder</span>
+    <div class="<%= picker %>">
+      <%= render "shared/folder_pick", name: "rubric[folder_id]", selected: rubric.folder_id, label: "From folder", roots: Folder.roots.media, padding: "py-2" %>
     </div>
   </div>
+
+  <% if Tag.exists? %>
+    <div>
+      <span class="<%= tw_label_classes %>">Only with tags</span>
+      <div class="<%= picker %>">
+        <%= render "shared/tag_pick", name: "rubric[tag_ids][]", selected: rubric.tag_ids, label: "Only with tags", multiple: true, padding: "py-2" %>
+      </div>
+    </div>
+  <% end %>
 
   <fieldset>
     <legend class="<%= tw_label_classes %>">Color</legend>

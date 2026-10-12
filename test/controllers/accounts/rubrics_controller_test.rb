@@ -25,4 +25,21 @@ class Accounts::RubricsControllerTest < ActionDispatch::IntegrationTest
       assert_select "li[title]", text: /Morning story/, count: 35
     end
   end
+
+  test "form picks a folder and tags from searchable dropdowns" do
+    user = sign_in_as(users(:lazaro_nixon))
+    rubric = user.rubrics.create!(name: "Morning story", schedule: "every day at 9am", folder: folders(:ready))
+
+    get edit_rubric_url(rubric)
+    assert_select "input[type=hidden][name='rubric[folder_id]'][value=?]", folders(:ready).id.to_s
+    assert_select "button[aria-label='From folder']"
+    assert_select "input[type=search][aria-label='Search folders']"
+    assert_select "fieldset input[type=radio][name='rubric[format]']", 3
+    assert_select "input[type=radio][name='rubric[format]'][value=story][checked]"
+    assert_select "input[type=checkbox][name='rubric[tag_ids][]']", Tag.count
+
+    patch rubric_url(rubric), params: { rubric: { tag_ids: [ "", tags(:after).id ] } }
+    assert_redirected_to rubrics_url
+    assert_equal [ tags(:after).id ], rubric.reload.tag_ids
+  end
 end

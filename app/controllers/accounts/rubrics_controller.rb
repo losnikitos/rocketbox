@@ -67,7 +67,7 @@ module Accounts
       end
 
       def rubric_params
-        params.expect(rubric: %i[name schedule format folder_id color auto_publish])
+        params.expect(rubric: [ :name, :schedule, :format, :folder_id, :color, :auto_publish, { tag_ids: [] } ])
       end
   end
 end

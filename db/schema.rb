@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_140000) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -242,6 +242,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_120000) do
     t.string "name", null: false
     t.datetime "next_run_at"
     t.string "schedule", null: false
+    t.json "tag_ids", default: [], null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["folder_id"], name: "index_rubrics_on_folder_id"
