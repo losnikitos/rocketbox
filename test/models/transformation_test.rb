@@ -271,6 +271,20 @@ class TransformationTest < ActiveSupport::TestCase
     assert_empty Transformation.create!(name: "Reviews", kind: "review", layer_steps: [ { "text" => "x" } ]).layer_steps
   end
 
+  test "a daily's caption is the prompt fed to it" do
+    daily = Transformation.create!(name: "Daily", kind: "daily", layer_steps: [ { "time" => "10:15", "caption" => "Typed" } ])
+    prompt = Prompt.create!(name: "Caption", body: " Fresh fades \n", folder: folders(:prompts_shots))
+    rendered = stub_screenshot
+
+    assert_equal %i[media prompt], daily.takes
+    start(daily, [ attach_logo(@interior).first, prompt ]).run!
+
+    html, = rendered.sole
+    assert_includes html, "10:15"
+    assert_includes html, "Fresh fades"
+    assert_not_includes html, "Typed"
+  end
+
   test "an overlay over a video lays its transparent layer over the video, as a video" do
     feature = Transformation.create!(name: "Daily", kind: "daily")
     clip = Tempfile.new([ "clip", ".mp4" ])
