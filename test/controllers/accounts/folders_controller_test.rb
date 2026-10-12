@@ -66,6 +66,18 @@ class Accounts::FoldersControllerTest < ActionDispatch::IntegrationTest
     assert_select "[id^=folder-rename-]", count: 0
   end
 
+  test "only photobank folders group media under their source" do
+    source = photo(folders(:interior))
+    [ folders(:photobank_interior), folders(:ready) ].each do |folder|
+      TransformationRun.create!(result: photo(folder), status: "complete", inputs: [ TransformationRunInput.new(item: source) ])
+    end
+
+    get library_folders_url("photobank", "interior")
+    assert_select "[aria-label='Versions of one source'][data-source-id=?]", source.id.to_s
+    get library_folders_url("ready")
+    assert_select "[aria-label='Versions of one source']", count: 0
+  end
+
   test "ready lists the steps with no output folder as writing to it" do
     landed = create_workflow("No output", input: folders(:interior), transformation: transformations(:cinematic))
     filed = create_workflow("Filed", input: folders(:interior), transformation: transformations(:before_after), output: folders(:photobank_interior))

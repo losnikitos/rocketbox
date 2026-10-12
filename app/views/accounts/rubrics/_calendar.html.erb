@@ -63,18 +63,29 @@
             <% shown.each do |time, rubric, post, media, short| %>
               <% shortage = (media ? "repeat" : "no media in #{rubric.folder.path}") if short %>
               <% aspect = !week ? "aspect-square" : rubric.post? ? "aspect-4/5" : "aspect-9/16" %>
-              <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, post&.status, post&.error_message, shortage ].compact.join(" · ") %>"
-                  class="overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %> <%= "opacity-50" unless post || rubric.auto_publish? %>">
-                <% if media&.file&.representable? %>
-                  <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
+              <% icon, tone, label = case post&.status
+                   when "published" then [ "check", "bg-signal-green", "Published" ]
+                   when "failed" then [ "x-mark", "bg-signal-red", "Failed" ]
+                   when "publishing" then [ "arrow-path", "bg-ink-500", "Publishing" ]
+                   else short ? [ "exclamation-triangle", "bg-amber-500", "Running short" ]
+                     : rubric.auto_publish? ? [ "clock", "bg-ink-500", "Scheduled" ] : [ "pause", "bg-ink-400", "Auto-publish off" ]
+                   end %>
+              <% badge = capture do %>
+                <span role="img" aria-label="<%= label %>" class="flex size-4 shrink-0 items-center justify-center rounded-full text-white ring-1 ring-white <%= tone %>">
+                  <%= heroicon icon, variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
+                </span>
+              <% end %>
+              <% thumb = media&.file&.representable? %>
+              <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, label, post&.error_message, shortage ].compact.join(" · ") %>"
+                  class="overflow-hidden rounded-md border text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %>">
+                <% if thumb %>
+                  <div class="relative">
+                    <%= image_tag media.file.representation(:small), alt: "", class: "#{aspect} w-full object-cover" %>
+                    <div class="absolute top-1 right-1"><%= badge %></div>
+                  </div>
                 <% end %>
                 <div class="flex items-center gap-1 px-1 py-0.5">
-                  <% if post %>
-                    <%= heroicon post.status == "failed" ? "x-mark" : "check", variant: :micro,
-                          options: { class: "size-3 shrink-0 #{post.status == "failed" ? "text-signal-red" : "text-ink-500"}", "aria-hidden": true } %>
-                  <% elsif short %>
-                    <%= heroicon "exclamation-triangle", variant: :micro, options: { class: "size-3 shrink-0 text-amber-500", "aria-hidden": true } %>
-                  <% end %>
+                  <%= badge unless thumb %>
                   <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
                   <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
                 </div>

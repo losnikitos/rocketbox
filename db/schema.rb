@@ -74,6 +74,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_120000) do
     t.index ["link_id"], name: "index_crawls_on_link_id"
   end
 
+  create_table "data_migrations", primary_key: "version", id: :string, force: :cascade do |t|
+  end
+
   create_table "documents", force: :cascade do |t|
     t.text "body", default: "", null: false
     t.datetime "created_at", null: false
