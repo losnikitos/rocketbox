@@ -14,11 +14,12 @@
     scheduled.each { |rubric| entries += rubric.occurrences(later).map { [ it, rubric, nil, nil, false ] } }
   end
   by_day = entries.sort_by(&:first).group_by { it.first.to_date }
-  nav_link = ->(day) { url_for(request.query_parameters.merge("date" => day.iso8601)) }
+  # An autosave PATCH redraws it too; its links go back to edit.
+  nav_link = ->(day) { url_for(request.query_parameters.merge("date" => day.iso8601, action: action_name == "update" ? "edit" : action_name)) }
   step = week ? 1.week : 1.month
   title = week ? "#{days.first.strftime(days.first.month == days.last.month ? "%-d" : "%-d %b")} – #{days.last.strftime("%-d %b %Y")}" : date.strftime("%B %Y")
 %>
-<section aria-label="Calendar" class="rounded-2xl border border-ink-900/10 bg-white p-4">
+<section id="rubric_calendar" aria-label="Calendar" class="rounded-2xl border border-ink-900/10 bg-white p-4">
   <div class="mb-3 flex items-center gap-1">
     <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900"><%= title %></h2>
     <%= link_to nav_link.(date - step), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Previous #{week ? "week" : "month"}" } do %>
@@ -80,6 +81,13 @@
                     <%= badge unless thumb || short %>
                     <span class="shrink-0 tabular-nums text-ink-500"><%= time.strftime("%H:%M") %></span>
                     <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
+                    <% if !post && media && rubric.auto_publish? && rubric.persisted? && !rubric.changed? %>
+                      <%= button_to rubric_posts_path(rubric), params: { scheduled_at: time.iso8601 }, form: { class: "ml-auto shrink-0" },
+                            class: "flex rounded p-0.5 text-ink-500 hover:bg-ink-900/10 hover:text-ink-900", title: "Lock in this post",
+                            aria: { label: "Lock in this post" } do %>
+                        <%= heroicon "lock-closed", variant: :micro, options: { class: "size-3", "aria-hidden": true } %>
+                      <% end %>
+                    <% end %>
                   </div>
                 <% end %>
                 <%= post ? link_to(entry, rubric_post_path(rubric, post), class: "block hover:bg-ink-900/5") : entry %>

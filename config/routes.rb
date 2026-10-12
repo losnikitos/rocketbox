@@ -53,7 +53,7 @@ Rails.application.routes.draw do
       get "recent", to: "recent#show", as: :recent
       get "calendar", to: "calendar#show", as: :calendar
       resources :rubrics, path: "schedule", except: :show do
-        resources :posts, controller: "rubric_posts", only: :show do
+        resources :posts, controller: "rubric_posts", only: %i[show create destroy] do
           post :publish, on: :member
         end
       end

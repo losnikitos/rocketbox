@@ -38,9 +38,18 @@ class Accounts::RubricsControllerTest < ActionDispatch::IntegrationTest
     assert_select "fieldset input[type=radio][name='rubric[format]']", 3
     assert_select "input[type=radio][name='rubric[format]'][value=story][checked]"
     assert_select "input[type=checkbox][name='rubric[tag_ids][]']", Tag.count
+    assert_select "input[type=checkbox][role=switch][name='rubric[auto_publish]']"
+    assert_select "form[data-controller=autosave][action=?]", rubric_path(rubric)
+    assert_select "form button", text: /Save|Preview/, count: 0
 
-    patch rubric_url(rubric), params: { rubric: { tag_ids: [ "", tags(:after).id ] } }
-    assert_redirected_to rubrics_url
+    patch rubric_url(rubric, date: "2030-01-09"), params: { rubric: { tag_ids: [ "", tags(:after).id ] } }, headers: { "X-Autosave" => "1" }
+    assert_equal "text/vnd.turbo-stream.html", response.media_type
+    assert_select "turbo-stream[action=replace][target=rubric_calendar] a[aria-label='Previous week'][href=?]",
+      edit_rubric_path(rubric, date: "2030-01-02")
     assert_equal [ tags(:after).id ], rubric.reload.tag_ids
+
+    patch rubric_url(rubric), params: { rubric: { schedule: "whenever" } }, headers: { "X-Autosave" => "1" }
+    assert_response :unprocessable_entity
+    assert response.parsed_body["error"].present?
   end
 end

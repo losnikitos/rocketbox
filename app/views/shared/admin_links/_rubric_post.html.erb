@@ -1,0 +1,16 @@
+<%# Locals: rubric_post %>
+<% post = local_assigns[:rubric_post] %>
+<% if Current.user&.admin? && post.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "rubric-post-admin-links-#{post.id}", align: local_assigns.fetch(:align, :right) } do %>
+    <%= render "shared/admin_links/item", path: admin_rubric_post_path(post), label: "Admin", icon: "cog", chip: "bg-signal-green" %>
+    <% if post.library_media %>
+      <%= render "shared/admin_links/item", path: admin_library_media_path(post.library_media), label: "Media admin", icon: "photo", chip: "bg-signal-green" %>
+    <% end %>
+    <%= render "shared/admin_links/item",
+        path: rubric_post_path(post.rubric, post),
+        label: "Delete",
+        icon: "trash",
+        chip: "bg-signal-red",
+        data: { turbo_method: :delete, turbo_confirm: "Delete this post? Its media can be planned again." } %>
+  <% end %>
+<% end %>
