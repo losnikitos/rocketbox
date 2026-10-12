@@ -18,6 +18,10 @@ class FolderTest < ActiveSupport::TestCase
     assert Folder.create!(name: "Clients").destroy_into_parent
   end
 
+  test "ready is ready/ready for media and prompts/ready for prompts" do
+    assert_equal [ folders(:ready), folders(:prompts_ready) ], [ Folder.ready, Folder.ready("prompt") ]
+  end
+
   test "media is a reserved slug" do
     assert_not Folder.new(name: "Media").valid?
   end

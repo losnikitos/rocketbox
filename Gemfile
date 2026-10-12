@@ -107,3 +107,5 @@ gem "fugit", "~> 1.11"
 
 # Headless Chrome for rendering layer templates to PNG
 gem "ferrum", "~> 0.18"
+
+gem "data_migrate", "~> 11.3"

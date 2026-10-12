@@ -42,4 +42,4 @@ restore-prod-to-local:
 	rm -f storage/development.sqlite3-wal storage/development.sqlite3-shm; \
 	cp $$LOCAL_PATH storage/development.sqlite3; \
 	bin/rails db:environment:set RAILS_ENV=development; \
-	bin/rails db:migrate
+	bin/rails db:migrate data:migrate
