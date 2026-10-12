@@ -59,7 +59,7 @@ module Accounts
 
       def set_calendar
         @date = (Date.iso8601(params[:date].to_s) rescue Date.current)
-        @week = params[:view] == "week"
+        @week = params[:view] != "month"
         @days = @week ? @date.all_week : @date.beginning_of_month.beginning_of_week..@date.end_of_month.end_of_week
         @rubrics = Current.account.rubrics.includes(:folder).order(:created_at)
         @posts = RubricPost.where(rubric: @rubrics, created_at: @days.first.beginning_of_day..@days.last.end_of_day)
