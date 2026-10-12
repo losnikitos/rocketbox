@@ -12,6 +12,7 @@ export default class extends Controller {
     if (!source) return
     const { moveUrl: url, moveAttr: attr = "data-move-to", moveField: field = "library_media[folder_id]", moveFrom: from } = source.dataset
     this.move = { url, attr, field, from }
+    this.element.dataset.dragging = ""
     event.dataTransfer.effectAllowed = "move"
   }
 
@@ -44,6 +45,7 @@ export default class extends Controller {
 
   end() {
     this.move = null
+    delete this.element.dataset.dragging
     this.highlight(null)
   }
 
