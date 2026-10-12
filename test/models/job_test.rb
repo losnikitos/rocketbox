@@ -18,15 +18,19 @@ class JobTest < ActiveSupport::TestCase
     assert_equal "job_1", first.reload.slug
   end
 
-  test "merge keeps the oldest job with every media and post" do
-    jobs = 3.times.map { @user.jobs.create!(created_at: it.days.ago, posts_count: it) }
-    media = jobs.map { LibraryMedia.create!(kind: "photo", user: @user, job: it) }
+  test "a job left without media folds its posts into the job its last media moved to" do
+    from, to = [ 3, 1 ].map { @user.jobs.create!(posts_count: it) }
+    media = 2.times.map { LibraryMedia.create!(kind: "photo", user: @user, job: from) }
 
-    kept = Job.merge!(jobs)
-    assert_equal jobs.last, kept
-    assert_equal media.sort_by(&:id), kept.library_media.sort_by(&:id)
-    assert_equal 3, kept.reload.posts_count
-    assert_equal [ kept ], @user.jobs.reload.to_a
+    media.first.update!(job: to)
+    assert_equal [ 3, 1 ], [ from.reload.posts_count, to.reload.posts_count ]
+
+    media.last.update!(job: to)
+    assert_not Job.exists?(from.id)
+    assert_equal 4, to.reload.posts_count
+
+    media.each { it.update!(job: nil) }
+    assert_not Job.exists?(to.id)
   end
 
   test "media can't take another account's job" do

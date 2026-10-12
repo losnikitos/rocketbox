@@ -17,10 +17,15 @@ class LibraryMediaController < ApplicationController
 
   def update
     media = Current.account.library_media.find(params[:id])
-    if media.update(params.expect(library_media: [ :folder_id, :job_id, tag_ids: [] ]))
-      return head :no_content unless media.saved_change_to_folder_id?
+    attrs = params.expect(library_media: [ :folder_id, :job_id, tag_ids: [] ])
+    attrs[:job_id] = Current.account.jobs.create!.id if attrs[:job_id] == "new"
+    if media.update(attrs)
+      notice = if media.saved_change_to_folder_id? then "Moved to #{media.folder.path}."
+      elsif media.saved_change_to_job_id? then media.job ? "Moved to @#{media.job.slug}." : "Removed from job."
+      end
+      return head :no_content unless notice
 
-      redirect_back_or_to helpers.library_item_path(media), notice: "Moved to #{media.folder.path}."
+      redirect_back_or_to helpers.library_item_path(media), notice:
     else
       redirect_back_or_to helpers.library_item_path(media), alert: media.errors.full_messages.to_sentence
     end
@@ -65,7 +70,7 @@ class LibraryMediaController < ApplicationController
       kind = LibraryMedia.kind_for(file.content_type)
       return unless kind.in?(%w[photo video])
 
-      media = Current.account.library_media.create!(kind:, folder:)
+      media = Current.account.library_media.create!(kind:, folder:, job: source&.job)
       media.file.attach(file)
       TransformationRun.create!(result: media, status: "complete", inputs: [ TransformationRunInput.new(item: source) ]) if source
       media
