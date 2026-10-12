@@ -1,4 +1,4 @@
-<%# locals: (rubrics:, posts:, month:, days:, draft: nil) %>
+<%# locals: (rubrics:, posts:, date:, days:, week:, draft: nil) %>
 <%# Past days show what each rubric posted; from now on, when each is scheduled to. The draft (dashed) stands in for its saved self. %>
 <%
   now = Time.current
@@ -12,16 +12,25 @@
     end
   end
   by_day = entries.sort_by(&:first).group_by { it.first.to_date }
-  month_link = ->(date) { url_for(request.query_parameters.merge(month: date.strftime("%Y-%m"))) }
+  view = ("week" if week)
+  nav_link = ->(day, view_name = view) { url_for(request.query_parameters.merge("date" => day.iso8601, "view" => view_name).compact) }
+  step = week ? 1.week : 1.month
+  title = week ? "#{days.first.strftime(days.first.month == days.last.month ? "%-d" : "%-d %b")} – #{days.last.strftime("%-d %b %Y")}" : date.strftime("%B %Y")
 %>
 <section aria-label="Calendar" class="rounded-2xl border border-ink-900/10 bg-white p-4">
   <div class="mb-3 flex items-center gap-1">
-    <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900"><%= month.strftime("%B %Y") %></h2>
-    <%= link_to month_link.(month.prev_month), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Previous month" } do %>
+    <h2 class="mr-auto font-manrope text-lg font-bold tracking-tight text-ink-900"><%= title %></h2>
+    <nav aria-label="Calendar view" class="mr-2 flex rounded-lg border border-ink-900/10 p-0.5 text-sm font-medium">
+      <% { "Month" => nil, "Week" => "week" }.each do |label, view_name| %>
+        <%= link_to label, nav_link.(date, view_name), aria: { current: ("page" if view_name == view) },
+              class: "rounded-md px-2.5 py-0.5 text-ink-500 hover:text-ink-900 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900" %>
+      <% end %>
+    </nav>
+    <%= link_to nav_link.(date - step), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Previous #{week ? "week" : "month"}" } do %>
       <%= heroicon "chevron-left", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
     <% end %>
-    <%= link_to "Today", month_link.(Date.current), class: "rounded-lg px-2.5 py-1 text-sm font-medium text-ink-700 hover:bg-ink-900/5" %>
-    <%= link_to month_link.(month.next_month), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Next month" } do %>
+    <%= link_to "Today", nav_link.(Date.current), class: "rounded-lg px-2.5 py-1 text-sm font-medium text-ink-700 hover:bg-ink-900/5" %>
+    <%= link_to nav_link.(date + step), class: "rounded-lg p-1.5 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900", aria: { label: "Next #{week ? "week" : "month"}" } do %>
       <%= heroicon "chevron-right", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
     <% end %>
   </div>
@@ -31,14 +40,16 @@
       <% %w[Mon Tue Wed Thu Fri Sat Sun].each do |weekday| %>
         <div class="bg-white py-1.5 text-center text-xs font-medium uppercase tracking-wide text-ink-500"><%= weekday %></div>
       <% end %>
-      <% days.each do |date| %>
-        <% day_entries = by_day.fetch(date, []) %>
-        <div class="min-h-28 p-1.5 <%= date.month == month.month ? "bg-white" : "bg-stone-50" %>">
-          <div class="mb-1 text-right text-xs font-semibold tabular-nums <%= date == Date.current ? "text-rocket" : date.month == month.month ? "text-ink-700" : "text-ink-400" %>">
-            <%= date.day %>
+      <% days.each do |day| %>
+        <% day_entries = by_day.fetch(day, []) %>
+        <% shown = week ? day_entries : day_entries.first(4) %>
+        <% in_range = week || day.month == date.month %>
+        <div class="<%= week ? "min-h-64" : "min-h-28" %> p-1.5 <%= in_range ? "bg-white" : "bg-stone-50" %>">
+          <div class="mb-1 text-right text-xs font-semibold tabular-nums <%= day == Date.current ? "text-rocket" : in_range ? "text-ink-700" : "text-ink-400" %>">
+            <%= day.day %>
           </div>
           <ul class="space-y-0.5">
-            <% day_entries.first(4).each do |time, rubric, post| %>
+            <% shown.each do |time, rubric, post| %>
               <li title="<%= [ time.strftime("%H:%M"), rubric.name.presence || "New rubric", rubric.format, post&.status, post&.error_message ].compact.join(" · ") %>"
                   class="flex items-center gap-1 rounded border px-1 py-0.5 text-xs <%= AppHelper::NOTE_COLORS[rubric.color] %> <%= "border-dashed" if rubric.equal?(draft) %> <%= "opacity-50" unless post || rubric.auto_publish? %>">
                 <% if post %>
@@ -53,8 +64,8 @@
                 <span class="truncate font-medium text-ink-900"><%= rubric.name.presence || "New rubric" %></span>
               </li>
             <% end %>
-            <% if day_entries.size > 4 %>
-              <li class="px-1 text-xs text-ink-500">+<%= day_entries.size - 4 %> more</li>
+            <% if day_entries.size > shown.size %>
+              <li class="px-1 text-xs text-ink-500">+<%= day_entries.size - shown.size %> more</li>
             <% end %>
           </ul>
         </div>

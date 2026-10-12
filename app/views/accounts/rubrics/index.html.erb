@@ -7,7 +7,7 @@
 <% end %>
 
 <div class="space-y-6">
-  <%= render "calendar", rubrics: @rubrics, posts: @posts, month: @month, days: @days %>
+  <%= render "calendar", rubrics: @rubrics, posts: @posts, date: @date, days: @days, week: @week %>
 
   <% if @rubrics.any? %>
     <ul aria-label="Rubrics" class="divide-y divide-ink-900/5 rounded-2xl border border-ink-900/10 bg-white">
