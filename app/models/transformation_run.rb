@@ -56,13 +56,14 @@ class TransformationRun < ApplicationRecord
   def generated_media = (result if result.is_a?(LibraryMedia))
   def generated_prompt = (result if result.is_a?(Prompt))
 
-  # `user` owns the result, made in `folder` with `tags` (media). Raises ActiveRecord::RecordInvalid when the items
-  # don't fit or an option isn't available.
+  # `user` owns the result, made in `folder` with `tags` (media) and the job of the first source media that has one.
+  # Raises ActiveRecord::RecordInvalid when the items don't fit or an option isn't available.
   def start!(user, folder:, tags: [])
     self.result = if transformation.makes == :prompt
       Prompt.new(user:, folder:, name: "#{transformation.name} · #{Time.current.to_fs(:short)}", body: "")
     else
-      LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:)
+      LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:,
+        job: source_media.filter_map(&:job).first)
     end
     picked = transformation.picks?(:prompt) ? prompts : []
     self.prompt_text = [ transformation.body, *picked.map { "# #{it.folder.name}\n\n#{it.body}" } ].compact_blank.join("\n\n") if transformation.ai?

@@ -84,7 +84,8 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_select "aside [data-pick-target=option][value='#{job.id}']", text: /job_1\s+Job 1/
 
     patch library_media_url(@media), params: { library_media: { job_id: job.id } }
-    assert_response :no_content
+    assert_redirected_to library_item_url(@media, account: @admin.id)
+    assert_equal "Moved to @job_1.", flash[:notice]
     assert_equal job, @media.reload.job
 
     patch library_media_url(@media), params: { library_media: { job_id: users(:lazaro_nixon).jobs.create!.id } }
@@ -92,14 +93,37 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal job, @media.reload.job
 
     patch library_media_url(@media), params: { library_media: { job_id: "" } }
+    assert_equal "Removed from job.", flash[:notice]
     assert_nil @media.reload.job
+    assert_not Job.exists?(job.id), "a job left without media is deleted"
 
     get library_item_url(@media, account: @admin.id)
     assert_select "aside button[form=new-job]", text: "New job"
     post jobs_url, params: { library_media_id: @media.id }
     assert_redirected_to library_item_url(@media, account: @admin.id)
-    assert_equal "Added to @job_2.", flash[:notice]
-    assert_equal "Job 2", @media.reload.job.name
+    assert_equal "Added to @job_1.", flash[:notice]
+    assert_equal "Job 1", @media.reload.job.name
+  end
+
+  test "dragged onto another job or a new one, folding an emptied job's posts into it" do
+    from, to = 2.times.map { @admin.jobs.create!(posts_count: 2) }
+    other = LibraryMedia.create!(kind: "photo", user: @admin, job: from)
+    @media.update!(job: from)
+
+    patch library_media_url(@media), params: { library_media: { job_id: to.id } }, headers: { "Referer" => jobs_url }
+    assert_redirected_to jobs_url
+    assert_equal [ to, 2 ], [ @media.reload.job, from.reload.posts_count ]
+
+    patch library_media_url(other), params: { library_media: { job_id: to.id } }
+    assert_not Job.exists?(from.id)
+    assert_equal 4, to.reload.posts_count
+
+    assert_difference -> { @admin.jobs.count } do
+      patch library_media_url(@media), params: { library_media: { job_id: "new" } }
+    end
+    assert_equal "Moved to @job_1.", flash[:notice]
+    assert_equal [ "Job 1", 0 ], [ @media.reload.job.name, @media.job.posts_count ]
+    assert_equal 4, to.reload.posts_count
   end
 
   test "applies extracted business card fields and logo to the account" do

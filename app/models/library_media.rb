@@ -5,6 +5,14 @@ class LibraryMedia < ApplicationRecord
   belongs_to :folder
   # The customer work it shows; media of one customer share a job.
   belongs_to :job, optional: true
+  # A job left without media folds into the one its last media moved to.
+  after_update if: :saved_change_to_job_id? do
+    old = Job.find_by(id: job_id_before_last_save)
+    next if old.nil? || old.library_media.exists?
+
+    job&.increment!(:posts_count, old.posts_count)
+    old.destroy!
+  end
   has_and_belongs_to_many :tags
   before_validation(on: :create) { self.folder ||= Folder.inbox }
   # Rubric posts outlive their media, as history.

@@ -9,29 +9,16 @@ class Accounts::JobsControllerTest < ActionDispatch::IntegrationTest
     @media = @jobs.map { LibraryMedia.create!(kind: "photo", user: @user, job: it) }
   end
 
-  test "lists jobs as pills and merges the checked ones" do
+  test "lists jobs as pills with their media to drag between them or onto a new one" do
     get jobs_url
     assert_response :success
-    assert_select "##{dom_id(@jobs.first)}", text: /job_1.*Job 1/m
+    assert_select "##{dom_id(@jobs.first)}[data-move-job='#{@jobs.first.id}']", text: /job_1.*Job 1/m
+    assert_select "##{dom_id(@jobs.first)} a[draggable=true][data-move-url=?][data-move-from='#{@jobs.first.id}'][data-move-field='library_media[job_id]']",
+      library_media_path(@media.first)
+    assert_select "[data-move-job=new]", text: /new job/
+    assert_select "form[data-drag-move-target=form]"
 
     get library_folders_url(root: "inbox")
     assert_select "#folder-media-#{@media.first.id}", text: /job_1/
-
-    post merge_jobs_url, params: { job_ids: @jobs.map(&:id) }
-    assert_redirected_to jobs_url
-    assert_equal "Merged into @job_1.", flash[:notice]
-    assert_equal [ @jobs.first ], @user.jobs.reload.to_a
-    assert_equal [ @jobs.first.id ], @media.map { it.reload.job_id }.uniq
-  end
-
-  test "won't merge fewer than two of the account's jobs" do
-    other = users(:admin_user).jobs.create!
-    post merge_jobs_url, params: { job_ids: [ @jobs.first.id, other.id ] }
-    assert_redirected_to jobs_url
-    assert_equal "Select at least two jobs to merge.", flash[:alert]
-    assert Job.exists?(other.id)
-
-    post merge_jobs_url
-    assert_equal "Select at least two jobs to merge.", flash[:alert]
   end
 end

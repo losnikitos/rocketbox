@@ -72,9 +72,7 @@ Rails.application.routes.draw do
         resources :runs, only: %i[create destroy], controller: "workflow_runs"
       end
       resources :tags, only: :create
-      resources :jobs, only: %i[index create] do
-        post :merge, on: :collection
-      end
+      resources :jobs, only: %i[index create]
       resources :links, only: %i[index create show destroy] do
         resources :crawls, only: :create do
           patch :apply, on: :member

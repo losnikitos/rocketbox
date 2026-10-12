@@ -24,10 +24,8 @@
         data-controller="command-panel" data-action="keydown@document->command-panel#hotkey">
     <div class="flex min-h-screen" data-controller="drag-move"
          data-action="dragstart->drag-move#start dragover->drag-move#over dragleave->drag-move#leave drop->drag-move#drop dragend->drag-move#end">
-      <% if Current.user&.admin? %>
-        <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
-          <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "value" } %>
-        <% end %>
+      <%= form_with url: "", method: :patch, class: "hidden", data: { drag_move_target: "form" } do %>
+        <%= hidden_field_tag "library_media[folder_id]", nil, id: nil, data: { drag_move_target: "value" } %>
       <% end %>
       <input type="checkbox" id="app-nav-toggle" class="peer sr-only">
 

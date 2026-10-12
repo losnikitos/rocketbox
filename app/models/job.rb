@@ -2,7 +2,7 @@
 
 # A piece of work for one customer, e.g. two photos of the same haircut. The account's own, like its media.
 # Shown as "@slug"; the slug is set from the name once and survives renames. posts_count is how many rubric posts its
-# media got, so rubrics can spread posts across jobs.
+# media got, so rubrics can spread posts across jobs. A job left without media is deleted (see LibraryMedia).
 class Job < ApplicationRecord
   belongs_to :user
   has_many :library_media, dependent: :nullify
@@ -17,15 +17,4 @@ class Job < ApplicationRecord
   validates :slug, uniqueness: { scope: :user_id }
 
   scope :ordered, -> { order(:created_at, :id) }
-
-  # Moves the others' media into the oldest and deletes the others; returns the one kept.
-  def self.merge!(jobs)
-    keep, *rest = jobs.sort_by { [ it.created_at, it.id ] }
-    transaction do
-      LibraryMedia.where(job: rest).update_all(job_id: keep.id)
-      keep.update!(posts_count: jobs.sum(&:posts_count))
-      rest.each(&:destroy!)
-    end
-    keep
-  end
 end
