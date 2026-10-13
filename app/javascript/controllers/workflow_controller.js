@@ -8,6 +8,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 export default class extends Controller {
   static targets = ["add", "x", "y", "connect", "edge", "from", "to", "copy", "copyNode", "copyX", "copyY", "remove", "item"]
   static values = { url: String }
+  static outlets = ["flow"]
 
   async move({ detail: { nodes } }) {
     const body = new FormData()
@@ -107,11 +108,10 @@ export default class extends Controller {
 
   // Before an add: the drop point, or the middle of the view for a click, in canvas coordinates.
   place() {
-    const flow = this.element.querySelector("[data-controller~='flow']"), box = flow.getBoundingClientRect()
-    const { zoom, marginLeft, marginTop } = flow.querySelector("[data-flow-target='canvas']").style, scale = parseFloat(zoom) || 1
-    const { clientX, clientY } = this.point || { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+    const box = this.flowOutlet.element.getBoundingClientRect()
+    const { x, y } = this.flowOutlet.point(this.point || { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 })
     this.point = null
-    this.xTarget.value = Math.round((flow.scrollLeft + clientX - box.left) / scale - parseFloat(marginLeft))
-    this.yTarget.value = Math.round((flow.scrollTop + clientY - box.top) / scale - parseFloat(marginTop))
+    this.xTarget.value = Math.round(x)
+    this.yTarget.value = Math.round(y)
   }
 }
