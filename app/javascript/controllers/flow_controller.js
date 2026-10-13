@@ -2,84 +2,112 @@ import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 import dagre from "@dagrejs/dagre"
 
-// Lays out the node targets left to right and draws the edges ([from id, to id, { id, path, frame, current, available }]) as curved
+// Where nodes were dragged to, by id: a refresh fetched before the move was saved still has them where they were, and
+// replaces this controller with a new one.
+const placed = {}
+
+// Places the node targets at their data-x/data-y (their centre) and draws the edges ([from id, to id, { id, path, frame, current, available }]) as curved
 // arrows, solid green when available (media ready to go along them); an edge with a path is clicked like a node's link.
-// Nodes with data-x/data-y (their centre) stay there instead. Nodes can be dragged around (flow:moved with the new
-// centres, or flow:copied with a copy's when Alt is held at the grab) and the canvas pinch-zoomed or scrolled to pan; zoom and scroll
-// survive reloads of the page. Double-clicking a node with data-open opens that URL in a new tab. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
+// Nodes can be dragged anywhere (flow:moved with the new centres, or flow:copied with a copy's when Alt is held at the
+// grab) and the canvas pinch-zoomed or scrolled to pan; zoom and pan survive reloads of the page. Double-clicking a node
+// with data-open opens that URL in a new tab. Dragging the empty canvas selects the nodes a rectangle touches; dragging one of them moves them all.
 // Dragging from a node's [data-flow-handle] onto another node dispatches flow:linked with both ids; dragging an end of
 // the selected edge (one with an id) onto another node dispatches it with the edge's id too. Output targets (with
 // data-v and data-w) sit on the middle of their edge.
 export default class extends Controller {
-  static targets = ["canvas", "dots", "node", "edges", "ends", "output", "marquee"]
+  static targets = ["canvas", "node", "edges", "ends", "output", "marquee"]
   static values = { edges: Array }
 
   connect() {
-    this.scale = 1
     const g = this.graph = new dagre.graphlib.Graph()
-    g.setGraph({ rankdir: "LR", nodesep: 24, ranksep: 72, marginx: 4, marginy: 4 })
     g.setDefaultEdgeLabel(() => ({}))
     // Edges attach at the middle of the node's first child (a folder's icon, a step's card), not the label below,
     // or, coming in, at its [data-flow-input] ports if it has them.
     this.nodeTargets.forEach(el => {
-      const first = el.firstElementChild, anchor = first.offsetHeight / 2
+      const first = el.firstElementChild, anchor = first.offsetHeight / 2, id = el.dataset.id
       el.querySelectorAll("[data-flow-handle]").forEach(it => it.style.top = `${anchor}px`)
       el.querySelectorAll("[data-flow-play]").forEach(it => Object.assign(it.style, { top: `${first.offsetTop}px`, left: `${first.offsetLeft}px` }))
       // Ports sit in a column flush with the node's top.
       const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
-      g.setNode(el.dataset.id, { el, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
+      const { x, y } = placed[id] || el.dataset
+      g.setNode(id, { el, x: +x, y: +y, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
+      place(g.node(id))
     })
     this.edgesValue.forEach(([from, to, edge]) => g.setEdge(from, to, { ...edge }))
-    dagre.layout(g)
-
-    g.nodes().forEach(id => {
-      const node = g.node(id), { x, y } = node.el.dataset
-      if (x) Object.assign(node, { x: +x, y: +y, moved: true })
-      place(node)
-    })
-    const view = JSON.parse(sessionStorage.getItem(this.key) || "null")
-    if (view) this.canvasTarget.style.zoom = this.scale = view.scale
-    this.resize(view?.left, view?.top)
+    // First visit: the canvas's origin, or the top-left node if it's further up or left, a little in from the corner.
+    const nodes = g.nodes().map(id => g.node(id))
+    this.view = JSON.parse(sessionStorage.getItem(this.key) || "null") || {
+      x: 40 - Math.min(0, ...nodes.map(n => n.x - n.width / 2)), y: 40 - Math.min(0, ...nodes.map(n => n.y - n.height / 2)), scale: 1
+    }
+    this.apply()
     this.draw()
-    Object.assign(this.element, view ? { scrollLeft: view.left, scrollTop: view.top } : { scrollLeft: this.slack.x, scrollTop: this.slack.y })
     this.canvasTarget.classList.remove("invisible")
   }
 
   // Trackpad pinch arrives as a wheel event with ctrlKey (Chrome, Firefox); plain scrolling pans.
   wheel(event) {
-    if (!event.ctrlKey) return
     event.preventDefault()
-    this.zoom(this.scale * Math.exp(-event.deltaY / 100), event)
+    // Some mice scroll by lines (Firefox).
+    const k = event.deltaMode ? 16 : 1
+    if (event.ctrlKey) return this.zoom(this.view.scale * Math.exp(-event.deltaY * k / 100), event)
+    this.view.x -= event.deltaX * k
+    this.view.y -= event.deltaY * k
+    this.apply()
   }
 
   // Safari sends pinch as gesture events with a scale relative to the gesture's start.
   gesture(event) {
     event.preventDefault()
-    if (event.type === "gesturestart") this.gestureScale = this.scale
+    if (event.type === "gesturestart") this.gestureScale = this.view.scale
     else this.zoom(this.gestureScale * event.scale, event)
   }
 
   // Zooms to `scale`, keeping the canvas point under the pointer in place.
   zoom(scale, { clientX, clientY }) {
-    const box = this.element.getBoundingClientRect(), mx = clientX - box.left, my = clientY - box.top
-    const { x, y } = this.point({ clientX, clientY })
-    this.scale = Math.min(2, Math.max(0.2, scale))
-    this.canvasTarget.style.zoom = this.scale
-    const left = x * this.scale + this.slack.x - mx, top = y * this.scale + this.slack.y - my
-    this.resize(left, top)
-    Object.assign(this.element, { scrollLeft: left, scrollTop: top })
-    this.remember()
+    const box = this.element.getBoundingClientRect(), { x, y } = this.point({ clientX, clientY })
+    const s = Math.min(2, Math.max(0.2, scale))
+    this.view = { x: clientX - box.left - x * s, y: clientY - box.top - y * s, scale: s }
+    this.apply()
   }
 
-  remember() {
-    sessionStorage.setItem(this.key, JSON.stringify({ scale: this.scale, left: this.element.scrollLeft, top: this.element.scrollTop }))
+  // Focus (Tab) and find-in-page still scroll the hidden overflow; pan by it instead.
+  unscroll() {
+    const { scrollLeft, scrollTop } = this.element
+    if (!scrollLeft && !scrollTop) return
+    this.view.x -= scrollLeft
+    this.view.y -= scrollTop
+    Object.assign(this.element, { scrollLeft: 0, scrollTop: 0 })
+    this.apply()
   }
 
-  get key() { return `flow:${location.pathname}` }
-  // A press on the empty canvas (not a node, an edge or the scrollbars) drags a selection rectangle, which clears the
-  // selection first (flow:cleared).
+  // Pans and zooms the canvas, the dots with it, and remembers where for reloads.
+  apply() {
+    const { x, y, scale } = this.view
+    this.canvasTarget.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
+    Object.assign(this.element.style, { backgroundSize: `${20 * scale}px ${20 * scale}px`, backgroundPosition: `${x}px ${y}px` })
+    sessionStorage.setItem(this.key, JSON.stringify(this.view))
+  }
+
+  get key() { return `flow-view:${location.pathname}` }
+
+  // A refresh (a run's step finishing) arriving mid-gesture waits for its end, so the canvas isn't replaced under the
+  // pointer.
+  hold(event) {
+    if (!(this.dragging || this.linking || this.marquee)) return
+    event.preventDefault()
+    ;(this.held ||= []).push(event.detail.resume)
+  }
+
+  release() {
+    this.held?.forEach(resume => resume())
+    this.held = null
+  }
+
+  // A press on the empty canvas (not a node or an edge) drags a selection rectangle, which clears the selection first
+  // (flow:cleared).
   lasso(event) {
-    if (event.button !== 0 || !this.canvasTarget.contains(event.target) || event.target.closest("[data-flow-target~='node'], [data-v]")) return
+    if (event.button !== 0 || event.target.closest("[data-flow-target~='node'], [data-v]")) return
+    press(event)
     this.dragged = false
     this.element.setPointerCapture(event.pointerId)
     if (this.selected) {
@@ -94,7 +122,7 @@ export default class extends Controller {
     const m = this.marquee
     if (!m) return
     const a = m.start, b = this.point(event)
-    if (!m.moved && Math.hypot(b.x - a.x, b.y - a.y) * this.scale < 4) return
+    if (!m.moved && Math.hypot(b.x - a.x, b.y - a.y) * this.view.scale < 4) return
     m.moved = true
     const left = Math.min(a.x, b.x), top = Math.min(a.y, b.y), right = Math.max(a.x, b.x), bottom = Math.max(a.y, b.y)
     Object.assign(this.marqueeTarget.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px`, zIndex: (this.z || 0) + 1 })
@@ -111,12 +139,14 @@ export default class extends Controller {
     this.dragged = this.marquee.moved
     this.marquee = null
     this.marqueeTarget.hidden = true
+    this.release()
   }
 
   // A selected node drags every selected node along. With Alt held a copy of the node is dragged away instead, the node
   // staying put.
   grab(event) {
     if (event.button !== 0) return
+    press(event)
     const el = event.currentTarget, id = el.dataset.id, node = this.graph.node(id), copy = event.altKey
     const nodes = copy ? [{ ...node, el: ghost(el) }]
       : el.hasAttribute("aria-current") ? this.nodeTargets.filter(it => it.hasAttribute("aria-current")).map(it => this.graph.node(it.dataset.id)) : [node]
@@ -126,21 +156,18 @@ export default class extends Controller {
     nodes.forEach(n => n.el.style.zIndex = this.z = (this.z || 0) + 1)
   }
 
-  // The nodes move together, stopping as one at the canvas's top and left edges.
   drag(event) {
     const d = this.dragging
     if (!d) return
     if (!d.moved && Math.hypot(event.clientX - d.x, event.clientY - d.y) < 4) return
     d.moved = true
-    const dx = Math.max((event.clientX - d.x) / this.scale, ...d.nodes.map(n => n.width / 2 - n.x))
-    const dy = Math.max((event.clientY - d.y) / this.scale, ...d.nodes.map(n => n.height / 2 - n.y))
+    const dx = (event.clientX - d.x) / this.view.scale, dy = (event.clientY - d.y) / this.view.scale
     d.nodes.forEach(n => {
-      Object.assign(n, { x: n.x + dx, y: n.y + dy, moved: true })
+      Object.assign(n, { x: n.x + dx, y: n.y + dy })
       place(n)
     })
     d.x = event.clientX
     d.y = event.clientY
-    this.resize()
     this.draw()
   }
 
@@ -149,11 +176,15 @@ export default class extends Controller {
     if (!d) return
     this.dragged = d.moved
     this.dragging = null
-    if (d.copy && !d.moved) d.nodes[0].el.remove()
-    if (!d.moved) return
-    const at = d.nodes.map(n => ({ id: n.el.dataset.id, x: Math.round(n.x), y: Math.round(n.y) }))
-    if (d.copy) this.dispatch("copied", { detail: { ...at[0], id: d.id } })
-    else this.dispatch("moved", { detail: { nodes: at } })
+    if (d.moved) {
+      const at = d.nodes.map(n => ({ id: n.el.dataset.id, x: Math.round(n.x), y: Math.round(n.y) }))
+      if (d.copy) this.dispatch("copied", { detail: { ...at[0], id: d.id } })
+      else {
+        at.forEach(({ id, x, y }) => placed[id] = { x, y })
+        this.dispatch("moved", { detail: { nodes: at } })
+      }
+    } else if (d.copy) d.nodes[0].el.remove()
+    this.release()
   }
 
   // A drag ends in a click on the node's link; don't follow it. A real click selects the node.
@@ -212,6 +243,7 @@ export default class extends Controller {
   // side 1: the fixed node is the source and the loose end its target; -1 the other way round.
   reach(event, linking) {
     if (event.button !== 0) return
+    press(event)
     this.dragged = false
     this.linking = linking
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -229,7 +261,7 @@ export default class extends Controller {
     const port = node && l.side > 0 ? node.inputs[this.others(node, l.edge).length] : undefined
     const loose = node ? anchor(node, -l.side, port) : this.point(event)
     this.draw()
-    this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${curve(l.side > 0 ? [l.start, loose] : [loose, l.start])}" class="stroke-rocket" />`)
+    this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${l.side > 0 ? curve(l.start, loose) : curve(loose, l.start)}" class="stroke-rocket" />`)
   }
 
   // Dropped on a node it can attach to: flow:linked with both ids, and the edge's id when one was moved. Anywhere else
@@ -243,6 +275,7 @@ export default class extends Controller {
     this.dragged = true
     this.nodeTargets.forEach(el => el.removeAttribute("data-flow-drop"))
     this.draw()
+    this.release()
     if (!node) return
     const [from, to] = l.side > 0 ? [l.fixed, node.el.dataset.id] : [node.el.dataset.id, l.fixed]
     this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to } })
@@ -271,15 +304,9 @@ export default class extends Controller {
 
   // The pointer in canvas coordinates.
   point({ clientX, clientY }) {
-    const box = this.element.getBoundingClientRect(), { marginLeft, marginTop } = this.canvasTarget.style
-    return {
-      x: (this.element.scrollLeft + clientX - box.left) / this.scale - parseFloat(marginLeft),
-      y: (this.element.scrollTop + clientY - box.top) / this.scale - parseFloat(marginTop)
-    }
+    const box = this.element.getBoundingClientRect(), { x, y, scale } = this.view
+    return { x: (clientX - box.left - x) / scale, y: (clientY - box.top - y) / scale }
   }
-
-  // Room to pan past the nodes on every side, in screen pixels.
-  get slack() { return { x: 0.9 * this.element.clientWidth, y: 0.9 * this.element.clientHeight } }
 
   // Where an edge leaves its source and enters its target. Edges in take the target's ports top to bottom in their
   // sources' order, so they don't cross.
@@ -289,28 +316,12 @@ export default class extends Controller {
     return [anchor(g.node(v), 1), anchor(target, -1, target.inputs[port])]
   }
 
-  // Fits the canvas to its nodes, and at least to the area visible when scrolled to `left`, `top`, so anything can be
-  // dropped anywhere and the scroll isn't clamped. A margin of slack on every side, dotted too, pans past the nodes.
-  resize(left = this.element.scrollLeft, top = this.element.scrollTop) {
-    const nodes = this.graph.nodes().map(id => this.graph.node(id))
-    const mx = this.slack.x / this.scale, my = this.slack.y / this.scale
-    const width = Math.max((left + this.element.clientWidth) / this.scale - mx, ...nodes.map(n => n.x + n.width / 2 + 4))
-    const height = Math.max((top + this.element.clientHeight) / this.scale - my, ...nodes.map(n => n.y + n.height / 2 + 4))
-    Object.assign(this.canvasTarget.style, { width: `${width}px`, height: `${height}px`, margin: `${my}px ${mx}px` })
-    Object.entries({ x: -mx, y: -my, width: width + 2 * mx, height: height + 2 * my }).forEach(([k, v]) => this.dotsTarget.setAttribute(k, v))
-  }
-
   draw() {
     const g = this.graph, moving = this.linking?.edge
     this.edgesTarget.innerHTML = g.edges().filter(e => !(e.v === moving?.v && e.w === moving?.w)).map(e => {
-      const source = g.node(e.v), target = g.node(e.w), [from, to] = this.anchors(e)
-      // dagre doubles the ranks to fit edge labels: keep only the bends at node ranks. Dragging a node drops its edges' bends.
-      const via = source.moved || target.moved ? [] : g.edge(e).points.slice(1, -1).filter((_, i) => i % 2)
-      // It routes through node centres; lift the bends to icon height, blending from source to target.
-      const lift = t => (from.y - source.y) * (1 - t) + (to.y - target.y) * t
-      const points = [from, ...via.map((p, i) => ({ x: p.x, y: p.y + lift((i + 1) / (via.length + 1)) })), to]
-      g.edge(e).middle = middle(points)
-      const d = curve(points), { path, current, available } = g.edge(e)
+      const [from, to] = this.anchors(e), d = curve(from, to), { path, current, available } = g.edge(e)
+      // curve() passes halfway between its ends at its halfway mark.
+      g.edge(e).middle = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }
       const line = `<path d="${d}" ${available ? `stroke-dasharray="none"` : ""} class="${current ? "stroke-rocket" : available ? "stroke-signal-green group-hover:stroke-signal-green/70" : path ? "group-hover:stroke-ink-900/50" : ""}" />`
       // A wide invisible stroke makes the thin dashed line easy to click.
       return path ? `<g data-v="${e.v}" data-w="${e.w}" class="group cursor-pointer"><path d="${d}" stroke="transparent" stroke-width="12" stroke-dasharray="none" />${line}</g>` : line
@@ -329,6 +340,13 @@ export default class extends Controller {
     this.endsTarget.style.zIndex = (this.z || 0) + 1
     this.endsTarget.classList.remove("opacity-0")
   }
+}
+
+// A press neither focuses (Chrome scrolls a half-hidden focused link into view, jumping the canvas) nor selects text,
+// but still blurs whatever had focus.
+function press(event) {
+  event.preventDefault()
+  document.activeElement?.blur()
 }
 
 // A stand-in for an Alt-dragged node's copy until the page re-renders with the saved one; not a node target.
@@ -353,20 +371,8 @@ function anchor(node, side, offset = node.anchor) {
   return { x: node.x + side * node.width / 2, y: node.y - node.height / 2 + offset }
 }
 
-// The point halfway through curve(points): the middle point, or between the middle two, where their symmetric segment
-// passes at its halfway mark.
-function middle(points) {
-  const i = points.length / 2
-  if (points.length % 2) return points[Math.floor(i)]
-  const a = points[i - 1], b = points[i]
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
-}
-
-// Bézier segments through the points, horizontal at each one, so a left-to-right flow never overshoots.
-function curve(points) {
-  return points.map((p, i) => {
-    if (i === 0) return `M${p.x},${p.y}`
-    const b = points[i - 1], mx = (b.x + p.x) / 2
-    return `C${mx},${b.y} ${mx},${p.y} ${p.x},${p.y}`
-  }).join("")
+// A Bézier from a to b, horizontal at both ends, so a left-to-right flow never overshoots.
+function curve(a, b) {
+  const mx = (a.x + b.x) / 2
+  return `M${a.x},${a.y}C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`
 }
