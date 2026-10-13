@@ -1,0 +1,25 @@
+<%# locals: (workflow:) %>
+<%# The canvas in miniature: each node a box about its card's size, centred on its saved x/y, and each edge the canvas's curve (flow_controller). %>
+<% boxes = workflow.nodes.to_h { |node| w, h = node.library_media_id ? [ 80, 120 ] : [ 224, 80 ]; [ node.id, [ node.x - w / 2, node.y - h / 2, w, h ] ] } %>
+<% if boxes.any? %>
+  <% left, top = boxes.values.map { it[0] }.min - 40, boxes.values.map { it[1] }.min - 40 %>
+  <% right, bottom = boxes.values.map { it[0] + it[2] }.max + 40, boxes.values.map { it[1] + it[3] }.max + 40 %>
+  <svg viewBox="<%= [ left, top, right - left, bottom - top ].join(" ") %>" preserveAspectRatio="xMidYMid meet" aria-hidden="true"
+       class="h-16 w-28 shrink-0 rounded-lg bg-stone-50">
+    <% workflow.edges.each do |edge| %>
+      <% from, to = boxes[edge.from_id], boxes[edge.to_id] %>
+      <% ax, ay, bx, by = from[0] + from[2], from[1] + from[3] / 2, to[0], to[1] + to[3] / 2 %>
+      <% mx = (ax + bx) / 2 %>
+      <path d="M<%= ax %>,<%= ay %>C<%= mx %>,<%= ay %> <%= mx %>,<%= by %> <%= bx %>,<%= by %>" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke" class="stroke-ink-900/25" />
+    <% end %>
+    <% workflow.nodes.each do |node| %>
+      <% x, y, w, h = boxes[node.id] %>
+      <% css = if node.step? then "fill-white stroke-ink-900/20"
+               elsif node.note? then "#{AppHelper::FOLDER_COLORS[node.color]} fill-current/15"
+               elsif node.library_media_id then "fill-ink-900/10"
+               else "#{folder_color(node.folder)} fill-current/25 stroke-current"
+               end %>
+      <rect x="<%= x %>" y="<%= y %>" width="<%= w %>" height="<%= h %>" rx="16" stroke-width="1.5" vector-effect="non-scaling-stroke" class="<%= css %>" />
+    <% end %>
+  </svg>
+<% end %>

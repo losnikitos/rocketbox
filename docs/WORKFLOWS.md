@@ -5,6 +5,7 @@ A workflow ([model](/app/models/workflow.rb), edited at `/app/workflows` ([contr
 Workflows are the media pipeline: folders, tags and the transformations their steps own. Items flowing through it are of three kinds, each living in folders of its kind ([folder.rb](/app/models/folder.rb) `kind`): media (`LibraryMedia`), prompts (`Prompt`, under the Prompts root, e.g. `prompts/shots` and `prompts/styles`, written ones landing in Prompts itself unless the step has an output folder) and reviews (`Review`, all in the one Reviews folder). A step run's inputs (`TransformationRunInput#item`) and result (`TransformationRun#result`) are polymorphic over them.
 
 Outside the canvas:
+- The index ([view](/app/views/accounts/workflows/index.html.erb)) shows each workflow's minimap ([partial](/app/views/accounts/workflows/_minimap.html.erb)): a server-rendered SVG of its nodes as boxes at their saved `x`/`y` and its edges as the canvas's curves.
 - A folder's page ([view](/app/views/accounts/folders/show.html.erb)) lists the workflows that read from it (its folder nodes feeding a step) and write to it (its folder nodes a step feeds, and on Ready every step with no output folder), each linking to that node.
 - A media's page ([view](/app/views/accounts/library/show.html.erb)) links a generated media to the step that made it, in its run. Its Run in workflow panel lists the start folders it fits (`Workflow.starts_for`), each playing a new run of just that media from there ([controller](/app/controllers/accounts/workflow_runs_controller.rb)).
 

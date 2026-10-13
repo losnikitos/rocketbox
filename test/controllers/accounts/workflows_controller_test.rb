@@ -155,6 +155,22 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "First", "Second" ], order.()
   end
 
+  test "workflows list draws each workflow's minimap" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow.create!(name: "Mapped")
+    input = workflow.nodes.create!(folder: folders(:interior), x: 0, y: 0)
+    step = workflow.nodes.create!(transformation: transformations(:cinematic), x: 300, y: 80)
+    workflow.edges.create!(from: input, to: step)
+    Workflow.create!(name: "Empty")
+
+    get workflows_url(account: admin.id)
+    assert_select "##{dom_id(workflow)} svg" do
+      assert_select "rect", 2
+      assert_select "path[d=?]", "M112,0C150,0 150,80 188,80"
+    end
+    assert_select "##{dom_id(Workflow.find_by!(name: "Empty"))} svg", 0
+  end
+
   test "agents read a workflow as Markdown with the agent token, nothing else" do
     credentials = Rails.application.credentials
     credentials.define_singleton_method(:agent_token) { "secret" }
