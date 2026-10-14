@@ -22,3 +22,4 @@ Service prompts are constants in the code that uses them:
 | `Crawl::DEFAULT_DATA_INSTRUCTION` | Default data instruction for a crawl |
 | `ExtractBusinessCard::INFO_PROMPT` / `LOGO_PROMPT` | Reading a business card |
 | `ImproveLibraryMedia::PROMPT` | Improving a library image with AI |
+| `SortInboxMedia::PROMPT` | Sorting media landing in the Inbox root into an Inbox subfolder (a video by its preview frame) |

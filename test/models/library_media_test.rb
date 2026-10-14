@@ -10,7 +10,7 @@ class LibraryMediaTest < ActiveSupport::TestCase
       path = File.join(dir, "clip.mp4")
       system("ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=d=1:s=320x240", "-pix_fmt", "yuv420p", path, exception: true)
       media = perform_enqueued_jobs do
-        LibraryMedia.create!(kind: "video", user: users(:lazaro_nixon),
+        LibraryMedia.create!(kind: "video", user: users(:lazaro_nixon), folder: folders(:misc),
           file: { io: File.open(path), filename: "clip.mp4", content_type: "video/mp4" })
       end
 
