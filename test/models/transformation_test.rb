@@ -59,7 +59,7 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
     calls = []
     RubyLLM.define_singleton_method(:animate) do |prompt, with:, **|
-      calls << [ prompt, *with.map { it.filename.to_s } ]
+      calls << [ prompt, *Array(with).map { it.filename.to_s } ]
       Struct.new(:to_blob).new("mp4-bytes")
     end
     source = photo("room.jpg", :interior)
@@ -71,6 +71,32 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal [ [ "Slow cinematic push-in on the shop.", "room.jpg" ] ], calls
     assert_equal "complete", run.reload.status
     assert_equal "mp4-bytes", run.generated_media.file.download
+  end
+
+  test "a video with two images pins first and last frames via provider_options" do
+    calls = []
+    RubyLLM.define_singleton_method(:animate) do |prompt, with:, provider:, provider_options:, **|
+      calls << { prompt:, with: Array(with).map { it&.filename.to_s }, provider:, provider_options: }
+      Struct.new(:to_blob).new("mp4-bytes")
+    end
+    before, after = photo("before.jpg", :photobank_customer), photo("after.jpg", :photobank_customer)
+
+    xai = transformations(:cinematic).dup.tap { it.update!(options: { "model" => "grok-imagine-video-1.5" }) }
+    start(xai, [ before, after ]).tap(&:run!)
+    assert_equal "before.jpg", calls.last[:with].sole
+    assert_match %r{\Adata:image/jpeg;base64,}, calls.last[:provider_options][:last_frame][:url]
+    assert_equal :xai, calls.last[:provider]
+
+    RubyLLM::ActiveRecord::Model.create!(provider: "gemini", model_id: "veo-3.1-generate-preview", name: "Veo 3.1", enabled: true,
+      modalities: { "input" => %w[text image], "output" => %w[video] })
+    veo = transformations(:cinematic).dup.tap { it.update!(options: { "model" => "veo-3.1-generate-preview" }) }
+    start(veo, [ before, after ]).tap(&:run!)
+    instance = calls.last[:provider_options][:instances].sole
+    assert_equal [], calls.last[:with]
+    assert_equal [ "Slow cinematic push-in on the shop.", :gemini ], [ calls.last[:prompt], calls.last[:provider] ]
+    assert_equal %i[prompt image lastFrame], instance.keys
+    assert instance[:image][:bytesBase64Encoded].present?
+    assert instance[:lastFrame][:bytesBase64Encoded].present?
   end
 
   test "steps joins its inputs into a video, 1 second each, without a prompt" do

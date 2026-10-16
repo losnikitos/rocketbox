@@ -7,12 +7,12 @@ RubyLLM.configure do |config|
   config.logger = Rails.logger
 end
 
-# ponytail: ruby_llm 2.0.0 sends Veo's reference image as `inlineData`, which the Gemini API rejects; drop on a gem fix.
+# ponytail: ruby_llm 2.1.1 still sends Veo's reference image as `inlineData`, which the Gemini API rejects; drop on a gem fix.
 RubyLLM::Protocols::Gemini::Videos.module_eval do
   private def render_video_image(image) = { bytesBase64Encoded: image.encoded, mimeType: image.mime_type }
 end
 
-# ponytail: ruby_llm 2.0.0 only sends `gemini-*-image` ids to generateContent, so `gemini-nano-banana-2.1` would hit
+# ponytail: ruby_llm 2.1.1 only matches nano-banana* / gemini-*-image, so `gemini-nano-banana-2.1` would hit
 # Imagen's `predict`; drop on a gem fix.
 RubyLLM::Protocols::Gemini::Images.module_eval do
   private def gemini_image_model?(model) = model_id(model).downcase.match?(/nano-?banana|\Agemini-.*-image/)

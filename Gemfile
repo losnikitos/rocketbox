@@ -96,7 +96,9 @@ gem "telegram-bot-ruby", "~> 2.7"
 
 gem "faraday", "~> 2.14"
 
-gem "ruby_llm", "= 2.0.0"
+# Rails < 8.1.4 breaks schema dump on json 3 (ruby_llm 2.1 allows it).
+gem "json", "< 3"
+gem "ruby_llm", "= 2.1.1"
 
 gem "mission_control-jobs", "~> 1.3"
 
