@@ -64,7 +64,8 @@
       <% media = items.first.is_a?(LibraryMedia) %>
       <span data-flow-target="output" data-v="<%= from %>" data-w="<%= to %>" class="absolute -translate-1/2">
         <% if media && items.one? %>
-          <%= thumb.(items.first, edge[:pinned], "h-24 w-auto rounded-md border-2 border-white shadow-sm") %>
+          <%# max-w-none beats img's max-width:100%: abspos available width is room to the canvas's right edge, so right thumbs squash under h-24 first. %>
+          <%= thumb.(items.first, edge[:pinned], "h-24 w-auto max-w-none rounded-md border-2 border-white shadow-sm") %>
         <% else %>
           <% label = "View #{media ? "#{items.size} media" : pluralize(items.size, items.first.item_kind.to_s)}" %>
           <%# The first three fanned out, the first on top. %>
@@ -73,7 +74,7 @@
                   class="relative grid cursor-pointer place-items-center rounded-md *:col-start-1 *:row-start-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket [&_img]:pointer-events-none">
             <% items.first(3).each_with_index.reverse_each do |item, i| %>
               <span class="block <%= [ "", "rotate-6", "-rotate-6" ][i] %>">
-                <%= media ? render("accounts/library/file", media: item, play: i.zero?, variant: :small, css: "h-24 w-auto rounded-md border-2 border-white shadow-sm") : card.(item, edge[:pinned]) %>
+                <%= media ? render("accounts/library/file", media: item, play: i.zero?, variant: :small, css: "h-24 w-auto max-w-none rounded-md border-2 border-white shadow-sm") : card.(item, edge[:pinned]) %>
               </span>
             <% end %>
             <% if items.many? %>

@@ -291,4 +291,18 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_equal "#{Transformation::GenerateImage.label}: Add a prompt.", run.reload.error
     assert_empty run.step_runs
   end
+
+  test "a step fed only media that doesn't fit its inputs fails the run instead of doing nothing" do
+    user = users(:lazaro_nixon)
+    user.library_media.create!(kind: "video", folder: folders(:interior), file: { io: StringIO.new("vid"), filename: "a.mp4", content_type: "video/mp4" })
+    workflow = Workflow.create!(name: "Misfit")
+    folder = workflow.nodes.create!(folder: folders(:interior))
+    step = workflow.nodes.create!(transformation_attributes: { kind: "generate_image", body: "Before." })
+    workflow.edges.create!(from: folder, to: step)
+    run = workflow.latest_run
+
+    run.start!(folder, user)
+    assert_equal "#{step.label}: needs 1+ image, got 0", run.reload.error
+    assert_empty run.step_runs
+  end
 end

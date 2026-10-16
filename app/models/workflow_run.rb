@@ -104,7 +104,12 @@ class WorkflowRun < ApplicationRecord
         end
         steps.each do |step|
           runs, sides = runs_of(step), sides_of(step, user)
-          batches_of(step, user).each do |batch|
+          batches = batches_of(step, user)
+          if batches.empty?
+            reason = unready_reason(step, user) and update!(error: "#{step.label}: #{reason}")
+            next
+          end
+          batches.each do |batch|
             if (run = runs.find { matches?(it, batch, sides) } || (reuse(step, batch, sides) unless step == fresh))
               land(run.result, step)
             else start_step(step, batch, sides, user)
@@ -113,6 +118,16 @@ class WorkflowRun < ApplicationRecord
           advance!(step, user) if output_of(step, user).any?
         end
       end
+    end
+
+    # Why a step whose arrows give something still has no batches (e.g. a video into an image input); nil while an arrow
+    # is empty, so a downstream step waiting on one before it stays quiet.
+    def unready_reason(step, user)
+      transformation = step.transformation
+      given = given_to(step, user) or return
+      short = transformation.inputs.select { |kind, count| given[kind].size < count.begin }
+      return if short.empty?
+      short.map { |kind, count| "needs #{count.begin}+ #{kind.to_s.pluralize(count.begin)}, got #{given[kind].size}" }.to_sentence
     end
 
     # A step run stands while it hasn't failed, took the batch and its picks are still given, and its transformation
