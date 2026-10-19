@@ -25,6 +25,7 @@ For images and video, don't use the `pricing` column on the model row. It is per
 - **Gemini (images and Veo):** the [pricing page](https://ai.google.dev/gemini-api/docs/pricing) lists a per-image price for each resolution and a per-second price for video. Read the 2K figure directly.
 - **OpenAI:** token rates are identical across `gpt-image-2` and `gpt-image-2.5-*`, so they say nothing about cost per image. Use the token calculator in the [image generation guide](https://developers.openai.com/api/docs/guides/image-generation) at our 9:16 2K size (1440×2560). Cost per image is output tokens × $30 per million. For example, `high` is 7,370 tokens ($0.221) on `gpt-image-2` and 1,843 tokens ($0.055) on 2.5.
 - **xAI:** the [pricing page](https://docs.x.ai/developers/pricing) lists per-second video prices by resolution. Read the 720p row, not the headline 480p price.
+- **OpenRouter (video):** [`GET /api/v1/videos/models`](https://openrouter.ai/api/v1/videos/models) lists per-second (or per-token) SKUs. Convert token-billed Seedance to $/s at 720p with their `(height × width × duration × 24) / 1024` formula.
 - **Token-billed video (Gemini Omni):** use the provider's per-second equivalent at 720p.
 
 ### Reference points (Oct 2026)
@@ -37,9 +38,16 @@ For images and video, don't use the `pricing` column on the model row. It is per
 | `gemini-3.1-flash-image` | $0.101 / 2K image | ££ |
 | `gemini-3-pro-image` | $0.134 / 2K image | £££ |
 | `gpt-image-2` | $0.221 / 2K high | £££ |
+| `bytedance/seedance-1-5-pro` | ~$0.02–0.03 / s | £ |
+| `bytedance/seedance-2.0-fast` | ~$0.04 / s | £ |
 | `veo-3.1-lite-generate-preview` | $0.05 / s | £ |
 | `grok-imagine-video` | $0.07 / s | £ |
+| `kwaivgi/kling-v3.0-std` | $0.084 / s | ££ |
+| `bytedance/seedance-2.5` | ~$0.10 / s | ££ |
 | `veo-3.1-fast-generate-preview`, `gemini-omni-1.1-flash` | $0.10 / s | ££ |
+| `kwaivgi/kling-v3.0-pro` | $0.112 / s | ££ |
+| `runway/gen-4.5` | $0.12 / s | ££ |
+| `black-forest-labs/flux-3-video` | $0.17 / s | £££ |
 | `veo-3.1-generate-preview` | $0.40 / s | £££ |
 | `gpt-6-luna` | $0.10 / $0.50 per M tokens, $0.0005 / run | £ |
 | `gpt-5.6-luna` | $0.20 / $1.20 per M tokens, $0.0010 / run | £ |

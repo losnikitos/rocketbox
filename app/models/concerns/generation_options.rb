@@ -43,6 +43,11 @@ module GenerationOptions
       "aspect_ratio" => %w[9:16 16:9],
       "resolution" => %w[720p 1080p], # 1080p needs 8s
       "duration" => %w[4 6 8]
+    },
+    "openrouter" => {
+      "aspect_ratio" => %w[9:16 1:1 16:9],
+      "resolution" => %w[720p 1080p], # 1080p not on Kling / Runway
+      "duration" => %w[4 5 6 8 10]
     }
   }.freeze
   # A prompt-writing type picks just the model.
