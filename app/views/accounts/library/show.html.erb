@@ -104,8 +104,6 @@
     </div>
   </details>
 
-  <%= render "accounts/library/business_card", media: @media if @media.business_card? && @media.story_image? %>
-
   <% if (run = @media.transformation_run) %>
     <details open class="group rb-surface-raised p-4">
       <summary class="flex cursor-pointer items-center gap-2">

@@ -20,6 +20,6 @@ Service prompts are constants in the code that uses them:
 | Constant | Used for |
 |----------|----------|
 | `Crawl::DEFAULT_DATA_INSTRUCTION` | Default data instruction for a crawl |
-| `ExtractBusinessCard::INFO_PROMPT` / `LOGO_PROMPT` | Reading a business card |
+| `Transformation::UpdateBusiness::DEFAULT_BODY` / `Transformation::ExtractLogo::DEFAULT_BODY` | Defaults for the Business card workflow steps (editable on the canvas) |
 | `ImproveLibraryMedia::PROMPT` | Improving a library image with AI |
 | `SortInboxMedia::PROMPT` | Sorting media landing in the Inbox root into an Inbox subfolder (a video by its preview frame) |

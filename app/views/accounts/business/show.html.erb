@@ -6,12 +6,12 @@
       data: { controller: "autosave", action: "input->autosave#queue change->autosave#queue submit->autosave#submit" } do |form| %>
   <div class="flex flex-col items-center text-center">
     <%= form.label :logo, class: "group relative cursor-pointer" do %>
-      <% if Current.account.logo.attached? %>
-        <%= image_tag Current.account.logo.variant(resize_to_limit: [ 384, 384 ]),
+      <% if (logo = Current.account.logo_media) %>
+        <%= image_tag logo.file.variant(resize_to_limit: [ 384, 384 ]),
               alt: "#{Current.account.business_name} logo",
-              class: "size-48 rounded-2xl object-cover ring-1 ring-ink-900/10 transition group-hover:ring-ink-900/25" %>
+              class: "size-48 rounded-2xl object-cover ring-1 ring-ink-900/10 group-hover:ring-ink-900/25" %>
       <% else %>
-        <span class="flex size-48 items-center justify-center rounded-2xl bg-ink-900/5 text-ink-400 ring-1 ring-ink-900/10 transition group-hover:bg-ink-900/10 group-hover:ring-ink-900/25">
+        <span class="flex size-48 items-center justify-center rounded-2xl bg-ink-900/5 text-ink-400 ring-1 ring-ink-900/10 group-hover:bg-ink-900/10 group-hover:ring-ink-900/25">
           <%= heroicon "camera", options: { class: "size-12" } %>
         </span>
       <% end %>

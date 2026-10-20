@@ -55,6 +55,16 @@ class WorkflowRun < ApplicationRecord
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
+  # When every step run has finished (complete or failed), notify onboarding for the Business card workflow.
+  def notify_settled!
+    return if running? || draft?
+    return unless workflow.slug == "business-card"
+
+    user = step_runs.flat_map(&:source_media).filter_map(&:user).first ||
+      step_runs.filter_map { it.result.try(:user) }.first
+    WhatsappOnboarding.card_processed!(user) if user
+  end
+
   # What a folder node gives in this run, as the user: its items picked in `picks` (node id => media ids, a media
   # folder's), else its pinned items, else its newest N, of its candidates.
   def picked(node, user)

@@ -26,8 +26,8 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 An automatic chain run by [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb). The copy lives in `MESSAGES`. `ask!` sends a step's message and stores the step in `whatsapp_pending_question`; the reply runs the step and asks the next one:
 
-1. `business_card` — the photo is tagged `business_card`, read inline with [ExtractBusinessCard](/app/services/extract_business_card.rb) and applied to the user (fields + logo).
-2. `logo` — only if the card gave no logo; the photo becomes `user.logo`.
+1. `business_card` — the photo lands in `inbox/business-card`; the autorun [Business card workflow](/app/models/workflow/business_card.rb) extracts fields onto the user and a logo into `photobank/logo`. Pending stays `processing_business_card` until the run settles, then onboarding asks for Instagram or a logo photo.
+2. `logo` — only if the card gave no logo; the photo lands in `inbox/logo` and the same workflow runs. The account logo is the newest media in `photobank/logo` ([User#logo_media](/app/models/user.rb)), not an ActiveStorage attachment on the user.
 3. `instagram` — Autopilot pitch + **Connect Instagram** URL button (one-time login link) that lands on Instagram authorize. The OAuth callback ([InstagramAuthorizationsController](/app/controllers/accounts/instagram_authorizations_controller.rb)) sends `instagram_connected` and moves on.
 4. `interior_back` (sent as the example photo `public/onboarding/barbershop-example.jpg` with the copy as caption), then `interior_front` — both photos are tagged `interior`.
 5. `brand_voice` — Classic / Bold / Wild reply buttons (typing the word works too); saved to `users.brand_voice`, also editable on `/app/business`.

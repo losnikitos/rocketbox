@@ -41,6 +41,19 @@
           placeholder: writes ? "Write one new shot that mixes the moods of these prompts…" : "Compose a collage from the interior, the barber and the client…" %>
   </div>
 <% end %>
+<% if (fields = type.try(:account_fields)).present? %>
+  <div>
+    <p class="<%= field_label %>">Writes to the account</p>
+    <ul class="flex flex-col gap-1.5">
+      <% fields.each_value do |column| %>
+        <li class="rounded-lg border border-stone-100 bg-stone-50 px-2.5 py-1.5 text-sm text-ink-700">
+          <%= column.to_s.humanize %>
+        </li>
+      <% end %>
+    </ul>
+    <p class="mt-1.5 text-xs text-ink-500">Blank values are skipped; existing account fields stay.</p>
+  </div>
+<% end %>
 <% if transformation.ai? || type&.options %>
   <%= render "shared/generation_options", record: transformation, scope:, refresh_url: %>
 <% end %>

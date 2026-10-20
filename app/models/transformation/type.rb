@@ -8,6 +8,7 @@
 class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo, Transformation::Llm,
+    Transformation::ExtractLogo, Transformation::UpdateBusiness,
     Transformation::SmartCrop, Transformation::Zoom, Transformation::ColorGrade,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Transformation::Caption, Transformation::Text,

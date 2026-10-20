@@ -25,7 +25,12 @@ class Suggestion < ApplicationRecord
       io = RemoteFile.fetch(value)
       raise RemoteFile::Error, "#{io.content_type} is not an image." unless io.content_type.start_with?("image/")
 
-      user.logo.attach(io: io, filename: RemoteFile.filename(value), content_type: io.content_type)
+      user.library_media.create!(
+        kind: "photo",
+        folder: Folder.logo,
+        source_url: value,
+        file: { io: io, filename: RemoteFile.filename(value), content_type: io.content_type }
+      )
     when *MEDIA_KEYS
       user.library_media.import_url!(value)
     else

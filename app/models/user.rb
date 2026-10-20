@@ -25,7 +25,6 @@ class User < ApplicationRecord
   has_many :prompts, dependent: :destroy
   has_many :services, dependent: :destroy
   has_one :subscription, dependent: :destroy, inverse_of: :user
-  has_one_attached :logo
   has_one_attached :instagram_avatar
 
   store_accessor :instagram_profile, :username, prefix: :instagram
@@ -65,10 +64,12 @@ class User < ApplicationRecord
     raise InstagramOauth::Error, "Instagram did not return #{e.key}."
   end
 
-  # Copy, not share: the source blob is purged with its record (or on re-extraction).
-  def copy_logo_from!(attachment)
-    logo.attach(io: StringIO.new(attachment.download), filename: attachment.filename, content_type: attachment.content_type)
+  # Newest media in photobank/logo — the account logo shown in the UI.
+  def logo_media
+    library_media.where(folder_id: Folder.logo.id).order(created_at: :desc).first
   end
+
+  def logo? = logo_media&.file&.attached?
 
   # Prefilled as START_<code> on /app/whatsapp; the sender's phone gets linked to this account.
   # Base58 × 8 ≈ 10^14 combinations; has_secure_token enforces a 24-char minimum.

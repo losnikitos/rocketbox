@@ -29,12 +29,7 @@ Rails.application.routes.draw do
   scope :app do
     get "/", to: redirect(path: "/app/recent"), as: :app
 
-    resources :library_media, only: %i[create update destroy], path: "library/media" do
-      member do
-        post :extract
-        patch :apply_extraction
-      end
-    end
+    resources :library_media, only: %i[create update destroy], path: "library/media"
 
     scope path: "library", module: :accounts do
       get "media/:id", to: "library#show", as: :library_item

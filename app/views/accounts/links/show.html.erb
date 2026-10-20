@@ -104,8 +104,8 @@
                   <%= render "shared/field_diff", current: account[Crawl::FIELDS[suggestion.key]], value: suggestion.value, source: "From page", status: suggestion.status %>
                 <% elsif suggestion.pending? %>
                   <dd class="flex items-center gap-3">
-                    <% if account.logo.attached? %>
-                      <%= image_tag url_for(account.logo), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
+                    <% if (logo = account.logo_media) %>
+                      <%= image_tag url_for(logo.file), alt: "Current logo", class: "size-16 rounded-lg object-contain opacity-60 ring-2 ring-red-200" %>
                     <% else %>
                       <span class="flex size-16 items-center justify-center rounded-lg bg-red-50 font-sans text-xs italic text-red-800/60 ring-2 ring-red-200">Not set</span>
                     <% end %>

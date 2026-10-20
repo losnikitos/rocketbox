@@ -126,41 +126,6 @@ class LibraryMediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal 4, to.reload.posts_count
   end
 
-  test "applies extracted business card fields and logo to the account" do
-    @admin.update!(business_name: "Old name", address: "1 Old St")
-    @media.update!(folder: folders(:business_card), extracted_info: {
-      "status" => "done",
-      "has_logo" => true,
-      "fields" => { "business_name" => " Fade Co ", "phone" => "+1 555 0100", "website" => "https://fade.co", "address" => nil, "person_name" => "" }
-    })
-    @media.extracted_logo.attach(io: file_fixture("logo.png").open, filename: "logo.png", content_type: "image/png")
-
-    patch apply_extraction_library_media_url(@media)
-
-    assert_redirected_to library_item_url(@media, account: @admin.id)
-    @admin.reload
-    assert_equal "Fade Co", @admin.business_name
-    assert_equal "+1 555 0100", @admin.phone
-    assert_equal "https://fade.co", @admin.homepage_url
-    assert_equal "1 Old St", @admin.address
-    assert_equal @media.extracted_logo.checksum, @admin.logo.checksum
-
-    post extract_library_media_url(@media)
-    assert @admin.reload.logo.attached?, "re-extracting must not purge the applied logo"
-  end
-
-  test "extract enqueues the job for business cards only" do
-    post extract_library_media_url(@media)
-    assert_redirected_to library_item_url(@media, account: @admin.id)
-    assert_nil @media.reload.extracted_info
-
-    @media.update!(folder: folders(:business_card))
-    assert_enqueued_with(job: ExtractBusinessCardJob, args: [ @media.id ]) do
-      post extract_library_media_url(@media)
-    end
-    assert_equal "pending", @media.reload.extraction_status
-  end
-
   test "uploads photo files into the inbox by default" do
     user = sign_in_as(users(:lazaro_nixon))
     file = fixture_file_upload("logo.png", "image/png")

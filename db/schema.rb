@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_19_202153) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_143903) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -139,7 +139,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_19_202153) do
   create_table "library_media", force: :cascade do |t|
     t.integer "chat_id"
     t.datetime "created_at", null: false
-    t.json "extracted_info"
     t.integer "folder_id", null: false
     t.integer "from_id"
     t.integer "job_id"

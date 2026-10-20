@@ -31,24 +31,6 @@ class LibraryMediaController < ApplicationController
     end
   end
 
-  def extract
-    media = Current.account.library_media.find(params[:id])
-    unless media.business_card? && media.story_image?
-      return redirect_to helpers.library_item_path(media), alert: "Only business card photos can be read."
-    end
-
-    media.extracted_logo.purge
-    media.update!(extracted_info: { "status" => "pending" })
-    ExtractBusinessCardJob.perform_later(media.id)
-    redirect_to helpers.library_item_path(media)
-  end
-
-  def apply_extraction
-    media = Current.account.library_media.find(params[:id])
-    media.apply_extraction_to!(Current.account)
-    redirect_to helpers.library_item_path(media), notice: "Business updated from card."
-  end
-
   def destroy
     media = Current.account.library_media.find(params[:id]).destroy!
     folder = helpers.folder_path(media.folder)

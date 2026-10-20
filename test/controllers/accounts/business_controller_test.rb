@@ -54,6 +54,7 @@ class Accounts::BusinessControllerTest < ActionDispatch::IntegrationTest
     }
 
     assert_redirected_to business_url
-    assert @user.reload.logo.attached?
+    assert @user.reload.logo?
+    assert_equal Folder.logo, @user.logo_media.folder
   end
 end

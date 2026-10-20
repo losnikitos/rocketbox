@@ -54,6 +54,12 @@ module WhatsappOnboarding
     "interior_front" => "interior"
   }.freeze
 
+  # After a card/logo photo is stored, pending becomes this until the Business card workflow settles.
+  PROCESSING = {
+    "business_card" => "processing_business_card",
+    "logo" => "processing_logo"
+  }.freeze
+
   # The webhook job has no request host; Meta must reach these (dev = tunnel).
   URL_OPTIONS = { protocol: "https", host: Rails.env.production? ? "rocketbox.plus" : "dev.rocketbox.plus" }.freeze
   EXAMPLE_PHOTO_URL = "https://#{URL_OPTIONS[:host]}/onboarding/barbershop-example.jpg"
@@ -78,23 +84,28 @@ module WhatsappOnboarding
     user.update!(whatsapp_pending_question: step)
   end
 
-  # Runs after the media for a photo step is stored.
+  # Runs after the media for a photo step is stored. Card/logo wait for the Business card workflow; see card_processed!.
   def received!(user, step, media)
     case step
-    when "business_card"
-      ExtractBusinessCard.call(media:)
-      media.apply_extraction_to!(user) if media.reload.extraction_status == "done"
-      ask!(user, user.logo.attached? ? "instagram" : "logo")
-    when "logo"
-      begin
-        ExtractBusinessCard.extract_logo!(media)
-      rescue RubyLLM::Error, Faraday::Error => e
-        Rails.logger.warn("Logo extraction failed for media #{media.id}: #{e.message}")
-      end
-      user.copy_logo_from!(media.extracted_logo.attached? ? media.extracted_logo : media.file)
-      ask!(user, "instagram")
+    when "business_card", "logo"
+      user.update!(whatsapp_pending_question: PROCESSING.fetch(step))
+      send!(user, "Got it — reading your card…") if step == "business_card"
+      # AutorunWorkflowsJob (from LibraryMedia after_commit) runs the Business card workflow.
     when "interior_back" then ask!(user, "interior_front")
     when "interior_front" then ask!(user, "brand_voice")
+    end
+  end
+
+  # Called when the Business card workflow run has no step still running.
+  def card_processed!(user)
+    user.with_lock do
+      user.reload
+      case user.whatsapp_pending_question
+      when "processing_business_card"
+        ask!(user, user.logo? ? "instagram" : "logo")
+      when "processing_logo"
+        ask!(user, "instagram")
+      end
     end
   end
 

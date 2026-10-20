@@ -35,18 +35,6 @@ class LibraryMedia < ApplicationRecord
     # Workflow cards and run rows, a few rem tall.
     file.variant :small, resize_to_limit: [ 256, 256 ]
   end
-  has_one_attached :extracted_logo
-
-  # Extracted business-card field => User column.
-  CARD_FIELDS = {
-    "business_name" => :business_name,
-    "phone" => :phone,
-    "person_name" => :name,
-    "address" => :address,
-    "website" => :homepage_url,
-    "business_description" => :business_description
-  }.freeze
-
   # Media with every one of the tags `ids`; all media when there are none.
   scope :tagged_all, ->(ids) do
     ids.empty? ? all : where(id: LibraryMedia.unscoped.joins(:tags).where(tags: { id: ids }).group(:id).having("COUNT(*) = ?", ids.size).select(:id))
@@ -64,7 +52,6 @@ class LibraryMedia < ApplicationRecord
   # Root folders: inbox gets everything the owner sends or uploads, photobank curated media; ready is where steps with no output folder land.
   def item_kind = :media
 
-  def business_card? = folder.slug == "business-card"
   def ready? = folder == Folder.ready
 
   # The media this one is ultimately a version of.
@@ -84,20 +71,6 @@ class LibraryMedia < ApplicationRecord
     return false if !file.attached? || story_image?
 
     file.content_type.to_s.start_with?("video/") || kind.in?(%w[video video_note animation])
-  end
-
-  def extraction_status
-    extracted_info&.dig("status")
-  end
-
-  def extracted_account_attributes
-    fields = extracted_info&.dig("fields") || {}
-    CARD_FIELDS.to_h { |key, column| [ column, fields[key].to_s.strip ] }.compact_blank
-  end
-
-  def apply_extraction_to!(user)
-    user.update!(extracted_account_attributes)
-    user.copy_logo_from!(extracted_logo) if extracted_logo.attached?
   end
 
   # Call on an association (user.library_media.import_url!) so the lookup and the new record are scoped to that user.

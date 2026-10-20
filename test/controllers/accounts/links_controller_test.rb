@@ -126,7 +126,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     @user.reload
     assert_equal "+44 20 0000", @user.phone
     assert_equal "Lazaro Cuts", @user.business_name
-    assert_not @user.logo.attached?
+    assert_not @user.logo?
     assert_equal 0, @user.library_media.count
     assert_equal %w[pending applied pending pending pending], @crawl.suggestions.map(&:status)
   end
@@ -147,7 +147,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     @user.reload
     assert_equal "Lazaro Fades", @user.business_name
     assert_nil @user.phone
-    assert_not @user.logo.attached?
+    assert_not @user.logo?
     assert_equal %w[applied rejected rejected applied applied], @crawl.suggestions.map(&:status)
   end
 
@@ -161,14 +161,14 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to link_url(@link)
     @user.reload
     assert_equal "Lazaro Fades", @user.business_name
-    assert @user.logo.attached?
-    assert_equal %w[photo video], @user.library_media.order(:id).pluck(:kind)
-    assert_equal [ PHOTO, VIDEO ], @user.library_media.order(:id).pluck(:source_url)
+    assert @user.logo?
+    assert_equal LOGO, @user.logo_media.source_url
+    assert_equal [ PHOTO, VIDEO ], @user.library_media.where.not(folder_id: Folder.logo.id).order(:id).pluck(:source_url)
     assert @crawl.suggestions.all?(&:applied?)
 
     get link_url(@link)
     assert_select "button", text: "Everything applied"
-    assert_select "a[href=?]", library_item_path(@user.library_media.first), text: /In library/
+    assert_select "a[href=?]", library_item_path(@user.library_media.find_by!(source_url: PHOTO)), text: /In library/
   end
 
   test "add all to library applies only photos and videos" do
@@ -176,7 +176,7 @@ class Accounts::LinksControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to link_url(@link)
     assert_equal [ PHOTO, VIDEO ], @user.library_media.order(:id).pluck(:source_url)
-    assert_not @user.reload.logo.attached?
+    assert_not @user.reload.logo?
     assert_equal %w[pending pending pending applied applied], @crawl.suggestions.map(&:status)
 
     get link_url(@link)

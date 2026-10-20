@@ -38,22 +38,21 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
-  test "logo step saves the logo extracted from the photo" do
+  test "logo step files the photo and waits for the business card workflow" do
     user = users(:lazaro_nixon)
     user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "logo")
-    painted = Struct.new(:to_blob, :mime_type).new("painted-logo", "image/png")
-    original_paint = RubyLLM.method(:paint)
-    original_cta = WhatsappCloud.method(:send_cta_url)
-    RubyLLM.define_singleton_method(:paint) { |*_, **_| painted }
-    WhatsappCloud.define_singleton_method(:send_cta_url) { |**_| true }
+    sent = []
+    original = WhatsappCloud.method(:send_text)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
 
-    store_image!(from: "15551234567", media_id: "logo-photo")
+    media = store_image!(from: "15551234567", media_id: "logo-photo")
 
-    assert_equal "painted-logo", user.reload.logo.download
-    assert_equal "instagram", user.whatsapp_pending_question
+    assert_equal folders(:logo), media.folder
+    assert_equal "processing_logo", user.reload.whatsapp_pending_question
+    assert_not user.logo?
+    assert_empty sent
   ensure
-    RubyLLM.define_singleton_method(:paint, original_paint)
-    WhatsappCloud.define_singleton_method(:send_cta_url, original_cta)
+    WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
   test "attaches blob to matching IncomingMessage" do

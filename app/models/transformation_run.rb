@@ -27,6 +27,7 @@ class TransformationRun < ApplicationRecord
   after_update_commit -> {
     workflow_run.advance!(workflow_node, result.user) if complete? && workflow_node
     workflow_run.broadcast_refresh_later
+    workflow_run.notify_settled! unless workflow_run.running?
   }, if: -> { workflow_run && saved_change_to_status? }
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }

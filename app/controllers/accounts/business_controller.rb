@@ -9,7 +9,8 @@ module Accounts
 
     def update
       attrs = business_params
-      attrs.delete(:logo) if attrs[:logo].blank?
+      logo = attrs.delete(:logo)
+      store_logo!(logo) if logo.present?
 
       if Current.account.update(attrs)
         return head :ok if autosave_request?
@@ -26,6 +27,10 @@ module Accounts
 
       def business_params
         params.require(:user).permit(:business_name, :business_description, :homepage_url, :phone, :address, :business_hours, :brand_voice, :logo)
+      end
+
+      def store_logo!(upload)
+        Current.account.library_media.create!(kind: "photo", folder: Folder.logo, file: upload)
       end
   end
 end
