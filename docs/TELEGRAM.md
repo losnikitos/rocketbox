@@ -1,6 +1,6 @@
 # Telegram
 
-Inbound media from the bot (photos, video, docs, etc.) for customer content. Text-only messages get a RubyLLM reply with a `list_media` tool.
+Inbound media from the bot (photos, video, docs, etc.) for customer content. Text-only messages get a RubyLLM reply with `list_media` and `login_link` tools.
 
 ## Flow
 
@@ -9,7 +9,7 @@ Inbound media from the bot (photos, video, docs, etc.) for customer content. Tex
 3. The job persists an [IncomingMessage](/app/models/incoming_message.rb) ([StoreIncomingMessage](/app/services/store_incoming_message.rb); failures logged, not raised), then branches:
    - **Media** → [StoreTelegramMedia](/app/services/store_telegram_media.rb): extract media → skip if `telegram_file_unique_id` already stored → download via Bot API → create [LibraryMedia](/app/models/library_media.rb) with Active Storage attachment → 👍 reaction on the message (failures logged, not raised). Caption-only context on media messages is not sent to the LLM.
    - **Links** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): text with `http(s)://` URLs from a linked sender → each URL saved as a [Link](/app/models/link.rb) (`source: "telegram"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`. Unlinked senders fall through to the LLM reply.
-   - **Text-only** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): resolve user by `telegram_user_id` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_message` the reply.
+   - **Text-only** → [ReplyTelegramMessage](/app/services/reply_telegram_message.rb): resolve user by `telegram_user_id` → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) and [LoginLink](/app/tools/login_link.rb) → `send_message` the reply.
 4. Ownership: if `message.from.id` matches a user’s `telegram_user_id`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. `telegram_user_id` is set by an admin in ActiveAdmin. Media appears on `/app/library`. Unlinked text senders still get an LLM reply; `list_media` tells them to set their WhatsApp phone in Profile.
 
 Outbound replies and reactions go through `TelegramBot.send_message` / `react`, which store an [OutgoingMessage](/app/models/outgoing_message.rb) (payload, Telegram `message_id`, or `error`); see `/admin/outgoing_messages`.

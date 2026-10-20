@@ -4,6 +4,7 @@ class ReplyWhatsappMessage
   INSTRUCTIONS = <<~TEXT.squish
     You are the Rocketbox library assistant.
     Use the list_media tool to answer questions about the user's media library.
+    Use the login_link tool when the user asks to log in, open the dashboard, or get a login link.
     Keep replies short and plain text.
   TEXT
 
@@ -63,7 +64,7 @@ class ReplyWhatsappMessage
       chat = Chat.create!
       response = chat
         .with_instructions(INSTRUCTIONS)
-        .with_tools(ListMedia.new(user:))
+        .with_tools(ListMedia.new(user:), LoginLink.new(user:))
         .ask(text)
 
       reply = response.content.to_s.truncate(WHATSAPP_MAX_LENGTH)

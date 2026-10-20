@@ -6,6 +6,7 @@ class ReplyTelegramMessage
   INSTRUCTIONS = <<~TEXT.squish
     You are the Rocketbox library assistant.
     Use the list_media tool to answer questions about the user's media library.
+    Use the login_link tool when the user asks to log in, open the dashboard, or get a login link.
     Keep replies short and plain text.
   TEXT
 
@@ -33,7 +34,7 @@ class ReplyTelegramMessage
     chat = Chat.create!
     response = chat
       .with_instructions(INSTRUCTIONS)
-      .with_tools(ListMedia.new(user:))
+      .with_tools(ListMedia.new(user:), LoginLink.new(user:))
       .ask(message.text)
 
     text = response.content.to_s.truncate(TELEGRAM_MAX_LENGTH)

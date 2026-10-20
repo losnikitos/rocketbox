@@ -1,6 +1,6 @@
 # WhatsApp
 
-Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for customer content. Text-only messages get a RubyLLM reply with a `list_media` tool.
+Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for customer content. Text-only messages get a RubyLLM reply with `list_media` and `login_link` tools.
 
 ## Flow
 
@@ -13,7 +13,7 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
    - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → restarts the onboarding chain on the existing user.
    - **Onboarding answer** → text or a button reply to the pending `brand_voice` / `email` step is saved and the chain moves on (see Onboarding), no LLM reply.
    - **Links** → text with `http(s)://` URLs from a known phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`.
-   - **Text-only** (known phone) → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) → `send_text` the reply.
+   - **Text-only** (known phone) → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) and [LoginLink](/app/tools/login_link.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Media appears on `/app/library`.
 
 ## Dashboard page
