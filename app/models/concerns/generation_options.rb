@@ -55,6 +55,27 @@ module GenerationOptions
   # Offered by every provider.
   IMAGE_DEFAULTS = { "aspect_ratio" => "9:16", "resolution" => "2k" }.freeze
   VIDEO_DEFAULTS = { "aspect_ratio" => "9:16", "resolution" => "720p", "duration" => "8" }.freeze
+  # Product-level frame roles (Start / End / Refs), not provider field names. Fallback when model.metadata["video"] is empty.
+  VIDEO_FIRST_FRAME_ONLY = %w[runway/gen-4.5].freeze
+  # Models that accept reference images (OpenRouter input_references / Gemini referenceImages). Hand-maintained.
+  VIDEO_WITH_REFS = %w[
+    bytedance/seedance-1-5-pro
+    bytedance/seedance-2.0-fast
+    bytedance/seedance-2.5
+    kwaivgi/kling-v3.0-std
+    kwaivgi/kling-v3.0-pro
+    black-forest-labs/flux-3-video
+  ].freeze
+  # Per-model allowlists intersected with the provider's VIDEO_OPTIONS (fallback when metadata has no video options).
+  VIDEO_MODEL_OPTIONS = {
+    "runway/gen-4.5" => { "aspect_ratio" => %w[9:16 16:9], "resolution" => %w[720p], "duration" => %w[4 5 6 8 10] },
+    "kwaivgi/kling-v3.0-std" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p], "duration" => %w[4 5 6 8 10] },
+    "kwaivgi/kling-v3.0-pro" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p], "duration" => %w[4 5 6 8 10] },
+    "bytedance/seedance-2.5" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p], "duration" => %w[4 5 6 8 10] },
+    "bytedance/seedance-2.0-fast" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p], "duration" => %w[4 5 6 8 10] },
+    "bytedance/seedance-1-5-pro" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p 1080p], "duration" => %w[4 5 6 8 10] },
+    "black-forest-labs/flux-3-video" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p 1080p], "duration" => %w[5 6 8 10] }
+  }.freeze
 
   included do
     after_initialize :fill_options, if: :new_record?
@@ -63,6 +84,22 @@ module GenerationOptions
       options.each { |key, value| errors.add(:options, "#{key.humanize} #{value} isn't available") unless value.in?(option_choices[key]) }
     end
   end
+
+  # What image roles this video model accepts: :first always, :last / :refs when the product (or synced metadata) says so.
+  def video_frame_roles
+    return [] unless video?
+    if (roles = selected_video_model&.metadata.to_h.dig("video", "frame_roles")).present?
+      return roles.map(&:to_sym)
+    end
+    roles = %i[first]
+    roles << :last unless VIDEO_FIRST_FRAME_ONLY.include?(options["model"])
+    roles << :refs if video_model_allows_refs?
+    roles
+  end
+
+  def supports_last_frame? = video_frame_roles.include?(:last)
+
+  def supports_reference? = video_frame_roles.include?(:refs)
 
   def inherited_options = {}
 
@@ -79,9 +116,15 @@ module GenerationOptions
 
   def provider = (models.find { it.model_id == options["model"] } || models.first)&.provider || option_sets.keys.first
 
-  # Every provider's models are offered; the other choices come from the chosen model's provider. A type with its own
-  # options (Transformation::Type.options) offers just those.
-  def option_choices = type&.options || { "model" => models.map(&:model_id) }.merge(option_sets[provider])
+  # Every provider's models are offered; the other choices come from the chosen model's provider, narrowed by
+  # per-model allowlists (metadata or VIDEO_MODEL_OPTIONS). A type with its own options offers just those.
+  def option_choices
+    return type.options if type&.options
+    base = { "model" => models.map(&:model_id) }.merge(option_sets[provider] || {})
+    return base unless video? && (narrow = video_model_option_allowlist).present?
+
+    base.merge(narrow) { |_key, provider_vals, model_vals| Array(provider_vals) & Array(model_vals) }
+  end
 
   # Drops what the chosen model doesn't offer (e.g. after a model or kind switch), then fills the gaps
   # from the inherited options and the defaults; blank means Auto. A type's own options default to their first value.
@@ -111,6 +154,24 @@ module GenerationOptions
   end
 
   private
+
+    def selected_video_model = models.find { it.model_id == options["model"] }
+
+    def video_model_allows_refs?
+      id = options["model"].to_s
+      VIDEO_WITH_REFS.include?(id) || id.match?(/\Aveo/i) || id.include?("/veo")
+    end
+
+    # Per-model duration / resolution / aspect from synced metadata, else VIDEO_MODEL_OPTIONS.
+    def video_model_option_allowlist
+      meta = selected_video_model&.metadata.to_h["video"].to_h
+      from_meta = {
+        "aspect_ratio" => meta["aspect_ratio"],
+        "resolution" => meta["resolution"],
+        "duration" => meta["duration"]
+      }.compact_blank
+      from_meta.presence || VIDEO_MODEL_OPTIONS[options["model"]]
+    end
 
     # Gemini takes raw request-body fields: Nano Banana's imageConfig, Veo's predict parameters.
     def gemini_options(opts)

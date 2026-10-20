@@ -96,7 +96,7 @@ module Accounts
 
       def workflow_params
         params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_ids: [] }, transformation_attributes: [ :kind ] ] ],
-                                         edges_attributes: [ [ :id, :from_id, :to_id, :_destroy ] ] ])
+                                         edges_attributes: [ [ :id, :from_id, :to_id, :input, :_destroy ] ] ])
       end
 
       # Saved nodes and edges only, so a rejected edit doesn't draw.
@@ -146,11 +146,21 @@ module Accounts
           # A step not running can start once all its arrows in are available.
           feeds = @graph_edges.select { it.to_id == node.id }
           ready = node.step? && runs.none?(&:running?) && feeds.any? && feeds.all? { gives[it.from_id].any? }
+          # Named ports (Video Start/End/Prompt) or one empty slot past current arrows.
+          ports = node.transformation&.ports&.map do |port|
+            muted = case port[:name]
+            when "last_frame" then !node.transformation.supports_last_frame?
+            when "reference" then !node.transformation.supports_reference?
+            else false
+            end
+            port.merge(muted:)
+          end
           [ node.id, { label: node.folder&.path || node.label, icon:, cover: node.transformation&.cover, media: node.library_media, path: workflow_path(@workflow, node: node.id, run: @run.id), frame: "inspector",
                        open: (helpers.folder_path(node.folder) if node.folder), current: node == @selected, linkable: !node.note?, x: node.x, y: node.y, shape:, note: node.note,
                        color: node.note? ? node.color : node.folder&.color,
                        kind: input ? node.gives : node.transformation&.options_label, tags: (node.tags if node.step? || node.media_folder?),
-                       gives: node.item_kind, takes: node.transformation&.takes&.join(" "), inputs: feeds.size + (node.step? ? 1 : 0),
+                       gives: node.item_kind, takes: node.transformation&.takes&.join(" "),
+                       ports:, inputs: ports ? ports.size : feeds.size + (node.step? ? 1 : 0),
                        play: @start_nodes.include?(node) || (ready && runs.empty?),
                        status: TransformationRun.status_of(runs), error: runs.filter_map(&:error).uniq.join("; ").presence, rerun: (ready && runs.any?) } ]
         end
@@ -165,7 +175,7 @@ module Accounts
           items.reject { it.is_a?(LibraryMedia) && !it.file.attached? }
         end
         @edges = @graph_edges.map do |edge|
-          [ edge.from_id, edge.to_id, { id: edge.id, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
+          [ edge.from_id, edge.to_id, { id: edge.id, input: edge.input.presence, path: workflow_path(@workflow, edge: edge.id, run: @run.id), frame: "inspector",
                                         current: edge == @selected_edge, available: gives[edge.from_id].any?,
                                         items: carried.(edge), pinned: by_id[edge.from_id].pinned_ids } ]
         end

@@ -14,7 +14,8 @@ class Transformation < ApplicationRecord
   has_many :runs, class_name: "TransformationRun", dependent: :nullify
   has_many :workflow_nodes, dependent: :restrict_with_error
 
-  delegate :ai?, :video?, :single?, :reel?, :inputs, :takes, :fits?, :picks?, :makes, :layer, :cover, to: :type, allow_nil: true
+  delegate :ai?, :video?, :single?, :reel?, :inputs, :takes, :fits?, :picks?, :makes, :layer, :cover, :ports, :item_kind,
+           to: :type, allow_nil: true
   # Only AI kinds have a prompt.
   attribute :body, default: ""
 
@@ -51,14 +52,26 @@ class Transformation < ApplicationRecord
     end.join(" · ").presence || type_label
   end
 
-  # `items` are the run's inputs, in order: its main items, then the prompts and review it picked. The result lands in
-  # `folder` with `tags` (media). `workflow_run` and its step `workflow_node` the run it's a step run of, if any.
-  # `user` owns the result.
+  # `items` are the run's inputs: a Hash of input name => items (workflow batches), or a flat Array (ad-hoc / tests).
+  # The result lands in `folder` with `tags` (media). `workflow_run` and its step `workflow_node` the run it's a step
+  # run of, if any. `user` owns the result.
   # Runs the transformation as it is in memory, unsaved edits included (see TransformationRun#start!).
   # Raises ActiveRecord::RecordInvalid when the items don't fit or an option isn't available.
-  def run!(items:, folder:, user: items.first&.user, tags: [], workflow_run: nil, workflow_node: nil)
-    runs.new(workflow_run:, workflow_node:,
-             inputs: items.each_with_index.map { |item, position| TransformationRunInput.new(item:, position:) })
-      .start!(user, folder:, tags:)
+  def run!(items:, folder:, user: nil, tags: [], workflow_run: nil, workflow_node: nil)
+    rows = input_rows(items)
+    user ||= rows.filter_map { it.item.try(:user) }.first
+    runs.new(workflow_run:, workflow_node:, inputs: rows).start!(user, folder:, tags:)
   end
+
+  private
+
+    def input_rows(items)
+      case items
+      when Hash
+        items.flat_map { |name, list| Array(list).map { |item| TransformationRunInput.new(item:, input: name.to_s) } }
+          .each_with_index { |row, position| row.position = position }
+      else
+        Array(items).each_with_index.map { |item, position| TransformationRunInput.new(item:, position:) }
+      end
+    end
 end

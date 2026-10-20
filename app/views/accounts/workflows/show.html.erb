@@ -143,7 +143,9 @@
     <%= form_with model: @workflow, class: "hidden", data: { workflow_target: "connect" } do %>
       <%= hidden_field_tag "workflow[edges_attributes][0][id]", nil, id: nil, data: { workflow_target: "edge" } %>
       <%= hidden_field_tag "workflow[edges_attributes][0][from_id]", nil, id: nil, data: { workflow_target: "from" } %>
-      <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>    <% end %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][to_id]", nil, id: nil, data: { workflow_target: "to" } %>
+      <%= hidden_field_tag "workflow[edges_attributes][0][input]", nil, id: nil, data: { workflow_target: "input" } %>
+    <% end %>
     <%= form_with url: copy_workflow_path(@workflow, run: @run.id), class: "hidden", data: { workflow_target: "copy" } do %>
       <%= hidden_field_tag :node_id, nil, id: nil, data: { workflow_target: "copyNode" } %>
       <%= hidden_field_tag :x, nil, id: nil, data: { workflow_target: "copyX" } %>
@@ -208,10 +210,20 @@
     <% close = link_to(here, data: top, aria: { label: "Close" }, class: icon_button) { heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } } %>
     <% if (edge = @selected_edge) %>
       <header class="-ml-2 flex items-center gap-1">
-        <h2 class="<%= title %>"><%= edge.from.label %> → <%= edge.to.label %></h2>
+        <h2 class="<%= title %>">
+          <%= edge.from.label %> → <%= edge.to.label %>
+          <% if edge.input.present? %>
+            <span class="ml-1 font-normal text-ink-500">(<%= edge.input.humanize %>)</span>
+          <% end %>
+        </h2>
         <%= render "shared/admin_links/workflow_element", element: edge, trigger_class: icon_button %>
         <%= close %>
       </header>
+      <% if edge.input == "last_frame" && edge.to.transformation && !edge.to.transformation.supports_last_frame? %>
+        <p class="<%= tw_alert_error_classes %>" role="alert">This model only uses the start frame. Disconnect End or pick another model.</p>
+      <% elsif edge.input == "reference" && edge.to.transformation && !edge.to.transformation.supports_reference? %>
+        <p class="<%= tw_alert_error_classes %>" role="alert">This model doesn't take reference images. Disconnect Refs or pick another model.</p>
+      <% end %>
     <% elsif (node = @selected) %>
       <header class="-ml-2 flex items-center gap-1">
         <% if node.step? %>
@@ -239,6 +251,14 @@
       <% start = @start_nodes.include?(node) %>
       <% @node_runs.filter_map(&:error).uniq.each do |error| %>
         <p class="<%= tw_alert_error_classes %>" role="alert"><%= error %></p>
+      <% end %>
+      <% if node.step? && node.transformation.video? && !node.transformation.supports_last_frame? &&
+            @graph_edges.any? { it.to_id == node.id && it.input == "last_frame" } %>
+        <p class="<%= tw_alert_error_classes %>" role="alert">This model only uses the start frame. Disconnect End or pick another model.</p>
+      <% end %>
+      <% if node.step? && node.transformation.video? && !node.transformation.supports_reference? &&
+            @graph_edges.any? { it.to_id == node.id && it.input == "reference" } %>
+        <p class="<%= tw_alert_error_classes %>" role="alert">This model doesn't take reference images. Disconnect Refs or pick another model.</p>
       <% end %>
 
       <% unless node.note? %>

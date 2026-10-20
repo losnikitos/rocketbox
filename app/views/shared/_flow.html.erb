@@ -130,10 +130,21 @@
               </span>
             <% end %>
           </span>
-          <%# Arrows in attach to these, top to bottom in their sources' order (flow_controller). %>
-          <span class="absolute inset-y-0 -left-2 flex flex-col justify-evenly" aria-hidden="true">
-            <% [ n[:inputs].to_i, 1 ].max.times do %>
-              <span data-flow-input class="<%= port %>"></span>
+          <%# Arrows in attach to these: named ports (Video Start/End/Refs/Prompt) or one per arrow plus an empty slot. %>
+          <span class="absolute inset-y-0 -left-2 flex flex-col justify-evenly gap-1" aria-hidden="true">
+            <% if n[:ports] %>
+              <% n[:ports].each do |p| %>
+                <span data-flow-input="<%= p[:name] %>" data-takes="<%= p[:name] == "prompt" ? "prompt" : "media" %>"
+                      <%= "data-muted" if p[:muted] %>
+                      title="<%= [ p[:label], ({ "last_frame" => "This model only uses the start frame", "reference" => "This model doesn't take reference images" }[p[:name]] if p[:muted]) ].compact.join(" — ") %>"
+                      class="<%= port %> <%= "opacity-40" if p[:muted] %> flex items-center">
+                  <span class="absolute right-full mr-1.5 text-[0.625rem] leading-none font-medium whitespace-nowrap text-ink-500"><%= p[:label] %></span>
+                </span>
+              <% end %>
+            <% else %>
+              <% [ n[:inputs].to_i, 1 ].max.times do %>
+                <span data-flow-input class="<%= port %>"></span>
+              <% end %>
             <% end %>
           </span>
         <% elsif n[:shape] == :note %>

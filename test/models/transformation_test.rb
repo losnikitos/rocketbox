@@ -56,7 +56,10 @@ class TransformationTest < ActiveSupport::TestCase
   end
 
   test "a video animates its inputs into a video" do
-    assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", Transformation.new(kind: "generate_video").options_label
+    video = Transformation.new(kind: "generate_video")
+    assert_equal "grok-imagine-video-1.5 · 9:16 · 720p · 8 s", video.options_label
+    assert_equal [ { first_frame: 1..1, last_frame: 0..1, reference: 0.., prompt: 0.. }, %i[media prompt], %i[first last] ],
+      [ video.inputs, video.takes, video.video_frame_roles ]
     calls = []
     RubyLLM.define_singleton_method(:animate) do |prompt, with:, **|
       calls << [ prompt, *Array(with).map { it.filename.to_s } ]
@@ -71,6 +74,47 @@ class TransformationTest < ActiveSupport::TestCase
     assert_equal [ [ "Slow cinematic push-in on the shop.", "room.jpg" ] ], calls
     assert_equal "complete", run.reload.status
     assert_equal "mp4-bytes", run.generated_media.file.download
+  end
+
+  test "a first-frame-only model refuses an end frame" do
+    RubyLLM::ActiveRecord::Model.create!(provider: "openrouter", model_id: "runway/gen-4.5", name: "Runway Gen-4.5", enabled: true,
+      modalities: { "input" => %w[text image], "output" => %w[video] }, price_band: 2)
+    before, after = photo("before.jpg", :photobank_customer), photo("after.jpg", :photobank_customer)
+    run = transformations(:cinematic).dup.tap { it.update!(options: { "model" => "runway/gen-4.5" }) }
+      .then { start(it, [ before, after ]) }
+
+    assert_equal %i[first], run.transformation.video_frame_roles
+    assert_equal %w[720p], run.transformation.option_choices["resolution"]
+    run.run!
+    assert_equal "failed", run.reload.status
+    assert_match(/only uses the start frame/, run.error)
+  end
+
+  test "a video sends reference images via provider_options" do
+    RubyLLM::ActiveRecord::Model.create!(provider: "openrouter", model_id: "bytedance/seedance-2.0-fast", name: "Seedance 2.0 Fast",
+      enabled: true, modalities: { "input" => %w[text image], "output" => %w[video] }, price_band: 1)
+    calls = []
+    RubyLLM.define_singleton_method(:animate) do |prompt, with:, provider:, provider_options:, **|
+      calls << { with: Array(with).map { it&.filename.to_s }, provider:, provider_options: }
+      Struct.new(:to_blob).new("mp4-bytes")
+    end
+    start_img, ref = photo("start.jpg", :photobank_customer), photo("ref.jpg", :photobank_customer)
+    video = transformations(:cinematic).dup.tap { it.update!(options: { "model" => "bytedance/seedance-2.0-fast" }) }
+    assert_equal %i[first last refs], video.video_frame_roles
+
+    start(video, { first_frame: [ start_img ], reference: [ ref ] }).tap(&:run!)
+    assert_equal [ "start.jpg" ], calls.last[:with]
+    assert_equal 1, calls.last[:provider_options][:input_references].size
+    assert_match %r{\Adata:image/jpeg;base64,}, calls.last[:provider_options][:input_references].sole.dig(:image_url, :url)
+  end
+
+  test "a model without refs refuses reference images" do
+    start_img, ref = photo("start.jpg", :photobank_customer), photo("ref.jpg", :photobank_customer)
+    run = start(transformations(:cinematic), { first_frame: [ start_img ], reference: [ ref ] })
+    assert_not run.transformation.supports_reference?
+    run.run!
+    assert_equal "failed", run.reload.status
+    assert_match(/doesn't take reference images/, run.error)
   end
 
   test "a video with two images pins first and last frames via provider_options" do

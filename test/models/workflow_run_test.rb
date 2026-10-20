@@ -90,7 +90,7 @@ class WorkflowRunTest < ActiveSupport::TestCase
     assert_nil second.step_runs.first.reused_from
   end
 
-  test "a many-media step takes a folder's newest media in one step run, and a one-media step runs once per media of every arrow in" do
+  test "a video runs once per start frame, and a one-media step runs once per media of every arrow in" do
     user = users(:lazaro_nixon)
     older, newer = [ 1.day.ago, 1.hour.ago ].map { user.library_media.create!(kind: "photo", folder: folders(:exterior), created_at: it, file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" }) }
     inside = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
@@ -98,9 +98,10 @@ class WorkflowRunTest < ActiveSupport::TestCase
     exterior, interior, video, crop = [ { folder: folders(:exterior), take: 2 }, { folder: folders(:interior) },
       { transformation_attributes: { kind: "generate_video", body: "Pan" } }, { transformation_attributes: { kind: "smart_crop" } } ].map { workflow.nodes.create!(it) }
     [ [ exterior, video ], [ exterior, crop ], [ interior, crop ] ].each { |from, to| workflow.edges.create!(from:, to:) }
+    assert_equal "first_frame", workflow.edges.find_by!(from: exterior, to: video).input
 
     workflow.latest_run.start!([ exterior, interior ], user)
-    assert_equal [ [ video, [ newer, older ] ], [ crop, [ newer ] ], [ crop, [ older ] ], [ crop, [ inside ] ] ],
+    assert_equal [ [ video, [ newer ] ], [ video, [ older ] ], [ crop, [ newer ] ], [ crop, [ older ] ], [ crop, [ inside ] ] ],
       workflow.latest_run.step_runs.reload.map { [ it.workflow_node, it.source_media ] }
   end
 
@@ -304,5 +305,40 @@ class WorkflowRunTest < ActiveSupport::TestCase
     run.start!(folder, user)
     assert_equal "#{step.label}: needs 1+ image, got 0", run.reload.error
     assert_empty run.step_runs
+  end
+
+  test "a video takes Start and End from separate arrows" do
+    user = users(:lazaro_nixon)
+    start_img = user.library_media.create!(kind: "photo", folder: folders(:exterior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    end_img = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Frames")
+    exterior, interior, video = [ { folder: folders(:exterior) }, { folder: folders(:interior) },
+      { transformation_attributes: { kind: "generate_video", body: "Morph." } } ].map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: exterior, to: video)
+    workflow.edges.create!(from: interior, to: video)
+    assert_equal %w[first_frame last_frame], workflow.edges.order(:id).pluck(:input)
+
+    workflow.latest_run.start!([ exterior, interior ], user)
+    run = workflow.latest_run.step_runs.reload.sole
+    assert_equal [ start_img, end_img ], run.source_media
+    assert_equal({ first_frame: [ start_img ], last_frame: [ end_img ], reference: [], prompt: [] }, run.assigned_inputs)
+  end
+
+  test "a video takes Start and Refs without stealing Refs into End" do
+    user = users(:lazaro_nixon)
+    RubyLLM::ActiveRecord::Model.create!(provider: "openrouter", model_id: "bytedance/seedance-2.0-fast", name: "Seedance",
+      enabled: true, modalities: { "input" => %w[text image], "output" => %w[video] }, price_band: 1)
+    start_img = user.library_media.create!(kind: "photo", folder: folders(:exterior), file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    ref = user.library_media.create!(kind: "photo", folder: folders(:interior), file: { io: StringIO.new("img"), filename: "b.jpg", content_type: "image/jpeg" })
+    workflow = Workflow.create!(name: "Refs")
+    exterior, interior, video = [ { folder: folders(:exterior) }, { folder: folders(:interior) },
+      { transformation_attributes: { kind: "generate_video", body: "Morph.", options: { "model" => "bytedance/seedance-2.0-fast" } } } ]
+      .map { workflow.nodes.create!(it) }
+    workflow.edges.create!(from: exterior, to: video, input: "first_frame")
+    workflow.edges.create!(from: interior, to: video, input: "reference")
+
+    workflow.latest_run.start!([ exterior, interior ], user)
+    run = workflow.latest_run.step_runs.reload.sole
+    assert_equal({ first_frame: [ start_img ], last_frame: [], reference: [ ref ], prompt: [] }, run.assigned_inputs)
   end
 end

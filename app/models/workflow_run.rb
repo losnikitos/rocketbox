@@ -127,7 +127,7 @@ class WorkflowRun < ApplicationRecord
       given = given_to(step, user) or return
       short = transformation.inputs.select { |kind, count| given[kind].size < count.begin }
       return if short.empty?
-      short.map { |kind, count| "needs #{count.begin}+ #{kind.to_s.pluralize(count.begin)}, got #{given[kind].size}" }.to_sentence
+      short.map { |name, count| "needs #{count.begin}+ #{name.to_s.humanize(capitalize: false).pluralize(count.begin)}, got #{given[name].size}" }.to_sentence
     end
 
     # A step run stands while it hasn't failed, took the batch and its picks are still given, and its transformation
@@ -135,10 +135,13 @@ class WorkflowRun < ApplicationRecord
     def stands?(run, batch, sides) = !run.failed? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
 
     # Whether the step run took `batch`, and one item per arrow it picks from that's still given there.
+    # `batch` is a Hash of input name => items (see batches_of).
     def matches?(run, batch, sides)
       transformation = run.transformation
-      picked, items = run.sources.partition { transformation.picks?(it.item_kind) }
-      items == batch && picked.size == sides.size && picked.zip(sides).all? { |item, given| given.include?(item) }
+      picked = run.sources.select { transformation.picks?(it.item_kind) }
+      assigned = run.assigned_inputs.reject { |name, _| transformation.picks?(name) }
+      expected = batch.reject { |name, _| transformation.picks?(name) }.transform_values { Array(it) }
+      assigned == expected && picked.size == sides.size && picked.zip(sides).all? { |item, given| given.include?(item) }
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands, copied into this one
@@ -180,14 +183,31 @@ class WorkflowRun < ApplicationRecord
       result&.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
     end
 
-    # What the arrows into the step give now, by its type's input kind, in the order they were connected, each input
-    # only the items that fit it (an image input skips videos), e.g. { image: [...], prompt: [...] }; nil while an
-    # arrow gives nothing.
+    # What the arrows into the step give now, by its type's input name, each input only the items that fit it (an
+    # image / frame input skips videos). Named ports pin an arrow (`edge.input`); otherwise items match by kind.
+    # e.g. { first_frame: [...], last_frame: [...], prompt: [...] }; nil while an arrow gives nothing.
     def given_to(step, user, cached: false)
       transformation = step.transformation
-      given = edges.select { it.to_id == step.id }.map { output_of(it.from, user, cached:) }
-      return if given.any?(&:empty?)
-      transformation.inputs.keys.index_with { |kind| given.flatten.select { transformation.fits?(kind, it) }.uniq }
+      incoming = edges.select { it.to_id == step.id }.map { |edge| [ edge, output_of(edge.from, user, cached:) ] }
+      return if incoming.any? { |_, items| items.empty? }
+
+      given = transformation.inputs.keys.index_with { [] }
+      incoming.each do |edge, items|
+        name = resolve_input(transformation, edge, items) or next
+        given[name].concat(items.select { transformation.fits?(name, it) })
+      end
+      given.transform_values(&:uniq)
+    end
+
+    # The input name an edge feeds: its `input` when set, else the sole fitting input (or :image / :media among roles).
+    def resolve_input(transformation, edge, items)
+      if edge.input.present?
+        name = edge.input.to_sym
+        return name if transformation.inputs.key?(name)
+      end
+      keys = transformation.inputs.keys.select { |name| items.any? { transformation.fits?(name, it) } }
+      return keys.first if keys.one?
+      keys.find { it.in?(%i[image media video]) } || keys.first
     end
 
     # What each arrow a step run picks one item of gives, in the order they were connected, e.g. [[shot, ...], [style, ...]].
@@ -198,17 +218,18 @@ class WorkflowRun < ApplicationRecord
       end
     end
 
-    # The items of each step run the step makes from what its arrows give now, its picks aside, inputs in the type's
-    # order: a media input of 1 one step run per item, any other input all its items in each. None while an arrow
+    # The items of each step run the step makes from what its arrows give now, its picks aside, as a Hash per input
+    # name: a media input of 1 one step run per item, any other input all its items in each. None while an arrow
     # gives nothing or an input gets fewer than it takes; one with no items for a step taking none and given nothing.
     def batches_of(step, user, cached: false)
       transformation = step.transformation
       given = given_to(step, user, cached:) or return []
       return [] if transformation.inputs.any? { |kind, count| given[kind].size < count.begin }
       fixed = given.reject { |kind, _| transformation.picks?(kind) }
-      fans = fixed.keys.select { transformation.inputs[it].end == 1 }
+      # Fan inputs of 1 (one step run per item); skip empty optional ones so a free End doesn't wipe Start's batches.
+      fans = fixed.keys.select { |name| transformation.inputs[name].end == 1 && fixed[name].any? }
       runs = fans.reduce([ {} ]) { |acc, kind| acc.flat_map { |run| fixed[kind].map { run.merge(kind => [ it ]) } } }
-      runs.map { |run| fixed.flat_map { |kind, items| run[kind] || items } }
+      runs.map { |run| fixed.to_h { |kind, items| [ kind, run[kind] || items ] } }
     end
 
     # A node's output in this run: a folder what's picked of it, a media itself, a step what its step runs made, in its
@@ -235,7 +256,12 @@ class WorkflowRun < ApplicationRecord
     # newest review.
     def start_step(step, batch, sides, user)
       picks = sides.map { it.first.is_a?(Prompt) ? it.sample : it.first }
-      step.transformation.run!(items: batch + picks, user:, folder: output_folder(step), tags: step.tags, workflow_run: self, workflow_node: step)
+      named = batch.transform_values { Array(it) }
+      picks.each do |item|
+        name = step.transformation.inputs.keys.find { |n| step.transformation.picks?(n) && step.transformation.fits?(n, item) }
+        named[name] = named.fetch(name, []) + [ item ] if name
+      end
+      step.transformation.run!(items: named, user:, folder: output_folder(step), tags: step.tags, workflow_run: self, workflow_node: step)
     rescue ActiveRecord::RecordInvalid => e
       update!(error: "#{step.label}: #{e.record.errors.full_messages.to_sentence}")
     end

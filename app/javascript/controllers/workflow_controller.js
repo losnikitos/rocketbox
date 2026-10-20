@@ -6,7 +6,7 @@ import { Turbo } from "@hotwired/turbo-rails"
 // + Add items, sidebar folders or a folder's media from the inspector dropped on the canvas there, or clicked, in the middle
 // of the view.
 export default class extends Controller {
-  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "copy", "copyNode", "copyX", "copyY", "remove", "item"]
+  static targets = ["add", "x", "y", "connect", "edge", "from", "to", "input", "copy", "copyNode", "copyX", "copyY", "remove", "item"]
   static values = { url: String }
   static outlets = ["flow"]
 
@@ -24,10 +24,11 @@ export default class extends Controller {
     Turbo.visit(this.urlValue, { frame: "inspector", action: "advance" })
   }
 
-  link({ detail: { id, from, to } }) {
+  link({ detail: { id, from, to, input } }) {
     this.edgeTarget.value = id ?? ""
     this.fromTarget.value = from
     this.toTarget.value = to
+    if (this.hasInputTarget) this.inputTarget.value = input ?? ""
     this.connectTarget.requestSubmit()
   }
 

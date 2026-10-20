@@ -27,10 +27,11 @@ export default class extends Controller {
       const first = el.firstElementChild, anchor = first.offsetHeight / 2, id = el.dataset.id
       el.querySelectorAll("[data-flow-handle]").forEach(it => it.style.top = `${anchor}px`)
       el.querySelectorAll("[data-flow-play]").forEach(it => Object.assign(it.style, { top: `${first.offsetTop}px`, left: `${first.offsetLeft}px` }))
-      // Ports sit in a column flush with the node's top.
-      const inputs = [...el.querySelectorAll("[data-flow-input]")].map(port => port.offsetTop + port.offsetHeight / 2)
+      // Ports sit in a column flush with the node's top; named ones (data-flow-input="first_frame") pin arrows by role.
+      const portEls = [...el.querySelectorAll("[data-flow-input]")]
+      const inputs = portEls.map(port => port.offsetTop + port.offsetHeight / 2)
       const { x, y } = placed[id] || el.dataset
-      g.setNode(id, { el, x: +x, y: +y, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs })
+      g.setNode(id, { el, x: +x, y: +y, width: el.offsetWidth, height: el.offsetHeight, anchor, inputs, portEls })
       place(g.node(id))
     })
     this.edgesValue.forEach(([from, to, edge]) => g.setEdge(from, to, { ...edge }))
@@ -258,18 +259,29 @@ export default class extends Controller {
     if (!l) return
     const node = this.droppable(event)
     this.nodeTargets.forEach(el => el.toggleAttribute("data-flow-drop", el === node?.el))
-    const port = node && l.side > 0 ? node.inputs[this.others(node, l.edge).length] : undefined
-    const loose = node ? anchor(node, -l.side, port) : this.point(event)
+    l.port = undefined
+    let portY
+    if (node && l.side > 0) {
+      const named = this.pickPort(node, event, l)
+      if (named) {
+        l.port = named.input
+        portY = named.y
+      } else {
+        portY = node.inputs[this.others(node, l.edge).length]
+      }
+    }
+    const loose = node ? anchor(node, -l.side, portY) : this.point(event)
     this.draw()
     this.edgesTarget.insertAdjacentHTML("beforeend", `<path d="${l.side > 0 ? curve(l.start, loose) : curve(loose, l.start)}" class="stroke-rocket" />`)
   }
 
   // Dropped on a node it can attach to: flow:linked with both ids, and the edge's id when one was moved. Anywhere else
-  // it snaps back.
+  // it snaps back. Named ports pass their input name.
   attach(event) {
     const l = this.linking
     if (!l) return
     const node = this.droppable(event)
+    const input = l.port
     this.linking = null
     // The press ends in a click on the node's link; don't follow it.
     this.dragged = true
@@ -278,14 +290,15 @@ export default class extends Controller {
     this.release()
     if (!node) return
     const [from, to] = l.side > 0 ? [l.fixed, node.el.dataset.id] : [node.el.dataset.id, l.fixed]
-    this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to } })
+    this.dispatch("linked", { detail: { id: l.edge && this.graph.edge(l.edge).id, from, to, input } })
   }
 
   // The node under the pointer the loose end may attach to, mirroring WorkflowEdge: not the fixed node, a step at one
   // end, no arrow into a source (data-source), no note (data-note) at either end, the kind of items the start gives
   // (data-gives) one a step takes (data-takes) or a folder holds, and not connected that way already, unless by the
-  // edge being moved.
-  droppable({ clientX, clientY }) {
+  // edge being moved. Into a step with named ports, only when a free unmuted port takes that kind.
+  droppable(event) {
+    const { clientX, clientY } = event
     const el = document.elementFromPoint(clientX, clientY)?.closest("[data-flow-target~='node']")
     if (!el || !this.element.contains(el)) return
     const g = this.graph, { fixed, side, edge } = this.linking, [v, w] = side > 0 ? [fixed, el.dataset.id] : [el.dataset.id, fixed]
@@ -294,7 +307,31 @@ export default class extends Controller {
     if (!("step" in g.node(v).el.dataset || "step" in g.node(w).el.dataset)) return
     const gives = g.node(v).el.dataset.gives, into = g.node(w).el.dataset
     if ("step" in into ? !into.takes?.split(" ").includes(gives) : into.gives !== gives) return
-    return g.node(el.dataset.id)
+    const node = g.node(el.dataset.id)
+    if (side > 0 && this.namedPorts(node).length && !this.pickPort(node, event, this.linking)) return
+    return node
+  }
+
+  // Named input ports on a step (Start / End / Prompt); empty for dynamic ports.
+  namedPorts(node) {
+    return (node.portEls || []).filter(p => p.dataset.flowInput)
+  }
+
+  // Nearest free unmuted port on `node` that takes what the arrow carries; null when none.
+  pickPort(node, { clientX, clientY }, linking) {
+    const ports = this.namedPorts(node)
+    if (!ports.length) return null
+    const fromId = linking.side > 0 ? linking.fixed : node.el.dataset.id
+    const gives = this.graph.node(fromId).el.dataset.gives
+    const taken = new Set(this.others(node, linking.edge).map(e => this.graph.edge(e).input).filter(Boolean))
+    const free = ports.filter(p => !("muted" in p.dataset) && !taken.has(p.dataset.flowInput) && (!p.dataset.takes || p.dataset.takes === gives))
+    if (!free.length) return null
+    const { y } = this.point({ clientX, clientY })
+    const top = node.y - node.height / 2
+    return free.map(p => {
+      const i = node.portEls.indexOf(p)
+      return { input: p.dataset.flowInput, y: node.inputs[i], dist: Math.abs(top + node.inputs[i] - y) }
+    }).sort((a, b) => a.dist - b.dist)[0]
   }
 
   // The arrows into `node` besides `moving`.
@@ -308,11 +345,12 @@ export default class extends Controller {
     return { x: (clientX - box.left - x) / scale, y: (clientY - box.top - y) / scale }
   }
 
-  // Where an edge leaves its source and enters its target. Edges in take the target's ports top to bottom in their
-  // sources' order, so they don't cross.
+  // Where an edge leaves its source and enters its target. Named ports pin by edge.input; otherwise ports are taken
+  // top to bottom in their sources' order so they don't cross.
   anchors({ v, w }) {
-    const g = this.graph, target = g.node(w)
-    const port = g.inEdges(w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(v)
+    const g = this.graph, target = g.node(w), input = g.edge(v, w).input
+    let port = input && target.portEls ? target.portEls.findIndex(p => p.dataset.flowInput === input) : -1
+    if (port < 0) port = g.inEdges(w).map(i => i.v).sort((a, b) => g.node(a).y - g.node(b).y).indexOf(v)
     return [anchor(g.node(v), 1), anchor(target, -1, target.inputs[port])]
   }
 

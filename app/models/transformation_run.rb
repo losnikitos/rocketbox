@@ -52,6 +52,24 @@ class TransformationRun < ApplicationRecord
   def prompts = sources.grep(Prompt)
   def review = sources.grep(Review).last
 
+  # Sources slotted into the type's named inputs: by `TransformationRunInput#input` when set, else greedily in
+  # input order (ad-hoc runs without port names).
+  def assigned_inputs
+    if inputs.any? { it.input.present? }
+      transformation.inputs.keys.index_with { [] }.tap do |out|
+        inputs.each { |row| out[row.input.to_sym] << row.item if out.key?(row.input.to_sym) }
+      end
+    else
+      remaining = sources.dup
+      transformation.inputs.to_h do |name, count|
+        matching = remaining.select { transformation.fits?(name, it) }
+        take = matching.first([ count.end, matching.size ].compact.min)
+        remaining -= take
+        [ name, take ]
+      end
+    end
+  end
+
   # Its result when that's a media or a prompt.
   def generated_media = (result if result.is_a?(LibraryMedia))
   def generated_prompt = (result if result.is_a?(Prompt))
@@ -86,16 +104,18 @@ class TransformationRun < ApplicationRecord
 
     def single_over_video? = transformation.single? && source_media.first&.video?
 
-    # Every item fits one of the type's inputs, each input gets as many as it takes, and every item is the result's
-    # owner's (a prompt may be shared).
+    # Every item fits one of the type's inputs, each input gets as many as it takes (items assigned greedily in input
+    # order so Start / End / Refs don't double-count the same photos), and every item is the result's owner's (a prompt
+    # may be shared).
     def items_fit_transformation
       items, inputs, owner = sources, transformation.inputs, result&.user_id
-      fits = items.all? && items.uniq.size == items.size &&
+      assigned = assigned_inputs
+      leftover = items.size - assigned.values.sum(&:size)
+      fits = items.all? && items.uniq.size == items.size && leftover.zero? &&
         items.all? { it.user_id == owner || (it.is_a?(Prompt) && it.user_id.nil?) } &&
-        items.all? { |item| inputs.keys.any? { transformation.fits?(it, item) } } &&
-        inputs.all? { |kind, count| count.cover?(items.count { transformation.fits?(kind, it) }) }
+        inputs.all? { |name, count| count.cover?(assigned[name].size) }
       unless fits
-        wanted = inputs.map { |kind, count| "#{count.begin}..#{count.end || "n"} #{kind.to_s.pluralize}" }.to_sentence
+        wanted = inputs.map { |name, count| "#{count.begin}..#{count.end || "n"} #{name.to_s.pluralize}" }.to_sentence
         errors.add(:base, "Give it #{wanted.presence || "nothing"}.")
       end
       errors.add(:base, "Add a prompt.") if transformation.ai? && transformation.body.blank?

@@ -39,25 +39,40 @@ class Transformation::Type
 
   def self.reel? = false
 
-  # What a step run takes: input kind => how many, as a Range (1..1, 0..1, 1.. or 0..). Kinds: :image, :video, :media
-  # (either), :prompt, :review. In a workflow, a media input of 1 runs once per item it's given; a prompt or review input
-  # picks one per arrow into it (a prompt at random, the newest review; see picks?); any other input gets all its items
-  # in each step run. An :image or :video input skips the media that isn't one.
+  # What a step run takes: input name => how many, as a Range (1..1, 0..1, 1.. or 0..). Names are kinds (:image,
+  # :video, :media, :prompt, :review) or roles that share a kind (`first_frame` / `last_frame` / `reference` → images).
+  # In a workflow, a media input of 1 runs once per item it's given; a prompt or review input picks one per arrow into
+  # it (a prompt at random, the newest review; see picks?); any other input gets all its items in each step run. An
+  # :image / frame role or :video input skips the media that isn't one. Named ports (`ports`) pin an arrow to one
+  # input; without them, arrows are matched by kind.
   def self.inputs = { media: 1..1 }
+
+  # Labeled ports on the canvas for types with role inputs (e.g. Video's Start / End / Refs); nil keeps dynamic ports.
+  def self.ports = nil
 
   # The item kinds its inputs take (:media, :prompt, :review): what an arrow in may carry.
   def self.takes = inputs.keys.map { item_kind(it) }.uniq
 
-  # The item kind an input of `kind` takes.
-  def self.item_kind(kind) = kind.in?(%i[image video]) ? :media : kind
-
-  # Whether `item` fits an input of `kind`.
-  def self.fits?(kind, item)
-    item.item_kind == item_kind(kind) && (kind != :image || item.story_image?) && (kind != :video || item.video?)
+  # The item kind an input of `name` takes.
+  def self.item_kind(name)
+    case name
+    when :image, :video, :media, :first_frame, :last_frame, :reference then :media
+    else name
+    end
   end
 
-  # Whether an input of `kind` picks one item per arrow into it per step run instead of taking them as given.
-  def self.picks?(kind) = kind.in?(%i[prompt review])
+  # Whether `item` fits an input of `name`.
+  def self.fits?(name, item)
+    return false unless item.item_kind == item_kind(name)
+    case name
+    when :image, :first_frame, :last_frame, :reference then item.story_image?
+    when :video then item.video?
+    else true
+    end
+  end
+
+  # Whether an input of `name` picks one item per arrow into it per step run instead of taking them as given.
+  def self.picks?(name) = name.in?(%i[prompt review])
 
   # The item kind its step runs make.
   def self.makes = :media
