@@ -29,7 +29,11 @@
       <% end %>
       <input type="checkbox" id="app-nav-toggle" class="peer sr-only">
 
-      <aside class="hidden w-60 shrink-0 flex-col max-sm:peer-checked:flex sm:flex sm:sticky sm:top-0 sm:h-screen sm:py-4 sm:pl-3">
+      <label for="app-nav-toggle"
+             class="fixed inset-0 z-40 hidden bg-ink-900/40 max-sm:peer-checked:block sm:hidden"
+             aria-label="Close menu"></label>
+
+      <aside class="hidden w-60 shrink-0 flex-col py-4 pl-3 max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:z-50 max-sm:h-dvh max-sm:bg-white max-sm:peer-checked:flex sm:flex sm:sticky sm:top-0 sm:h-screen">
         <div class="flex items-center justify-between px-3 pt-2">
           <%= render "shared/logo" %>
           <button type="button" data-action="command-panel#open" aria-label="Search" title="Search (⌘K)"
