@@ -85,7 +85,7 @@ jobs:
           bundler-cache: true
 
       - name: Install libvips and ffmpeg
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips ffmpeg
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips libheif1 libde265-0 ffmpeg
 
       - name: Run tests
         env:

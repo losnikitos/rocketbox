@@ -120,6 +120,6 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     get admin_url(account: admin.id)
 
     assert_response :success
-    assert_select "h2", "Meta"
+    assert_select "a", text: /Meta app/
   end
 end
