@@ -55,4 +55,36 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_nil @user.reload.password_digest
   end
+
+  test "user can delete their own account" do
+    assert_difference("User.count", -1) do
+      delete profile_settings_url
+    end
+
+    assert_redirected_to sign_in_url
+    assert_not User.exists?(@user.id)
+  end
+
+  test "admin can delete another account" do
+    sign_in_as(users(:admin_user))
+    customer = users(:lazaro_nixon)
+
+    assert_difference("User.count", -1) do
+      delete profile_settings_url(account: customer.id)
+    end
+
+    assert_redirected_to onboarding_url(account: users(:admin_user).id)
+    assert_not User.exists?(customer.id)
+  end
+
+  test "admin cannot delete the signed-in account" do
+    admin = sign_in_as(users(:admin_user))
+
+    assert_no_difference("User.count") do
+      delete profile_settings_url(account: admin.id)
+    end
+
+    assert_redirected_to profile_settings_url(account: admin.id)
+    assert User.exists?(admin.id)
+  end
 end

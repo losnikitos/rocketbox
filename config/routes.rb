@@ -102,7 +102,7 @@ Rails.application.routes.draw do
     end
 
     scope path: "profile", as: "profile", module: :accounts do
-      resource :settings, only: [ :show, :update ]
+      resource :settings, only: [ :show, :update, :destroy ]
       get "instagram/authorize", to: "instagram_authorizations#new", as: :instagram_authorize
       get "instagram/callback", to: "instagram_authorizations#callback", as: :instagram_callback
       post "instagram/refresh", to: "instagram_authorizations#refresh", as: :instagram_refresh

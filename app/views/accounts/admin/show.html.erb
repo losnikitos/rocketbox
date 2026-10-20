@@ -1,37 +1,128 @@
 <% content_for(:title, "Admin — Rocketbox") %>
 <% content_for(:bare, "true") %>
 
-<section class="flex flex-col gap-3 rounded-2xl border border-ink-900/10 bg-white p-6">
-  <h2 class="font-manrope text-base font-bold text-ink-900">Meta</h2>
-  <%= link_to "https://developers.facebook.com/apps/1836367217546891/dashboard/?business_id=925995145350263",
-        target: "_blank", rel: "noopener",
-        class: "inline-flex items-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
-    <%= image_tag "brands/facebook.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
-    Facebook app
-  <% end %>
-  <% {
-    "WhatsApp use case" => ["brands/whatsapp.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/wa-configurations-v2/?use_case_enum=WHATSAPP_BUSINESS_MESSAGING&selected_tab=wa-configurations-v2&product_route=whatsapp-business&business_id=925995145350263"],
-    "Instagram use case" => ["brands/instagram.svg", "https://developers.facebook.com/apps/1836367217546891/use_cases/customize/API-Setup/?product_route=instagram-business&business_id=925995145350263&use_case_enum=INSTAGRAM_BUSINESS&selected_tab=API-Setup"],
-    "App review" => ["brands/facebook.svg", "https://developers.facebook.com/apps/1836367217546891/app-review/submissions/feedback/?submission_id=1843836450133301&business_id=1235592620332534"],
-    "Business verification" => ["brands/facebook.svg", "https://business.facebook.com/latest/settings/security_center/?business_id=925995145350263"]
-  }.each do |label, (icon, url)| %>
-    <%= link_to url, target: "_blank", rel: "noopener",
-          class: "inline-flex items-center gap-2 text-sm text-ink-600 underline underline-offset-2 hover:text-ink-900" do %>
-      <%= image_tag icon, class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
-      <%= label %>
+<%
+  portfolio_id = "1235592620332534"
+  app_business_id = "925995145350263"
+  app_id = "1836367217546891"
+  submission_id = "1843836450133301"
+  system_user_id = "61594834930452"
+
+  portfolio_url = "https://business.facebook.com/latest/settings/?business_id=#{portfolio_id}"
+  app_url = "https://developers.facebook.com/apps/#{app_id}/dashboard/?business_id=#{app_business_id}"
+  whatsapp_use_case_url = "https://developers.facebook.com/apps/#{app_id}/use_cases/customize/wa-configurations-v2/?use_case_enum=WHATSAPP_BUSINESS_MESSAGING&selected_tab=wa-configurations-v2&product_route=whatsapp-business&business_id=#{app_business_id}"
+  instagram_use_case_url = "https://developers.facebook.com/apps/#{app_id}/use_cases/customize/API-Setup/?product_route=instagram-business&business_id=#{app_business_id}&use_case_enum=INSTAGRAM_BUSINESS&selected_tab=API-Setup"
+  app_review_url = "https://developers.facebook.com/apps/#{app_id}/app-review/submissions/feedback/?submission_id=#{submission_id}&business_id=#{portfolio_id}"
+
+  island = "rounded-2xl border border-ink-900/10 bg-white p-3"
+  id_class = "shrink-0 font-mono text-xs text-ink-500 select-all"
+  row = "flex items-baseline justify-between gap-3"
+%>
+
+<%# Nested Meta map as compact islands: labels left, ids right; siblings in columns. %>
+<section class="<%= island %> flex flex-col gap-3 p-4">
+  <div class="<%= row %>">
+    <%= link_to portfolio_url, target: "_blank", rel: "noopener",
+          class: "inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+      <%= image_tag "brands/facebook.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+      Business portfolio — TADAAA!
     <% end %>
-    <% if label == "WhatsApp use case" %>
-      <p class="-mt-1 pl-6 text-xs text-ink-500">
-        Verify token
-        <code class="block truncate font-mono text-ink-900 select-all"><%= WhatsappCloud.webhook_verify_token || "Not set" %></code>
-      </p>
-      <% WhatsappCloud::PHONES.each do |env, phone| %>
-        <p class="-mt-1 pl-6 text-xs text-ink-500">
-          <%= env %> number<%= " (this env)" if phone == WhatsappCloud.display_phone %>
-          <%= link_to "+#{phone}", "https://wa.me/#{phone}", target: "_blank", rel: "noopener",
-                class: "block truncate font-mono text-ink-900 underline underline-offset-2 hover:text-rocket" %>
-        </p>
+    <code class="<%= id_class %>"><%= portfolio_id %></code>
+  </div>
+
+  <div class="<%= island %> <%= row %>">
+    <span class="text-sm text-ink-900">System user</span>
+    <code class="<%= id_class %>"><%= system_user_id %></code>
+  </div>
+
+  <div class="grid gap-3 md:grid-cols-2">
+    <% WhatsappCloud::WABA_IDS.each do |env, waba_id| %>
+      <%
+        phone = WhatsappCloud::PHONES.fetch(env)
+        phone_id = WhatsappCloud::PHONE_NUMBER_IDS.fetch(env)
+        current = phone == WhatsappCloud.display_phone
+        waba_url = "https://business.facebook.com/latest/whatsapp_manager/?business_id=#{portfolio_id}&asset_id=#{waba_id}"
+        phone_url = "https://business.facebook.com/latest/whatsapp_manager/phone_numbers/?business_id=#{portfolio_id}&asset_id=#{waba_id}"
+      %>
+      <div class="<%= island %> flex flex-col gap-2">
+        <div class="<%= row %>">
+          <%= link_to waba_url, target: "_blank", rel: "noopener",
+                class: "inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+            <%= image_tag "brands/whatsapp.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+            <%= env %> WABA<%= " · this env" if current %>
+          <% end %>
+          <code class="<%= id_class %>"><%= waba_id %></code>
+        </div>
+
+        <div class="<%= island %> flex flex-col gap-1">
+          <div class="<%= row %>">
+            <%= link_to phone_url, target: "_blank", rel: "noopener",
+                  class: "min-w-0 text-sm text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+              <span class="font-mono">+<%= phone %></span>
+            <% end %>
+            <code class="<%= id_class %>"><%= phone_id %></code>
+          </div>
+          <p class="text-xs text-ink-500">
+            <%= link_to "wa.me", "https://wa.me/#{phone}", target: "_blank", rel: "noopener",
+                  class: "text-ink-900 underline underline-offset-2 hover:text-rocket" %>
+            ·
+            <% if env == "Test" %>
+              webhook → dev.rocketbox.plus
+            <% else %>
+              webhook → rocketbox.plus
+            <% end %>
+          </p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="<%= island %> flex flex-col gap-3">
+    <div class="<%= row %>">
+      <%= link_to app_url, target: "_blank", rel: "noopener",
+            class: "inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+        <%= image_tag "brands/facebook.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+        Meta app — Rocketbox
       <% end %>
-    <% end %>
-  <% end %>
+      <code class="<%= id_class %>"><%= app_id %></code>
+    </div>
+    <div class="<%= row %>">
+      <span class="text-xs text-ink-500">Developer console business</span>
+      <code class="<%= id_class %>"><%= app_business_id %></code>
+    </div>
+
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="<%= island %> flex flex-col gap-1">
+        <%= link_to whatsapp_use_case_url, target: "_blank", rel: "noopener",
+              class: "inline-flex items-center gap-2 text-sm text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+          <%= image_tag "brands/whatsapp.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+          WhatsApp
+        <% end %>
+        <p class="truncate text-xs text-ink-500">
+          verify
+          <code class="font-mono text-ink-900 select-all"><%= WhatsappCloud.webhook_verify_token || "—" %></code>
+        </p>
+      </div>
+
+      <div class="<%= island %>">
+        <%= link_to instagram_use_case_url, target: "_blank", rel: "noopener",
+              class: "inline-flex items-center gap-2 text-sm text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+          <%= image_tag "brands/instagram.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+          Instagram
+        <% end %>
+      </div>
+
+      <div class="<%= island %> flex flex-col gap-1 sm:col-span-2 lg:col-span-1">
+        <div class="<%= row %>">
+          <%= link_to app_review_url, target: "_blank", rel: "noopener",
+                class: "inline-flex min-w-0 items-center gap-2 text-sm text-ink-900 underline underline-offset-2 hover:text-rocket" do %>
+            <%= image_tag "brands/facebook.svg", class: "size-4 shrink-0", alt: "", aria: { hidden: true } %>
+            App review
+          <% end %>
+          <code class="<%= id_class %>"><%= submission_id %></code>
+        </div>
+        <p class="text-xs text-ink-500">Submitted 2026-10-03</p>
+      </div>
+    </div>
+  </div>
 </section>

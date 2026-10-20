@@ -20,10 +20,27 @@ module Accounts
       end
     end
 
+    def destroy
+      account = Current.account
+      return redirect_to(profile_settings_path, alert: "Can't delete the signed-in account.") if account == Current.user && account.admin?
+
+      label = account.account_label
+      self_delete = account == Current.user
+      account.destroy!
+
+      if self_delete
+        cookies.delete(:session_token)
+        redirect_to sign_in_path, notice: "Account deleted."
+      else
+        session.delete(:account_user_id)
+        redirect_to onboarding_path(account: Current.user.id), notice: "Deleted #{label}."
+      end
+    end
+
     private
 
       def settings_params
         params.require(:user).permit(:name, :email, :password)
       end
-  end
+    end
 end

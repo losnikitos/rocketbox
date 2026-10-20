@@ -11,6 +11,7 @@ module WhatsappCloud
   GRAPH_BASE = "https://graph.facebook.com/#{API_VERSION}"
   PHONES = { "Test" => "15551540920", "Prod" => "447451273884" }.freeze
   PHONE_NUMBER_IDS = { "Test" => "1369590492903246", "Prod" => "1344349375436017" }.freeze
+  WABA_IDS = { "Test" => "1997100320969487", "Prod" => "2946448049053569" }.freeze
 
   module_function
 

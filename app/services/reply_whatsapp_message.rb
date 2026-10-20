@@ -32,17 +32,29 @@ class ReplyWhatsappMessage
         next
       end
 
-      if user && text.strip.casecmp?("start")
+      # Unknown phone → new account + onboarding. Known phone → library / answers below.
+      unless user
+        user = User.create!(whatsapp_phone: from)
         WhatsappOnboarding.ask!(user, "business_card")
         next
       end
 
-      if user && WhatsappOnboarding.answer!(user, text)
+      if text.strip.casecmp?("start")
+        WhatsappOnboarding.ask!(user, "business_card")
+        next
+      end
+
+      if WhatsappOnboarding.answer!(user, text)
         react_ok(phone_number_id, from, message["id"]) if user.whatsapp_pending_question.nil?
         next
       end
 
-      if user && (urls = Link.urls_in(text)).any?
+      if user.whatsapp_pending_question.present?
+        WhatsappOnboarding.ask!(user, user.whatsapp_pending_question)
+        next
+      end
+
+      if (urls = Link.urls_in(text)).any?
         urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "whatsapp" } }
         react_ok(phone_number_id, from, message["id"])
         next

@@ -29,3 +29,17 @@
   <% end %>
   <%= form.submit "Save password", class: "#{tw_btn_secondary_classes} mt-3" %>
 <% end %>
+
+<section class="mt-10 max-w-lg rounded-2xl border border-signal-red/30 bg-white p-6">
+  <h2 class="font-manrope text-base font-bold text-ink-900">Danger zone</h2>
+
+  <div class="mt-4 flex items-center gap-3">
+    <div class="min-w-0 flex-1">
+      <p class="text-sm font-medium text-ink-900">Delete account</p>
+      <p class="mt-0.5 text-xs text-ink-500">Removes <%= Current.account.account_label %> and all of its data. This can't be undone.</p>
+    </div>
+    <%= button_to "Delete account", profile_settings_path, method: :delete,
+          form: { data: { turbo_confirm: "Delete #{Current.account.account_label}? This can't be undone." } },
+          class: "shrink-0 cursor-pointer rounded-lg border border-signal-red/40 px-2.5 py-1 text-xs font-semibold text-signal-red hover:bg-signal-red/5" %>
+  </div>
+</section>

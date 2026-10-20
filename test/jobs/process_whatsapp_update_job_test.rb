@@ -3,7 +3,19 @@
 require "test_helper"
 
 class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
-  test "any message from a new number creates a user once" do
+  test "text from a new number creates a user and starts onboarding" do
+    sent = capture_texts do
+      assert_difference -> { User.count }, 1 do
+        ProcessWhatsappUpdateJob.perform_now(text_payload("Hey"))
+      end
+    end
+
+    user = User.find_by!(whatsapp_phone: "15551234567")
+    assert_equal "business_card", user.whatsapp_pending_question
+    assert_equal [ WhatsappOnboarding::MESSAGES["business_card"] ], sent
+  end
+
+  test "non-text from a new number does not create a user" do
     payload = {
       "entry" => [ {
         "changes" => [ {
@@ -13,13 +25,9 @@ class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
       } ]
     }
 
-    assert_difference -> { User.count }, 1 do
-      2.times { ProcessWhatsappUpdateJob.perform_now(payload) }
+    assert_no_difference -> { User.count } do
+      ProcessWhatsappUpdateJob.perform_now(payload)
     end
-
-    user = User.find_by!(whatsapp_phone: "15551234567")
-    assert_nil user.email
-    assert_equal [ user ], IncomingMessage.where(sender: "15551234567").map(&:user).uniq
   end
 
   test "START_<code> links the phone to the existing account, once" do

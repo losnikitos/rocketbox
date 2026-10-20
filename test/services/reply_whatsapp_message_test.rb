@@ -20,6 +20,23 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     WhatsappCloud.define_singleton_method(:send_text, original)
   end
 
+  test "text from an unknown phone creates a user and starts onboarding" do
+    sent = []
+
+    original = WhatsappCloud.method(:send_text)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
+
+    assert_difference -> { User.count }, 1 do
+      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "Hey"))
+    end
+
+    user = User.find_by!(whatsapp_phone: "15551234567")
+    assert_equal [ WhatsappOnboarding::MESSAGES["business_card"] ], sent
+    assert_equal "business_card", user.whatsapp_pending_question
+  ensure
+    WhatsappCloud.define_singleton_method(:send_text, original)
+  end
+
   test "brand voice button saves the voice and asks for email, then email finishes onboarding" do
     user = users(:lazaro_nixon)
     user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "brand_voice", email: nil)
