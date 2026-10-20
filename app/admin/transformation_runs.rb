@@ -1,4 +1,5 @@
 ActiveAdmin.register TransformationRun do
+  menu parent: "Workflows"
   actions :index, :show
 
   includes :transformation, :workflow_run, :result

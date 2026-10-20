@@ -57,6 +57,12 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     assert_equal "email", user.reload.whatsapp_pending_question
     assert_equal [ WhatsappOnboarding::MESSAGES["email"] ] * 2, sent
 
+    users(:admin_user).update!(email: "taken@cuts.example")
+    ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "taken@cuts.example"))
+    assert_equal "email", user.reload.whatsapp_pending_question
+    assert_nil user.email
+    assert_equal "That email is already on another Rocketbox account. Send a different one.", sent.last
+
     ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: " Ada@Cuts.example "))
     user.reload
     assert_equal "ada@cuts.example", user.email
