@@ -61,6 +61,12 @@ Rails.application.routes.draw do
       resources :transformations, only: %i[show update] do
         get "originals/:kind", action: :original, on: :collection, as: :original
       end
+      resources :transformation_runs, only: [] do
+        member do
+          post :approve
+          post :reject
+        end
+      end
       resources :workflows, except: :edit do
         post :run, on: :member
         post :copy, on: :member

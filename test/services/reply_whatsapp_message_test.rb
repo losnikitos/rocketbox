@@ -88,6 +88,66 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     WhatsappCloud.define_singleton_method(:send_text, original_send)
   end
 
+  test "approval button approves a waiting run owned by the sender" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567")
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior),
+      file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    run = Transformation.create!(name: "Approval", kind: "approval").run!(items: [ photo ], folder: folders(:ready))
+    assert_equal "waiting", run.status
+
+    sent = []
+    reactions = []
+    original_send = WhatsappCloud.method(:send_text)
+    original_react = WhatsappCloud.method(:react)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
+    WhatsappCloud.define_singleton_method(:react) { |**args| reactions << args }
+
+    ReplyWhatsappMessage.call(button_payload(from: "15551234567", id: "approval:approve:#{run.id}"))
+
+    assert_equal "complete", run.reload.status
+    assert_equal [ "Approved — continuing." ], sent
+    assert_equal 1, reactions.size
+  ensure
+    WhatsappCloud.define_singleton_method(:send_text, original_send) if original_send
+    WhatsappCloud.define_singleton_method(:react, original_react) if original_react
+  end
+
+  test "approval reject stops a waiting run" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567")
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior),
+      file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    run = Transformation.create!(name: "Approval", kind: "approval").run!(items: [ photo ], folder: folders(:ready))
+    sent = []
+    original_send = WhatsappCloud.method(:send_text)
+    original_react = WhatsappCloud.method(:react)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
+    WhatsappCloud.define_singleton_method(:react) { |_| }
+
+    ReplyWhatsappMessage.call(button_payload(from: "15551234567", id: "approval:reject:#{run.id}"))
+
+    assert_equal "rejected", run.reload.status
+    assert_equal [ "Rejected — won't post this one." ], sent
+  ensure
+    WhatsappCloud.define_singleton_method(:send_text, original_send) if original_send
+    WhatsappCloud.define_singleton_method(:react, original_react) if original_react
+  end
+
+  test "stale approval button gets a short reply" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567")
+    sent = []
+    original_send = WhatsappCloud.method(:send_text)
+    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
+
+    ReplyWhatsappMessage.call(button_payload(from: "15551234567", id: "approval:approve:999999"))
+
+    assert_equal [ "That approval is no longer pending." ], sent
+  ensure
+    WhatsappCloud.define_singleton_method(:send_text, original_send)
+  end
+
   private
 
     def text_payload(from:, body:)

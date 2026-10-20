@@ -11,7 +11,7 @@
 class TransformationRun < ApplicationRecord
   include GenerationOptions
 
-  STATUSES = %w[running complete failed].freeze
+  STATUSES = %w[running waiting complete failed rejected].freeze
 
   belongs_to :transformation, optional: true
   belongs_to :workflow_run, optional: true
@@ -32,15 +32,15 @@ class TransformationRun < ApplicationRecord
 
   STATUSES.each { |s| define_method(:"#{s}?") { status == s } }
 
-  # Several runs' status as one: failed if any failed, else running if any is, else complete; nil for none.
-  def self.status_of(runs) = %w[failed running complete].find { |s| runs.any? { it.status == s } }
+  # Several runs' status as one: failed if any failed, else rejected, waiting, running, else complete; nil for none.
+  def self.status_of(runs) = %w[failed rejected waiting running complete].find { |s| runs.any? { it.status == s } }
 
   def video? = transformation&.video?
 
   def type = transformation&.type
 
-  # Seconds from start to finish; nil while running.
-  def duration = (updated_at - created_at unless running?)
+  # Seconds from start to finish; nil while running or waiting.
+  def duration = (updated_at - created_at unless running? || waiting?)
 
   # The step run that made its result, when this one reuses it from another run (see WorkflowRun#reuse).
   def reused_from = result.transformation_run.then { it unless it == self }
@@ -86,8 +86,14 @@ class TransformationRun < ApplicationRecord
     end
     picked = transformation.picks?(:prompt) ? prompts : []
     self.prompt_text = [ transformation.body, *picked.map { "# #{it.folder.name}\n\n#{it.body}" } ].compact_blank.join("\n\n") if transformation.ai?
-    save!
-    GenerateJob.perform_later(self)
+    if transformation.type.waits?
+      self.status = "waiting"
+      save!
+      RequestApproval.call(self)
+    else
+      save!
+      GenerateJob.perform_later(self)
+    end
     self
   end
 
@@ -99,6 +105,18 @@ class TransformationRun < ApplicationRecord
   rescue StandardError => e
     Rails.logger.error("[TransformationRun] id=#{id} #{e.class}: #{e.message}")
     update!(status: "failed", error: e.message.to_s.truncate(1000))
+  end
+
+  # Pass-through the source media and continue the workflow. Only from waiting.
+  def approve!
+    raise "Not waiting for approval" unless waiting?
+    run!
+  end
+
+  # Stop this branch; downstream steps stay quiet. Only from waiting.
+  def reject!
+    raise "Not waiting for approval" unless waiting?
+    update!(status: "rejected", error: nil)
   end
 
   private

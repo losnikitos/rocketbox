@@ -145,7 +145,7 @@ module Accounts
           runs = runs_of.(node)
           # A step not running can start once all its arrows in are available.
           feeds = @graph_edges.select { it.to_id == node.id }
-          ready = node.step? && runs.none?(&:running?) && feeds.any? && feeds.all? { gives[it.from_id].any? }
+          ready = node.step? && runs.none? { it.running? || it.waiting? } && feeds.any? && feeds.all? { gives[it.from_id].any? }
           # Named ports (Video Start/End/Prompt) or one empty slot past current arrows.
           ports = node.transformation&.ports&.map do |port|
             muted = case port[:name]

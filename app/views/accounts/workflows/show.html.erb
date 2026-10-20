@@ -261,6 +261,32 @@
         <p class="<%= tw_alert_error_classes %>" role="alert">This model doesn't take reference images. Disconnect Refs or pick another model.</p>
       <% end %>
 
+      <% waiting = @node_runs.select(&:waiting?) %>
+      <% if waiting.any? %>
+        <section aria-label="Approval" class="<%= panel %>">
+          <h3 id="node_approval" class="<%= panel_heading %>"><a href="#node_approval" data-turbo-frame="_top" class="hover:underline">Approval</a></h3>
+          <p class="mb-3 text-sm text-ink-600">Waiting for approval before continuing.</p>
+          <div class="space-y-3">
+            <% waiting.each do |step_run| %>
+              <% preview = step_run.source_media.first %>
+              <div class="space-y-2">
+                <% if preview&.file&.attached? %>
+                  <div class="w-40">
+                    <%= render "accounts/library/file", media: preview, play: true, css: "aspect-2/3 w-full rounded-lg object-cover" %>
+                  </div>
+                <% end %>
+                <div class="flex gap-2">
+                  <%= button_to "Approve", approve_transformation_run_path(step_run), method: :post,
+                        class: "rb-btn-primary cursor-pointer px-3.5 py-1.5 text-sm" %>
+                  <%= button_to "Reject", reject_transformation_run_path(step_run), method: :post,
+                        class: "rb-btn-ghost-on-light cursor-pointer px-3.5 py-1.5 text-sm" %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
       <% unless node.note? %>
         <% { "Inputs" => @run_inputs, "Outputs" => @run_outputs }.each do |label, items| %>
           <section aria-label="<%= label %>" class="<%= panel %>">

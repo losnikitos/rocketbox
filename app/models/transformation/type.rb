@@ -2,14 +2,15 @@
 
 # How a transformation makes its media, picked by the transformation's `kind`, a type's slug. Each type is a class: what
 # it is as class methods (label, description, layer, …), how it makes a run's file as `file` on an instance wrapping the run.
-# Its superclass is its group: Generation (one AI call), Transform (Edit: one photo or video edited), Overlay (a layer
-# over one photo or video) or Reels (Scripted: the inputs cut into a reel, each type its own folder under reels/). A new
-# type is a subclass plus a line in `all`, whose order is the groups' order.
+# Its superclass is its group: Generation (one AI call), Transform (Edit: one photo or video edited), Control
+# (gates like Approval), Overlay (a layer over one photo or video) or Reels (Scripted: the inputs cut into a reel,
+# each type its own folder under reels/). A new type is a subclass plus a line in `all`, whose order is the groups' order.
 class Transformation::Type
   def self.all = [
     Transformation::GenerateImage, Transformation::GenerateVideo, Transformation::Llm,
     Transformation::ExtractLogo, Transformation::UpdateBusiness,
     Transformation::SmartCrop, Transformation::Zoom, Transformation::ColorGrade,
+    Transformation::Approval,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Transformation::Caption, Transformation::Text,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
@@ -39,6 +40,9 @@ class Transformation::Type
   def self.single? = false
 
   def self.reel? = false
+
+  # Whether a step run waits for a human (or other external signal) instead of running GenerateJob.
+  def self.waits? = false
 
   # What a step run takes: input name => how many, as a Range (1..1, 0..1, 1.. or 0..). Names are kinds (:image,
   # :video, :media, :prompt, :review) or roles that share a kind (`first_frame` / `last_frame` / `reference` → images).

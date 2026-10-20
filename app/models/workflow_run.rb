@@ -25,10 +25,11 @@ class WorkflowRun < ApplicationRecord
 
   before_create { self.name = "Run #{workflow.runs.count + 1}" }
 
-  def running? = step_runs.any?(&:running?)
+  # Busy while a step is generating or waiting on approval (blocks settle notify and run delete).
+  def running? = step_runs.any? { it.running? || it.waiting? }
   def draft? = status == "draft"
 
-  # Draft until first played; then failed, running or complete, as its step runs (nil while none started).
+  # Draft until first played; then failed, rejected, waiting, running or complete, as its step runs (nil while none started).
   def state = draft? ? "draft" : error ? "failed" : TransformationRun.status_of(step_runs)
 
   # What it was played with and what it ended with: items its step runs took that none made, and made that none took.
@@ -140,9 +141,9 @@ class WorkflowRun < ApplicationRecord
       short.map { |name, count| "needs #{count.begin}+ #{name.to_s.humanize(capitalize: false).pluralize(count.begin)}, got #{given[name].size}" }.to_sentence
     end
 
-    # A step run stands while it hasn't failed, took the batch and its picks are still given, and its transformation
-    # wasn't saved since it started.
-    def stands?(run, batch, sides) = !run.failed? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
+    # A step run stands while it hasn't failed or been rejected, took the batch and its picks are still given, and its
+    # transformation wasn't saved since it started.
+    def stands?(run, batch, sides) = !run.failed? && !run.rejected? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
 
     # Whether the step run took `batch`, and one item per arrow it picks from that's still given there.
     # `batch` is a Hash of input name => items (see batches_of).
@@ -175,8 +176,10 @@ class WorkflowRun < ApplicationRecord
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands.
+    # Approval (waits?) never reuses — every run asks a human again.
     def prior(step, batch, sides)
       transformation = step.transformation
+      return if transformation.type.waits?
       transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
         .includes(inputs: :item).find { matches?(it, batch, sides) }
     end

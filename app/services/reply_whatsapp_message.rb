@@ -45,6 +45,11 @@ class ReplyWhatsappMessage
         next
       end
 
+      if (decision = text.strip.match(/\Aapproval:(approve|reject):(\d+)\z/))
+        handle_approval!(user, decision[1], decision[2].to_i, phone_number_id, from, message["id"])
+        next
+      end
+
       if WhatsappOnboarding.answer!(user, text)
         react_ok(phone_number_id, from, message["id"]) if user.whatsapp_pending_question.nil?
         next
@@ -73,6 +78,19 @@ class ReplyWhatsappMessage
   end
 
   private
+
+    def handle_approval!(user, action, run_id, phone_number_id, from, message_id)
+      run = TransformationRun.find_by(id: run_id)
+      unless run&.waiting? && run.result&.user_id == user.id
+        WhatsappCloud.send_text(phone_number_id:, to: from, body: "That approval is no longer pending.")
+        return
+      end
+
+      action == "approve" ? run.approve! : run.reject!
+      react_ok(phone_number_id, from, message_id)
+      WhatsappCloud.send_text(phone_number_id:, to: from,
+        body: action == "approve" ? "Approved — continuing." : "Rejected — won't post this one.")
+    end
 
     def react_ok(phone_number_id, from, message_id)
       WhatsappCloud.react(phone_number_id:, to: from, message_id:)

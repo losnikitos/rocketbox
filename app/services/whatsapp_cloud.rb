@@ -69,12 +69,17 @@ module WhatsappCloud
   end
 
   # buttons: { "reply_id" => "Title" }; Meta allows up to 3, titles up to 20 chars.
-  def send_buttons(phone_number_id:, to:, body:, buttons:)
-    send_message!(phone_number_id, to, "interactive", {
+  # Optional header: { type: "image"|"video", link: "https://..." } for a media preview above the body.
+  def send_buttons(phone_number_id:, to:, body:, buttons:, header: nil)
+    interactive = {
       type: "button",
       body: { text: body },
       action: { buttons: buttons.map { |id, title| { type: "reply", reply: { id:, title: } } } }
-    })
+    }
+    if header
+      interactive[:header] = { type: header[:type], header[:type].to_sym => { link: header[:link] } }
+    end
+    send_message!(phone_number_id, to, "interactive", interactive)
   end
 
   # Meta limits: body up to 1024 chars, display_text up to 20.
