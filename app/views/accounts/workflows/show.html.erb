@@ -15,8 +15,15 @@
     </nav>
     <div class="flex min-w-0 items-center gap-3">
       <h1 class="-ml-2 min-w-0 font-manrope text-xl font-bold tracking-tight sm:text-2xl">
-        <%= f.text_field :name, required: true, placeholder: "Workflow name", "aria-label": "Name",
-              class: "block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+        <% if @workflow.built_in? %>
+          <span class="inline-flex max-w-full min-w-0 items-center gap-2 px-2 py-0.5">
+            <%= lucide_icon "pin", class: "size-5 shrink-0 text-ink-400", "aria-hidden": true %>
+            <span class="truncate"><%= @workflow.name %></span>
+          </span>
+        <% else %>
+          <%= f.text_field :name, required: true, placeholder: "Workflow name", "aria-label": "Name",
+                class: "block max-w-full min-w-0 field-sizing-content rounded-lg border-0 bg-transparent px-2 py-0.5 placeholder:text-ink-400 hover:bg-ink-900/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rocket/30" %>
+        <% end %>
       </h1>
       <label title="Run each new media that lands in a start folder, on its own" class="flex cursor-pointer items-center gap-2 text-sm font-medium text-ink-700">
         <%= f.check_box :autorun, role: "switch", class: "rb-switch" %>
@@ -343,7 +350,7 @@
         <% elsif (media = node.library_media) %>
           <%= link_to "Open in library", library_item_path(media), data: top, class: "rb-btn-ghost-on-light inline-block px-3.5 py-1.5 text-sm" %>
         <% else %>
-          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "flex gap-3" do %>
+          <%= form_with model: @workflow, data: top, html: { onchange: "this.requestSubmit()" }, class: "flex flex-wrap gap-3" do %>
             <%= hidden_field_tag "workflow[nodes_attributes][0][id]", node.id, id: nil %>
             <div class="w-24">
               <%= label_tag "workflow_node_take", "Take", class: field_label %>
@@ -356,6 +363,11 @@
                       id: "workflow_node_media_type", class: tw_input_classes %>
               </div>
             <% end %>
+            <label class="flex items-end gap-2 pb-2 text-sm text-ink-700">
+              <%= hidden_field_tag "workflow[nodes_attributes][0][include_subfolders]", "0", id: nil %>
+              <%= check_box_tag "workflow[nodes_attributes][0][include_subfolders]", "1", node.include_subfolders?, id: "workflow_node_include_subfolders", class: "size-4 rounded border-ink-900/20" %>
+              Include subfolders
+            </label>
           <% end %>
           <% if node.folder.prompt? %>
             <p class="text-sm text-ink-600">An LLM step takes all it gives, any other step one at random per step run, after its own prompt under a “# <%= node.folder.name %>” header.</p>

@@ -22,4 +22,4 @@ Service prompts are constants in the code that uses them:
 | `Crawl::DEFAULT_DATA_INSTRUCTION` | Default data instruction for a crawl |
 | `Transformation::UpdateBusiness::DEFAULT_BODY` / `Transformation::ExtractLogo::DEFAULT_BODY` | Defaults for the Business card workflow steps (editable on the canvas) |
 | `ImproveLibraryMedia::PROMPT` | Improving a library image with AI |
-| `SortInboxMedia::PROMPT` | Sorting media landing in the Inbox root into an Inbox subfolder (a video by its preview frame) |
+| `Transformation::Sort::DEFAULT_BODY` (`SortInboxMedia::PROMPT`) | Sort step default prompt (editable on the canvas); pick an Inbox subfolder for a photo or video |

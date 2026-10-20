@@ -54,8 +54,13 @@ class LibraryMedia < ApplicationRecord
 
   def ready? = folder == Folder.ready
 
-  # The media this one is ultimately a version of.
-  def original = transformation_run&.source_media&.first&.original || self
+  # The media this one is ultimately a version of. A relocating step (Sort) uses this media as its own result — stop there.
+  def original
+    source = transformation_run&.source_media&.first
+    return self if source.nil? || source == self
+
+    source.original
+  end
 
   # This media and every version made from it, each followed by its own versions.
   # ponytail: one query per node; fine for shallow trees, switch to a recursive CTE if chains get long

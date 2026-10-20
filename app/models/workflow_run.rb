@@ -73,11 +73,11 @@ class WorkflowRun < ApplicationRecord
     ((ids = picks[node.id.to_s] || node.pinned_ids.presence) ? items.where(id: ids) : items.limit(node.take)).to_a
   end
 
-  # What a folder node can give from the folder and its subfolders, newest first. A media folder: the user's media still
-  # in them (with all its tags, of its type). A prompt folder: their written prompts, shared or the user's. Reviews: the
-  # user's 5-star reviews.
+  # What a folder node can give from the folder (and its subfolders when `include_subfolders`), newest first. A media
+  # folder: the user's media still in them (with all its tags, of its type). A prompt folder: their written prompts,
+  # shared or the user's. Reviews: the user's 5-star reviews.
   def candidates(node, user)
-    folder_id = node.folder.tree_ids
+    folder_id = node.folder_ids
     case node.folder.kind
     when "prompt" then Prompt.where(folder_id:).written.where(user_id: [ nil, user.id ]).order(id: :desc)
     when "review" then user.reviews.postable.where(folder_id:).order(id: :desc)
@@ -176,24 +176,36 @@ class WorkflowRun < ApplicationRecord
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands.
-    # Approval (waits?) never reuses — every run asks a human again.
+    # Approval (waits?) and Sort (relocates?) never reuse — every run asks again / classifies again.
     def prior(step, batch, sides)
       transformation = step.transformation
-      return if transformation.type.waits?
+      return if transformation.type.waits? || transformation.type.relocates?
       transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
         .includes(inputs: :item).find { matches?(it, batch, sides) }
     end
 
     # Its result goes, unless another step run shares it, and before it the step runs here that took it, as their
-    # inputs go with it.
+    # inputs go with it. A relocating run's result is the source media — never destroy it.
     def drop(run)
-      step_runs.joins(:inputs).where(transformation_run_inputs: { item_type: run.result_type, item_id: run.result_id }).each { drop(it) }
-      run.result.transformation_runs.many? ? run.destroy! : run.result.destroy!
+      # Relocating runs use the source as result — skip self or this recurses forever.
+      step_runs.joins(:inputs).where.not(id: run.id)
+        .where(transformation_run_inputs: { item_type: run.result_type, item_id: run.result_id }).each { drop(it) }
+      if run.transformation&.type&.relocates? || run.result.transformation_runs.many?
+        run.destroy!
+      else
+        run.result.destroy!
+      end
     end
 
     # A step's result moves to its output folder, a media gaining the step's tags.
+    # Relocating types already set the folder in `run!`; only tags are applied here.
     def land(result, step)
-      result&.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
+      return unless result
+      if step.transformation.type.relocates?
+        result.update!(tags: result.tags | step.tags) if result.is_a?(LibraryMedia) && step.tags.any?
+      else
+        result.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
+      end
     end
 
     # What the arrows into the step give now, by its type's input name, each input only the items that fit it (an

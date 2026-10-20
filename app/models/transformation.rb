@@ -23,6 +23,10 @@ class Transformation < ApplicationRecord
   normalizes :layer_steps, with: ->(steps) { Array(steps).map { it.to_h.compact_blank } }
 
   before_validation { self.layer_steps = [] unless layer_steps? }
+  before_validation(on: :create) do
+    default = type.const_get(:DEFAULT_BODY) if type&.const_defined?(:DEFAULT_BODY)
+    self.body = default if body.blank? && default
+  end
   validates :name, presence: true
   validates :kind, inclusion: { in: -> { Type.all.map(&:slug) } }
   # The type is picked once, on create.

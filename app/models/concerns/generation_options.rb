@@ -104,7 +104,7 @@ module GenerationOptions
   def inherited_options = {}
 
   # The RubyLLM model type it picks from.
-  def model_type = video? ? :video : type&.makes == :prompt ? :chat : :image
+  def model_type = video? ? :video : type&.chat? ? :chat : :image
 
   def option_sets = { video: VIDEO_OPTIONS, chat: CHAT_OPTIONS }.fetch(model_type, IMAGE_OPTIONS)
 

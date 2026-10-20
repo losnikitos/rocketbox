@@ -76,9 +76,12 @@ class TransformationRun < ApplicationRecord
   def generated_prompt = (result if result.is_a?(Prompt))
 
   # `user` owns the result, made in `folder` with `tags` (media) and the job of the first source media that has one.
+  # A relocating type (Sort) reuses the source media as the result and moves it later in `run!`.
   # Raises ActiveRecord::RecordInvalid when the items don't fit or an option isn't available.
   def start!(user, folder:, tags: [])
-    self.result = if transformation.makes == :prompt
+    self.result = if transformation.type.relocates?
+      source_media.first.tap { |media| media.tags = media.tags.to_a | Array(tags) if tags.any? }
+    elsif transformation.makes == :prompt
       Prompt.new(user:, folder:, name: "#{transformation.name} · #{Time.current.to_fs(:short)}", body: "")
     else
       LibraryMedia.new(user:, kind: transformation.video? || transformation.reel? || single_over_video? ? "video" : "photo", folder:, tags:,
@@ -98,9 +101,14 @@ class TransformationRun < ApplicationRecord
   end
 
   # Makes the file or text the transformation's type's way (see Transformation::Type).
+  # A relocating type moves the source media into the folder its type picks.
   def run!
     made = transformation.type.new(self)
-    result.update!(transformation.makes == :prompt ? { body: made.body } : { file: made.file })
+    if transformation.type.relocates?
+      result.update!(folder: made.folder)
+    else
+      result.update!(transformation.makes == :prompt ? { body: made.body } : { file: made.file })
+    end
     update!(status: "complete", error: nil)
   rescue StandardError => e
     Rails.logger.error("[TransformationRun] id=#{id} #{e.class}: #{e.message}")

@@ -89,4 +89,16 @@ class WorkflowTest < ActiveSupport::TestCase
     workflow.update!(name: "2026")
     assert_equal [ "workflow-2026", workflow, workflow ], [ workflow.slug, Workflow.find("inbox-to-ready"), Workflow.find(workflow.id) ]
   end
+
+  test "built-in workflows can't be renamed or deleted" do
+    workflow = Workflow::InboxSort.ensure!
+    assert workflow.built_in?
+
+    assert_not workflow.update(name: "Renamed")
+    assert_includes workflow.errors[:name], "can't be changed on a built-in workflow"
+    assert_equal "Inbox sort", workflow.reload.name
+
+    assert_not workflow.destroy
+    assert Workflow.exists?(workflow.id)
+  end
 end

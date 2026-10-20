@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Runs a media that just landed in its folder through the autorun workflows starting there (see Workflow.autorun!).
-# One landing in the Inbox root is sorted into a subfolder first, landing it again there.
+# Inbox-root landings go through the seeded Inbox sort workflow, which files them into a subfolder and lands again.
 class AutorunWorkflowsJob < ApplicationJob
   queue_as :default
 
@@ -9,7 +9,6 @@ class AutorunWorkflowsJob < ApplicationJob
 
   def perform(media)
     return unless media.user && media.file.attached?
-    return if media.folder == Folder.inbox && SortInboxMedia.call(media)
 
     Workflow.autorun!(media)
   end

@@ -75,11 +75,16 @@
                 <%= heroicon "chevron-right", variant: :mini, options: { class: "mx-1 size-6 shrink-0 rounded-lg p-1 text-ink-400 transition hover:bg-ink-900/5 group-open:rotate-90", "aria-hidden": true } %>
               </summary>
               <ul>
-                <% Workflow.order(updated_at: :desc).each do |workflow| %>
+                <% Workflow.sidebar.each do |workflow| %>
                   <li>
-                    <%= link_to workflow.name, workflow_path(workflow),
-                          class: "block truncate rounded-xl py-1.5 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
-                          aria: { current: ("page" if workflow == current_workflow) } %>
+                    <%= link_to workflow_path(workflow),
+                          class: "flex min-w-0 items-center gap-1 rounded-xl py-1.5 pr-3 pl-10 text-sm font-medium text-ink-500 transition hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
+                          aria: { current: ("page" if workflow == current_workflow) } do %>
+                      <span class="truncate"><%= workflow.name %></span>
+                      <% if workflow.built_in? %>
+                        <%= lucide_icon "pin", class: "size-3 shrink-0 text-ink-400", "aria-hidden": true %>
+                      <% end %>
+                    <% end %>
                   </li>
                 <% end %>
               </ul>

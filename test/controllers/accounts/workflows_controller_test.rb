@@ -145,6 +145,36 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to workflows_url(account: admin.id)
   end
 
+  test "built-in workflows show a pin after the name, first in the sidebar, and can't be renamed or deleted" do
+    admin = sign_in_as(users(:admin_user))
+    workflow = Workflow::InboxSort.ensure!
+    custom = Workflow.create!(name: "Custom later")
+    travel 1.minute
+    custom.touch
+
+    get workflows_url(account: admin.id)
+    names = css_select("nav[aria-label=Primary] a[href*='/workflows/'] span").map(&:text)
+    assert_operator names.index(workflow.name), :<, names.index(custom.name)
+    assert_select "nav[aria-label=Primary] a[href^=?]", workflow_path(workflow) do
+      assert_select "span", text: workflow.name
+      assert_select "svg" # pin after name
+    end
+
+    get workflow_url(workflow, account: admin.id)
+    assert_select "h1 input[name='workflow[name]']", 0
+    assert_select "h1", text: /#{Regexp.escape(workflow.name)}/
+    assert_select "header [id^=workflow-admin-links-] a[data-turbo-method=delete]", 0
+
+    patch workflow_url(workflow, account: admin.id), params: { workflow: { name: "Renamed" } }, as: :json
+    assert_response :unprocessable_entity
+    assert_equal "Inbox sort", workflow.reload.name
+
+    assert_no_difference -> { Workflow.count } do
+      delete workflow_url(workflow, account: admin.id)
+    end
+    assert_redirected_to workflow_url(workflow, account: admin.id)
+  end
+
   test "workflows list recently edited first, counting node, edge and transformation edits" do
     admin = sign_in_as(users(:admin_user))
     first, second = Workflow.create!(name: "First"), Workflow.create!(name: "Second")
@@ -283,7 +313,7 @@ class Accounts::WorkflowsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-id=?] button[form=workflow_play][name=node_id][value=?]", folder.id.to_s, folder.id.to_s
     assert_select "a[data-id=?] button[form=workflow_play][title='Run from here']", step.id.to_s
     assert_select "a[data-id] [role=img]", 0
-    assert_select "#workflow_palette section h3", 8
+    assert_select "#workflow_palette section h3", 9
 
     assert_enqueued_with(job: GenerateJob) { post run_workflow_url(workflow, account: admin.id), params: { node_id: folder.id } }
     run = workflow.runs.sole
