@@ -1,4 +1,5 @@
 <% content_for(:title, "Business — Rocketbox") %>
+<% content_for(:header_actions) { render "shared/admin_links/user", user: Current.account } %>
 
 <%= form_with model: Current.account, url: business_path, method: :patch, multipart: true,
       class: "space-y-8",

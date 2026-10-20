@@ -1,0 +1,11 @@
+<%# Locals: user %>
+<% user = local_assigns[:user] %>
+<% if Current.user&.admin? && user.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "user-admin-links-#{user.id}", align: local_assigns.fetch(:align, :right) } do %>
+    <%= render "shared/admin_links/item",
+        path: admin_user_path(user),
+        label: "Admin",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+  <% end %>
+<% end %>
