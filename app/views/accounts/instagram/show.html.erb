@@ -14,6 +14,32 @@
     <% end %>
   <% end %>
 
+  <% if flash[:just_authorized] || params[:just_authorized] %>
+    <div
+      class="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 sm:items-center"
+      role="status"
+      data-just-authorized
+      onclick="this.remove()"
+    >
+      <div
+        class="relative flex h-1/2 w-full flex-col items-center justify-center gap-2 rounded-t-2xl bg-white px-6 py-8 text-center sm:h-auto sm:max-w-sm sm:rounded-2xl sm:shadow-lg"
+        onclick="event.stopPropagation()"
+      >
+        <button
+          type="button"
+          class="absolute top-3 right-3 rounded-lg p-1.5 text-ink-400 hover:bg-ink-900/5 hover:text-ink-900"
+          aria-label="Dismiss"
+          onclick="this.closest('[data-just-authorized]').remove()"
+        >
+          <%= heroicon "x-mark", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+        </button>
+        <%= heroicon "check-circle", variant: :solid, options: { class: "size-16 text-signal-green", "aria-hidden": true } %>
+        <p class="text-xl font-semibold text-ink-900">Authorized</p>
+        <p class="text-sm text-ink-500">You can close this page now</p>
+      </div>
+    </div>
+  <% end %>
+
   <div class="relative">
     <%= button_to profile_instagram_refresh_path,
           form: { class: "absolute top-0 right-0" },

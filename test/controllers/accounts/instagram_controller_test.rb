@@ -57,9 +57,15 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "ig-user", "fadehouse", "long-token-abc" ],
       @user.reload.values_at(:instagram_user_id, :instagram_username, :instagram_access_token)
 
-    get instagram_profile_url
+    follow_redirect!
+    assert_select "[data-just-authorized]"
+    assert_select "[data-just-authorized] p", text: "Authorized"
+    assert_select "[data-just-authorized] p", text: "You can close this page now"
     assert_select "a[href=?]", "https://www.instagram.com/fadehouse", text: "fadehouse"
     assert_select "li", text: "624 followers"
+
+    get instagram_profile_url
+    assert_select "[data-just-authorized]", count: 0
   end
 
   test "admin's instagram redirect_uri skips the account param and matches on exchange" do

@@ -21,7 +21,7 @@ module Accounts
       Current.account.update!(instagram_access_token: InstagramOauth.exchange(code: params[:code], redirect_uri: callback_url))
       Current.account.refresh_instagram_profile!
       continue_onboarding
-      redirect_to instagram_profile_path, notice: "Instagram authorized."
+      redirect_to instagram_profile_path, flash: { just_authorized: true }
     rescue InstagramOauth::Error => e
       redirect_to instagram_profile_path, alert: e.message
     end
