@@ -6,54 +6,69 @@
 <% else %>
   <% profile = Current.account.instagram_profile.to_h %>
   <% handle = profile["username"] %>
-  <% content_for :header_actions, button_to("Fetch info", profile_instagram_refresh_path, class: "rb-btn-ghost-on-light py-1.5") %>
-  <% content_for :header_actions, button_to("Disconnect", instagram_profile_path, method: :delete,
-        form: { data: { turbo_confirm: "Disconnect #{handle.presence || "Instagram"}?" } },
-        class: "cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3 py-1.5 text-sm font-semibold text-signal-red transition hover:bg-ink-900/5") %>
-
-  <section class="mx-auto flex max-w-3xl items-start gap-6 sm:gap-16 sm:px-6">
-    <% if Current.account.instagram_avatar.attached? %>
-      <%= image_tag Current.account.instagram_avatar, alt: "", class: "size-20 shrink-0 rounded-full object-cover ring-1 ring-ink-900/10 sm:size-36" %>
+  <% username = capture do %>
+    <% if handle.present? %>
+      <%= link_to handle, "https://www.instagram.com/#{handle}", target: "_blank", rel: "noopener", class: "hover:underline" %>
     <% else %>
-      <span class="flex size-20 shrink-0 items-center justify-center rounded-full bg-ink-900/5 text-ink-400 sm:size-36">
-        <%= heroicon "user", options: { class: "size-10 sm:size-16", "aria-hidden": true } %>
-      </span>
+      Instagram
+    <% end %>
+  <% end %>
+
+  <div class="relative">
+    <%= button_to profile_instagram_refresh_path,
+          form: { class: "absolute top-0 right-0" },
+          class: "rounded-lg p-1.5 text-ink-400 hover:bg-ink-900/5 hover:text-ink-900",
+          aria: { label: "Fetch info" } do %>
+      <%= heroicon "arrow-path", options: { class: "size-5", "aria-hidden": true } %>
     <% end %>
 
-    <div class="min-w-0 flex-1 space-y-4 sm:pt-2">
-      <h2 class="inline-flex items-center gap-2 text-xl text-ink-900">
-        <%= image_tag "brands/instagram.svg", class: "size-5 shrink-0", alt: "", aria: { hidden: true } %>
-        <% if handle.present? %>
-          <%= link_to handle, "https://www.instagram.com/#{handle}", target: "_blank", rel: "noopener", class: "hover:underline" %>
+    <section class="mx-auto flex w-full max-w-3xl flex-col gap-6 sm:flex-row sm:items-start sm:gap-16 sm:px-6">
+      <div class="flex items-center gap-4 sm:contents">
+        <% if Current.account.instagram_avatar.attached? %>
+          <%= image_tag Current.account.instagram_avatar, alt: "", class: "size-20 shrink-0 rounded-full object-cover ring-1 ring-ink-900/10 sm:size-36" %>
         <% else %>
-          Instagram
+          <span class="flex size-20 shrink-0 items-center justify-center rounded-full bg-ink-900/5 text-ink-400 sm:size-36">
+            <%= heroicon "user", options: { class: "size-10 sm:size-16", "aria-hidden": true } %>
+          </span>
         <% end %>
-      </h2>
+        <h2 class="min-w-0 flex-1 text-xl text-ink-900 sm:hidden"><%= username %></h2>
+      </div>
 
-      <% if profile.blank? %>
-        <p class="text-sm text-ink-500">No profile info fetched yet.</p>
-      <% else %>
-        <ul class="flex gap-6 text-ink-900 sm:gap-10">
-          <% { "media_count" => "posts", "followers_count" => "followers", "follows_count" => "following" }.each do |key, label| %>
-            <li><span class="font-semibold"><%= number_with_delimiter(profile[key].to_i) %></span> <%= label %></li>
-          <% end %>
-        </ul>
+      <div class="min-w-0 flex-1 space-y-4 sm:pt-2">
+        <h2 class="hidden text-xl text-ink-900 sm:block"><%= username %></h2>
 
-        <div class="space-y-0.5 text-sm text-ink-900">
-          <% if profile["name"].present? %>
-            <p class="font-semibold"><%= profile["name"] %></p>
-          <% end %>
-          <% if profile["account_type"].present? %>
-            <p class="text-ink-500"><%= profile["account_type"].humanize %></p>
-          <% end %>
-          <% if profile["biography"].present? %>
-            <p class="whitespace-pre-line break-words"><%= profile["biography"] %></p>
-          <% end %>
-          <% if (website = profile["website"]).present? %>
-            <%= link_to website.sub(%r{\Ahttps?://}, "").delete_suffix("/"), website, target: "_blank", rel: "noopener", class: "font-semibold text-rocket hover:underline" %>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
-  </section>
+        <% if profile.blank? %>
+          <p class="text-sm text-ink-500">No profile info fetched yet.</p>
+        <% else %>
+          <ul class="flex w-full justify-between gap-6 text-ink-900 sm:w-auto sm:justify-start sm:gap-10">
+            <% { "media_count" => "posts", "followers_count" => "followers", "follows_count" => "following" }.each do |key, label| %>
+              <li class="flex flex-col">
+                <span class="font-semibold"><%= number_with_delimiter(profile[key].to_i) %></span>
+                <span><%= label %></span>
+              </li>
+            <% end %>
+          </ul>
+
+          <div class="space-y-0.5 text-sm text-ink-900">
+            <% if profile["name"].present? %>
+              <p class="font-semibold"><%= profile["name"] %></p>
+            <% end %>
+            <% if profile["account_type"].present? %>
+              <p class="text-ink-500"><%= profile["account_type"].humanize %></p>
+            <% end %>
+            <% if profile["biography"].present? %>
+              <p class="whitespace-pre-line break-words"><%= profile["biography"] %></p>
+            <% end %>
+            <% if (website = profile["website"]).present? %>
+              <%= link_to website.sub(%r{\Ahttps?://}, "").delete_suffix("/"), website, target: "_blank", rel: "noopener", class: "font-semibold text-rocket hover:underline" %>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%= button_to "Disconnect", instagram_profile_path, method: :delete,
+              form: { class: "w-full sm:w-auto", data: { turbo_confirm: "Disconnect #{handle.presence || "Instagram"}?" } },
+              class: "w-full cursor-pointer rounded-lg border border-signal-red/40 bg-white px-3 py-1.5 text-sm font-semibold text-signal-red hover:bg-ink-900/5 sm:w-auto" %>
+      </div>
+    </section>
+  </div>
 <% end %>

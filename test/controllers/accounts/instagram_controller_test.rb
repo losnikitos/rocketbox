@@ -18,7 +18,7 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     get instagram_profile_url
     assert_select "a[href=?]", profile_instagram_authorize_path, count: 0
     assert_select "p", text: "No profile info fetched yet."
-    assert_select "form[action=?] button", profile_instagram_refresh_path, text: "Fetch info"
+    assert_select "form[action=?] button[aria-label=?]", profile_instagram_refresh_path, "Fetch info"
   end
 
   test "fetch info refreshes instagram profile and avatar" do
