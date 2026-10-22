@@ -68,6 +68,8 @@ class RocketboxAgentTest < ActiveSupport::TestCase
 
     assert_equal 2, messages.size
     assert_includes messages[0], "You cannot see the image"
+    assert_includes messages[0], "When onboarding is COMPLETE, ask them to send photos of their work"
+    assert_includes messages[0], "At least 2 photos are needed to compose the first Instagram reel"
     assert_includes messages[1], "Onboarding: INCOMPLETE"
     assert_includes messages[1], "Business name: Wick Lane Barbershop"
   end
