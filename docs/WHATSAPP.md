@@ -1,6 +1,6 @@
 # WhatsApp
 
-Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for customer content. Text-only messages get a RubyLLM reply with `list_media` and `login_link` tools.
+Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for customer content. Text-only messages get a reply from [RocketboxAgent](/app/agents/rocketbox_agent.rb). Its system prompt lists what we know about the business.
 
 ## Flow
 
@@ -11,11 +11,11 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
    - **Link** (`START_<code>`, prefilled on `/app/whatsapp`) → `WhatsappOnboarding.link!` sets the sender as the `whatsapp_phone` of the account whose `users.whatsapp_link_code` matches (e.g. an email-only account), rotates the code (one-time), replies “WhatsApp connected.” and starts the onboarding chain. One phone per account: a number already on another account, or an account that already has a different number, is refused; an unknown code gets an “expired” reply. No account is created either way.
    - **Unknown phone** → [ReplyWhatsappMessage](/app/services/reply_whatsapp_message.rb) creates a user for that `whatsapp_phone` and starts onboarding (business card).
    - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → restarts the onboarding chain on the existing user.
-   - **Onboarding answer** → text or a button reply to the pending `brand_voice` / `email` step is saved and the chain moves on (see Onboarding), no LLM reply.
+   - **Onboarding answer** → text or a button reply to the pending `brand_voice` / `email` step is saved and the chain moves on (see Onboarding), no LLM reply. Other pending steps are resent, except `business_card`, `logo`, and their processing steps, which fall through.
    - **Links** → text with `http(s)://` URLs from a known phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`.
    - **Approval** (`approval:approve:<id>` / `approval:reject:<id>` button reply) → approve or reject a waiting Approval step run owned by that user ([RequestApproval](/app/services/request_approval.rb)); see [WORKFLOWS.md](./WORKFLOWS.md). Approve does not send its own ack — the next step's WhatsApp line is the reply.
    - **Waiting step** (known phone, no onboarding question) → the newest `waiting` step run owned by that user is the cursor. Text resends that step (Approval resends its buttons). A photo that lands in a waiting Collect's start folder joins that run instead of opening another ([Workflow.autorun!](/app/models/workflow.rb)).
-   - **Text-only** (known phone, nothing waiting) → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) and [LoginLink](/app/tools/login_link.rb) → `send_text` the reply.
+   - **Text-only** (known phone, nothing waiting — including free-form text during the business-card and logo steps) → [RocketboxAgent](/app/agents/rocketbox_agent.rb) ([ListMedia](/app/tools/list_media.rb), [LoginLink](/app/tools/login_link.rb), [SaveBusiness](/app/tools/save_business.rb)) → `send_text` the reply. [SaveBusiness](/app/tools/save_business.rb) writes facts they state. The pending step stays set so the next photo still files. A business-card photo is still read by the [Business card workflow](/app/models/workflow/business_card.rb), not the agent.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Media appears on `/app/library`.
 
 ## Dashboard page
@@ -28,7 +28,7 @@ Supported kinds: image (stored as `photo`), video, audio, document, sticker.
 
 An automatic chain run by [WhatsappOnboarding](/app/services/whatsapp_onboarding.rb). The copy lives in `MESSAGES`. `ask!` sends a step's message and stores the step in `whatsapp_pending_question`; the reply runs the step and asks the next one:
 
-1. `business_card` — the photo lands in `inbox/business-card`; the autorun [Business card workflow](/app/models/workflow/business_card.rb) extracts fields onto the user and a logo into `photobank/logo`. Pending stays `processing_business_card` until the run settles, then onboarding asks for Instagram or a logo photo.
+1. `business_card` — the photo lands in `inbox/business-card`; the autorun [Business card workflow](/app/models/workflow/business_card.rb) extracts fields onto the user and a logo into `photobank/logo`. Pending stays `processing_business_card` until the run settles, then onboarding asks for Instagram or a logo photo. Text during this step, `logo`, or either processing step goes to [RocketboxAgent](/app/agents/rocketbox_agent.rb) instead of resending the prompt.
 2. `logo` — only if the card gave no logo; the photo lands in `inbox/logo` and the same workflow runs. The account logo is the newest media in `photobank/logo` ([User#logo_media](/app/models/user.rb)), not an ActiveStorage attachment on the user.
 3. `instagram` — Autopilot pitch + **Connect Instagram** URL button (one-time login link) that lands on Instagram authorize. The OAuth callback ([InstagramAuthorizationsController](/app/controllers/accounts/instagram_authorizations_controller.rb)) sends `instagram_connected` and moves on.
 4. `interior_back` (sent as the example photo `public/onboarding/barbershop-example.jpg` with the copy as caption), then `interior_front` — both photos are tagged `interior`.
@@ -129,8 +129,10 @@ Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display
 | Job | [app/jobs/process_whatsapp_update_job.rb](/app/jobs/process_whatsapp_update_job.rb) |
 | Store media | [app/services/store_whatsapp_media.rb](/app/services/store_whatsapp_media.rb) |
 | LLM reply | [app/services/reply_whatsapp_message.rb](/app/services/reply_whatsapp_message.rb) |
+| Agent | [app/agents/rocketbox_agent.rb](/app/agents/rocketbox_agent.rb) |
 | Onboarding chain / links | [app/services/whatsapp_onboarding.rb](/app/services/whatsapp_onboarding.rb) |
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
+| Save business tool | [app/tools/save_business.rb](/app/tools/save_business.rb) |
 | Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/accounts/show.html.erb](/app/views/accounts/show.html.erb) (`/app/library`) |
 | Tests | [test/services/store_whatsapp_media_test.rb](/test/services/store_whatsapp_media_test.rb), [test/services/reply_whatsapp_message_test.rb](/test/services/reply_whatsapp_message_test.rb), [test/controllers/whatsapp_webhooks_controller_test.rb](/test/controllers/whatsapp_webhooks_controller_test.rb) |

@@ -1,14 +1,10 @@
 # frozen_string_literal: true
 
 class ReplyWhatsappMessage
-  INSTRUCTIONS = <<~TEXT.squish
-    You are the Rocketbox library assistant.
-    Use the list_media tool to answer questions about the user's media library.
-    Use the login_link tool when the user asks to log in, open the dashboard, or get a login link.
-    Keep replies short and plain text.
-  TEXT
-
   WHATSAPP_MAX_LENGTH = 4096
+
+  # Text here is business details for the agent. The step stays set so the next photo still files.
+  AGENT_ONBOARDING_STEPS = %w[business_card logo processing_business_card processing_logo].freeze
 
   def self.call(payload)
     new(payload).call
@@ -55,8 +51,8 @@ class ReplyWhatsappMessage
         next
       end
 
-      if user.whatsapp_pending_question.present?
-        WhatsappOnboarding.ask!(user, user.whatsapp_pending_question)
+      if (step = user.whatsapp_pending_question).present? && AGENT_ONBOARDING_STEPS.exclude?(step)
+        WhatsappOnboarding.ask!(user, step)
         next
       end
 
@@ -71,11 +67,7 @@ class ReplyWhatsappMessage
         next
       end
 
-      chat = Chat.create!
-      response = chat
-        .with_instructions(INSTRUCTIONS)
-        .with_tools(ListMedia.new(user:), LoginLink.new(user:))
-        .ask(text)
+      response = RocketboxAgent.create!(user:).ask(text)
 
       reply = response.content.to_s.truncate(WHATSAPP_MAX_LENGTH)
       WhatsappCloud.send_text(phone_number_id:, to: from, body: reply) if from.present? && reply.present?
