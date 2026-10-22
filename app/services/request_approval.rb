@@ -18,8 +18,13 @@ class RequestApproval
     return unless media&.file&.attached?
 
     ActiveStorage::Current.url_options ||= URL_OPTIONS
-    link = media.file.url(expires_in: 1.hour, **URL_OPTIONS)
-    header = { type: media.video? ? "video" : "image", link: }
+    header = if media.video?
+      id = WhatsappCloud.upload_media(WhatsappCloud.phone_number_id, StringIO.new(media.file.download),
+        filename: media.file.filename.to_s, content_type: media.file.content_type)
+      { type: "video", id: }
+    else
+      { type: "image", link: media.file.url(expires_in: 1.hour) }
+    end
     label = @run.transformation.options["button"].to_s.truncate(20, omission: "").presence
     buttons = if label
       { "approval:approve:#{@run.id}" => label }

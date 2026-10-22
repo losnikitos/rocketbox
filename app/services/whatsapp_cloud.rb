@@ -40,6 +40,31 @@ module WhatsappCloud
     request!(:get, media_id)
   end
 
+  # Uploads bytes and returns the WhatsApp media id. Header videos need this; a link is not reliable.
+  def upload_media(phone_number_id, io, filename:, content_type:)
+    uri = URI("#{GRAPH_BASE}/#{phone_number_id}/media")
+    boundary = "----Rocketbox#{SecureRandom.hex(16)}"
+    head = [
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"messaging_product\"\r\n\r\nwhatsapp",
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\n#{content_type}",
+      "--#{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"#{filename}\"\r\nContent-Type: #{content_type}\r\n\r\n"
+    ].join("\r\n")
+    body = head.b + io.read.b + "\r\n--#{boundary}--\r\n".b
+
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+      req = Net::HTTP::Post.new(uri)
+      req["Authorization"] = "Bearer #{access_token}"
+      req["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
+      req.body = body
+      http.request(req)
+    end
+    parsed = JSON.parse(response.body)
+    return parsed.fetch("id") if response.is_a?(Net::HTTPSuccess) && parsed["id"].present?
+
+    message = parsed.dig("error", "message").presence || "WhatsApp media upload failed (#{response.code})"
+    raise Error, message
+  end
+
   def download_media(media_id)
     meta = get_media(media_id)
     url = meta["url"].presence || raise(Error, "WhatsApp media #{media_id} has no url")
@@ -77,7 +102,9 @@ module WhatsappCloud
       action: { buttons: buttons.map { |id, title| { type: "reply", reply: { id:, title: } } } }
     }
     if header
-      interactive[:header] = { type: header[:type], header[:type].to_sym => { link: header[:link] } }
+      kind = header[:type].to_sym
+      media = header[:id].present? ? { id: header[:id] } : { link: header[:link] }
+      interactive[:header] = { type: header[:type], kind => media }
     end
     send_message!(phone_number_id, to, "interactive", interactive)
   end

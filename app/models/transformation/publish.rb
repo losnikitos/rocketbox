@@ -15,7 +15,7 @@ class Transformation::Publish < Transformation::Control
     media = source_media.first
     user = media.user
     ActiveStorage::Current.url_options ||= WhatsappOnboarding::URL_OPTIONS
-    link = media.file.url(expires_in: 1.hour, **WhatsappOnboarding::URL_OPTIONS)
+    link = media.file.url(expires_in: 1.hour)
     id = PublishInstagramPost.call(user:, format: "reel", slides: [ { url: link, video: true } ]).first
     permalink = PublishInstagramPost.permalink(user:, media_id: id)
     run.options = run.options.merge("permalink" => permalink)
