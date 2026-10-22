@@ -1,0 +1,11 @@
+<%# Locals: outgoing_message, align (default :left), trigger_class (optional) %>
+<% outgoing_message = local_assigns[:outgoing_message] %>
+<% if Current.user&.admin? && outgoing_message.present? %>
+  <%= render layout: "shared/admin_links/menu", locals: { popover_id: "outgoing-message-admin-links-#{outgoing_message.id}", align: local_assigns.fetch(:align, :left), trigger_class: local_assigns[:trigger_class] }.compact do %>
+    <%= render "shared/admin_links/item",
+        path: admin_outgoing_message_path(outgoing_message),
+        label: "Admin",
+        icon: "cog",
+        chip: "bg-signal-green" %>
+  <% end %>
+<% end %>

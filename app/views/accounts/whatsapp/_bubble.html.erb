@@ -1,0 +1,69 @@
+<%# locals: message, menu_class %>
+<% message = local_assigns[:message] %>
+<% menu_class = local_assigns[:menu_class] %>
+<% incoming = message.is_a?(IncomingMessage) %>
+<% text = whatsapp_bubble_text(message) %>
+<% label = whatsapp_kind_label(message) %>
+<% media = whatsapp_outgoing_media(message) %>
+<% buttons = whatsapp_buttons(message) %>
+<% reactions = whatsapp_reactions(message, @reactions) %>
+
+<div class="flex <%= incoming ? "justify-end" : "justify-start" %>">
+  <div class="flex max-w-xs items-start gap-1 sm:max-w-sm <%= "flex-row-reverse" if incoming %>">
+    <div class="min-w-0">
+      <div class="overflow-hidden rounded-lg shadow-sm <%= incoming ? "rounded-tr-sm bg-[#dcf8c6]" : "rounded-tl-sm bg-white" %>">
+        <% if incoming %>
+          <% message.attachments.each do |attachment| %>
+            <div class="p-1">
+              <% if attachment.image? %>
+                <%= image_tag attachment, class: "max-h-64 w-full rounded-md object-contain", alt: "" %>
+              <% elsif attachment.video? %>
+                <%= video_tag url_for(attachment), controls: true, class: "max-h-64 w-full rounded-md" %>
+              <% elsif attachment.audio? %>
+                <%= audio_tag url_for(attachment), controls: true, class: "w-full" %>
+              <% else %>
+                <%= link_to attachment.filename.to_s, attachment, class: "block px-2 py-1 text-sm text-[#075e54] underline" %>
+              <% end %>
+            </div>
+          <% end %>
+        <% elsif media %>
+          <div class="p-1">
+            <% if media[0] == "video" %>
+              <%= video_tag media[1], controls: true, class: "max-h-64 w-full rounded-md" %>
+            <% else %>
+              <%= image_tag media[1], class: "max-h-64 w-full rounded-md object-contain", alt: "" %>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if text.present? %>
+          <p class="px-2.5 pt-1.5 text-sm leading-snug break-words whitespace-pre-wrap text-ink-900"><%= text %></p>
+        <% elsif label %>
+          <p class="px-2.5 pt-1.5 text-sm text-ink-500"><%= label %></p>
+        <% end %>
+        <p class="px-2.5 pb-1 text-right text-xs tabular-nums text-ink-500"><%= message.created_at.strftime("%H:%M") %></p>
+
+        <% buttons.each do |title| %>
+          <p class="border-t border-ink-900/10 px-2 py-1.5 text-center text-sm font-medium text-[#075e54]"><%= title %></p>
+        <% end %>
+      </div>
+
+      <% if message.try(:error).present? %>
+        <p class="mt-0.5 text-xs break-words text-signal-red"><%= message.error %></p>
+      <% end %>
+      <% if reactions.any? %>
+        <p class="<%= incoming ? "text-right" : "text-left" %>">
+          <% reactions.each do |emoji| %>
+            <span class="inline-block rounded-full bg-white px-1.5 text-sm shadow-sm"><%= emoji %></span>
+          <% end %>
+        </p>
+      <% end %>
+    </div>
+
+    <% if incoming %>
+      <%= render "shared/admin_links/incoming_message", incoming_message: message, align: :right, trigger_class: menu_class %>
+    <% else %>
+      <%= render "shared/admin_links/outgoing_message", outgoing_message: message, align: :left, trigger_class: menu_class %>
+    <% end %>
+  </div>
+</div>

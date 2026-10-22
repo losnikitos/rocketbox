@@ -38,6 +38,8 @@ Follow the [popover](../popover/SKILL.md) skill for positioning. The shared `_me
 | Workflow node or edge | [`_workflow_element`](/app/views/shared/admin_links/_workflow_element.html.erb) | Admin (step's transformation, folder or media), Delete |
 | Workflow run | [`_workflow_run`](/app/views/shared/admin_links/_workflow_run.html.erb) | Admin |
 | User (business page) | [`_user`](/app/views/shared/admin_links/_user.html.erb) | Admin |
+| Incoming message | [`_incoming_message`](/app/views/shared/admin_links/_incoming_message.html.erb) | Admin |
+| Outgoing message | [`_outgoing_message`](/app/views/shared/admin_links/_outgoing_message.html.erb) | Admin |
 | Tags (library tabs) | [`_tags`](/app/views/shared/admin_links/_tags.html.erb) | Tags |
 
 ## Usage
