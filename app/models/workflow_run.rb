@@ -67,10 +67,15 @@ class WorkflowRun < ApplicationRecord
   end
 
   # What a folder node gives in this run, as the user: its items picked in `picks` (node id => media ids, a media
-  # folder's), else its pinned items, else its newest N, of its candidates.
+  # folder's, in that order), else its pinned items in pin order, else its newest N, of its candidates.
   def picked(node, user)
     items = candidates(node, user)
-    ((ids = picks[node.id.to_s] || node.pinned_ids.presence) ? items.where(id: ids) : items.limit(node.take)).to_a
+    if (ids = picks[node.id.to_s] || node.pinned_ids.presence)
+      found = items.where(id: ids).index_by(&:id)
+      ids.filter_map { |id| found[id.to_i] }
+    else
+      items.limit(node.take).to_a
+    end
   end
 
   # What a folder node can give from the folder (and its subfolders when `include_subfolders`), newest first. A media
@@ -176,10 +181,10 @@ class WorkflowRun < ApplicationRecord
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands.
-    # Approval (waits?) and Sort (relocates?) never reuse — every run asks again / classifies again.
+    # Approval (waits?), Sort (relocates?) and a forwarding step never reuse — every run asks / classifies / posts again.
     def prior(step, batch, sides)
       transformation = step.transformation
-      return if transformation.type.waits? || transformation.type.relocates?
+      return if transformation.type.waits? || transformation.type.relocates? || transformation.type.forwards?
       transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
         .includes(inputs: :item).find { matches?(it, batch, sides) }
     end
@@ -187,10 +192,10 @@ class WorkflowRun < ApplicationRecord
     # Its result goes, unless another step run shares it, and before it the step runs here that took it, as their
     # inputs go with it. A relocating run's result is the source media — never destroy it.
     def drop(run)
-      # Relocating runs use the source as result — skip self or this recurses forever.
+      # Relocating and forwarding runs use the source as result — skip self or this recurses forever.
       step_runs.joins(:inputs).where.not(id: run.id)
         .where(transformation_run_inputs: { item_type: run.result_type, item_id: run.result_id }).each { drop(it) }
-      if run.transformation&.type&.relocates? || run.result.transformation_runs.many?
+      if run.transformation&.type&.then { it.relocates? || it.forwards? } || run.result.transformation_runs.many?
         run.destroy!
       else
         run.result.destroy!
@@ -201,6 +206,8 @@ class WorkflowRun < ApplicationRecord
     # Relocating types already set the folder in `run!`; only tags are applied here.
     def land(result, step)
       return unless result
+      return if step.transformation.type.forwards?
+
       if step.transformation.type.relocates?
         result.update!(tags: result.tags | step.tags) if result.is_a?(LibraryMedia) && step.tags.any?
       else
@@ -264,9 +271,10 @@ class WorkflowRun < ApplicationRecord
       if node.step?
         runs, sides = runs_of(node).select(&:complete?), sides_of(node, user, cached:)
         made = batches_of(node, user, cached:).map do |batch|
-          runs.find { matches?(it, batch, sides) }&.result || (prior(node, batch, sides)&.result if cached)
+          run = runs.find { matches?(it, batch, sides) } || (prior(node, batch, sides) if cached)
+          run&.transformation&.type&.forwards? ? run.sources.presence : run&.result
         end
-        made.all? ? made : []
+        made.all? ? made.flatten : []
       elsif node.library_media then [ node.library_media ]
       else picked(node, user)
       end

@@ -20,14 +20,19 @@ class RequestApproval
     ActiveStorage::Current.url_options ||= URL_OPTIONS
     link = media.file.url(expires_in: 1.hour, **URL_OPTIONS)
     header = { type: media.video? ? "video" : "image", link: }
-    buttons = {
-      "approval:approve:#{@run.id}" => "Approve",
-      "approval:reject:#{@run.id}" => "Reject"
-    }
+    label = @run.transformation.options["button"].to_s.truncate(20, omission: "").presence
+    buttons = if label
+      { "approval:approve:#{@run.id}" => label }
+    else
+      {
+        "approval:approve:#{@run.id}" => "Approve",
+        "approval:reject:#{@run.id}" => "Reject"
+      }
+    end
     WhatsappCloud.send_buttons(
       phone_number_id: WhatsappCloud.phone_number_id,
       to:,
-      body: "Approve this for posting?",
+      body: @run.transformation.body.presence || "Approve this for posting?",
       buttons:,
       header:
     )

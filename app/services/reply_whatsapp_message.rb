@@ -60,6 +60,11 @@ class ReplyWhatsappMessage
         next
       end
 
+      if (waiting = TransformationRun.waiting_for(user))
+        waiting.remind!
+        next
+      end
+
       if (urls = Link.urls_in(text)).any?
         urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "whatsapp" } }
         react_ok(phone_number_id, from, message["id"])
@@ -88,8 +93,9 @@ class ReplyWhatsappMessage
 
       action == "approve" ? run.approve! : run.reject!
       react_ok(phone_number_id, from, message_id)
-      WhatsappCloud.send_text(phone_number_id:, to: from,
-        body: action == "approve" ? "Approved — continuing." : "Rejected — won't post this one.")
+      return if action == "approve"
+
+      WhatsappCloud.send_text(phone_number_id:, to: from, body: "Rejected — won't post this one.")
     end
 
     def react_ok(phone_number_id, from, message_id)

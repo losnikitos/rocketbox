@@ -37,6 +37,7 @@ class Transformation::ApprovalTest < ActiveSupport::TestCase
     assert_equal "15551234567", sent.first[:to]
     assert_equal "image", sent.first[:header][:type]
     assert_match %r{\Ahttps?://}, sent.first[:header][:link]
+    assert_equal "Approve this for posting?", sent.first[:body]
     assert_equal({ "approval:approve:#{@run.id}" => "Approve", "approval:reject:#{@run.id}" => "Reject" }, sent.first[:buttons])
   ensure
     WhatsappCloud.define_singleton_method(:send_buttons, original)

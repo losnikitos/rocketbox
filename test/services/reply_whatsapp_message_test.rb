@@ -112,7 +112,7 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     ReplyWhatsappMessage.call(button_payload(from: "15551234567", id: "approval:approve:#{run.id}"))
 
     assert_equal "complete", run.reload.status
-    assert_equal [ "Approved — continuing." ], sent
+    assert_empty sent
     assert_equal 1, reactions.size
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original_send) if original_send
@@ -138,6 +138,28 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
   ensure
     WhatsappCloud.define_singleton_method(:send_text, original_send) if original_send
     WhatsappCloud.define_singleton_method(:react, original_react) if original_react
+  end
+
+  test "text while a step is waiting resends it and does not ask the assistant" do
+    user = users(:lazaro_nixon)
+    user.update!(whatsapp_phone: "15551234567")
+    photo = user.library_media.create!(kind: "photo", folder: folders(:interior),
+      file: { io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg" })
+    buttons = []
+    original = WhatsappCloud.method(:send_buttons)
+    WhatsappCloud.define_singleton_method(:send_buttons) { |**args| buttons << args }
+    run = Transformation.create!(name: "Approval", kind: "approval", body: "Your reel is ready. Publish?",
+      options: { "button" => "Publish" }).run!(items: [ photo ], folder: folders(:ready))
+
+    assert_no_difference -> { Chat.count } do
+      ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "hello"))
+    end
+
+    assert_equal "waiting", run.reload.status
+    assert_equal [ "Your reel is ready. Publish?" ] * 2, buttons.map { it[:body] }
+    assert_equal({ "approval:approve:#{run.id}" => "Publish" }, buttons.last[:buttons])
+  ensure
+    WhatsappCloud.define_singleton_method(:send_buttons, original) if original
   end
 
   test "stale approval button gets a short reply" do

@@ -8,8 +8,8 @@
 class Workflow < ApplicationRecord
   extend FriendlyId
 
-  # Seeded by Workflow::InboxSort / Workflow::BusinessCard (their NAME.parameterize).
-  BUILT_IN_SLUGS = %w[inbox-sort business-card].freeze
+  # Seeded by Workflow::InboxSort / Workflow::BusinessCard / Workflow::HaircutReel (their NAME.parameterize).
+  BUILT_IN_SLUGS = %w[inbox-sort business-card haircut-reel].freeze
 
   # Built-ins first (sidebar pin), then recently edited.
   scope :sidebar, -> {
@@ -54,12 +54,19 @@ class Workflow < ApplicationRecord
   end
 
   # Runs `media`, just landed in its folder, from each autorun workflow's start folders it fits, as its owner; never
-  # through the workflow that made it.
-  # ponytail: one run per media, and a loop across workflows (A feeds B feeds A) isn't caught.
+  # through the workflow that made it. A waiting Collect for this user and folder takes the photo into that run
+  # instead. Serialized per user so two photos arriving together can't both open a run.
+  # ponytail: a loop across workflows (A feeds B feeds A) isn't caught.
   def self.autorun!(media)
-    where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).starts_for(media).each do |workflow, node|
-      workflow.start_with!(node, media, media.user)
-    end
+    start = -> {
+      joined = media.user && TransformationRun.open_collect_for(media)&.accept_media!(media)
+      unless joined
+        where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).starts_for(media).each do |workflow, node|
+          workflow.start_with!(node, media, media.user)
+        end
+      end
+    }
+    media.user ? media.user.with_lock(&start) : start.call
   end
 
   # A new run of `media` alone from start folder `node`, as `user`.

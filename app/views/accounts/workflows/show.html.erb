@@ -268,7 +268,7 @@
         <p class="<%= tw_alert_error_classes %>" role="alert">This model doesn't take reference images. Disconnect Refs or pick another model.</p>
       <% end %>
 
-      <% waiting = @node_runs.select(&:waiting?) %>
+      <% waiting = @node_runs.select { it.waiting? && it.transformation&.kind == "approval" } %>
       <% if waiting.any? %>
         <section aria-label="Approval" class="<%= panel %>">
           <h3 id="node_approval" class="<%= panel_heading %>"><a href="#node_approval" data-turbo-frame="_top" class="hover:underline">Approval</a></h3>

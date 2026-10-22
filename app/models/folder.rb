@@ -5,8 +5,9 @@
 # its parent's. Top-level folders hold subfolders one level below, except Reviews, which holds every review.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
 # Top-level folders never move, so code looks up inbox, photobank, ready, prompts and reviews by slug.
-# ponytail: code also looks up inbox/business-card, inbox/logo, inbox/interior and photobank/logo (WhatsApp
-# onboarding, account logo) by slug, so moving or deleting those rows breaks them. Upgrade = a locked flag on those rows.
+# ponytail: code also looks up inbox/business-card, inbox/logo, inbox/interior, inbox/haircuts and photobank/logo
+# (WhatsApp onboarding, the haircut reel, account logo) by slug, so moving or deleting those rows breaks them.
+# Upgrade = a locked flag on those rows.
 class Folder < ApplicationRecord
   extend FriendlyId
 

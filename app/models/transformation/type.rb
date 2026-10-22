@@ -10,7 +10,7 @@ class Transformation::Type
     Transformation::GenerateImage, Transformation::GenerateVideo, Transformation::Llm,
     Transformation::ExtractLogo, Transformation::UpdateBusiness,
     Transformation::SmartCrop, Transformation::Zoom, Transformation::ColorGrade,
-    Transformation::Approval, Transformation::Sort,
+    Transformation::Approval, Transformation::Collect, Transformation::Publish, Transformation::Sort,
     Transformation::FullyBooked, Transformation::Daily, Transformation::Review, Transformation::Calendar,
     Transformation::Caption, Transformation::Text,
     Reels::Steps, Reels::Doppler, Reels::Welcome, Reels::BlackEyedPeas, Reels::Azzurro, Reels::GmVisuals
@@ -47,8 +47,14 @@ class Transformation::Type
   # Whether a step run waits for a human (or other external signal) instead of running GenerateJob.
   def self.waits? = false
 
+  # Whether a waiting step run is still waiting. Approval always is; Collect isn't once it has enough photos.
+  def self.hold?(_run) = true
+
   # Whether the step run's result is the source media moved to another folder (no new row).
   def self.relocates? = false
+
+  # Whether the step passes its inputs on (no new media row). Its output is those inputs, once complete.
+  def self.forwards? = false
 
   # What a step run takes: input name => how many, as a Range (1..1, 0..1, 1.. or 0..). Names are kinds (:image,
   # :video, :media, :prompt, :review) or roles that share a kind (`first_frame` / `last_frame` / `reference` → images).
