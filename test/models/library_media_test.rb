@@ -44,4 +44,14 @@ class LibraryMediaTest < ActiveSupport::TestCase
     assert_equal [ result ], source.generated_media.to_a
     assert_empty extra.generated_media
   end
+
+  test "lineage stops when a run's result is the source" do
+    user = users(:lazaro_nixon)
+    media = LibraryMedia.create!(kind: "photo", user:)
+    child = LibraryMedia.create!(kind: "photo", user:)
+    TransformationRun.create!(result: media, status: "complete", inputs: [ TransformationRunInput.new(item: media) ])
+    TransformationRun.create!(result: child, status: "complete", inputs: [ TransformationRunInput.new(item: media) ])
+
+    assert_equal [ media, child ], media.lineage
+  end
 end

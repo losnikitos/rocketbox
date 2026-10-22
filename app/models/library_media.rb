@@ -63,8 +63,14 @@ class LibraryMedia < ApplicationRecord
   end
 
   # This media and every version made from it, each followed by its own versions.
+  # A Sort (or other relocating / forwarding step) uses this media as its own result, so skip anything already seen.
   # ponytail: one query per node; fine for shallow trees, switch to a recursive CTE if chains get long
-  def lineage = [ self, *generated_media.with_attached_file.includes(:transformation_run).order(:created_at).flat_map(&:lineage) ]
+  def lineage(seen = {})
+    return [] if seen[id]
+
+    seen[id] = true
+    [ self, *generated_media.with_attached_file.includes(:transformation_run).order(:created_at).flat_map { it.lineage(seen) } ]
+  end
 
   def story_image?
     return false unless file.attached?
