@@ -27,7 +27,7 @@
 
   <% if phone || @messages.any? %>
     <div class="<%= phone ? "flex min-h-0 flex-1 flex-col" : "mt-6" %>">
-      <%= render "chat", fill: phone.present? %>
+      <%= render "chat", fill: phone.present?, composer: phone.present? %>
     </div>
   <% end %>
 </div>

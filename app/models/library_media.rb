@@ -97,4 +97,15 @@ class LibraryMedia < ApplicationRecord
     else "document"
     end
   end
+
+  # Only Safari renders HEIC, and other browsers upload it without a MIME type.
+  def self.heic_as_jpeg(file)
+    ActionDispatch::Http::UploadedFile.new(
+      tempfile: ImageProcessing::Vips.source(file.tempfile).convert("jpg").call,
+      filename: "#{File.basename(file.original_filename, ".*")}.jpg",
+      type: "image/jpeg"
+    )
+  rescue Vips::Error
+    nil
+  end
 end

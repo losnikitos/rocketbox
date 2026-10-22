@@ -1,5 +1,6 @@
-<%# locals: fill (true when the chat should take the rest of the page) %>
+<%# locals: fill (true when the chat should take the rest of the page), composer %>
 <% fill = local_assigns[:fill] %>
+<% composer = local_assigns[:composer] %>
 <% menu_class = "cursor-pointer rounded p-1 text-ink-400 hover:bg-white hover:text-ink-700" %>
 
 <section class="flex min-h-0 flex-col overflow-hidden rounded-2xl <%= fill ? "flex-1" : "h-[70vh]" %>" aria-label="WhatsApp chat">
@@ -25,4 +26,26 @@
       </div>
     <% end %>
   </div>
+
+  <% if composer %>
+    <%= form_with url: whatsapp_path, multipart: true,
+          class: "shrink-0 bg-[#f0f2f5] px-2 py-2 data-dragging:bg-white",
+          data: { controller: "whatsapp-composer", action: "dragover->whatsapp-composer#over dragleave->whatsapp-composer#leave drop->whatsapp-composer#drop" } do %>
+      <ul data-whatsapp-composer-target="previews" class="mb-2 flex gap-2 overflow-x-auto empty:hidden"></ul>
+      <div class="flex items-end gap-2">
+        <label class="mb-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-500 hover:bg-ink-900/5">
+          <%= heroicon "paper-clip", options: { class: "size-6", "aria-hidden": true } %>
+          <span class="sr-only">Attach</span>
+          <%= file_field_tag "attachments[]", multiple: true, accept: "image/*,video/*,audio/*,*/*", class: "sr-only",
+                data: { whatsapp_composer_target: "input", action: "change->whatsapp-composer#pick" } %>
+        </label>
+        <%= text_area_tag :body, nil, rows: 1, placeholder: "Type a message",
+              class: "field-sizing-content max-h-32 min-h-10 flex-1 resize-none overflow-y-auto rounded-lg border-0 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:ring-0",
+              data: { action: "keydown->whatsapp-composer#keydown" } %>
+        <button type="submit" class="mb-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#075e54] text-white" aria-label="Send">
+          <%= heroicon "paper-airplane", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+        </button>
+      </div>
+    <% end %>
+  <% end %>
 </section>

@@ -50,4 +50,59 @@ class Accounts::WhatsappControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href^=?]", admin_incoming_message_path(incoming), text: "Admin"
     assert_select "a[href^=?]", admin_outgoing_message_path(outgoing), text: "Admin"
   end
+
+  test "text from the composer is an incoming message and gets the agent reply" do
+    original_request = WhatsappCloud.method(:request!)
+    original_reply = RocketboxAgent.method(:reply)
+    WhatsappCloud.define_singleton_method(:request!) { |*| { "messages" => [ { "id" => "wamid.dash-reply" } ] } }
+    RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
+
+    assert_difference -> { IncomingMessage.where(channel: "whatsapp", kind: "text").count }, 1 do
+      post whatsapp_url, params: { body: "hello from the desk" }
+    end
+
+    incoming = IncomingMessage.find_by!(channel: "whatsapp", body: "hello from the desk")
+    assert_equal @user, incoming.user
+    assert_equal "15551234567", incoming.sender
+    assert_redirected_to whatsapp_url
+
+    follow_redirect!
+    assert_select "p", text: "hello from the desk"
+    assert_select "p", text: "What's the business called?"
+  ensure
+    WhatsappCloud.define_singleton_method(:request!, original_request)
+    RocketboxAgent.define_singleton_method(:reply, original_reply)
+  end
+
+  test "an attachment is one incoming message and inbox media, with no agent reply" do
+    replies = 0
+    original_reply = RocketboxAgent.method(:reply)
+    RocketboxAgent.define_singleton_method(:reply) { |*| replies += 1 }
+
+    assert_no_difference -> { OutgoingMessage.count } do
+      assert_difference -> { LibraryMedia.count }, 1 do
+        post whatsapp_url, params: { body: "fresh cut", attachments: [ fixture_file_upload("rendered.jpg", "image/jpeg") ] }
+      end
+    end
+
+    incoming = IncomingMessage.order(:id).last
+    media = LibraryMedia.order(:id).last
+    assert_equal "image", incoming.kind
+    assert_equal "fresh cut", incoming.body
+    assert incoming.attachments.attached?
+    assert_equal media.file.blob, incoming.attachments.first.blob
+    assert_equal folders(:inbox), media.folder
+    assert_equal @user, media.user
+    assert_equal 0, replies
+  ensure
+    RocketboxAgent.define_singleton_method(:reply, original_reply)
+  end
+
+  test "an empty composer post creates nothing" do
+    assert_no_difference -> { IncomingMessage.count } do
+      post whatsapp_url, params: { body: "  " }
+    end
+
+    assert_redirected_to whatsapp_url
+  end
 end
