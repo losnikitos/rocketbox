@@ -34,12 +34,13 @@ class AdminAccountParamTest < ActionDispatch::IntegrationTest
     assert_redirected_to business_url(account: admin.id)
   end
 
-  test "non-admin ignores the account param and sees no selector" do
-    sign_in_as(users(:lazaro_nixon))
+  test "non-admin ignores the account param and sees their company, not a selector" do
+    user = sign_in_as(users(:lazaro_nixon))
 
     get library_folders_url("inbox", account: users(:admin_user).id)
     assert_response :success
     assert_select "select#account_user_id", count: 0
+    assert_select "[aria-label=Company][aria-readonly=true]", text: /#{user.business_name}/
     assert_select "nav[aria-label='Primary'] a[href=?]", reviews_path
   end
 end

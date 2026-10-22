@@ -2,7 +2,7 @@
   admin = Current.user&.admin?
   rows = [
     [ "Recent", recent_path, section_icon("clock") ],
-    *Folder.roots.ordered.includes(:children).flat_map { [ it, *it.children ] }
+    *sidebar_roots.flat_map { [ it, *it.children ] }
       .map { [ it.path, folder_path(it), heroicon("folder", options: { class: "size-5 shrink-0 #{folder_color(it)}", "aria-hidden": true }), "Folder" ] },
     *([ [ "Workflows", workflows_path, lucide_icon("workflow", class: "size-5 shrink-0", "stroke-width": 1.5, "aria-hidden": true) ],
         *Workflow.order(updated_at: :desc).map { [ it.name, workflow_path(it), lucide_icon("workflow", class: "size-5 shrink-0 text-ink-400", "stroke-width": 1.5, "aria-hidden": true), "Workflow" ] },

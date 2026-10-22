@@ -3,13 +3,6 @@
 require "telegram/bot"
 
 class ReplyTelegramMessage
-  INSTRUCTIONS = <<~TEXT.squish
-    You are the Rocketbox library assistant.
-    Use the list_media tool to answer questions about the user's media library.
-    Use the login_link tool when the user asks to log in, open the dashboard, or get a login link.
-    Keep replies short and plain text.
-  TEXT
-
   TELEGRAM_MAX_LENGTH = 4096
 
   def self.call(update)
@@ -31,11 +24,7 @@ class ReplyTelegramMessage
       return TelegramBot.react(message)
     end
 
-    chat = Chat.create!
-    response = chat
-      .with_instructions(INSTRUCTIONS)
-      .with_tools(ListMedia.new(user:), LoginLink.new(user:))
-      .ask(message.text)
+    response = RocketboxAgent.create!(user:).ask(message.text)
 
     text = response.content.to_s.truncate(TELEGRAM_MAX_LENGTH)
     TelegramBot.send_message(chat_id: message.chat.id, text: text)
