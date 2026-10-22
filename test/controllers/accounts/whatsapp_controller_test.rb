@@ -51,6 +51,52 @@ class Accounts::WhatsappControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href^=?]", admin_outgoing_message_path(outgoing), text: "Admin"
   end
 
+  test "admin sees workflow runs in the thread; the owner does not" do
+    photo = @user.library_media.create!(kind: "photo", folder: folders(:business_card))
+    workflow = Workflow.create!(name: "Card filing")
+    run = workflow.runs.create!(status: "started", picks: { "9" => [ photo.id ] })
+    step = run.step_runs.create!(result: photo, status: "complete")
+    step.inputs.create!(item: photo, position: 0)
+    running = Workflow.create!(name: "Still going").runs.create!(status: "started")
+    running.step_runs.create!(result: photo, status: "running")
+    Workflow.create!(name: "Just a draft").runs.create!(status: "draft").step_runs.create!(result: photo, status: "complete")
+    other = users(:admin_user).library_media.create!(kind: "photo", folder: folders(:business_card))
+    Workflow.create!(name: "Other shop").runs.create!(status: "started").step_runs.create!(result: other, status: "complete")
+
+    incoming = IncomingMessage.create!(channel: "whatsapp", user: @user, sender: "15551234567", kind: "text",
+      body: "from the shop", payload: { "id" => "wamid.transcript-in" })
+    outgoing = OutgoingMessage.create!(channel: "whatsapp", user: @user, recipient: "15551234567", kind: "text",
+      body: "from rocketbox", payload: { "type" => "text" })
+    incoming.update_columns(created_at: 3.minutes.ago)
+    run.update_columns(created_at: 2.minutes.ago)
+    outgoing.update_columns(created_at: 1.minute.ago)
+
+    get whatsapp_url
+
+    assert_response :success
+    assert_no_match "card_filing", response.body
+    assert_no_match "still_going", response.body
+
+    sign_in_as(users(:admin_user))
+    get whatsapp_url(account: @user.id)
+
+    assert_response :success
+    assert_match "card_filing", response.body
+    assert_match "Complete", response.body
+    assert_match "media_ids #{photo.id}", response.body
+    assert_match "in media_id #{photo.id} · Inbox / Business card", response.body
+    assert_match "out media_id #{photo.id} · Inbox / Business card", response.body
+    assert_match "still_going", response.body
+    assert_match "Running", response.body
+    assert_no_match "just_a_draft", response.body
+    assert_no_match "other_shop", response.body
+    assert_select "a[href^=?]", workflow_path(workflow, run: run.id)
+    assert_select "a[href^=?]", admin_workflow_run_path(run), text: "Admin"
+    body = response.body
+    assert_operator body.index("from the shop"), :<, body.index("card_filing")
+    assert_operator body.index("card_filing"), :<, body.index("from rocketbox")
+  end
+
   test "text from the composer is an incoming message and gets the agent reply" do
     original_request = WhatsappCloud.method(:request!)
     original_reply = RocketboxAgent.method(:reply)

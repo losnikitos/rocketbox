@@ -20,6 +20,17 @@ class WorkflowRun < ApplicationRecord
   belongs_to :workflow
   has_many :step_runs, -> { order(:id) }, class_name: "TransformationRun", inverse_of: :workflow_run
 
+  # Started runs played as this user: a step run's result is their media or prompt. A step creates
+  # that result up front, so a run still going is included. Drafts are not.
+  scope :played_by, ->(user) {
+    owned = TransformationRun.where.not(workflow_run_id: nil).where(
+      "(result_type = 'LibraryMedia' AND result_id IN (:media)) OR (result_type = 'Prompt' AND result_id IN (:prompts))",
+      media: user.library_media.select(:id),
+      prompts: user.prompts.select(:id)
+    ).select(:workflow_run_id)
+    where(id: owned, status: "started")
+  }
+
   validates :status, inclusion: { in: STATUSES }
   normalizes :error, with: -> { it.presence }
 

@@ -97,7 +97,15 @@ module Accounts
         reactions, bubbles = rows.partition { |message| message.kind == "reaction" }
         grouped = reactions.group_by { |message| message.payload.is_a?(Hash) ? message.payload.dig("reaction", "message_id").presence : nil }
         grouped.delete(nil)
-        [ bubbles.sort_by(&:created_at), grouped ]
+        if Current.user&.admin?
+          bubbles += WorkflowRun.played_by(account)
+            .includes(:workflow, step_runs: { inputs: { item: :folder }, result: :folder }).to_a
+          rank = { IncomingMessage => 0, WorkflowRun => 1, OutgoingMessage => 2 }
+          bubbles.sort_by! { |record| [ record.created_at, rank.fetch(record.class), record.id ] }
+        else
+          bubbles.sort_by!(&:created_at)
+        end
+        [ bubbles, grouped ]
       end
   end
 end

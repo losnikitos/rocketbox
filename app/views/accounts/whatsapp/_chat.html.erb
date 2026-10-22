@@ -21,7 +21,11 @@
             <p class="mx-auto my-1 w-fit rounded-lg bg-white/70 px-2 py-0.5 text-xs text-ink-500"><%= whatsapp_day(message.created_at) %></p>
             <% last_day = day %>
           <% end %>
-          <%= render "bubble", message:, menu_class: %>
+          <% if message.is_a?(WorkflowRun) %>
+            <%= render "run", run: message, menu_class: %>
+          <% else %>
+            <%= render "bubble", message:, menu_class: %>
+          <% end %>
         <% end %>
       </div>
     <% end %>

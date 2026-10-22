@@ -11,6 +11,22 @@ class AgentTranscript
 
   def self.call(chat, user) = new(chat, user).call
 
+  # What a workflow run took and made. A Sort's result is the source, so WorkflowRun#inputs/#outputs
+  # (a set difference) is empty; this lists the step runs instead. The model receives this as JSON.
+  def self.trace(run)
+    {
+      status: run.state,
+      error: run.error,
+      inputs: run.step_runs.flat_map(&:sources).uniq.map { item_ref(it) },
+      outputs: run.step_runs.filter_map(&:result).uniq.map { item_ref(it) }
+    }
+  end
+
+  def self.item_ref(item)
+    id_key = { media: :media_id, prompt: :prompt_id, review: :review_id }.fetch(item.item_kind, :id)
+    { id_key => item.id, folder: item.folder.path }
+  end
+
   def initialize(chat, user)
     @chat = chat
     @user = user
@@ -29,18 +45,11 @@ class AgentTranscript
       rows.sort_by { |record, rank| [ record.created_at, rank, record.id ] }.map(&:first)
     end
 
-    # A run is played as this user; its step runs' results are their media or prompts.
-    # Skip drafts and runs that still have a step running or waiting.
+    # Skip runs that still have a step running or waiting. The page shows those; the model does not.
     def runs
-      owned = TransformationRun.where.not(workflow_run_id: nil).where(status: %w[complete failed rejected]).where(
-        "(result_type = 'LibraryMedia' AND result_id IN (:media)) OR (result_type = 'Prompt' AND result_id IN (:prompts))",
-        media: @user.library_media.select(:id),
-        prompts: @user.prompts.select(:id)
-      ).select(:workflow_run_id)
       busy = TransformationRun.where(status: %w[running waiting]).select(:workflow_run_id)
-
-      WorkflowRun.where(id: owned, status: "started").where.not(id: busy)
-        .includes(:workflow, step_runs: { inputs: :item, result: :folder })
+      WorkflowRun.played_by(@user).where.not(id: busy)
+        .includes(:workflow, step_runs: { inputs: { item: :folder }, result: :folder })
     end
 
     def sent
@@ -64,8 +73,6 @@ class AgentTranscript
     end
 
     # Name is the workflow slug underscored, so a later tool class can use the same name.
-    # A Sort's result is the source, so WorkflowRun#inputs/#outputs (a set difference) is empty;
-    # list what the run took and made instead.
     def render_run(run)
       id = "run_#{run.id}"
       media_ids = run.picks.values.flatten.map(&:to_i).uniq
@@ -77,17 +84,5 @@ class AgentTranscript
       @chat.add_message(role: :tool, content: result_json(run), tool_call_id: id)
     end
 
-    def result_json(run)
-      {
-        status: run.state,
-        error: run.error,
-        inputs: run.step_runs.flat_map(&:sources).uniq.map { item_ref(it) },
-        outputs: run.step_runs.filter_map(&:result).uniq.map { item_ref(it) }
-      }.to_json
-    end
-
-    def item_ref(item)
-      id_key = { media: :media_id, prompt: :prompt_id, review: :review_id }.fetch(item.item_kind, :id)
-      { id_key => item.id, folder: item.folder.path }
-    end
+    def result_json(run) = self.class.trace(run).to_json
 end
