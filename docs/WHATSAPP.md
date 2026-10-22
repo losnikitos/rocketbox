@@ -15,7 +15,7 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
    - **Links** → text with `http(s)://` URLs from a known phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`.
    - **Approval** (`approval:approve:<id>` / `approval:reject:<id>` button reply) → approve or reject a waiting Approval step run owned by that user ([RequestApproval](/app/services/request_approval.rb)); see [WORKFLOWS.md](./WORKFLOWS.md). Approve does not send its own ack — the next step's WhatsApp line is the reply.
    - **Waiting step** (known phone, no onboarding question) → the newest `waiting` step run owned by that user is the cursor. Text resends that step (Approval resends its buttons). A photo that lands in a waiting Collect's start folder joins that run instead of opening another ([Workflow.autorun!](/app/models/workflow.rb)).
-   - **Text-only** (known phone, nothing waiting — including free-form text during the business-card and logo steps) → [RocketboxAgent](/app/agents/rocketbox_agent.rb) ([ListMedia](/app/tools/list_media.rb), [LoginLink](/app/tools/login_link.rb), [SaveBusiness](/app/tools/save_business.rb)) → `send_text` the reply. [SaveBusiness](/app/tools/save_business.rb) writes facts they state. The pending step stays set so the next photo still files. A business-card photo is still read by the [Business card workflow](/app/models/workflow/business_card.rb), not the agent.
+   - **Text-only** (known phone, nothing waiting — including free-form text during the business-card and logo steps) → [RocketboxAgent](/app/agents/rocketbox_agent.rb) ([ListMedia](/app/tools/list_media.rb), [LoginLink](/app/tools/login_link.rb), [ConnectInstagram](/app/tools/connect_instagram.rb), [SaveBusiness](/app/tools/save_business.rb)) → `send_text` the reply. [SaveBusiness](/app/tools/save_business.rb) writes facts they state. The pending step stays set so the next photo still files. A business-card photo is still read by the [Business card workflow](/app/models/workflow/business_card.rb), not the agent.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Media appears on `/app/library`.
 
 ## Dashboard page
@@ -134,6 +134,7 @@ Fields we care about: `entry[].id` (WABA), `metadata.phone_number_id` / `display
 | Onboarding chain / links | [app/services/whatsapp_onboarding.rb](/app/services/whatsapp_onboarding.rb) |
 | List media tool | [app/tools/list_media.rb](/app/tools/list_media.rb) |
 | Save business tool | [app/tools/save_business.rb](/app/tools/save_business.rb) |
+| Connect Instagram tool | [app/tools/connect_instagram.rb](/app/tools/connect_instagram.rb) |
 | Model | [app/models/library_media.rb](/app/models/library_media.rb) |
 | Library UI | [app/views/accounts/show.html.erb](/app/views/accounts/show.html.erb) (`/app/library`) |
 | Tests | [test/services/store_whatsapp_media_test.rb](/test/services/store_whatsapp_media_test.rb), [test/services/reply_whatsapp_message_test.rb](/test/services/reply_whatsapp_message_test.rb), [test/controllers/whatsapp_webhooks_controller_test.rb](/test/controllers/whatsapp_webhooks_controller_test.rb) |

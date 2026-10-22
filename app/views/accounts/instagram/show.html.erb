@@ -1,8 +1,22 @@
 <% content_for(:title, "Instagram — Rocketbox") %>
 
 <% if !Current.account.instagram_authorized? %>
-  <p class="text-sm text-ink-500">Not connected yet.</p>
-  <%= link_to "Connect Instagram", profile_instagram_authorize_path, class: "rb-btn-primary mt-4 px-4 py-2 text-sm" %>
+  <section class="max-w-sm rounded-2xl border border-ink-900/10 bg-white p-6">
+    <h2 class="font-semibold text-ink-900">Connect Instagram</h2>
+    <p class="mt-1 text-sm text-ink-600">Scan with the phone where you’re signed in to Instagram. The code works once, for 1 hour.</p>
+
+    <div class="mx-auto mt-6 size-48 *:size-full" role="img" aria-label="QR code to connect Instagram">
+      <%= raw RQRCode::QRCode.new(@instagram_connect_url, level: :l).as_svg(use_path: true, viewbox: true, standalone: true) %>
+    </div>
+    <p class="mt-2 text-center text-sm text-ink-600">Scan with your phone camera</p>
+
+    <div class="mt-6 flex flex-col gap-2">
+      <%= button_to "Send link to WhatsApp", instagram_profile_link_path,
+            form: { class: "w-full" },
+            class: "rb-btn-primary w-full px-4 py-2 text-sm" %>
+      <%= link_to "Connect here instead", profile_instagram_authorize_path, class: "rb-btn-ghost-on-light w-full px-4 py-2 text-sm" %>
+    </div>
+  </section>
 <% else %>
   <% profile = Current.account.instagram_profile.to_h %>
   <% handle = profile["username"] %>

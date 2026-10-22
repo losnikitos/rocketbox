@@ -46,7 +46,7 @@ Any message from a new number creates the user (`whatsapp_phone` set, `email` ni
 
 ## WhatsApp login link
 
-WhatsApp users get into the web UI via a one-time link: an admin clicks “Send dashboard link” on `/app/onboarding`, or the user asks in WhatsApp/Telegram chat and the [`LoginLink`](/app/tools/login_link.rb) tool sends the same link. Both use `GET /sign_in/whatsapp?token=…`. The token is `generates_token_for :whatsapp_login` (1 hour, bound to `users.whatsapp_login_at`, which the link bumps — so each link works once). [`SessionsController#whatsapp`](/app/controllers/sessions_controller.rb) starts a session and redirects to `/app`, or to Instagram authorize when `to=instagram` (the Instagram “Ask in chat” link).
+WhatsApp users get into the web UI via a one-time link: an admin clicks “Send dashboard link” on `/app/onboarding`, or the user asks in WhatsApp/Telegram chat and the [`LoginLink`](/app/tools/login_link.rb) tool sends the same link. Both use `GET /sign_in/whatsapp?token=…`. The token is `generates_token_for :whatsapp_login` (1 hour, bound to `users.whatsapp_login_at`, which the link bumps — so each link works once). [`SessionsController#whatsapp`](/app/controllers/sessions_controller.rb) starts a session and redirects to `/app`, or to Instagram authorize when `to=instagram`. The dashboard “Send link to WhatsApp” button and the [`ConnectInstagram`](/app/tools/connect_instagram.rb) tool (when onboarding shows Instagram missing) both send that link.
 
 ## Email verification
 

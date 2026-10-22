@@ -42,6 +42,7 @@ Rails.application.routes.draw do
     scope path: "instagram", module: :accounts, as: :instagram do
       get "profile", to: "instagram#show"
       delete "profile", to: "instagram#destroy"
+      post "profile/link", to: "instagram#link", as: :profile_link
     end
 
     scope module: :accounts do

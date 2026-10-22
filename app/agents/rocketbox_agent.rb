@@ -22,6 +22,7 @@ class RocketboxAgent < RubyLLM::Agent
     When they state a fact, save it with save_business. Only save what they said. Never invent a value.
     Use list_media for questions about their media library.
     Use login_link when they ask to log in, open the dashboard, or get a login link.
+    WhatsApp and Instagram are connections, not facts. If Instagram is (missing) and that is the one thing you are asking for, call connect_instagram and tell them to tap Connect Instagram; do not paste a URL or ask for a handle. If WhatsApp is (missing), suggest connecting WhatsApp.
     Keep replies to one short plain-text message. When onboarding is INCOMPLETE, ask for one missing fact.
     A tool result is a workflow that already ran. Confirm what it changed, then ask for one missing fact if onboarding is INCOMPLETE.
   TEXT
@@ -30,7 +31,7 @@ class RocketboxAgent < RubyLLM::Agent
     RocketboxAgent.business_brief(user)
   end
 
-  tools { [ ListMedia.new(user:), LoginLink.new(user:), SaveBusiness.new(user:) ] }
+  tools { [ ListMedia.new(user:), LoginLink.new(user:), ConnectInstagram.new(user:), SaveBusiness.new(user:) ] }
 
   # One chat per user. Wiped and rebuilt from their messages and workflow runs; the brief above is the account.
   # `text` is a line the user did not send (a connection, a nudge). Their own words are already incoming messages.
@@ -70,6 +71,8 @@ class RocketboxAgent < RubyLLM::Agent
 
     lines = BRIEF.map { |label, column| "#{label}: #{user.public_send(column).presence || "(missing)"}" }
     lines << "Logo: #{user.logo? ? "set" : "(missing)"}"
+    lines << "WhatsApp: #{user.whatsapp_phone.present? ? "connected" : "(missing)"}"
+    lines << "Instagram: #{user.instagram_authorized? ? "connected" : "(missing)"}"
     status = lines.any? { it.end_with?("(missing)") } ? "INCOMPLETE" : "COMPLETE"
     "Onboarding: #{status}\n#{lines.join("\n")}"
   end

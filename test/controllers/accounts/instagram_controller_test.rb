@@ -7,11 +7,41 @@ class Accounts::InstagramControllerTest < ActionDispatch::IntegrationTest
     @user = sign_in_as(users(:lazaro_nixon))
   end
 
+  test "sends an instagram connect link to whatsapp" do
+    @user.update!(whatsapp_phone: "15551234567")
+    sent = []
+    original = WhatsappCloud.method(:send_cta_url)
+    WhatsappCloud.define_singleton_method(:send_cta_url) { |**args| sent << args }
+
+    get instagram_profile_url
+    assert_select "[aria-label=?]", "QR code to connect Instagram"
+    assert_select "form[action=?] button", instagram_profile_link_path, text: "Send link to WhatsApp"
+    assert_select "a[href=?]", profile_instagram_authorize_path, text: "Connect here instead"
+
+    post instagram_profile_link_url
+    assert_redirected_to instagram_profile_url
+    assert_equal "Link sent to +15551234567", flash[:notice]
+    assert_equal "Connect Instagram", sent.sole[:display_text]
+    assert_equal "15551234567", sent.sole[:to]
+    assert_match(/[?&]to=instagram(?:&|\z)/, sent.sole[:url])
+  ensure
+    WhatsappCloud.define_singleton_method(:send_cta_url, original) if original
+  end
+
+  test "instagram connect link requires a whatsapp phone" do
+    post instagram_profile_link_url
+
+    assert_redirected_to instagram_profile_url
+    assert_equal "Connect WhatsApp first.", flash[:alert]
+  end
+
   test "shows connect until authorized, then fetch info" do
     get instagram_profile_url
     assert_response :success
     assert_select "h1", "Your profile"
-    assert_select "a[href=?]", profile_instagram_authorize_path, text: "Connect Instagram"
+    assert_select "[aria-label=?]", "QR code to connect Instagram"
+    assert_select "form[action=?] button", instagram_profile_link_path, text: "Send link to WhatsApp"
+    assert_select "a[href=?]", profile_instagram_authorize_path, text: "Connect here instead"
     assert_select "form[action=?]", profile_instagram_refresh_path, count: 0
 
     @user.update!(instagram_user_id: "1", instagram_access_token: "t")

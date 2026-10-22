@@ -22,18 +22,38 @@ class RocketboxAgentTest < ActiveSupport::TestCase
     assert_includes brief, "Description: (missing)"
     assert_includes brief, "Hours: (missing)"
     assert_includes brief, "Logo: (missing)"
+    assert_includes brief, "WhatsApp: (missing)"
+    assert_includes brief, "Instagram: (missing)"
   end
 
   test "business brief is complete when every field and the logo are set" do
     user = users(:lazaro_nixon)
     user.update!(
       business_name: "Acme", phone: "1", name: "Ada", address: "1 High St",
-      homepage_url: "https://acme.test", business_description: "Cuts", business_hours: "9-5"
+      homepage_url: "https://acme.test", business_description: "Cuts", business_hours: "9-5",
+      whatsapp_phone: "15551234567", instagram_user_id: "ig", instagram_access_token: "token"
     )
     logo = user.library_media.create!(kind: "photo", folder: Folder.logo)
     logo.file.attach(io: StringIO.new("logo"), filename: "logo.png", content_type: "image/png")
 
     assert_includes RocketboxAgent.business_brief(user), "Onboarding: COMPLETE"
+  end
+
+  test "business brief stays incomplete without instagram" do
+    user = users(:lazaro_nixon)
+    user.update!(
+      business_name: "Acme", phone: "1", name: "Ada", address: "1 High St",
+      homepage_url: "https://acme.test", business_description: "Cuts", business_hours: "9-5",
+      whatsapp_phone: "15551234567"
+    )
+    logo = user.library_media.create!(kind: "photo", folder: Folder.logo)
+    logo.file.attach(io: StringIO.new("logo"), filename: "logo.png", content_type: "image/png")
+
+    brief = RocketboxAgent.business_brief(user)
+
+    assert_includes brief, "Onboarding: INCOMPLETE"
+    assert_includes brief, "WhatsApp: connected"
+    assert_includes brief, "Instagram: (missing)"
   end
 
   test "system messages are the instructions and then the brief" do
