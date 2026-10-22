@@ -1,0 +1,26 @@
+<%# locals: messages, reactions %>
+<% messages = local_assigns[:messages] %>
+<% reactions = local_assigns[:reactions] %>
+<% menu_class = "cursor-pointer rounded p-1 text-ink-400 hover:bg-white hover:text-ink-700" %>
+
+<div id="whatsapp_messages" class="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#efeae2]" data-controller="scroll-end">
+  <% if messages.empty? %>
+    <p class="m-auto text-sm text-ink-500">No messages yet.</p>
+  <% else %>
+    <div class="mt-auto flex flex-col gap-1 px-3 py-3">
+      <% last_day = nil %>
+      <% messages.each do |message| %>
+        <% day = message.created_at.to_date %>
+        <% if day != last_day %>
+          <p class="mx-auto my-1 w-fit rounded-lg bg-white/70 px-2 py-0.5 text-xs text-ink-500"><%= whatsapp_day(message.created_at) %></p>
+          <% last_day = day %>
+        <% end %>
+        <% if message.is_a?(WorkflowRun) %>
+          <%= render "accounts/whatsapp/run", run: message, menu_class: %>
+        <% else %>
+          <%= render "accounts/whatsapp/bubble", message:, reactions:, menu_class: %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

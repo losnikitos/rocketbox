@@ -48,6 +48,17 @@ export default class extends Controller {
     this.element.requestSubmit()
   }
 
+  // turbo:submit-start fires after FormData is built, so the request still has the text and files.
+  clear() {
+    const body = this.element.querySelector("textarea")
+    if (body) body.value = ""
+    this.previewsTarget.querySelectorAll("li").forEach((li) => {
+      if (li.url) URL.revokeObjectURL(li.url)
+      li.remove()
+    })
+    this.sync()
+  }
+
   sync() {
     const transfer = new DataTransfer()
     this.previewsTarget.querySelectorAll("li").forEach((li) => li.file && transfer.items.add(li.file))

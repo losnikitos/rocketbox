@@ -6,6 +6,8 @@ class OutgoingMessage < ApplicationRecord
   validates :channel, presence: true
   validates :payload, presence: true
 
+  after_create_commit -> { user.broadcast_whatsapp_thread }, if: -> { channel == "whatsapp" && user }
+
   # Auditing must never break a send.
   def self.log(**attrs)
     create!(attrs)

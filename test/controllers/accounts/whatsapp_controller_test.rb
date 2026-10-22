@@ -103,18 +103,30 @@ class Accounts::WhatsappControllerTest < ActionDispatch::IntegrationTest
     WhatsappCloud.define_singleton_method(:request!) { |*| { "messages" => [ { "id" => "wamid.dash-reply" } ] } }
     RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
 
+    streams = nil
     assert_difference -> { IncomingMessage.where(channel: "whatsapp", kind: "text").count }, 1 do
-      post whatsapp_url, params: { body: "hello from the desk" }
+      assert_no_difference -> { OutgoingMessage.count } do
+        streams = capture_turbo_stream_broadcasts([ @user, :whatsapp, "owner" ]) do
+          post whatsapp_url, params: { body: "hello from the desk" }
+        end
+      end
     end
 
+    assert_response :no_content
     incoming = IncomingMessage.find_by!(channel: "whatsapp", body: "hello from the desk")
     assert_equal @user, incoming.user
     assert_equal "15551234567", incoming.sender
-    assert_redirected_to whatsapp_url
+    assert_equal "replace", streams.sole["action"]
+    assert_equal "whatsapp_messages", streams.sole["target"]
+    assert_includes streams.sole.to_html, "hello from the desk"
+    assert_not_includes streams.sole.to_html, "What's the business called?"
 
-    follow_redirect!
-    assert_select "p", text: "hello from the desk"
-    assert_select "p", text: "What's the business called?"
+    reply_streams = capture_turbo_stream_broadcasts([ @user, :whatsapp, "owner" ]) do
+      perform_enqueued_jobs(only: ReplyWhatsappMessageJob)
+    end
+
+    assert_includes reply_streams.sole.to_html, "What's the business called?"
+    assert OutgoingMessage.exists?(channel: "whatsapp", body: "What's the business called?")
   ensure
     WhatsappCloud.define_singleton_method(:request!, original_request)
     RocketboxAgent.define_singleton_method(:reply, original_reply)
@@ -146,9 +158,11 @@ class Accounts::WhatsappControllerTest < ActionDispatch::IntegrationTest
 
   test "an empty composer post creates nothing" do
     assert_no_difference -> { IncomingMessage.count } do
-      post whatsapp_url, params: { body: "  " }
+      assert_no_turbo_stream_broadcasts([ @user, :whatsapp, "owner" ]) do
+        post whatsapp_url, params: { body: "  " }
+      end
     end
 
-    assert_redirected_to whatsapp_url
+    assert_response :no_content
   end
 end

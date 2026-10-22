@@ -5,7 +5,7 @@ module Accounts
     layout "app"
 
     def show
-      @messages, @reactions = whatsapp_thread
+      @messages, @reactions = Current.account.whatsapp_thread(admin: Current.user&.admin?)
       return if Current.account.whatsapp_phone
 
       Current.account.regenerate_whatsapp_link_code unless Current.account.whatsapp_link_code
@@ -18,10 +18,18 @@ module Accounts
 
       body = params[:body].to_s.strip
       files = dashboard_files
-      return redirect_to(whatsapp_path) if body.blank? && files.empty?
+      return head :no_content if body.blank? && files.empty?
 
-      files.any? ? store_media!(phone, body, files) : store_text!(phone, body)
-      redirect_to whatsapp_path
+      # Broadcast before the reply is enqueued, so the first paint is the new message alone.
+      payload = if files.any?
+        store_media!(phone, body, files)
+        nil
+      else
+        store_text!(phone, body)
+      end
+      Current.account.broadcast_whatsapp_thread
+      ReplyWhatsappMessageJob.perform_later(payload) if payload
+      head :no_content
     end
 
     def destroy
@@ -42,7 +50,7 @@ module Accounts
       def store_text!(phone, body)
         message = { "from" => phone, "id" => "dash.#{SecureRandom.hex(8)}", "type" => "text", "text" => { "body" => body } }
         StoreIncomingMessage.whatsapp(message)
-        ReplyWhatsappMessage.call(
+        {
           "entry" => [ {
             "changes" => [ {
               "field" => "messages",
@@ -52,9 +60,7 @@ module Accounts
               }
             } ]
           } ]
-        )
-      rescue WhatsappCloud::Error => error
-        flash[:alert] = error.message
+        }
       end
 
       # One bubble, caption on the media. Each file is also Inbox media, which autoruns on attach.
@@ -80,32 +86,6 @@ module Accounts
 
       def whatsapp_type(file)
         { "photo" => "image", "video" => "video", "audio" => "audio" }.fetch(LibraryMedia.kind_for(file.content_type), "document")
-      end
-
-      # The first inbound text is stored before the user exists, so match the phone too.
-      def whatsapp_thread
-        account = Current.account
-        phone = account.whatsapp_phone
-        incoming = IncomingMessage.where(channel: "whatsapp", user: account)
-        outgoing = OutgoingMessage.where(channel: "whatsapp", user: account)
-        if phone.present?
-          incoming = incoming.or(IncomingMessage.where(channel: "whatsapp", sender: phone))
-          outgoing = outgoing.or(OutgoingMessage.where(channel: "whatsapp", recipient: phone))
-        end
-
-        rows = incoming.with_attached_attachments.to_a + outgoing.to_a
-        reactions, bubbles = rows.partition { |message| message.kind == "reaction" }
-        grouped = reactions.group_by { |message| message.payload.is_a?(Hash) ? message.payload.dig("reaction", "message_id").presence : nil }
-        grouped.delete(nil)
-        if Current.user&.admin?
-          bubbles += WorkflowRun.played_by(account)
-            .includes(:workflow, step_runs: { inputs: { item: :folder }, result: :folder }).to_a
-          rank = { IncomingMessage => 0, WorkflowRun => 1, OutgoingMessage => 2 }
-          bubbles.sort_by! { |record| [ record.created_at, rank.fetch(record.class), record.id ] }
-        else
-          bubbles.sort_by!(&:created_at)
-        end
-        [ bubbles, grouped ]
       end
   end
 end

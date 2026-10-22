@@ -16,11 +16,13 @@ class ProcessWhatsappUpdateJob < ApplicationJob
     end
     return if messages.empty?
 
-    messages.each { |message| StoreIncomingMessage.whatsapp(message) }
+    stored = messages.filter_map { |message| StoreIncomingMessage.whatsapp(message) }
 
     if messages.any? { |message| StoreWhatsappMedia.media?(message) }
       StoreWhatsappMedia.call(payload)
     end
+
+    stored.filter_map(&:user).uniq.each(&:broadcast_whatsapp_thread)
 
     if messages.any? { |message| message["type"].in?(%w[text interactive]) }
       ReplyWhatsappMessage.call(payload)

@@ -78,6 +78,52 @@ class User < ApplicationRecord
     update!(whatsapp_link_code: SecureRandom.base58(8))
   end
 
+  # The first inbound text is stored before the user exists, so match the phone too.
+  # Admins also see this account's workflow runs, in the same order as AgentTranscript.
+  def whatsapp_thread(admin: false)
+    phone = whatsapp_phone
+    incoming = IncomingMessage.where(channel: "whatsapp", user: self)
+    outgoing = OutgoingMessage.where(channel: "whatsapp", user: self)
+    if phone.present?
+      incoming = incoming.or(IncomingMessage.where(channel: "whatsapp", sender: phone))
+      outgoing = outgoing.or(OutgoingMessage.where(channel: "whatsapp", recipient: phone))
+    end
+
+    rows = incoming.with_attached_attachments.to_a + outgoing.to_a
+    reactions, bubbles = rows.partition { |message| message.kind == "reaction" }
+    grouped = reactions.group_by { |message| message.payload.is_a?(Hash) ? message.payload.dig("reaction", "message_id").presence : nil }
+    grouped.delete(nil)
+    if admin
+      bubbles += WorkflowRun.played_by(self)
+        .includes(:workflow, step_runs: { inputs: { item: :folder }, result: :folder }).to_a
+      rank = { IncomingMessage => 0, WorkflowRun => 1, OutgoingMessage => 2 }
+      bubbles.sort_by! { |record| [ record.created_at, rank.fetch(record.class), record.id ] }
+    else
+      bubbles.sort_by!(&:created_at)
+    end
+    [ bubbles, grouped ]
+  end
+
+  # Owner and admin each get their own stream: the admin paint includes run cards and admin menus.
+  # "owner"/"admin": Turbo drops false from a stream name, so a boolean would not match the subscription.
+  def broadcast_whatsapp_thread
+    variants = [ [ admin?, admin? ? "admin" : "owner", self ] ]
+    variants << [ true, "admin", User.find_by(role: "admin") ] unless admin?
+    variants.each do |admin, stream, viewer|
+      next unless viewer
+
+      Current.set(account: self, session: ViewerSession.new(viewer)) do
+        messages, reactions = whatsapp_thread(admin:)
+        Turbo::StreamsChannel.broadcast_replace_to(
+          [ self, :whatsapp, stream ],
+          target: "whatsapp_messages",
+          partial: "accounts/whatsapp/messages",
+          locals: { messages:, reactions: }
+        )
+      end
+    end
+  end
+
   def account_label
     business_name.presence || email.presence || name.presence || "+#{whatsapp_phone}"
   end
@@ -98,6 +144,9 @@ class User < ApplicationRecord
   end
 
   private
+
+    ViewerSession = Struct.new(:user)
+    private_constant :ViewerSession
 
     def create_default_subscription
       create_subscription!(active: false)

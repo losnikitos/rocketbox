@@ -1,4 +1,4 @@
-<%# locals: message, menu_class %>
+<%# locals: message, reactions, menu_class %>
 <% message = local_assigns[:message] %>
 <% menu_class = local_assigns[:menu_class] %>
 <% incoming = message.is_a?(IncomingMessage) %>
@@ -6,7 +6,7 @@
 <% label = whatsapp_kind_label(message) %>
 <% media = whatsapp_outgoing_media(message) %>
 <% buttons = whatsapp_buttons(message) %>
-<% reactions = whatsapp_reactions(message, @reactions) %>
+<% reactions = whatsapp_reactions(message, local_assigns[:reactions]) %>
 
 <div class="flex <%= incoming ? "justify-end" : "justify-start" %>">
   <div class="flex max-w-xs items-start gap-1 sm:max-w-sm <%= "flex-row-reverse" if incoming %>">
