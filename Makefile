@@ -32,14 +32,20 @@ stop:
 	rm -f tmp/pids/dev.pid
 
 # Replace storage/development.sqlite3 with a snapshot of prod (queue db untouched).
+# Stop first, then rename into place. cp onto a file Puma still has open corrupts it.
 restore-prod-to-local:
 	@set -e; \
 	mkdir -p tmp/db_backups; \
 	LOCAL_PATH="tmp/db_backups/production_$$(date +%Y%m%d%H%M%S).sqlite3"; \
 	echo "Snapshotting prod db..."; \
 	ssh $(PROD_HOST) "sqlite3 $(PROD_DB) '.backup /tmp/rocketbox_pull.sqlite3' && cat /tmp/rocketbox_pull.sqlite3 && rm /tmp/rocketbox_pull.sqlite3" > $$LOCAL_PATH; \
+	echo "Stopping local app..."; \
+	$(MAKE) stop; \
+	pids=$$(lsof -t storage/development.sqlite3 storage/development.sqlite3-wal 2>/dev/null || true); \
+	if [ -n "$$pids" ]; then kill $$pids 2>/dev/null || true; sleep 0.5; fi; \
 	echo "Restoring into storage/development.sqlite3..."; \
 	rm -f storage/development.sqlite3-wal storage/development.sqlite3-shm; \
-	cp $$LOCAL_PATH storage/development.sqlite3; \
+	cp $$LOCAL_PATH storage/development.sqlite3.new; \
+	mv -f storage/development.sqlite3.new storage/development.sqlite3; \
 	bin/rails db:environment:set RAILS_ENV=development; \
 	bin/rails db:migrate data:migrate
