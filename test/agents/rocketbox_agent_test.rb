@@ -36,30 +36,29 @@ class RocketboxAgentTest < ActiveSupport::TestCase
     assert_includes RocketboxAgent.business_brief(user), "Onboarding: COMPLETE"
   end
 
-  test "reply forgets the previous turn and restates an incomplete brief" do
+  test "reply forgets a chat-only message and replays an incoming one" do
     user = users(:lazaro_nixon)
     user.update!(phone: nil, name: nil, address: nil, homepage_url: nil, business_description: nil, business_hours: nil)
     chat = user.create_chat!
     chat.messages.create!(role: "user", content: "secret previous turn")
+    IncomingMessage.create!(channel: "whatsapp", user:, kind: "text", body: "hello from them", payload: { "id" => "wamid.hello" })
     seen = []
-    original = Chat.instance_method(:ask)
-    Chat.define_method(:ask) do |message = nil, **|
+    original = Chat.instance_method(:complete)
+    Chat.define_method(:complete) do |*|
       seen << to_llm.messages.map { |m| "#{m.role} #{m.content}" }.join("\n")
       Struct.new(:content).new("What is your phone number?")
     end
 
     assert_no_difference -> { Chat.where(user:).count } do
-      RocketboxAgent.reply(user, "hello")
-      chat.messages.create!(role: "user", content: "hello from before")
       RocketboxAgent.reply(user, "second")
     end
 
-    assert_equal 2, seen.size
+    assert_equal 1, seen.size
     assert_includes seen[0], "Onboarding: INCOMPLETE"
+    assert_includes seen[0], "hello from them"
+    assert_includes seen[0], "second"
     assert_not_includes seen[0], "secret previous turn"
-    assert_not_includes seen[1], "hello from before"
-    assert_not_includes seen[1], "secret previous turn"
   ensure
-    Chat.define_method(:ask, original) if original
+    Chat.define_method(:complete, original) if original
   end
 end

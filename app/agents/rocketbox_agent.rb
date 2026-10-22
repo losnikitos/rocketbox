@@ -23,7 +23,7 @@ class RocketboxAgent < RubyLLM::Agent
     Use list_media for questions about their media library.
     Use login_link when they ask to log in, open the dashboard, or get a login link.
     Keep replies to one short plain-text message. When onboarding is INCOMPLETE, ask for one missing fact.
-    When the message says the workflows have finished, confirm what is now known, then ask for one missing fact if onboarding is INCOMPLETE.
+    A tool result is a workflow that already ran. Confirm what it changed, then ask for one missing fact if onboarding is INCOMPLETE.
   TEXT
 
   instructions append: true, persist: false do
@@ -32,11 +32,14 @@ class RocketboxAgent < RubyLLM::Agent
 
   tools { [ ListMedia.new(user:), LoginLink.new(user:), SaveBusiness.new(user:) ] }
 
-  # One chat per user. Previous turns are dropped; the brief above is the memory.
-  def self.reply(user, text)
+  # One chat per user. Wiped and rebuilt from their messages and workflow runs; the brief above is the account.
+  # `text` is a line the user did not send (a connection, a nudge). Their own words are already incoming messages.
+  def self.reply(user, text = nil)
     chat = user.with_lock { user.chat || user.create_chat! }
     chat.messages.destroy_all
-    find(chat.id, user:).ask(text)
+    AgentTranscript.call(chat, user)
+    chat.add_message(role: :user, content: text) if text.present? && chat.messages.where(role: "user").order(:id).last&.content != text
+    find(chat.id, user:).complete
   end
 
   # WhatsApp when they have a phone, otherwise Telegram.

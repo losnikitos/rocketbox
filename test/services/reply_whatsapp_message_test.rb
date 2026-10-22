@@ -30,12 +30,15 @@ class ReplyWhatsappMessageTest < ActiveSupport::TestCase
     original_reply = RocketboxAgent.method(:reply)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
     RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
+    incoming = IncomingMessage.create!(channel: "whatsapp", external_id: "wamid.text", sender: "15551234567",
+      kind: "text", body: "Hey", payload: { "id" => "wamid.text" }, user: nil)
 
     assert_difference -> { User.count }, 1 do
       ReplyWhatsappMessage.call(text_payload(from: "15551234567", body: "Hey"))
     end
 
     user = User.find_by!(whatsapp_phone: "15551234567")
+    assert_equal user, incoming.reload.user
     assert_equal [ "What's the business called?" ], sent
     assert_nil user.whatsapp_pending_question
   ensure

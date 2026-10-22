@@ -28,6 +28,10 @@ class ReplyWhatsappMessage
 
       # Unknown phone → new account. The agent asks for whatever the brief is missing.
       user ||= User.create!(whatsapp_phone: from)
+      # Stored before this account existed, so the transcript can replay it.
+      if (external_id = message["id"].to_s.presence)
+        IncomingMessage.where(channel: "whatsapp", external_id:, user_id: nil).update_all(user_id: user.id)
+      end
 
       if (decision = text.strip.match(/\Aapproval:(approve|reject):(\d+)\z/))
         handle_approval!(user, decision[1], decision[2].to_i, phone_number_id, from, message["id"])

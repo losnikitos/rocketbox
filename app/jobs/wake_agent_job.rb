@@ -8,7 +8,6 @@ class WakeAgentJob < ApplicationJob
   queue_as :default
 
   WAIT = 2.seconds
-  TRIGGER = "They sent a photo. The workflows have finished."
 
   def self.schedule(user)
     token = SecureRandom.hex(4)
@@ -23,7 +22,7 @@ class WakeAgentJob < ApplicationJob
     return unless Rails.cache.read(self.class.cache_key(user)) == token
     return if busy?(user)
 
-    body = RocketboxAgent.reply(user, TRIGGER).content
+    body = RocketboxAgent.reply(user).content
     RocketboxAgent.deliver(user, body)
     Rails.cache.delete(self.class.cache_key(user)) if Rails.cache.read(self.class.cache_key(user)) == token
   end

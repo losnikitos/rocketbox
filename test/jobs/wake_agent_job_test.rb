@@ -14,7 +14,7 @@ class WakeAgentJobTest < ActiveJob::TestCase
     @original_send = WhatsappCloud.method(:send_text)
     @original_reply = RocketboxAgent.method(:reply)
     WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
-    RocketboxAgent.define_singleton_method(:reply) { |_, text| asked << text; Struct.new(:content).new("What's the business called?") }
+    RocketboxAgent.define_singleton_method(:reply) { |*args| asked << args; Struct.new(:content).new("What's the business called?") }
   end
 
   teardown do
@@ -34,7 +34,7 @@ class WakeAgentJobTest < ActiveJob::TestCase
     running.update!(status: "complete")
     WakeAgentJob.perform_now(@user.id, token)
     assert_equal [ "What's the business called?" ], @sent
-    assert_equal [ WakeAgentJob::TRIGGER ], @asked
+    assert_equal [ [ @user ] ], @asked
   end
 
   test "a stale token does not speak" do
