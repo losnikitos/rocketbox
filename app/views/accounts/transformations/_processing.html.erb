@@ -33,6 +33,27 @@
   <% end %>
 </div>
 <% end %>
+<% if type&.reel? || transformation.kind.in?(%w[approval publish]) %>
+  <div>
+    <%= tf.label :body, transformation.kind == "approval" ? "Message" : "When it starts", class: field_label %>
+    <%= tf.text_area :body, rows: 2, class: tw_input_classes, placeholder: "Optional WhatsApp message" %>
+  </div>
+  <% if transformation.kind == "publish" %>
+    <div>
+      <%= label_tag "transformation_options_done", "When it finishes", class: field_label %>
+      <%= text_field_tag "transformation[options][done]", transformation.options["done"],
+            id: "transformation_options_done", class: tw_input_classes %>
+    </div>
+  <% end %>
+  <% if transformation.kind.in?(%w[approval publish]) %>
+    <div>
+      <%= label_tag "transformation_options_button", transformation.kind == "approval" ? "Button" : "Link button", class: field_label %>
+      <%= text_field_tag "transformation[options][button]", transformation.options["button"],
+            id: "transformation_options_button", class: tw_input_classes,
+            placeholder: transformation.kind == "approval" ? "Approve" : "View on Instagram" %>
+    </div>
+  <% end %>
+<% end %>
 <% if transformation.ai? %>
   <div>
     <% writes = transformation.makes == :prompt %>

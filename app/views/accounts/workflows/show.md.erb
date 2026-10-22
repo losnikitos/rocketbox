@@ -106,7 +106,7 @@ flowchart LR
 
 <% if outs.(node).any? %>
 <% noun = { "prompt" => "written prompts (shared ones plus the account's)", "review" => "5-star reviews" }.fetch(node.folder.kind, "media") %>
-- Gives: <%= node.pinned_ids.any? ? "its pinned #{node.folder.kind.pluralize} #{node.pinned_ids.join(", ")}" : "its newest #{node.take} #{noun}" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %><%= ", only #{node.media_type.pluralize}" if node.media_type %>
+- Gives: <%= node.pinned_ids.any? ? "its pinned #{node.folder.kind.pluralize} #{node.pinned_ids.join(", ")}" : "its newest #{node.take} #{noun}" %><%= " tagged #{hashtags.(node.tags)} (all of them)" if node.tags.any? %><%= ", only #{node.media_type.pluralize}" if node.media_type %><%= ", this folder only" unless node.include_subfolders? %>
 <% end %>
 - From: <%= ins.(node).join(", ").presence || "nothing" %>
 - To: <%= outs.(node).join(", ").presence || "nothing" %>

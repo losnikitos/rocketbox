@@ -15,7 +15,9 @@ end
 { "prompts" => [ "violet", "prompt" ], "reviews" => [ "amber", "review" ] }.each do |slug, (color, kind)|
   Folder.roots.find_or_create_by!(slug:) { it.assign_attributes(name: slug.humanize, color:, kind:) }
 end
+Workflow::InboxSort.ensure!
 Workflow::BusinessCard.ensure!
+Workflow::HaircutReel.ensure!
 
 # Meta app review account (credentials are shared with the submission).
 User.find_or_initialize_by(email: "review@meta.com").update!(password: "review_2026", verified: true)

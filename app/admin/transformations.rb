@@ -1,4 +1,5 @@
 ActiveAdmin.register Transformation do
+  menu parent: "Workflows"
   actions :index, :show
 
   includes workflow_nodes: :workflow

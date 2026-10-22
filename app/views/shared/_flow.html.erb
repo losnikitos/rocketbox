@@ -122,8 +122,10 @@
             </span>
             <% if n[:status] %>
               <% label, icon, css = { "running" => [ "Working", "arrow-path", "bg-signal-yellow [&_svg]:animate-spin" ],
+                                      "waiting" => [ "Waiting", "clock", "bg-signal-yellow" ],
                                       "complete" => [ "Complete", "check", "bg-signal-green" ],
-                                      "failed" => [ "Failed", "x-mark", "bg-signal-red" ] }.fetch(n[:status]) %>
+                                      "failed" => [ "Failed", "x-mark", "bg-signal-red" ],
+                                      "rejected" => [ "Rejected", "hand-raised", "bg-ink-500" ] }.fetch(n[:status]) %>
               <span role="img" aria-label="<%= label %>" title="<%= [ label, n[:error] ].compact.join(": ") %>"
                     class="absolute -top-2.5 -right-2.5 flex size-6 items-center justify-center rounded-full text-white shadow-sm ring-2 ring-white <%= css %>">
                 <%= heroicon icon, variant: :mini, options: { class: "size-4", "aria-hidden": true } %>

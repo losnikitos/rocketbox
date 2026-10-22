@@ -1,4 +1,5 @@
 ActiveAdmin.register Workflow do
+  menu parent: "Workflows"
   actions :index, :show, :edit, :update
   permit_params :name, :autorun
 
@@ -65,7 +66,11 @@ ActiveAdmin.register Workflow do
 
   form do |f|
     f.inputs do
-      f.input :name
+      if f.object.built_in?
+        f.input :name, input_html: { disabled: true }, hint: "Built-in workflows can't be renamed"
+      else
+        f.input :name
+      end
       f.input :autorun, hint: "Start a run for each media landing in a start folder"
     end
     f.actions

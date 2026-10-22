@@ -25,10 +25,11 @@ class WorkflowRun < ApplicationRecord
 
   before_create { self.name = "Run #{workflow.runs.count + 1}" }
 
-  def running? = step_runs.any?(&:running?)
+  # Busy while a step is generating or waiting on approval (blocks settle notify and run delete).
+  def running? = step_runs.any? { it.running? || it.waiting? }
   def draft? = status == "draft"
 
-  # Draft until first played; then failed, running or complete, as its step runs (nil while none started).
+  # Draft until first played; then failed, rejected, waiting, running or complete, as its step runs (nil while none started).
   def state = draft? ? "draft" : error ? "failed" : TransformationRun.status_of(step_runs)
 
   # What it was played with and what it ended with: items its step runs took that none made, and made that none took.
@@ -66,17 +67,22 @@ class WorkflowRun < ApplicationRecord
   end
 
   # What a folder node gives in this run, as the user: its items picked in `picks` (node id => media ids, a media
-  # folder's), else its pinned items, else its newest N, of its candidates.
+  # folder's, in that order), else its pinned items in pin order, else its newest N, of its candidates.
   def picked(node, user)
     items = candidates(node, user)
-    ((ids = picks[node.id.to_s] || node.pinned_ids.presence) ? items.where(id: ids) : items.limit(node.take)).to_a
+    if (ids = picks[node.id.to_s] || node.pinned_ids.presence)
+      found = items.where(id: ids).index_by(&:id)
+      ids.filter_map { |id| found[id.to_i] }
+    else
+      items.limit(node.take).to_a
+    end
   end
 
-  # What a folder node can give from the folder and its subfolders, newest first. A media folder: the user's media still
-  # in them (with all its tags, of its type). A prompt folder: their written prompts, shared or the user's. Reviews: the
-  # user's 5-star reviews.
+  # What a folder node can give from the folder (and its subfolders when `include_subfolders`), newest first. A media
+  # folder: the user's media still in them (with all its tags, of its type). A prompt folder: their written prompts,
+  # shared or the user's. Reviews: the user's 5-star reviews.
   def candidates(node, user)
-    folder_id = node.folder.tree_ids
+    folder_id = node.folder_ids
     case node.folder.kind
     when "prompt" then Prompt.where(folder_id:).written.where(user_id: [ nil, user.id ]).order(id: :desc)
     when "review" then user.reviews.postable.where(folder_id:).order(id: :desc)
@@ -140,9 +146,9 @@ class WorkflowRun < ApplicationRecord
       short.map { |name, count| "needs #{count.begin}+ #{name.to_s.humanize(capitalize: false).pluralize(count.begin)}, got #{given[name].size}" }.to_sentence
     end
 
-    # A step run stands while it hasn't failed, took the batch and its picks are still given, and its transformation
-    # wasn't saved since it started.
-    def stands?(run, batch, sides) = !run.failed? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
+    # A step run stands while it hasn't failed or been rejected, took the batch and its picks are still given, and its
+    # transformation wasn't saved since it started.
+    def stands?(run, batch, sides) = !run.failed? && !run.rejected? && matches?(run, batch, sides) && run.created_at >= run.transformation.updated_at
 
     # Whether the step run took `batch`, and one item per arrow it picks from that's still given there.
     # `batch` is a Hash of input name => items (see batches_of).
@@ -175,22 +181,38 @@ class WorkflowRun < ApplicationRecord
     end
 
     # A complete step run of the step's transformation, from any run, that matches and stands.
+    # Approval (waits?), Sort (relocates?) and a forwarding step never reuse — every run asks / classifies / posts again.
     def prior(step, batch, sides)
       transformation = step.transformation
+      return if transformation.type.waits? || transformation.type.relocates? || transformation.type.forwards?
       transformation.runs.where(status: "complete", created_at: transformation.updated_at..)
         .includes(inputs: :item).find { matches?(it, batch, sides) }
     end
 
     # Its result goes, unless another step run shares it, and before it the step runs here that took it, as their
-    # inputs go with it.
+    # inputs go with it. A relocating run's result is the source media — never destroy it.
     def drop(run)
-      step_runs.joins(:inputs).where(transformation_run_inputs: { item_type: run.result_type, item_id: run.result_id }).each { drop(it) }
-      run.result.transformation_runs.many? ? run.destroy! : run.result.destroy!
+      # Relocating and forwarding runs use the source as result — skip self or this recurses forever.
+      step_runs.joins(:inputs).where.not(id: run.id)
+        .where(transformation_run_inputs: { item_type: run.result_type, item_id: run.result_id }).each { drop(it) }
+      if run.transformation&.type&.then { it.relocates? || it.forwards? } || run.result.transformation_runs.many?
+        run.destroy!
+      else
+        run.result.destroy!
+      end
     end
 
     # A step's result moves to its output folder, a media gaining the step's tags.
+    # Relocating types already set the folder in `run!`; only tags are applied here.
     def land(result, step)
-      result&.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
+      return unless result
+      return if step.transformation.type.forwards?
+
+      if step.transformation.type.relocates?
+        result.update!(tags: result.tags | step.tags) if result.is_a?(LibraryMedia) && step.tags.any?
+      else
+        result.update!(folder: output_folder(step), **({ tags: result.tags | step.tags } if result.is_a?(LibraryMedia)).to_h)
+      end
     end
 
     # What the arrows into the step give now, by its type's input name, each input only the items that fit it (an
@@ -249,9 +271,10 @@ class WorkflowRun < ApplicationRecord
       if node.step?
         runs, sides = runs_of(node).select(&:complete?), sides_of(node, user, cached:)
         made = batches_of(node, user, cached:).map do |batch|
-          runs.find { matches?(it, batch, sides) }&.result || (prior(node, batch, sides)&.result if cached)
+          run = runs.find { matches?(it, batch, sides) } || (prior(node, batch, sides) if cached)
+          run&.transformation&.type&.forwards? ? run.sources.presence : run&.result
         end
-        made.all? ? made : []
+        made.all? ? made.flatten : []
       elsif node.library_media then [ node.library_media ]
       else picked(node, user)
       end

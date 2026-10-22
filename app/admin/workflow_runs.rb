@@ -1,4 +1,5 @@
 ActiveAdmin.register WorkflowRun do
+  menu parent: "Workflows"
   actions :index, :show, :edit, :update
   permit_params :name, :status, :error
 

@@ -4,8 +4,17 @@
 # Nodes and edges are edited one at a time through nested attributes, so a workflow can be incomplete.
 # Played from a start folder or media as one of its WorkflowRuns. With `autorun`, each media landing in a start folder
 # starts a run of its own, picked for that folder (n8n's trigger node, passing on the new item).
+# Built-in workflows (seeded by Workflow::*::ensure!) can't be renamed or deleted; the sidebar shows a pin.
 class Workflow < ApplicationRecord
   extend FriendlyId
+
+  # Seeded by Workflow::InboxSort / Workflow::BusinessCard / Workflow::HaircutReel (their NAME.parameterize).
+  BUILT_IN_SLUGS = %w[inbox-sort business-card haircut-reel].freeze
+
+  # Built-ins first (sidebar pin), then recently edited.
+  scope :sidebar, -> {
+    order(Arel.sql("CASE WHEN slug IN (#{BUILT_IN_SLUGS.map { connection.quote(it) }.join(",")}) THEN 0 ELSE 1 END"), updated_at: :desc)
+  }
 
   # Follows the name; old slugs still find it, so an open page keeps working after a rename.
   friendly_id :name, use: %i[slugged finders history]
@@ -16,6 +25,11 @@ class Workflow < ApplicationRecord
   accepts_nested_attributes_for :nodes, :edges, allow_destroy: true
 
   validates :name, presence: true
+  validate :name_locked_when_built_in, on: :update
+  before_destroy :prevent_built_in_destroy
+
+  # Use the persisted slug — FriendlyId may already have rewritten `slug` in memory on rename.
+  def built_in? = BUILT_IN_SLUGS.include?(slug_in_database || slug)
 
   # A numeric slug would be found as an id.
   def normalize_friendly_id(text) = super.then { it.match?(/\A\d+\z/) ? "workflow-#{it}" : it }
@@ -40,14 +54,34 @@ class Workflow < ApplicationRecord
   end
 
   # Runs `media`, just landed in its folder, from each autorun workflow's start folders it fits, as its owner; never
-  # through the workflow that made it.
-  # ponytail: one run per media, and a loop across workflows (A feeds B feeds A) isn't caught.
+  # through the workflow that made it. A waiting Collect for this user and folder takes the photo into that run
+  # instead. Serialized per user so two photos arriving together can't both open a run.
+  # ponytail: a loop across workflows (A feeds B feeds A) isn't caught.
   def self.autorun!(media)
-    where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).starts_for(media).each do |workflow, node|
-      workflow.start_with!(node, media, media.user)
-    end
+    start = -> {
+      joined = media.user && TransformationRun.open_collect_for(media)&.accept_media!(media)
+      unless joined
+        where(autorun: true).where.not(id: media.transformation_run&.workflow_run&.workflow_id).starts_for(media).each do |workflow, node|
+          workflow.start_with!(node, media, media.user)
+        end
+      end
+    }
+    media.user ? media.user.with_lock(&start) : start.call
   end
 
   # A new run of `media` alone from start folder `node`, as `user`.
   def start_with!(node, media, user) = runs.create!(picks: { node.id.to_s => [ media.id ] }).tap { it.start!(node, user) }
+
+  private
+
+    def name_locked_when_built_in
+      errors.add(:name, "can't be changed on a built-in workflow") if name_changed? && built_in?
+    end
+
+    def prevent_built_in_destroy
+      return unless built_in?
+
+      errors.add(:base, "Can't delete a built-in workflow")
+      throw :abort
+    end
 end

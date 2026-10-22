@@ -122,8 +122,10 @@ module WhatsappOnboarding
       if user.update(email: text.strip, whatsapp_pending_question: nil)
         UserMailer.with(user:).email_verification.deliver_later
       else
+        taken = user.errors.of_kind?(:email, :taken)
         user.restore_attributes
-        send!(user, MESSAGES["email"])
+        # Same prompt on invalid; explain taken — silent re-ask looked like a loop.
+        send!(user, taken ? "That email is already on another Rocketbox account. Send a different one." : MESSAGES["email"])
       end
     else
       return false

@@ -13,7 +13,9 @@ Inbound media from WhatsApp Cloud API (photos, video, docs, audio, stickers) for
    - **Start** (`START`, case-insensitive, prefilled by `/sign_up`) → restarts the onboarding chain on the existing user.
    - **Onboarding answer** → text or a button reply to the pending `brand_voice` / `email` step is saved and the chain moves on (see Onboarding), no LLM reply.
    - **Links** → text with `http(s)://` URLs from a known phone → each URL saved as a [Link](/app/models/link.rb) (`source: "whatsapp"`, deduped per user) → 👍 reaction, no LLM reply. Links appear on `/app/links`.
-   - **Text-only** (known phone) → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) and [LoginLink](/app/tools/login_link.rb) → `send_text` the reply.
+   - **Approval** (`approval:approve:<id>` / `approval:reject:<id>` button reply) → approve or reject a waiting Approval step run owned by that user ([RequestApproval](/app/services/request_approval.rb)); see [WORKFLOWS.md](./WORKFLOWS.md). Approve does not send its own ack — the next step's WhatsApp line is the reply.
+   - **Waiting step** (known phone, no onboarding question) → the newest `waiting` step run owned by that user is the cursor. Text resends that step (Approval resends its buttons). A photo that lands in a waiting Collect's start folder joins that run instead of opening another ([Workflow.autorun!](/app/models/workflow.rb)).
+   - **Text-only** (known phone, nothing waiting) → create a [Chat](/app/models/chat.rb) → ask with [ListMedia](/app/tools/list_media.rb) and [LoginLink](/app/tools/login_link.rb) → `send_text` the reply.
 4. Ownership: if `messages.from` matches a user’s `whatsapp_phone`, the media is attached to that user (`library_media.user_id`). Unmatched media is still stored. Media appears on `/app/library`.
 
 ## Dashboard page

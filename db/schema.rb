@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_143903) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_164641) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -517,6 +517,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_143903) do
     t.string "color", default: "amber", null: false
     t.datetime "created_at", null: false
     t.integer "folder_id"
+    t.boolean "include_subfolders", default: true, null: false
     t.integer "library_media_id"
     t.string "media_type"
     t.text "note"

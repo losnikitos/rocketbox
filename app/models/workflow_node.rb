@@ -5,10 +5,10 @@
 # Every node but a note gives items of one kind (`item_kind`): a folder its kind's (media, prompts or reviews), a media
 # itself, a step what its type makes. A folder's role comes from its edges: one feeding a step is an input, one a step
 # feeds is an output.
-# A folder gives its pinned items (`pinned_ids`, every run until reset), else its newest `take` of its and its
-# subfolders' items: a media folder's media, a prompt folder's prompts, Reviews' 5-star reviews. A media folder's tags filter what it
-# gives to its media with all of them, and its `media_type` (nil for any) to images or videos. A step's tags go on what
-# it makes.
+# A folder gives its pinned items (`pinned_ids`, every run until reset), else its newest `take` of its items (and its
+# subfolders' when `include_subfolders`, the default): a media folder's media, a prompt folder's prompts, Reviews'
+# 5-star reviews. A media folder's tags filter what it gives to its media with all of them, and its `media_type` (nil
+# for any) to images or videos. A step's tags go on what it makes.
 # A note is a sticky note (Markdown, may be blank) in its `color`: it never connects, so runs pass it by.
 class WorkflowNode < ApplicationRecord
   belongs_to :workflow, touch: true
@@ -44,16 +44,20 @@ class WorkflowNode < ApplicationRecord
 
   def tags = Tag.where(id: tag_ids).ordered
 
-  # Whether `media` is in this folder or a subfolder, with all its tags, of its media type.
+  # Folder ids this node reads: itself, plus children when `include_subfolders`.
+  def folder_ids = folder && (include_subfolders? ? folder.tree_ids : [ folder.id ])
+
+  # Whether `media` is in this folder (or a subfolder when included), with all its tags, of its media type.
   def takes?(media)
-    !!folder&.tree_ids&.include?(media.folder_id) && (tag_ids - media.tag_ids).empty? &&
+    !!folder_ids&.include?(media.folder_id) && (tag_ids - media.tag_ids).empty? &&
       (media_type.nil? || (media_type == "image" ? media.story_image? : media.video?))
   end
 
   # A folder's media type and how many it gives, e.g. "Videos · take 3".
   def gives
     return unless folder
-    [ media_type&.pluralize&.capitalize, pinned_ids.any? ? "#{pinned_ids.size} pinned" : ("take #{take}" if take.to_i > 1) ].compact.join(" · ").presence
+    [ media_type&.pluralize&.capitalize, pinned_ids.any? ? "#{pinned_ids.size} pinned" : ("take #{take}" if take.to_i > 1),
+      ("this folder only" unless include_subfolders?) ].compact.join(" · ").presence
   end
 
   def label

@@ -77,11 +77,16 @@ module GenerationOptions
     "black-forest-labs/flux-3-video" => { "aspect_ratio" => %w[9:16 1:1 16:9], "resolution" => %w[720p 1080p], "duration" => %w[5 6 8 10] }
   }.freeze
 
+  # WhatsApp copy and a publish permalink, kept beside the model options. Not offered as choices.
+  MESSAGE_KEYS = %w[done button permalink].freeze
+
   included do
     after_initialize :fill_options, if: :new_record?
-    before_validation(if: :options_changed?) { self.options = options.to_h.slice(*option_choices.keys).compact_blank }
+    before_validation(if: :options_changed?) { self.options = options.to_h.slice(*option_choices.keys, *MESSAGE_KEYS).compact_blank }
     validate(if: :options_changed?) do
-      options.each { |key, value| errors.add(:options, "#{key.humanize} #{value} isn't available") unless value.in?(option_choices[key]) }
+      options.except(*MESSAGE_KEYS).each do |key, value|
+        errors.add(:options, "#{key.humanize} #{value} isn't available") unless value.in?(option_choices[key])
+      end
     end
   end
 
@@ -104,7 +109,7 @@ module GenerationOptions
   def inherited_options = {}
 
   # The RubyLLM model type it picks from.
-  def model_type = video? ? :video : type&.makes == :prompt ? :chat : :image
+  def model_type = video? ? :video : type&.chat? ? :chat : :image
 
   def option_sets = { video: VIDEO_OPTIONS, chat: CHAT_OPTIONS }.fetch(model_type, IMAGE_OPTIONS)
 
@@ -130,15 +135,18 @@ module GenerationOptions
   # from the inherited options and the defaults; blank means Auto. A type's own options default to their first value.
   def fill_options
     given, inherited = options.to_h, inherited_options.to_h
+    messages = given.slice(*MESSAGE_KEYS)
     if (own = type&.options)
-      return self.options = own.to_h { |key, values| [ key, [ given[key], inherited[key] ].find { it.in?(values) } || values.first ] }
+      self.options = own.to_h { |key, values| [ key, [ given[key], inherited[key] ].find { it.in?(values) } || values.first ] }
+    else
+      model_ids = models.map(&:model_id)
+      self.options = { "model" => [ given["model"], inherited["model"] ].find { it.in?(model_ids) } || model_ids.first }
+      choices = option_choices
+      self.options = [ video? ? VIDEO_DEFAULTS : IMAGE_DEFAULTS, inherited, given ].reduce(options) do |kept, layer|
+        kept.merge(layer.except("model").select { |key, value| choices.key?(key) && (value.blank? || value.in?(choices[key])) })
+      end
     end
-    model_ids = models.map(&:model_id)
-    self.options = { "model" => [ given["model"], inherited["model"] ].find { it.in?(model_ids) } || model_ids.first }
-    choices = option_choices
-    self.options = [ video? ? VIDEO_DEFAULTS : IMAGE_DEFAULTS, inherited, given ].reduce(options) do |kept, layer|
-      kept.merge(layer.except("model").select { |key, value| choices.key?(key) && (value.blank? || value.in?(choices[key])) })
-    end
+    self.options = options.merge(messages.compact_blank)
   end
 
   def ai_options

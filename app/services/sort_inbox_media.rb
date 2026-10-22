@@ -1,41 +1,44 @@
 # frozen_string_literal: true
 
-# Moves a photo or video in the Inbox root into the Inbox subfolder a vision model picks; Misc when none fits.
+# Picks an Inbox subfolder for a photo or video with a vision model; Misc when none fits.
+# Used by the Sort workflow step (and tests). Pass `folders:` to limit the enum to connected outputs.
 class SortInboxMedia
   PROMPT = <<~TEXT.strip
     You are sorting a photo a small business owner sent in, for their social media. Pick the one folder it belongs in.
     Use misc for anything no other folder fits. The folders, as slug: name:
   TEXT
 
-  def self.call(media) = new(media).call
+  def self.classify(media, folders: Folder.inbox.children, prompt: PROMPT, model: nil, provider: nil) =
+    new(media, folders:, prompt:, model:, provider:).classify
 
-  def initialize(media)
+  def initialize(media, folders: Folder.inbox.children, prompt: PROMPT, model: nil, provider: nil)
     @media = media
+    @folders = Array(folders)
+    @prompt = prompt
+    @model = model
+    @provider = provider
   end
 
-  # Whether it moved; on failure it stays in the root.
-  def call
+  # The chosen folder. Raises when the media has no image, folders are empty, or the model fails.
+  def classify
     image = if @media.story_image? then @media.file
     elsif @media.video? then @media.file.preview(resize_to_limit: [ 720, 720 ]).processed.image
     end
-    return false unless image
+    raise "Need a photo or video frame to sort" unless image
+    raise "Connect at least one output folder" if @folders.empty?
 
-    folders = Folder.inbox.children
-    slug = RubyLLM.chat(provider: :xai)
-      .with_schema(schema(folders))
-      .ask("#{PROMPT}\n#{folders.map { "- #{it.slug}: #{it.name}" }.join("\n")}", with: image)
+    slug = RubyLLM.chat(model: @model, provider: (@provider.to_sym if @model))
+      .with_schema(schema)
+      .ask("#{@prompt}\n#{@folders.map { "- #{it.slug}: #{it.name}" }.join("\n")}", with: image)
       .parsed["folder"]
-    @media.update!(folder: folders.find_by!(slug:))
-  rescue StandardError => e
-    Rails.logger.warn("Sorting inbox media #{@media.id} failed: #{e.class}: #{e.message}")
-    false
+    @folders.find { it.slug == slug } or raise "Unknown folder #{slug}"
   end
 
   private
 
-    def schema(folders) = {
+    def schema = {
       type: "object",
-      properties: { folder: { type: "string", enum: folders.map(&:slug) } },
+      properties: { folder: { type: "string", enum: @folders.map(&:slug) } },
       required: [ "folder" ],
       additionalProperties: false
     }

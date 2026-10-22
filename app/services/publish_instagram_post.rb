@@ -20,6 +20,11 @@ class PublishInstagramPost
     @caption = caption.presence
   end
 
+  # The Instagram permalink for a media id this app just published.
+  def self.permalink(user:, media_id:)
+    new(user:, format: "reel", slides: []).permalink(media_id)
+  end
+
   # Returns the published media ids.
   def call
     raise Error, "Connect Instagram first." unless @user.instagram_authorized?
@@ -44,6 +49,11 @@ class PublishInstagramPost
     else
       raise Error, "Unknown format #{@format}."
     end
+  end
+
+  def permalink(media_id)
+    request!(:get, media_id.to_s, fields: "permalink", access_token: @user.instagram_access_token)["permalink"].presence or
+      raise Error, "Instagram did not return a permalink."
   end
 
   private

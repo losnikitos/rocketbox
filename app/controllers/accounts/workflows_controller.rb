@@ -61,8 +61,12 @@ module Accounts
     end
 
     def destroy
-      @workflow.destroy!
-      redirect_to workflows_path, notice: "Workflow deleted."
+      if @workflow.built_in?
+        redirect_to workflow_path(@workflow), alert: "Can't delete a built-in workflow."
+      else
+        @workflow.destroy!
+        redirect_to workflows_path, notice: "Workflow deleted."
+      end
     end
 
     def run
@@ -95,7 +99,7 @@ module Accounts
       end
 
       def workflow_params
-        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_ids: [] }, transformation_attributes: [ :kind ] ] ],
+        params.expect(workflow: [ :name, :autorun, nodes_attributes: [ [ :id, :folder_id, :library_media_id, :take, :media_type, :include_subfolders, :note, :color, :x, :y, :_destroy, { tag_ids: [], pinned_ids: [] }, transformation_attributes: [ :kind ] ] ],
                                          edges_attributes: [ [ :id, :from_id, :to_id, :input, :_destroy ] ] ])
       end
 
@@ -145,7 +149,7 @@ module Accounts
           runs = runs_of.(node)
           # A step not running can start once all its arrows in are available.
           feeds = @graph_edges.select { it.to_id == node.id }
-          ready = node.step? && runs.none?(&:running?) && feeds.any? && feeds.all? { gives[it.from_id].any? }
+          ready = node.step? && runs.none? { it.running? || it.waiting? } && feeds.any? && feeds.all? { gives[it.from_id].any? }
           # Named ports (Video Start/End/Prompt) or one empty slot past current arrows.
           ports = node.transformation&.ports&.map do |port|
             muted = case port[:name]
