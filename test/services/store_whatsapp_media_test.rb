@@ -21,38 +21,14 @@ class StoreWhatsappMediaTest < ActiveSupport::TestCase
     assert media.file.attached?
   end
 
-  test "tags the first media after a photo step with its type and asks the next step" do
-    user = users(:lazaro_nixon)
-    user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "interior_back")
-    sent = []
-    original = WhatsappCloud.method(:send_text)
-    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
-
-    assert_equal folders(:interior), store_image!(from: "15551234567", media_id: "interior-1").folder
-    assert_equal "interior_front", user.reload.whatsapp_pending_question
-    assert_equal [ WhatsappOnboarding::MESSAGES["interior_front"] ], sent
-
-    user.update!(whatsapp_pending_question: nil)
-    assert_equal folders(:inbox), store_image!(from: "15551234567", media_id: "interior-2").folder
-  ensure
-    WhatsappCloud.define_singleton_method(:send_text, original)
-  end
-
-  test "logo step files the photo and waits for the business card workflow" do
+  test "a photo lands in the inbox even when an onboarding step is pending" do
     user = users(:lazaro_nixon)
     user.update!(whatsapp_phone: "15551234567", whatsapp_pending_question: "logo")
-    sent = []
-    original = WhatsappCloud.method(:send_text)
-    WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
 
     media = store_image!(from: "15551234567", media_id: "logo-photo")
 
-    assert_equal folders(:logo), media.folder
-    assert_equal "processing_logo", user.reload.whatsapp_pending_question
-    assert_not user.logo?
-    assert_empty sent
-  ensure
-    WhatsappCloud.define_singleton_method(:send_text, original)
+    assert_equal folders(:inbox), media.folder
+    assert_equal "logo", user.reload.whatsapp_pending_question
   end
 
   test "attaches blob to matching IncomingMessage" do

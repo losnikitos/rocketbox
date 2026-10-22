@@ -13,6 +13,7 @@ class User < ApplicationRecord
   has_secure_password validations: false
   validates :password, length: { minimum: 8, maximum: 72 }, allow_nil: true
 
+  has_one :chat, dependent: :destroy
   has_many :sessions, dependent: :destroy
   has_many :rubrics, dependent: :destroy
   has_many :library_media, dependent: :destroy

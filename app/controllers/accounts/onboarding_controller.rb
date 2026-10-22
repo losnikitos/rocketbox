@@ -18,7 +18,8 @@ module Accounts
       user = Current.account
       return head(:unprocessable_entity) unless WhatsappOnboarding::MESSAGES.key?(params[:field])
 
-      WhatsappOnboarding.ask!(user, params[:field])
+      body = RocketboxAgent.reply(user, "Check what's missing and ask for one thing.").content.to_s
+      WhatsappOnboarding.send!(user, body) if body.present?
       redirect_back_or_to onboarding_path, notice: "Sent to +#{user.whatsapp_phone}"
     rescue WhatsappCloud::Error => e
       redirect_back_or_to onboarding_path, alert: e.message

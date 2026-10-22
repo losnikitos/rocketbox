@@ -56,14 +56,12 @@ class WorkflowRun < ApplicationRecord
   # Runs the steps `node` feeds, directly or through a folder.
   def advance!(node, user) = run_steps(next_steps(node), user)
 
-  # When every step run has finished (complete or failed), notify onboarding for the Business card workflow.
+  # When every step run has finished, wake the owner's agent unless this workflow already texts them.
   def notify_settled!
-    return if running? || draft?
-    return unless workflow.slug == "business-card"
+    return if running? || draft? || tells_owner?
 
-    user = step_runs.flat_map(&:source_media).filter_map(&:user).first ||
-      step_runs.filter_map { it.result.try(:user) }.first
-    WhatsappOnboarding.card_processed!(user) if user
+    user = step_runs.filter_map { it.result.try(:user) }.first
+    WakeAgentJob.schedule(user) if user
   end
 
   # What a folder node gives in this run, as the user: its items picked in `picks` (node id => media ids, a media
@@ -95,6 +93,11 @@ class WorkflowRun < ApplicationRecord
   def gives(node, user) = output_of(node, user, cached: true)
 
   private
+
+    # Approval, Publish and other non-AI steps send their own WhatsApp line. The agent would repeat it.
+    def tells_owner?
+      step_runs.includes(:transformation).any? { |step| (t = step.transformation) && !t.ai? && t.body.present? }
+    end
 
     def took = step_runs.flat_map(&:sources).uniq
     def made = step_runs.filter_map(&:result)

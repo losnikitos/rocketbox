@@ -19,14 +19,16 @@ class ReplyTelegramMessage
     return if StoreTelegramMedia.media?(message)
 
     user = User.find_by(telegram_user_id: message.from&.id)
-    if user && (urls = Link.urls_in(message.text)).any?
+    return if user.nil?
+
+    if (urls = Link.urls_in(message.text)).any?
       urls.each { |url| user.links.find_or_create_by!(url:) { it.source = "telegram" } }
       return TelegramBot.react(message)
     end
 
-    response = RocketboxAgent.create!(user:).ask(message.text)
+    response = RocketboxAgent.reply(user, message.text)
 
     text = response.content.to_s.truncate(TELEGRAM_MAX_LENGTH)
-    TelegramBot.send_message(chat_id: message.chat.id, text: text)
+    TelegramBot.send_message(chat_id: message.chat.id, text: text) if text.present?
   end
 end

@@ -41,9 +41,11 @@ module Accounts
       end
 
       def continue_onboarding
-        return unless Current.account.whatsapp_pending_question == "instagram"
+        user = Current.account
+        return if user.whatsapp_phone.blank?
 
-        WhatsappOnboarding.instagram_connected!(Current.account)
+        body = RocketboxAgent.reply(user, "Instagram is connected.").content.to_s
+        WhatsappOnboarding.send!(user, body) if body.present?
       rescue WhatsappCloud::Error => e
         Rails.logger.warn("WhatsApp onboarding after Instagram failed: #{e.message}")
       end

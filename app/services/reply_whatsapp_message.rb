@@ -3,9 +3,6 @@
 class ReplyWhatsappMessage
   WHATSAPP_MAX_LENGTH = 4096
 
-  # Text here is business details for the agent. The step stays set so the next photo still files.
-  AGENT_ONBOARDING_STEPS = %w[business_card logo processing_business_card processing_logo].freeze
-
   def self.call(payload)
     new(payload).call
   end
@@ -29,30 +26,11 @@ class ReplyWhatsappMessage
         next
       end
 
-      # Unknown phone → new account + onboarding. Known phone → library / answers below.
-      unless user
-        user = User.create!(whatsapp_phone: from)
-        WhatsappOnboarding.ask!(user, "business_card")
-        next
-      end
-
-      if text.strip.casecmp?("start")
-        WhatsappOnboarding.ask!(user, "business_card")
-        next
-      end
+      # Unknown phone → new account. The agent asks for whatever the brief is missing.
+      user ||= User.create!(whatsapp_phone: from)
 
       if (decision = text.strip.match(/\Aapproval:(approve|reject):(\d+)\z/))
         handle_approval!(user, decision[1], decision[2].to_i, phone_number_id, from, message["id"])
-        next
-      end
-
-      if WhatsappOnboarding.answer!(user, text)
-        react_ok(phone_number_id, from, message["id"]) if user.whatsapp_pending_question.nil?
-        next
-      end
-
-      if (step = user.whatsapp_pending_question).present? && AGENT_ONBOARDING_STEPS.exclude?(step)
-        WhatsappOnboarding.ask!(user, step)
         next
       end
 
@@ -67,7 +45,7 @@ class ReplyWhatsappMessage
         next
       end
 
-      response = RocketboxAgent.create!(user:).ask(text)
+      response = RocketboxAgent.reply(user, text)
 
       reply = response.content.to_s.truncate(WHATSAPP_MAX_LENGTH)
       WhatsappCloud.send_text(phone_number_id:, to: from, body: reply) if from.present? && reply.present?
