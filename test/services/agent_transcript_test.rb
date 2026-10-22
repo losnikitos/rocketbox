@@ -28,7 +28,7 @@ class AgentTranscriptTest < ActiveSupport::TestCase
     messages = chat.messages.order(:created_at, :id).to_a
     assert_equal %w[user assistant tool assistant], messages.map(&:role)
     assert_equal "Sent a photo", messages[0].content
-    assert messages[0].attachments.attached?
+    assert_not messages[0].attachments.attached?
 
     call = messages[1].tool_calls.values.sole
     assert_equal "inbox_sort", call.name
@@ -44,5 +44,18 @@ class AgentTranscriptTest < ActiveSupport::TestCase
     chat.messages.destroy_all
     AgentTranscript.call(chat, user)
     assert_equal %w[user assistant tool assistant], chat.messages.order(:created_at, :id).pluck(:role)
+  end
+
+  test "a captioned photo is a text note and the file stays off the chat" do
+    user = users(:lazaro_nixon)
+    chat = user.create_chat!
+    incoming = IncomingMessage.create!(channel: "whatsapp", user:, kind: "image", body: "front of the shop", payload: { "id" => "wamid.caption" })
+    incoming.attachments.attach(io: StringIO.new("img"), filename: "shop.jpg", content_type: "image/jpeg")
+
+    AgentTranscript.call(chat, user)
+
+    message = chat.messages.sole
+    assert_equal "Sent a photo: front of the shop", message.content
+    assert_not message.attachments.attached?
   end
 end

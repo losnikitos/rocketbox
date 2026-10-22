@@ -64,12 +64,18 @@ class AgentTranscript
       end
     end
 
+    # Media stays in the library for workflows. The model only hears that it arrived.
     def render_incoming(message)
-      @chat.add_message(
-        role: :user,
-        content: message.body.presence || "Sent a #{PHOTO.fetch(message.kind.to_s, message.kind.presence || "message")}",
-        attachments: message.attachments.attached? ? message.attachments.blobs : nil
-      )
+      @chat.add_message(role: :user, content: incoming_content(message))
+    end
+
+    def incoming_content(message)
+      text = message.body.presence
+      kind = message.kind.to_s
+      return text if text && (kind.blank? || kind.in?(%w[text interactive]))
+
+      note = "Sent a #{PHOTO.fetch(kind, kind.presence || "message")}"
+      text ? "#{note}: #{text}" : note
     end
 
     # Name is the workflow slug underscored, so a later tool class can use the same name.
