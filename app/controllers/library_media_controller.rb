@@ -46,7 +46,7 @@ class LibraryMediaController < ApplicationController
   private
 
     def store_upload!(file, folder, source)
-      file = heic_as_jpeg(file) if file.original_filename.to_s.match?(/\.hei[cf]\z/i)
+      file = LibraryMedia.heic_as_jpeg(file) if file.original_filename.to_s.match?(/\.hei[cf]\z/i)
       return unless file
 
       kind = LibraryMedia.kind_for(file.content_type)
@@ -56,16 +56,5 @@ class LibraryMediaController < ApplicationController
       media.file.attach(file)
       TransformationRun.create!(result: media, status: "complete", inputs: [ TransformationRunInput.new(item: source) ]) if source
       media
-    end
-
-    # Only Safari renders HEIC, and other browsers upload it without a MIME type.
-    def heic_as_jpeg(file)
-      ActionDispatch::Http::UploadedFile.new(
-        tempfile: ImageProcessing::Vips.source(file.tempfile).convert("jpg").call,
-        filename: "#{File.basename(file.original_filename, ".*")}.jpg",
-        type: "image/jpeg"
-      )
-    rescue Vips::Error
-      nil
     end
 end

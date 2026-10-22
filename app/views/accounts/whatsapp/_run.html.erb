@@ -1,0 +1,36 @@
+<%# locals: run, menu_class %>
+<% run = local_assigns[:run] %>
+<% menu_class = local_assigns[:menu_class] %>
+<% trace = AgentTranscript.trace(run) %>
+<% ids = run.picks.values.flatten.map(&:to_i).uniq %>
+<% reason = run.error || run.step_runs.find(&:failed?)&.error %>
+
+<div class="flex justify-center">
+  <div class="flex max-w-md items-start gap-1">
+    <div class="min-w-0 rounded-lg border border-dashed border-ink-900/20 bg-white/80 px-2.5 py-1.5 shadow-sm">
+      <p class="flex flex-wrap items-center gap-1.5">
+        <%= link_to run.workflow.slug.underscore, workflow_path(run.workflow, run: run.id),
+              class: "text-sm font-medium text-[#075e54] underline" %>
+        <% if (state = run.state) %>
+          <span class="<%= run_status_pill_class(state) %>"><%= state.humanize %></span>
+        <% end %>
+      </p>
+      <% if ids.any? %>
+        <p class="mt-1 text-xs text-ink-500">media_ids <%= ids.join(", ") %></p>
+      <% end %>
+      <% trace[:inputs].each do |ref| %>
+        <% id_key, id = ref.except(:folder).first %>
+        <p class="mt-1 text-xs leading-snug break-words text-ink-600">in <%= id_key %> <%= id %> · <%= ref[:folder] %></p>
+      <% end %>
+      <% trace[:outputs].each do |ref| %>
+        <% id_key, id = ref.except(:folder).first %>
+        <p class="mt-1 text-xs leading-snug break-words text-ink-600">out <%= id_key %> <%= id %> · <%= ref[:folder] %></p>
+      <% end %>
+      <% if reason.present? %>
+        <p class="mt-1 text-xs break-words text-signal-red"><%= reason %></p>
+      <% end %>
+      <p class="text-right text-xs tabular-nums text-ink-500"><%= run.created_at.strftime("%H:%M") %></p>
+    </div>
+    <%= render "shared/admin_links/workflow_run", workflow_run: run, align: :left, trigger_class: menu_class %>
+  </div>
+</div>

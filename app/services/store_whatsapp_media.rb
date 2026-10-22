@@ -63,17 +63,13 @@ class StoreWhatsappMedia
       filename = filename_for(media_payload, media_id, mime_type)
 
       user = User.find_by(whatsapp_phone: from.presence)
-      # ponytail: only the first media after a request is filed, so later photos of an album land in the inbox root.
-      # Upgrade = keep the request open for a short time window.
-      step = user&.whatsapp_pending_question.presence_in(WhatsappOnboarding::MEDIA_REQUESTS.keys)
       media = LibraryMedia.create!(
         whatsapp_media_id: media_id,
         whatsapp_from: from.presence,
         kind: kind,
-        folder: (step && Folder.inbox.children.find_by(slug: WhatsappOnboarding::MEDIA_REQUESTS[step])) || Folder.inbox,
+        folder: Folder.inbox,
         user:
       )
-      user.update!(whatsapp_pending_question: nil) if step
 
       blob = ActiveStorage::Blob.create_and_upload!(
         io: io,
@@ -83,7 +79,6 @@ class StoreWhatsappMedia
       media.file.attach(blob)
       attach_to_incoming_message!(message["id"], blob)
       react_ok(message, phone_number_id)
-      WhatsappOnboarding.received!(user, step, media) if step
       media
     ensure
       io&.close if defined?(io)

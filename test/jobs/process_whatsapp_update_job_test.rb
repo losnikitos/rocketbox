@@ -11,8 +11,8 @@ class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
     end
 
     user = User.find_by!(whatsapp_phone: "15551234567")
-    assert_equal "business_card", user.whatsapp_pending_question
-    assert_equal [ WhatsappOnboarding::MESSAGES["business_card"] ], sent
+    assert_nil user.whatsapp_pending_question
+    assert_equal [ "What's the business called?" ], sent
   end
 
   test "non-text from a new number does not create a user" do
@@ -44,8 +44,8 @@ class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
     user.reload
     assert_equal "15551234567", user.whatsapp_phone
     assert_not_equal code, user.whatsapp_link_code
-    assert_equal "business_card", user.whatsapp_pending_question
-    assert_equal [ "WhatsApp connected.", WhatsappOnboarding::MESSAGES["business_card"] ], sent
+    assert_nil user.whatsapp_pending_question
+    assert_equal [ "WhatsApp connected.", "What's the business called?" ], sent
 
     sent = capture_texts { ProcessWhatsappUpdateJob.perform_now(text_payload("START_#{code}")) }
     assert_match(/expired/, sent.sole)
@@ -101,10 +101,13 @@ class ProcessWhatsappUpdateJobTest < ActiveJob::TestCase
     def capture_texts
       sent = []
       original = WhatsappCloud.method(:send_text)
+      original_reply = RocketboxAgent.method(:reply)
       WhatsappCloud.define_singleton_method(:send_text) { |**args| sent << args[:body] }
+      RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
       yield
       sent
     ensure
       WhatsappCloud.define_singleton_method(:send_text, original)
+      RocketboxAgent.define_singleton_method(:reply, original_reply)
     end
 end

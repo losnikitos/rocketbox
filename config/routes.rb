@@ -88,6 +88,7 @@ Rails.application.routes.draw do
       resources :reviews, only: %i[index update destroy]
       resource :subscription, only: [ :show ]
       get "whatsapp", to: "whatsapp#show", as: :whatsapp
+      post "whatsapp", to: "whatsapp#create"
       delete "whatsapp", to: "whatsapp#destroy"
       get "onboarding/:tab", to: "onboarding#show", as: :onboarding, tab: /steps|media/, defaults: { tab: "steps" }
       post "onboarding/reset", to: "onboarding#reset", as: :onboarding_reset

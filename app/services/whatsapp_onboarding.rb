@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Each step's message is sent by ask!, which also stores the step in whatsapp_pending_question;
-# the user's reply (photo, text or button) runs the step and asks the next one.
+# WhatsApp delivery and the one-time link that attaches a phone to an account.
+# What to ask next is the agent's job: it reads the business brief. The copy in MESSAGES
+# is still shown on the onboarding page.
 # ponytail: free-form messages only reach users within Meta's 24h window after their last message;
 # outside it the API raises and the admin sees the error. Upgrade = approved message templates.
 module WhatsappOnboarding
@@ -46,7 +47,7 @@ module WhatsappOnboarding
     TEXT
   }.freeze
 
-  # Photo step => slug of the inbox subfolder the next WhatsApp media goes into.
+  # Photo steps the onboarding page still lists. Filing is Inbox sort's job, not this map.
   MEDIA_REQUESTS = {
     "business_card" => "business-card",
     "logo" => "logo",
@@ -54,89 +55,13 @@ module WhatsappOnboarding
     "interior_front" => "interior"
   }.freeze
 
-  # After a card/logo photo is stored, pending becomes this until the Business card workflow settles.
-  PROCESSING = {
-    "business_card" => "processing_business_card",
-    "logo" => "processing_logo"
-  }.freeze
-
   # The webhook job has no request host; Meta must reach these (dev = tunnel).
   URL_OPTIONS = { protocol: "https", host: Rails.env.production? ? "rocketbox.plus" : "dev.rocketbox.plus" }.freeze
-  EXAMPLE_PHOTO_URL = "https://#{URL_OPTIONS[:host]}/onboarding/barbershop-example.jpg"
 
   # START_<users.whatsapp_link_code>, prefilled on /app/whatsapp.
   LINK_PATTERN = /\Astart_(\w+)\z/i
 
   module_function
-
-  def ask!(user, step)
-    case step
-    when "instagram"
-      send_link!(user, MESSAGES[step], url: login_url(user, to: "instagram"), button: "Connect Instagram")
-    when "interior_back"
-      deliver!(user) { |to| WhatsappCloud.send_image(phone_number_id: WhatsappCloud.phone_number_id, to:, link: EXAMPLE_PHOTO_URL, caption: MESSAGES[step]) }
-    when "brand_voice"
-      buttons = User.brand_voices.keys.index_with(&:capitalize)
-      deliver!(user) { |to| WhatsappCloud.send_buttons(phone_number_id: WhatsappCloud.phone_number_id, to:, body: MESSAGES[step], buttons:) }
-    else
-      send!(user, MESSAGES.fetch(step))
-    end
-    user.update!(whatsapp_pending_question: step)
-  end
-
-  # Runs after the media for a photo step is stored. Card/logo wait for the Business card workflow; see card_processed!.
-  def received!(user, step, media)
-    case step
-    when "business_card", "logo"
-      user.update!(whatsapp_pending_question: PROCESSING.fetch(step))
-      send!(user, "Got it — reading your card…") if step == "business_card"
-      # AutorunWorkflowsJob (from LibraryMedia after_commit) runs the Business card workflow.
-    when "interior_back" then ask!(user, "interior_front")
-    when "interior_front" then ask!(user, "brand_voice")
-    end
-  end
-
-  # Called when the Business card workflow run has no step still running.
-  def card_processed!(user)
-    user.with_lock do
-      user.reload
-      case user.whatsapp_pending_question
-      when "processing_business_card"
-        ask!(user, user.logo? ? "instagram" : "logo")
-      when "processing_logo"
-        ask!(user, "instagram")
-      end
-    end
-  end
-
-  # Returns true when the text answered the pending step.
-  def answer!(user, text)
-    case user.whatsapp_pending_question
-    when "brand_voice"
-      voice = text.strip.downcase
-      return false unless User.brand_voices.key?(voice)
-
-      user.update!(brand_voice: voice)
-      ask!(user, "email")
-    when "email"
-      if user.update(email: text.strip, whatsapp_pending_question: nil)
-        UserMailer.with(user:).email_verification.deliver_later
-      else
-        taken = user.errors.of_kind?(:email, :taken)
-        user.restore_attributes
-        # Same prompt on invalid; explain taken — silent re-ask looked like a loop.
-        send!(user, taken ? "That email is already on another Rocketbox account. Send a different one." : MESSAGES["email"])
-      end
-    else
-      return false
-    end
-    true
-  end
-
-  def instagram_connected!(user)
-    send!(user, MESSAGES["instagram_connected"])
-    ask!(user, "interior_back")
-  end
 
   # Attaches the sender's phone to the account the code belongs to instead of creating a new one.
   def link!(phone, code)
@@ -154,7 +79,8 @@ module WhatsappOnboarding
       user.update!(whatsapp_phone: phone)
       user.regenerate_whatsapp_link_code
       send!(user, "WhatsApp connected.")
-      ask!(user, "business_card")
+      body = RocketboxAgent.reply(user, "WhatsApp just connected.").content.to_s
+      send!(user, body) if body.present?
     end
   end
 

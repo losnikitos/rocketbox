@@ -1,0 +1,55 @@
+<%# locals: fill (true when the chat should take the rest of the page), composer %>
+<% fill = local_assigns[:fill] %>
+<% composer = local_assigns[:composer] %>
+<% menu_class = "cursor-pointer rounded p-1 text-ink-400 hover:bg-white hover:text-ink-700" %>
+
+<section class="flex min-h-0 flex-col overflow-hidden rounded-2xl <%= fill ? "flex-1" : "h-[70vh]" %>" aria-label="WhatsApp chat">
+  <header class="flex shrink-0 items-center gap-3 bg-[#075e54] px-4 py-3 text-white">
+    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold" aria-hidden="true">R</span>
+    <p class="truncate font-semibold">Rocketbox</p>
+  </header>
+
+  <div class="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#efeae2]" data-controller="scroll-end">
+    <% if @messages.empty? %>
+      <p class="m-auto text-sm text-ink-500">No messages yet.</p>
+    <% else %>
+      <div class="mt-auto flex flex-col gap-1 px-3 py-3">
+        <% last_day = nil %>
+        <% @messages.each do |message| %>
+          <% day = message.created_at.to_date %>
+          <% if day != last_day %>
+            <p class="mx-auto my-1 w-fit rounded-lg bg-white/70 px-2 py-0.5 text-xs text-ink-500"><%= whatsapp_day(message.created_at) %></p>
+            <% last_day = day %>
+          <% end %>
+          <% if message.is_a?(WorkflowRun) %>
+            <%= render "run", run: message, menu_class: %>
+          <% else %>
+            <%= render "bubble", message:, menu_class: %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if composer %>
+    <%= form_with url: whatsapp_path, multipart: true,
+          class: "shrink-0 bg-[#f0f2f5] px-2 py-2 data-dragging:bg-white",
+          data: { controller: "whatsapp-composer", action: "dragover->whatsapp-composer#over dragleave->whatsapp-composer#leave drop->whatsapp-composer#drop" } do %>
+      <ul data-whatsapp-composer-target="previews" class="mb-2 flex gap-2 overflow-x-auto empty:hidden"></ul>
+      <div class="flex items-end gap-2">
+        <label class="mb-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-500 hover:bg-ink-900/5">
+          <%= heroicon "paper-clip", options: { class: "size-6", "aria-hidden": true } %>
+          <span class="sr-only">Attach</span>
+          <%= file_field_tag "attachments[]", multiple: true, accept: "image/*,video/*,audio/*,*/*", class: "sr-only",
+                data: { whatsapp_composer_target: "input", action: "change->whatsapp-composer#pick" } %>
+        </label>
+        <%= text_area_tag :body, nil, rows: 1, placeholder: "Type a message",
+              class: "field-sizing-content max-h-32 min-h-10 flex-1 resize-none overflow-y-auto rounded-lg border-0 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:ring-0",
+              data: { action: "keydown->whatsapp-composer#keydown" } %>
+        <button type="submit" class="mb-0.5 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#075e54] text-white" aria-label="Send">
+          <%= heroicon "paper-airplane", variant: :mini, options: { class: "size-5", "aria-hidden": true } %>
+        </button>
+      </div>
+    <% end %>
+  <% end %>
+</section>

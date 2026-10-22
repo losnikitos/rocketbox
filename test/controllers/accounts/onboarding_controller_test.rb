@@ -28,15 +28,19 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", onboarding_dashboard_link_path(account: customer.id)
   end
 
-  test "ask in chat sends the step message and the reply target is recorded" do
+  test "ask in chat asks the agent" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
+    original = RocketboxAgent.method(:reply)
+    RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
     post onboarding_ask_url(field: "business_card", account: customer.id)
 
     assert_redirected_to onboarding_url(account: customer.id)
-    assert_equal "business_card", customer.reload.whatsapp_pending_question
-    assert_equal [ { phone_number_id: WhatsappCloud.phone_number_id, to: "447000000000", body: WhatsappOnboarding::MESSAGES["business_card"] } ], @sent
+    assert_nil customer.reload.whatsapp_pending_question
+    assert_equal [ { phone_number_id: WhatsappCloud.phone_number_id, to: "447000000000", body: "What's the business called?" } ], @sent
+  ensure
+    RocketboxAgent.define_singleton_method(:reply, original) if original
   end
 
   test "media step shows count and previews, and asks for that media in chat" do
@@ -49,10 +53,14 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_select "li", text: /Interior\b.*1 file/m
     assert_select "li img[alt=photo]"
 
+    original = RocketboxAgent.method(:reply)
+    RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
     post onboarding_ask_url(field: "interior_front"), headers: { "Referer" => onboarding_url(tab: "media") }
     assert_redirected_to onboarding_url(tab: "media")
-    assert_equal "interior_front", customer.reload.whatsapp_pending_question
-    assert_equal WhatsappOnboarding::MESSAGES["interior_front"], @sent.sole[:body]
+    assert_nil customer.reload.whatsapp_pending_question
+    assert_equal "What's the business called?", @sent.sole[:body]
+  ensure
+    RocketboxAgent.define_singleton_method(:reply, original) if original
   end
 
   test "dashboard link logs the customer in once" do
@@ -73,16 +81,18 @@ class Accounts::OnboardingControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to sign_in_path
   end
 
-  test "instagram ask sends a login link that lands on instagram authorize" do
+  test "instagram ask asks the agent instead of sending a connect button" do
     sign_in_as(users(:admin_user))
     customer = users(:lazaro_nixon)
     customer.update!(whatsapp_phone: "447000000000")
+    original = RocketboxAgent.method(:reply)
+    RocketboxAgent.define_singleton_method(:reply) { |*| Struct.new(:content).new("What's the business called?") }
     post onboarding_ask_url(field: "instagram", account: customer.id)
-    url = @sent.sole[:url]
-    delete sign_out_url
 
-    get url
-    assert_redirected_to profile_instagram_authorize_path
+    assert_redirected_to onboarding_url(account: customer.id)
+    assert_equal "What's the business called?", @sent.sole[:body]
+  ensure
+    RocketboxAgent.define_singleton_method(:reply, original) if original
   end
 
   test "admin resets whatsapp for selected customer" do
