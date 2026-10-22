@@ -43,6 +43,25 @@ class Transformation::ApprovalTest < ActiveSupport::TestCase
     WhatsappCloud.define_singleton_method(:send_buttons, original)
   end
 
+  test "video approval uploads the file and sends that WhatsApp media id" do
+    @user.update!(whatsapp_phone: "15551234567")
+    video = @user.library_media.create!(kind: "video", folder: folders(:interior),
+      file: { io: StringIO.new("mp4"), filename: "reel.mp4", content_type: "video/mp4" })
+    sent = []
+    original_send = WhatsappCloud.method(:send_buttons)
+    original_upload = WhatsappCloud.method(:upload_media)
+    WhatsappCloud.define_singleton_method(:send_buttons) { |**args| sent << args }
+    WhatsappCloud.define_singleton_method(:upload_media) { |*, **| "media-1" }
+
+    run = @approval.run!(items: [ video ], folder: folders(:ready))
+
+    assert_equal "waiting", run.status
+    assert_equal({ type: "video", id: "media-1" }, sent.first[:header])
+  ensure
+    WhatsappCloud.define_singleton_method(:send_buttons, original_send) if original_send
+    WhatsappCloud.define_singleton_method(:upload_media, original_upload) if original_upload
+  end
+
   test "start! skips WhatsApp when the owner has no phone" do
     sent = []
     original = WhatsappCloud.method(:send_buttons)

@@ -48,7 +48,7 @@ class Transformation::Scripted < Transformation::Type
         end
         # image2 reads the whole file as one frame; the default jpeg_pipe also emits embedded images (iPhone HDR gain
         # maps) as extra frames, and -loop 1 over those hangs ffmpeg.
-        ffmpeg!(*(%w[-f image2 -loop 1] if item.story_image?), "-i", paths[item], *filter, "-frames:v", frames.to_s, "-an", "-c:v", "libx264", segment)
+        ffmpeg!(*(%w[-f image2 -loop 1] if item.story_image?), "-i", paths[item], *filter, "-frames:v", frames.to_s, "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", segment)
         "file '#{segment}'\n"
       end.join)
       audio_in, audio_out = [ "-i", track.to_s ], [ "-map", "1:a", "-c:a", "aac" ] if track
