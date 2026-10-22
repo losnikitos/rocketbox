@@ -35,7 +35,7 @@ class ActiveAdminTest < ActionDispatch::IntegrationTest
   test "admin can open chat with messages" do
     sign_in_as(users(:admin_user))
     model = RubyLLM::ActiveRecord::Model.create!(model_id: "admin-test", name: "Admin Test", provider: "test")
-    chat = Chat.create!(model: model)
+    chat = Chat.create!(model: model, user: users(:admin_user))
     message = chat.messages.create!(role: "user", content: "hello from test")
     get "/admin/chats/#{chat.id}", headers: @ua
     assert_response :success

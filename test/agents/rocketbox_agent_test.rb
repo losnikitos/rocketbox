@@ -86,6 +86,9 @@ class RocketboxAgentTest < ActiveSupport::TestCase
       seen << to_llm.messages.map { |m| "#{m.role} #{m.content}" }.join("\n")
       Struct.new(:content).new("What is your phone number?")
     end
+    # find builds the xAI chat before complete runs. CI has no key; the stub never calls the API.
+    previous_key = RubyLLM.config.xai_api_key
+    RubyLLM.config.xai_api_key = "test"
 
     assert_no_difference -> { Chat.where(user:).count } do
       RocketboxAgent.reply(user, "second")
@@ -97,6 +100,7 @@ class RocketboxAgentTest < ActiveSupport::TestCase
     assert_includes seen[0], "second"
     assert_not_includes seen[0], "secret previous turn"
   ensure
+    RubyLLM.config.xai_api_key = previous_key if defined?(previous_key)
     Chat.define_method(:complete, original) if original
   end
 end

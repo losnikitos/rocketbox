@@ -13,7 +13,8 @@ class Workflow < ApplicationRecord
 
   # Built-ins first (sidebar pin), then recently edited.
   scope :sidebar, -> {
-    order(Arel.sql("CASE WHEN slug IN (#{BUILT_IN_SLUGS.map { connection.quote(it) }.join(",")}) THEN 0 ELSE 1 END"), updated_at: :desc)
+    built_ins_first = Arel::Nodes::Case.new.when(arel_table[:slug].in(BUILT_IN_SLUGS)).then(0).else(1)
+    order(built_ins_first, updated_at: :desc)
   }
 
   # Follows the name; old slugs still find it, so an open page keeps working after a rename.
