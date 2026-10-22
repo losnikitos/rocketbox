@@ -35,6 +35,16 @@
 
   <div class="mt-4 flex items-center gap-3">
     <div class="min-w-0 flex-1">
+      <p class="text-sm font-medium text-ink-900">Reset account</p>
+      <p class="mt-0.5 text-xs text-ink-500">Disconnects Instagram and WhatsApp and removes this account's media, runs and messages. Business details and logo stay.</p>
+    </div>
+    <%= button_to "Reset account", reset_profile_settings_path, method: :post,
+          form: { data: { turbo_confirm: "Reset #{Current.account.account_label}? Instagram, WhatsApp, media, runs and messages will be removed." } },
+          class: "shrink-0 cursor-pointer rounded-lg border border-signal-red/40 px-2.5 py-1 text-xs font-semibold text-signal-red hover:bg-signal-red/5" %>
+  </div>
+
+  <div class="mt-4 flex items-center gap-3">
+    <div class="min-w-0 flex-1">
       <p class="text-sm font-medium text-ink-900">Delete account</p>
       <p class="mt-0.5 text-xs text-ink-500">Removes <%= Current.account.account_label %> and all of its data. This can't be undone.</p>
     </div>

@@ -77,6 +77,67 @@ class Accounts::SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_not User.exists?(customer.id)
   end
 
+  test "reset clears usage and keeps the business and logo" do
+    @user.update!(
+      business_name: "Lazaro Cuts",
+      whatsapp_phone: "15551234567",
+      whatsapp_pending_question: "email",
+      whatsapp_login_at: Time.current,
+      instagram_user_id: "ig",
+      instagram_access_token: "token",
+      instagram_profile: { "username" => "lazaro" },
+      telegram_user_id: 99
+    )
+    file = { io: StringIO.new("img"), filename: "cut.jpg", content_type: "image/jpeg" }
+    inbox = @user.library_media.create!(kind: "photo", folder: folders(:inbox), file:)
+    ready = @user.library_media.create!(kind: "photo", folder: folders(:ready), file: file.merge(io: StringIO.new("reel")))
+    logo = @user.library_media.create!(kind: "photo", folder: folders(:photobank_logo), file: file.merge(io: StringIO.new("logo"), filename: "logo.png", content_type: "image/png"))
+    other = users(:admin_user).library_media.create!(kind: "photo", folder: folders(:inbox), file: file.merge(io: StringIO.new("other")))
+    workflow = Workflow.create!(name: "Haircut reel")
+    node = workflow.nodes.create!(library_media: inbox)
+    run = workflow.runs.create!(status: "started")
+    run.step_runs.create!(result: ready, status: "complete")
+    @user.incoming_messages.create!(channel: "whatsapp", sender: "15551234567", payload: { "x" => 1 }, body: "hi")
+    IncomingMessage.create!(channel: "whatsapp", sender: "15551234567", payload: { "x" => 1 }, body: "orphan")
+    @user.outgoing_messages.create!(channel: "whatsapp", recipient: "15551234567", payload: { "to" => "1" }, body: "hello")
+    @user.jobs.create!
+    rubric = @user.rubrics.create!(name: "Daily", schedule: "every day at 9am", folder: folders(:ready))
+    rubric.posts.create!(library_media: ready, scheduled_at: Time.current)
+    prompt = @user.prompts.create!(name: "Shot", folder: folders(:prompts_shots), body: "a cut")
+    @user.create_chat!.messages.create!(role: "user", content: "hi")
+
+    assert_no_difference("User.count") do
+      post reset_profile_settings_url
+    end
+
+    assert_redirected_to profile_settings_url
+    @user.reload
+    assert_equal "Lazaro Cuts", @user.business_name
+    assert_nil @user.whatsapp_phone
+    assert_nil @user.whatsapp_pending_question
+    assert_nil @user.whatsapp_login_at
+    assert_nil @user.instagram_user_id
+    assert_nil @user.instagram_access_token
+    assert_nil @user.instagram_profile
+    assert_nil @user.telegram_user_id
+    assert LibraryMedia.exists?(logo.id)
+    assert_not LibraryMedia.exists?(inbox.id)
+    assert_not LibraryMedia.exists?(ready.id)
+    assert LibraryMedia.exists?(other.id)
+    assert_not WorkflowRun.exists?(run.id)
+    assert Workflow.exists?(workflow.id)
+    assert_nil node.reload.library_media_id
+    assert_empty @user.incoming_messages
+    assert_empty IncomingMessage.where(sender: "15551234567")
+    assert_empty @user.outgoing_messages
+    assert_empty @user.jobs
+    assert_empty @user.prompts
+    assert_not Prompt.exists?(prompt.id)
+    assert Rubric.exists?(rubric.id)
+    assert_empty rubric.posts.reload
+    assert_nil @user.reload.chat
+  end
+
   test "admin cannot delete the signed-in account" do
     admin = sign_in_as(users(:admin_user))
 

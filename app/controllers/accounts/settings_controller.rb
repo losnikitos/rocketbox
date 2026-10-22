@@ -20,6 +20,11 @@ module Accounts
       end
     end
 
+    def reset
+      Current.account.reset_activity!
+      redirect_to profile_settings_path, notice: "Account reset."
+    end
+
     def destroy
       account = Current.account
       return redirect_to(profile_settings_path, alert: "Can't delete the signed-in account.") if account == Current.user && account.admin?

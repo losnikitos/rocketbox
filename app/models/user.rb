@@ -128,6 +128,42 @@ class User < ApplicationRecord
     business_name.presence || email.presence || name.presence || "+#{whatsapp_phone}"
   end
 
+  # Drops usage so a reviewer starts from a finished setup. The business brief and logo stay,
+  # which is what makes RocketboxAgent call onboarding complete.
+  def reset_activity!
+    transaction do
+      phone = whatsapp_phone
+      incoming = IncomingMessage.where(user: self)
+      outgoing = OutgoingMessage.where(user: self)
+      if phone.present?
+        incoming = incoming.or(IncomingMessage.where(channel: "whatsapp", sender: phone))
+        outgoing = outgoing.or(OutgoingMessage.where(channel: "whatsapp", recipient: phone))
+      end
+      incoming.destroy_all
+      outgoing.destroy_all
+
+      # played_by looks through media and prompts, so capture runs before those go.
+      run_ids = WorkflowRun.played_by(self).pluck(:id)
+      doomed = library_media.where.not(folder_id: Folder.logo.id)
+      # Null first: workflow_nodes.library_media_id cascade-deletes the node.
+      WorkflowNode.where(library_media_id: doomed.select(:id)).update_all(library_media_id: nil)
+      doomed.destroy_all
+      prompts.destroy_all
+      WorkflowRun.where(id: run_ids).find_each do |run|
+        run.step_runs.destroy_all
+        run.destroy!
+      end
+      jobs.destroy_all
+      RubricPost.where(rubric_id: rubrics.select(:id)).delete_all
+
+      resets = Accounts::OnboardingController::RESETS
+      update!(
+        resets.fetch("instagram").merge(resets.fetch("whatsapp")).merge(resets.fetch("telegram")).merge(whatsapp_login_at: nil)
+      )
+      chat&.destroy!
+    end
+  end
+
   def self.find_or_create_from_login!(email)
     user = find_or_initialize_by(email: email)
     if user.new_record?
