@@ -30,9 +30,16 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Inbox"
     assert_select "a[aria-label='Rocketbox home'][href=?]", root_path
     assert_select "nav[aria-label='Primary'] a[href=?][aria-current=page]", library_folders_path("inbox"), text: /Inbox/
+    assert_select "nav[aria-label='Primary'] details[open] > summary", text: /Business/
     assert_select "nav[aria-label='Primary'] a[href=?]", business_path, text: "Business"
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path, text: "Profile"
+    assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("inbox", "interior")
+    %w[photobank prompts ready reviews].each do |slug|
+      assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path(slug), count: 0
+    end
     assert_select "nav[aria-label='Primary'] a[href=?]", rubrics_path, text: "Schedule"
+    assert_select "nav[aria-label='Primary'] a[href=?]", layers_path, count: 0
+    assert_select "nav[aria-label='Primary']", text: /Workflows/, count: 0
     assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path, text: "Onboarding"
     assert_select "a[href='/jobs']", count: 0
     assert_select "a[href='/admin']", count: 0
@@ -41,7 +48,11 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_select "dialog#command-panel" do
       [ jobs_path, reviews_path, links_path, services_path, library_folders_path("inbox") ].each { assert_select "a[href=?]", it }
       assert_select "a[href=?][data-label='Inbox / Interior']", library_folders_path("inbox", "interior")
-      assert_select "a[href=?][data-label='Prompts / Shots']", library_folders_path("prompts", "shots")
+      assert_select "a[href=?]", library_folders_path("reviews"), count: 0
+      assert_select "a[href=?]", library_folders_path("prompts", "shots"), count: 0
+      assert_select "a[href=?]", library_folders_path("photobank"), count: 0
+      assert_select "a[href=?]", library_folders_path("ready"), count: 0
+      assert_select "a[href=?]", layers_path, count: 0
       assert_select "a[href=?]", workflows_path, count: 0
     end
   end
@@ -83,6 +94,11 @@ class AccountNavigationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "nav[aria-label='Primary'] a[href=?]", profile_settings_path(account: admin.id), text: "Profile"
     assert_select "nav[aria-label='Primary'] a[href=?]", onboarding_path(account: admin.id), text: "Onboarding"
+    %w[photobank prompts ready reviews].each do |slug|
+      assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path(slug, account: admin.id)
+    end
+    assert_select "nav[aria-label='Primary'] a[href=?]", layers_path(account: admin.id), text: "Layers"
+    assert_select "nav[aria-label='Primary'] details[open] > summary", text: /Business/, count: 0
     assert_select "nav[aria-label='Primary'] a[href='/jobs']", text: /Jobs/
     assert_select "nav[aria-label='Primary'] a[href='/admin']", text: /Active Admin/
     assert_select "select#account_user_id"

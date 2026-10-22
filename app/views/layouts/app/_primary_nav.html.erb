@@ -40,7 +40,7 @@
             <span class="truncate">Recent</span>
           <% end %>
         </li>
-        <% Folder.roots.ordered.includes(:children).each do |root| %>
+        <% sidebar_roots.each do |root| %>
           <li>
             <details class="group" <%= "open" if current_folder&.root == root %>>
               <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
@@ -61,8 +61,8 @@
     </li>
     <li class="mt-2">
       <ol>
-        <li>
-          <% if Current.user&.admin? %>
+        <% if Current.user&.admin? %>
+          <li>
             <% current_workflow = @workflow if @workflow&.persisted? %>
             <details class="group" <%= "open" if section == :workflows %>>
               <summary class="flex cursor-pointer list-none items-center rounded-xl [&::-webkit-details-marker]:hidden">
@@ -89,31 +89,28 @@
                 <% end %>
               </ul>
             </details>
-          <% else %>
-            <span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500">Workflows</span>
-          <% end %>
-        </li>
-        <% [
-          [ "Layers", layers_path, :layers, "square-3-stack-3d" ],
-          [ "Schedule", rubrics_path, :schedule, "calendar" ]
-        ].each do |label, path, key, icon| %>
+          </li>
           <li>
-            <% if key == :schedule || Current.user&.admin? %>
-              <%= link_to path,
-                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
-                    aria: { selected: section == key } do %>
-                <%= heroicon icon, options: { class: "size-5 shrink-0", "aria-hidden": true } %>
-                <%= label %>
-              <% end %>
-            <% else %>
-              <span class="block py-2 pr-3 pl-10 text-sm font-medium text-ink-500"><%= label %></span>
+            <%= link_to layers_path,
+                  class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                  aria: { selected: section == :layers } do %>
+              <%= heroicon "square-3-stack-3d", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+              Layers
             <% end %>
           </li>
         <% end %>
+        <li>
+          <%= link_to rubrics_path,
+                class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                aria: { selected: section == :schedule } do %>
+            <%= heroicon "calendar", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+            Schedule
+          <% end %>
+        </li>
       </ol>
     </li>
     <li class="mt-2 border-t border-ink-900/10 pt-2">
-      <details class="group" <%= "open" if business_sections.any? { |_, _, key| key == section } %>>
+      <details class="group" <%= "open" if !Current.user&.admin? || business_sections.any? { |_, _, key| key == section } %>>
         <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
           Business
           <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>

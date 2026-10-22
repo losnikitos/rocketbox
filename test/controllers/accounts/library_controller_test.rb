@@ -99,7 +99,7 @@ class Accounts::LibraryControllerTest < ActionDispatch::IntegrationTest
 
     run.update!(status: "failed", error: "content policy")
     get library_item_url(run.generated_media)
-    assert_select "[aria-label='Folder tree'] a[href=?][aria-current=page]", library_folders_path("ready")
+    assert_select "[aria-label='Folder tree'] a[href=?]", library_folders_path("ready"), count: 0
     assert_select "#transformation-run-heading + span", text: "failed"
     assert_select "details:has(#transformation-run-heading) p", text: "content policy"
     assert_select "nav[aria-label='Collage media']" do

@@ -64,6 +64,12 @@ module AppHelper
     end
   end
 
+  # Top-level folders in the sidebar and command panel. Non-admins see Inbox and its subfolders.
+  def sidebar_roots
+    roots = Folder.roots.ordered.includes(:children)
+    Current.user&.admin? ? roots : roots.where(slug: "inbox")
+  end
+
   # [label, path, section, icon] rows of the sidebar's Business group, also listed in the command panel.
   def business_sections = [
     [ "Onboarding", onboarding_path, :onboarding, "clipboard-document-check" ],
