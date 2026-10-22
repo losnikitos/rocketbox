@@ -11,6 +11,26 @@ class AgentTranscript
 
   def self.call(chat, user) = new(chat, user).call
 
+  # The messages a reply would rebuild, without touching the user's chat.
+  def self.preview(user)
+    sink = Preview.new
+    call(sink, user)
+    sink.messages
+  end
+
+  # Collects add_message calls in memory. Not a Chat, so a preview writes nothing.
+  class Preview
+    attr_reader :messages
+
+    def initialize
+      @messages = []
+    end
+
+    def add_message(**message)
+      @messages << message
+    end
+  end
+
   # What a workflow run took and made. A Sort's result is the source, so WorkflowRun#inputs/#outputs
   # (a set difference) is empty; this lists the step runs instead. The model receives this as JSON.
   def self.trace(run)

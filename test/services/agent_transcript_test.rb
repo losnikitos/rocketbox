@@ -58,4 +58,19 @@ class AgentTranscriptTest < ActiveSupport::TestCase
     assert_equal "Sent a photo: front of the shop", message.content
     assert_not message.attachments.attached?
   end
+
+  test "preview is the text the model hears and writes no chat" do
+    user = users(:lazaro_nixon)
+    incoming = IncomingMessage.create!(channel: "whatsapp", user:, kind: "image", body: "front of the shop", payload: { "id" => "wamid.preview" })
+    incoming.attachments.attach(io: StringIO.new("img"), filename: "shop.jpg", content_type: "image/jpeg")
+
+    messages = nil
+    assert_no_difference [ -> { Chat.count }, -> { Message.count } ] do
+      messages = AgentTranscript.preview(user)
+    end
+
+    assert_equal [ :user ], messages.map { it[:role] }
+    assert_equal "Sent a photo: front of the shop", messages.sole[:content]
+    assert_nil messages.sole[:attachments]
+  end
 end

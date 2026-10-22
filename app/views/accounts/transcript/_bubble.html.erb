@@ -1,0 +1,14 @@
+<% message = local_assigns[:message] %>
+<% role = message[:role].to_s %>
+
+<div data-role="<%= role %>" class="flex flex-col <%= transcript_align(role) %>">
+  <p class="text-xs font-semibold leading-none <%= transcript_role(role) %>"><%= role %><% if message[:tool_call_id] %> <span class="font-normal text-ink-500"><%= message[:tool_call_id] %></span><% end %></p>
+  <div class="mt-0.5 rounded-lg border border-ink-900/10 bg-white px-3 py-2 font-mono text-xs text-ink-900 <%= transcript_bubble(role) %>">
+    <% if message[:content].present? %>
+      <p class="whitespace-pre-wrap"><%= transcript_body(message[:content]) %></p>
+    <% end %>
+    <% message[:tool_calls]&.each_value do |call| %>
+      <p class="whitespace-pre-wrap"><%= call.name %> <%= JSON.pretty_generate(call.arguments) %></p>
+    <% end %>
+  </div>
+</div>

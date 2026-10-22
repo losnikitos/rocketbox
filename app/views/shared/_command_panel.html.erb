@@ -9,7 +9,8 @@
         [ "Layers", layers_path, section_icon("square-3-stack-3d") ] ] if admin),
     [ "Schedule", rubrics_path, section_icon("calendar") ],
     *business_sections.map { |label, path, _, icon| [ label, path, section_icon(icon) ] },
-    *([ [ "Admin", admin_path, section_icon("wrench-screwdriver") ] ] if admin)
+    *([ [ "Admin", admin_path, section_icon("wrench-screwdriver") ],
+        [ "Transcript", transcript_path, section_icon("chat-bubble-left-right") ] ] if admin)
   ]
 %>
 <dialog id="command-panel" aria-label="Command panel"

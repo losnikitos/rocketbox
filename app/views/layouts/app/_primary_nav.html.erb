@@ -131,7 +131,7 @@
     </li>
     <% if Current.user&.admin? %>
       <li class="mt-2 border-t border-ink-900/10 pt-2">
-        <details class="group" <%= "open" if section == :admin %>>
+        <details class="group" <%= "open" if section.in?(%i[admin transcript]) %>>
           <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
             Admin
             <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>
@@ -143,6 +143,14 @@
                     aria: { selected: section == :admin } do %>
                 <%= heroicon "wrench-screwdriver", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
                 Dashboard
+              <% end %>
+            </li>
+            <li>
+              <%= link_to transcript_path,
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    aria: { selected: section == :transcript } do %>
+                <%= heroicon "chat-bubble-left-right", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Transcript
               <% end %>
             </li>
             <li>

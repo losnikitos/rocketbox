@@ -54,6 +54,17 @@ class RocketboxAgent < RubyLLM::Agent
     end
   end
 
+  # The system messages a reply sends, in order. The brief is the second one.
+  def self.system_messages(user)
+    runtime = Object.new
+    runtime.define_singleton_method(:user) { user }
+    instructions.filter_map do |declaration|
+      value = declaration[:value]
+      text = value.is_a?(Proc) ? runtime.instance_exec(&value) : value
+      text.to_s.presence
+    end
+  end
+
   def self.business_brief(user)
     return "No Rocketbox account linked." if user.nil?
 

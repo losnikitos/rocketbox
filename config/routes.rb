@@ -95,6 +95,7 @@ Rails.application.routes.draw do
       post "onboarding/ask", to: "onboarding#ask", as: :onboarding_ask
       post "onboarding/dashboard_link", to: "onboarding#dashboard_link", as: :onboarding_dashboard_link
       get "admin", to: "admin#show", as: :admin
+      get "transcript", to: "transcript#show", as: :transcript
     end
 
     scope path: "subscription", as: "subscription" do

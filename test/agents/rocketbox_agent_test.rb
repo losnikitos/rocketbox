@@ -36,6 +36,22 @@ class RocketboxAgentTest < ActiveSupport::TestCase
     assert_includes RocketboxAgent.business_brief(user), "Onboarding: COMPLETE"
   end
 
+  test "system messages are the instructions and then the brief" do
+    user = users(:lazaro_nixon)
+    user.update!(
+      business_name: "Wick Lane Barbershop",
+      phone: nil, name: nil, address: nil, homepage_url: nil,
+      business_description: nil, business_hours: nil
+    )
+
+    messages = RocketboxAgent.system_messages(user)
+
+    assert_equal 2, messages.size
+    assert_includes messages[0], "You cannot see the image"
+    assert_includes messages[1], "Onboarding: INCOMPLETE"
+    assert_includes messages[1], "Business name: Wick Lane Barbershop"
+  end
+
   test "reply forgets a chat-only message and replays an incoming one" do
     user = users(:lazaro_nixon)
     user.update!(phone: nil, name: nil, address: nil, homepage_url: nil, business_description: nil, business_hours: nil)

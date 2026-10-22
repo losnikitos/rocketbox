@@ -53,6 +53,8 @@ module AppHelper
       ] ]
     when "accounts/admin"
       [ :admin, "Admin", [] ]
+    when "accounts/transcript"
+      [ :transcript, "Transcript", [] ]
     when "accounts/prompts"
       [ :folders, @prompt&.folder&.name || "Prompts", [] ]
     when "accounts/layers"

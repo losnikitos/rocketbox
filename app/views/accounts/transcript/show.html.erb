@@ -1,0 +1,23 @@
+<% content_for(:title, "Transcript — Rocketbox") %>
+<% content_for(:fit, "true") %>
+<% content_for(:bare, "true") %>
+
+<section class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-ink-900/10 bg-white" aria-label="Agent transcript">
+  <header class="shrink-0 border-b border-ink-900/10 px-4 py-3">
+    <p class="font-semibold text-ink-900">What the model sees</p>
+  </header>
+
+  <div class="min-h-0 flex-1 space-y-3 overflow-y-auto bg-ink-900/5 p-2">
+    <% @system_messages.each do |text| %>
+      <%= render "bubble", message: { role: "system", content: text } %>
+    <% end %>
+
+    <% if @transcript.empty? %>
+      <p class="font-mono text-xs text-ink-500">No messages yet.</p>
+    <% end %>
+
+    <% @transcript.each do |message| %>
+      <%= render "bubble", message: %>
+    <% end %>
+  </div>
+</section>
