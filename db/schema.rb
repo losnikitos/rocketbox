@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_164606) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_170647) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.string "namespace"
     t.text "body"
@@ -133,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_164606) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "prompt", default: "", null: false
     t.index ["guide_chapter_id"], name: "index_guide_rules_on_guide_chapter_id"
     t.index ["guide_id", "number"], name: "index_guide_rules_on_guide_id_and_number", unique: true
     t.index ["guide_id"], name: "index_guide_rules_on_guide_id"

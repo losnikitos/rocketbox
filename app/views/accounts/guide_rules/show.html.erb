@@ -1,0 +1,37 @@
+<% content_for(:title, "#{@rule.label} #{@rule.title} — #{@guide.title} — Rocketbox") %>
+
+<% content_for(:breadcrumbs) do %>
+  <%= link_to studio_guides_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+    <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Guides
+  <% end %>
+  <span class="text-sm text-ink-400">/</span>
+  <%= link_to @guide.title, studio_guide_path(@guide), class: "text-sm text-ink-600 hover:text-ink-900" %>
+  <span class="text-sm text-ink-400">/</span>
+  <%= link_to @chapter.title, studio_guide_chapter_path(@guide, @chapter), class: "text-sm text-ink-600 hover:text-ink-900" %>
+  <span class="text-sm text-ink-400">/</span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @rule.label %></span>
+<% end %>
+
+<article class="rounded-2xl border border-ink-900/10 bg-white p-6">
+  <p class="font-mono text-sm text-ink-400"><%= @rule.label %></p>
+  <h2 class="mt-1 font-manrope text-2xl font-extrabold tracking-tight text-ink-900"><%= @rule.title %></h2>
+
+  <div class="guide-body mt-6 text-[17px] font-medium leading-relaxed text-ink-600
+    [&_p]:mt-4 [&_p]:first:mt-0
+    [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5
+    [&_strong]:font-semibold [&_strong]:text-ink-900
+    [&_a]:font-medium [&_a]:text-rocket [&_a]:underline">
+    <%= render_guide_markdown(@rule.body) %>
+  </div>
+</article>
+
+<section class="mt-6 rounded-2xl border border-dashed border-ink-900/15 bg-white p-6" aria-labelledby="prompt-heading">
+  <h2 id="prompt-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-500">Image prompt</h2>
+  <p class="mt-1 text-sm text-ink-500">Studio only — not shown on the public guide.</p>
+  <% if @rule.prompt.present? %>
+    <p class="mt-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-800"><%= @rule.prompt %></p>
+  <% else %>
+    <p class="mt-4 text-sm text-ink-400">No prompt set.</p>
+  <% end %>
+</section>

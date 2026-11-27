@@ -1,0 +1,47 @@
+<% content_for(:title, "#{@chapter.title} — #{@guide.title} — Rocketbox") %>
+
+<% content_for(:breadcrumbs) do %>
+  <%= link_to studio_guides_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+    <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Guides
+  <% end %>
+  <span class="text-sm text-ink-400">/</span>
+  <%= link_to @guide.title, studio_guide_path(@guide), class: "text-sm text-ink-600 hover:text-ink-900" %>
+  <span class="text-sm text-ink-400">/</span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @chapter.title %></span>
+<% end %>
+
+<div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+  <% if @chapter.lede.present? %>
+    <div class="text-[17px] font-medium leading-relaxed text-ink-600">
+      <%= render_markdown(@chapter.lede) %>
+    </div>
+  <% end %>
+</div>
+
+<section class="mt-6 space-y-4" aria-label="Rules">
+  <% @chapter.rules.each do |rule| %>
+    <article class="rounded-2xl border border-ink-900/10 bg-white p-6">
+      <header class="flex flex-wrap items-baseline justify-between gap-2">
+        <%= link_to studio_guide_chapter_rule_path(@guide, @chapter, rule.number),
+              class: "font-manrope text-lg font-bold tracking-tight text-ink-900 hover:text-rocket" do %>
+          <span class="font-mono text-sm font-medium text-ink-400"><%= rule.label %></span>
+          <%= rule.title %>
+        <% end %>
+      </header>
+      <div class="guide-body mt-4 text-[15px] font-medium leading-relaxed text-ink-600
+        [&_p]:mt-3 [&_p]:first:mt-0
+        [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5
+        [&_strong]:font-semibold [&_strong]:text-ink-900
+        [&_a]:font-medium [&_a]:text-rocket [&_a]:underline">
+        <%= render_guide_markdown(rule.body) %>
+      </div>
+      <% if rule.prompt.present? %>
+        <div class="mt-4 rounded-xl border border-dashed border-ink-900/15 bg-ink-900/[0.03] p-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-ink-500">Image prompt</p>
+          <p class="mt-2 whitespace-pre-wrap font-mono text-xs leading-relaxed text-ink-700"><%= rule.prompt %></p>
+        </div>
+      <% end %>
+    </article>
+  <% end %>
+</section>

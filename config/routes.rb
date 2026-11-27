@@ -65,6 +65,11 @@ Rails.application.routes.draw do
         get :canvas, on: :member
       end
       resources :media_banks, path: "media_bank", only: %i[index show create update destroy]
+      resources :studio_guides, path: "guides", only: %i[index show], param: :slug, controller: "guides" do
+        resources :chapters, only: :show, param: :slug, controller: "guide_chapters" do
+          resources :rules, only: :show, param: :number, controller: "guide_rules"
+        end
+      end
       resources :posts do
         member do
           get :canvas

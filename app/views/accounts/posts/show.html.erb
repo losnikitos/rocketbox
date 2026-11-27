@@ -29,13 +29,15 @@
       aria-label="Scenes">
     <% scenes.each_with_index do |scene, i| %>
       <li class="flex shrink-0 flex-col" style="width: <%= frame_w %>px">
-        <div class="overflow-hidden rounded-lg bg-white"
-             style="width: <%= frame_w %>px; height: <%= frame_h %>px">
+        <%= link_to post_path(@post, scene: scene.slug),
+              aria: { selected: params[:scene] == scene.slug, label: "#{i + 1}. #{scene.label}" },
+              class: "block overflow-hidden rounded-lg bg-white ring-2 ring-transparent aria-selected:ring-rocket focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rocket",
+              style: "width: #{frame_w}px; height: #{frame_h}px" do %>
           <div class="origin-top-left"
                style="width: <%= width %>px; height: <%= height %>px; transform: scale(<%= scale %>)">
             <%= render "accounts/posts/scene", scene:, preset: @preset %>
           </div>
-        </div>
+        <% end %>
         <p class="mt-1.5 text-center text-[10px] leading-tight font-medium text-ink-700"
            title="<%= scene.label %>">
           <%= i + 1 %>. <%= scene.label %>

@@ -1,0 +1,21 @@
+<% content_for(:title, "Guides — Studio — Rocketbox") %>
+
+<ul class="space-y-3">
+  <% @guides.each do |guide| %>
+    <li>
+      <%= link_to studio_guide_path(guide),
+            class: "block rounded-2xl border border-ink-900/10 bg-white p-6 hover:border-ink-900/20" do %>
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="font-manrope text-xl font-bold tracking-tight text-ink-900"><%= guide.title %></h2>
+          <p class="text-sm text-ink-500">
+            <%= pluralize(guide.chapters.size, "chapter") %>
+            <% unless guide.published? %><span class="ml-2 rounded-md bg-ink-900/5 px-1.5 py-0.5 text-xs font-medium text-ink-500">Draft</span><% end %>
+          </p>
+        </div>
+        <% if guide.lede.present? %>
+          <p class="mt-2 text-sm font-medium text-ink-500"><%= guide.lede %></p>
+        <% end %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

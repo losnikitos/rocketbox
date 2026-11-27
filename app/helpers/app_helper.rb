@@ -61,6 +61,8 @@ module AppHelper
       [ :layers, "Layers", [] ]
     when "accounts/media_banks"
       [ :media_bank, "Media bank", [] ]
+    when "accounts/guides", "accounts/guide_chapters", "accounts/guide_rules"
+      [ :guides, @guide&.title || "Guides", [] ]
     when "accounts/posts"
       [ :posts, "Posts", [] ]
     when "accounts/workflows"

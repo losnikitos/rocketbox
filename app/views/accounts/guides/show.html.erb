@@ -1,0 +1,50 @@
+<% content_for(:title, "#{@guide.title} — Guides — Rocketbox") %>
+
+<% content_for(:breadcrumbs) do %>
+  <%= link_to studio_guides_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+    <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Guides
+  <% end %>
+  <span class="text-sm text-ink-400">/</span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @guide.title %></span>
+<% end %>
+
+<div class="rounded-2xl border border-ink-900/10 bg-white p-6">
+  <div class="flex flex-wrap items-center gap-2 text-sm text-ink-500">
+    <%= @guide.access_label %>
+    <% unless @guide.published? %><span class="rounded-md bg-ink-900/5 px-1.5 py-0.5 text-xs font-medium">Draft</span><% end %>
+  </div>
+
+  <% if @guide.lede.present? %>
+    <div class="mt-4 text-[17px] font-medium leading-relaxed text-ink-600">
+      <%= render_markdown(@guide.lede) %>
+    </div>
+  <% end %>
+
+  <% if @guide.promo.present? %>
+    <div class="mt-4 text-[17px] font-medium leading-relaxed text-ink-600">
+      <%= render_markdown(@guide.promo) %>
+    </div>
+  <% end %>
+</div>
+
+<section class="mt-6 rounded-2xl border border-ink-900/10 bg-white p-6" aria-labelledby="chapters-heading">
+  <h2 id="chapters-heading" class="font-manrope text-lg font-bold tracking-tight text-ink-900">Chapters</h2>
+  <ol class="mt-4 divide-y divide-ink-900/10 border-y border-ink-900/10">
+    <% @guide.chapters.each_with_index do |chapter, index| %>
+      <li>
+        <%= link_to studio_guide_chapter_path(@guide, chapter),
+              class: "flex items-baseline justify-between gap-4 py-4 no-underline hover:text-rocket" do %>
+          <span class="flex min-w-0 items-baseline gap-3">
+            <span class="font-mono text-sm text-ink-400"><%= format("%02d", index + 1) %></span>
+            <span class="font-manrope text-base font-bold tracking-tight text-ink-900"><%= chapter.title %></span>
+          </span>
+          <span class="shrink-0 text-sm font-medium text-ink-500"><%= pluralize(chapter.rules.size, "rule") %></span>
+        <% end %>
+        <% if chapter.lede.present? %>
+          <p class="-mt-2 mb-4 max-w-2xl pl-9 text-sm font-medium leading-relaxed text-ink-500"><%= chapter.lede %></p>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</section>
