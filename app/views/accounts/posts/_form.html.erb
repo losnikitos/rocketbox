@@ -1,6 +1,13 @@
 <%# locals: (post:, preset:, renders:) %>
 <%= form_with model: post, url: (post.persisted? ? post_path(post) : posts_path), class: "rb-surface-raised space-y-4 p-4" do |f| %>
-  <h2 class="text-sm font-semibold text-ink-900"><%= post.persisted? ? "Settings" : "New post" %></h2>
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-sm font-semibold text-ink-900"><%= post.persisted? ? "Settings" : "New post" %></h2>
+    <% if post.persisted? %>
+      <%= link_to "as markdown", post_path(post, format: :md),
+            class: "text-xs text-ink-500 hover:text-ink-900 hover:underline",
+            target: "_blank", rel: "noopener" %>
+    <% end %>
+  </div>
 
   <div class="space-y-2">
     <%= f.label :preset_slug, "Preset", class: "text-xs font-medium text-ink-500" %>
@@ -42,10 +49,6 @@
           Preset::TRANSITIONS.map { |value, label| [ label, value ] },
           {},
           class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
-  </div>
-
-  <div class="space-y-1 border-t border-ink-900/10 pt-3 text-xs text-ink-500">
-    <p>CTA: <%= preset.cta_text %> → <code class="font-mono"><%= preset.cta_href %></code></p>
   </div>
 
   <%= f.submit post.persisted? ? "Save" : "Create post",

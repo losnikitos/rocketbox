@@ -3,12 +3,12 @@
 class SeedGuideRuleImagePrompts < ActiveRecord::Migration[8.1]
   PROMPTS = {
     10 => <<~PROMPT.squish,
-      Keep the same camera angle, building, signage, and surroundings as the source photo.
-      Apply: Keep the facade clear — a tidy shop reads as professional; one sign on the facade,
-      no sticker collage. Remove ALL window stickers, posters, special-offer signs, price lists,
-      haircut photo grids, and decals from the glass door and windows so the glass is clear and
-      you can see cleanly into the shop interior. Keep only the main overhead shop sign.
-      Professional clear storefront, no clutter on the glass.
+      Inpaint edit of the reference photo only — leave every other pixel unchanged.
+      Do not zoom, crop, reframe, or move the camera closer. Field of view must match the
+      reference exactly (same upper facade, same sidewalk/road at the bottom, same neighbors).
+      Only change: erase ALL stickers, posters, price lists, haircut photo grids, special-offer
+      signs, and decals from the glass door and windows so the glass is clear. Keep the neon
+      barber pole and the main overhead shop sign. No lighting change, no interior redesign.
     PROMPT
     12 => <<~PROMPT.squish
       Keep the same camera angle, composition, and scene as the source photo.

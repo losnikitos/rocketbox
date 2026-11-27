@@ -31,7 +31,7 @@ puts path
 2. Call Cursor **GenerateImage** with:
    - `description` = that rule's **Image prompt** from the Markdown (the `GuideRule#prompt`)
    - `reference_image_paths` = `[that tmp path]` (optionally also the guide's compare "do" image if helpful)
-   - `aspect_ratio` matching the source (storefront photos are usually `4:3`)
+   - `aspect_ratio` matching the source (preset/posts are `9:16`; check source dimensions)
    - `filename` like `post{POST_ID}-v{N}-rule{NUMBER}.png`
 
 3. Attach the generated file as the frame:
