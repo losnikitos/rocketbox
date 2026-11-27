@@ -35,7 +35,11 @@ Changing **source** or **rules** destroys all `PostFrame`s and `PostRender`s (st
 
 ## Key frames (`PostFrame`)
 
-Each generated still after a rule is a `PostFrame`: `position` (1 = v1, 2 = v2, …), `rule_number` (how it was made today), Active Storage `file`. Scenes hold the bank `LibraryMedia` or `PostFrame` records directly. Source id stays on the post; frames live on the post. Today frames come from rule + image generation (demo seeds attach public compare JPGs); other generators can land here later.
+Each generated still after a rule is a `PostFrame`: `position` (1 = v1, 2 = v2, …), `rule_number` (how it was made today), Active Storage `file`. Scenes hold the bank `LibraryMedia` or `PostFrame` records directly. Source id stays on the post; frames live on the post. Image prompts live on [`GuideRule#prompt`](/app/models/guide_rule.rb) (Studio Guides only, not the public site).
+
+### Agents
+
+Given a post URL, curl its Markdown first (same path + `.md`, public, no auth). It lists source, ordered rules, each rule's prompt, and which frames are missing. Full generate-and-attach procedure: [POST_FRAMES.md](./POST_FRAMES.md).
 
 ## Guide promo defaults
 

@@ -1,0 +1,60 @@
+<%
+  source_file = @source&.file&.attached? ? "[#{@source.file.filename}](#{rails_blob_url(@source.file)})" : "missing"
+  missing = []
+%>
+# Post #<%= @post.id %> — <%= @preset.name %>
+
+- Studio: <%= post_url(@post) %>
+- Preset: `<%= @post.preset_slug %>`
+- Transition: <%= @post.transition_label %>
+- Source (v0): <%= @source ? "media bank ##{@source.id} #{source_file}" : "(none)" %>
+- Rules (order): <%= @post.rules_list.join(" → ").presence || "(none)" %>
+
+## Agent task
+
+Fill missing key frames for this post. Full procedure: [docs/POST_FRAMES.md](/docs/POST_FRAMES.md).
+
+1. Work **one rule at a time**, in the order below.
+2. For each missing `vN`: call **GenerateImage** with the rule's **Image prompt**, `reference_image_paths` = the previous still (v0 source, else the last attached frame), aspect matching the source.
+3. Attach the result as `PostFrame` position `N` / `rule_number` via `bin/rails runner` (snippet in POST_FRAMES.md).
+4. Stop when every rule has an attached frame. Do not re-generate attached frames unless asked.
+
+## Frames
+<% @post.rules_list.each_with_index do |number, i| %>
+<%
+  position = i + 1
+  rule = @rules[number]
+  frame = @post.frame_at(position)
+  attached = frame&.file&.attached?
+  missing << "v#{position}" unless attached
+  ref = i.zero? ? "v0 (source)" : "v#{i}"
+%>
+### v<%= position %> · rule #<%= number %><%= rule ? " — #{rule.title}" : "" %>
+
+- Status: <%= attached ? "attached [#{frame.file.filename}](#{rails_blob_url(frame.file)})" : "**missing** — generate from #{ref}" %>
+- Studio scene: <%= post_url(@post, scene: "v#{position}") %>
+<% if rule&.prompt.present? %>
+
+Image prompt:
+
+~~~text
+<%= rule.prompt %>
+~~~
+<% elsif rule %>
+
+Image prompt: _(empty on GuideRule #<%= number %> — write one from the rule body before generating)_
+<% else %>
+
+Image prompt: _(no GuideRule ##<%= number %> on this preset's guide)_
+<% end %>
+<% end %>
+<% if @post.rules_list.empty? %>
+
+_(No rules on this post — nothing to generate.)_
+<% elsif missing.empty? %>
+
+All frames attached.
+<% else %>
+
+Still missing: <%= missing.join(", ") %>.
+<% end %>

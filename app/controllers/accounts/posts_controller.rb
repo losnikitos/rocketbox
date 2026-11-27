@@ -5,6 +5,8 @@ module Accounts
     layout "app"
 
     before_action :authenticate_admin!
+    # Post Markdown is public for coding agents (see docs/POST_FRAMES.md).
+    skip_before_action :authenticate, :authenticate_admin!, :require_account_param, if: :markdown?
     before_action :set_post, only: %i[show edit update destroy canvas render_video]
     before_action :set_scene, only: %i[canvas]
 
@@ -14,7 +16,14 @@ module Accounts
     end
 
     def show
-      @renders = @post.renders.order(created_at: :desc)
+      respond_to do |format|
+        format.html { @renders = @post.renders.order(created_at: :desc) }
+        format.md do
+          @guide = @preset.try(:guide)
+          @rules = @guide ? @guide.rules.where(number: @post.rules_list).index_by(&:number) : {}
+          @source = @post.source_media
+        end
+      end
     end
 
     def new
@@ -81,6 +90,11 @@ module Accounts
         else
           @post.scenes.first
         end
+      end
+
+      # The action is checked here: `only:` beside `if:` on a skip would skip for every show.
+      def markdown?
+        action_name == "show" && request.format.md?
       end
 
       def post_params

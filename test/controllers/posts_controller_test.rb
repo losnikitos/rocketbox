@@ -82,6 +82,27 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pending", PostRender.last.status
   end
 
+  test "post Markdown is public and lists missing frames" do
+    media = bank_media!
+    @post.update!(source: media.id.to_s, rules: [ 10, 11 ])
+    guide_rules(:facade).update!(prompt: "Clear the facade glass.")
+    guide_rules(:uniform).update!(prompt: "Dress the barber in uniform.")
+    delete sign_out_url
+
+    get post_url(@post, format: :md)
+    assert_response :success
+    assert_equal "text/markdown", response.media_type
+    assert_includes response.body, "# Post ##{@post.id}"
+    assert_includes response.body, "docs/POST_FRAMES.md"
+    assert_includes response.body, "Clear the facade glass."
+    assert_includes response.body, "Dress the barber in uniform."
+    assert_includes response.body, "**missing**"
+    assert_includes response.body, "Still missing: v1, v2"
+
+    get post_url(@post)
+    assert_redirected_to sign_in_url
+  end
+
   private
 
     def bank_media!

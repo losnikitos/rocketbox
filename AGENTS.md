@@ -96,3 +96,6 @@ Heroicons: `heroicon "name"` — no variant or size unless needed.
 ### [PRESET.md](./docs/PRESET.md)
 Admin Studio: media bank + coded presets + Posts (scene preview, Ferrum stills, MP4).
 
+### [POST_FRAMES.md](./docs/POST_FRAMES.md)
+Agent procedure: curl a post's `.md`, GenerateImage per rule prompt, attach `PostFrame`s.
+
