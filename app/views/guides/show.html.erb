@@ -1,32 +1,80 @@
 <% content_for(:title, "#{@guide.title} — Guides — Rocketbox") %>
+<% first_chapter = @guide.first_chapter %>
 
 <article class="pb-16 pt-4 lg:pb-24 lg:pt-2">
-  <header class="max-w-3xl border-b border-ink-900/10 pb-10">
-    <p class="text-sm font-semibold uppercase tracking-wide text-ink-500">
-      <%= link_to "Guides", guides_path, class: "text-ink-500 hover:text-ink-900" %>
-    </p>
-    <h1 class="mt-4 font-manrope text-[clamp(2.25rem,5vw,4.5rem)] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink-900 text-balance">
-      <%= @guide.title %>
-    </h1>
-    <p class="mt-6 max-w-2xl text-[17px] font-medium leading-relaxed text-ink-500">
-      <%= @guide.lede %>
-    </p>
+  <p class="text-sm font-semibold uppercase tracking-wide text-ink-500">
+    <%= link_to "Guides", guides_path, class: "text-ink-500 hover:text-ink-900" %>
+  </p>
+
+  <%# Promo hero — cover + pitch before any chapter reading %>
+  <header class="mt-6 grid items-start gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-16">
+    <div class="mx-auto w-full max-w-72 sm:max-w-80 lg:mx-0">
+      <%= render "guides/cover", guide: @guide, size: :hero %>
+    </div>
+
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-3">
+        <%= render "guides/access_badge", guide: @guide %>
+        <p class="text-sm font-medium text-ink-500"><%= pluralize(@guide.chapters.size, "chapter") %></p>
+      </div>
+
+      <h1 class="mt-4 font-manrope text-[clamp(2.25rem,5vw,4.5rem)] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink-900 text-balance">
+        <%= @guide.title %>
+      </h1>
+      <p class="mt-6 max-w-2xl text-[17px] font-medium leading-relaxed text-ink-500">
+        <%= @guide.lede %>
+      </p>
+
+      <% if @guide.promo.present? %>
+        <div class="mt-6 max-w-2xl space-y-4 text-[17px] font-medium leading-relaxed text-ink-600">
+          <% @guide.promo.split(/\n\n+/).each do |paragraph| %>
+            <p><%= paragraph.strip %></p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <% if first_chapter && @guide.open? %>
+          <%= link_to "Start reading →", guide_chapter_path(@guide, first_chapter), class: "rb-btn-primary" %>
+        <% end %>
+        <%= link_to "Contents", "#contents", class: "rb-btn-ghost" %>
+      </div>
+    </div>
   </header>
 
-  <section class="mt-12 max-w-3xl" aria-labelledby="chapters-heading">
-    <h2 id="chapters-heading" class="font-manrope text-xl font-extrabold tracking-[-0.03em] text-ink-900">Chapters</h2>
+  <section id="contents" class="mt-16 max-w-3xl scroll-mt-24 border-t border-ink-900/10 pt-12" aria-labelledby="contents-heading">
+    <h2 id="contents-heading" class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 sm:text-3xl">
+      Contents
+    </h2>
     <ol class="mt-6 divide-y divide-ink-900/10 border-y border-ink-900/10">
-      <% @guide.chapters.each do |chapter| %>
+      <% @guide.chapters.each_with_index do |chapter, index| %>
         <li>
           <%= link_to guide_chapter_path(@guide, chapter), class: "flex items-baseline justify-between gap-4 py-4 no-underline hover:text-rocket" do %>
-            <span class="font-manrope text-lg font-bold tracking-tight text-ink-900"><%= chapter.title %></span>
+            <span class="flex min-w-0 items-baseline gap-3">
+              <span class="font-mono text-sm text-ink-400"><%= format("%02d", index + 1) %></span>
+              <span class="font-manrope text-lg font-bold tracking-tight text-ink-900"><%= chapter.title %></span>
+            </span>
             <span class="shrink-0 text-sm font-medium text-ink-500"><%= pluralize(chapter.rules.size, "rule") %></span>
           <% end %>
           <% if chapter.lede.present? %>
-            <p class="-mt-2 mb-4 max-w-2xl text-[15px] font-medium leading-relaxed text-ink-500"><%= chapter.lede %></p>
+            <p class="-mt-2 mb-4 max-w-2xl pl-9 text-[15px] font-medium leading-relaxed text-ink-500"><%= chapter.lede %></p>
           <% end %>
         </li>
       <% end %>
     </ol>
+  </section>
+
+  <%# Hook for free vs members later — visible copy stays open; swap CTA when gating lands. %>
+  <section class="mt-16 max-w-3xl border-t border-ink-900/10 pt-12" aria-labelledby="access-heading" data-guide-access="<%= @guide.access %>">
+    <h2 id="access-heading" class="font-manrope text-xl font-extrabold tracking-[-0.03em] text-ink-900">
+      Access
+    </h2>
+    <p class="mt-3 max-w-2xl text-[15px] font-medium leading-relaxed text-ink-500">
+      <% if @guide.free? %>
+        This guide is free to read. Open any chapter from the contents — no account required.
+      <% else %>
+        This guide is marked for members. Reading stays open for now while we finish plans.
+      <% end %>
+    </p>
   </section>
 </article>

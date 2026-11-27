@@ -6,8 +6,9 @@ class GuidesController < ApplicationController
   end
 
   def show
-    @guide = Guide.published.friendly.find(params[:slug])
+    @guide = Guide.published.includes(chapters: :rules).friendly.find(params[:slug])
   rescue ActiveRecord::RecordNotFound
     redirect_to guides_path, alert: "That guide could not be found."
   end
 end
+

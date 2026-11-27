@@ -2,4 +2,7 @@ barbershop:
   title: Barbershop
   slug: barbershop
   lede: The franchisee handbook.
+  promo: A practical handbook for franchisees — look, book, market, and keep the books.
+  cover_image: /guides/barbershop/clean.jpg
+  access: free
   published: true
