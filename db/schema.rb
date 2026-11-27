@@ -10,15 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_161308) do
   create_table "active_admin_comments", force: :cascade do |t|
-    t.integer "author_id"
-    t.string "author_type"
-    t.text "body"
-    t.datetime "created_at", null: false
     t.string "namespace"
-    t.integer "resource_id"
+    t.text "body"
     t.string "resource_type"
+    t.integer "resource_id"
+    t.string "author_type"
+    t.integer "author_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author"
     t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
@@ -26,24 +26,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
     t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
     t.text "metadata"
     t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -54,9 +54,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "chats", force: :cascade do |t|
+    t.bigint "ruby_llm_model_id", null: false
     t.boolean "cancelled", default: false, null: false
     t.datetime "created_at", null: false
-    t.bigint "ruby_llm_model_id", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
@@ -64,15 +64,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "crawls", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.string "provider", null: false
     t.text "data_instruction", null: false
+    t.string "status", default: "pending", null: false
     t.text "error"
     t.json "extracted"
-    t.integer "link_id", null: false
-    t.string "provider", null: false
     t.string "screenshot_url"
-    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "link_id", null: false
     t.index ["link_id"], name: "index_crawls_on_link_id"
   end
 
@@ -80,58 +80,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "documents", force: :cascade do |t|
-    t.text "body", default: "", null: false
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.boolean "published", default: false, null: false
     t.string "slug", null: false
     t.string "title", null: false
+    t.text "body", default: "", null: false
+    t.boolean "published", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_documents_on_slug", unique: true
   end
 
   create_table "folders", force: :cascade do |t|
-    t.string "color", default: "sky", null: false
-    t.datetime "created_at", null: false
-    t.string "kind", default: "media", null: false
     t.string "name", null: false
-    t.integer "parent_id"
     t.string "slug", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "parent_id"
+    t.string "color", default: "sky", null: false
+    t.string "kind", default: "media", null: false
     t.index ["parent_id", "slug"], name: "index_folders_on_parent_id_and_slug", unique: true
     t.index ["parent_id"], name: "index_folders_on_parent_id"
   end
 
   create_table "friendly_id_slugs", force: :cascade do |t|
-    t.datetime "created_at"
-    t.string "scope"
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type"
+    t.string "scope"
+    t.datetime "created_at"
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
   create_table "guide_chapters", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.integer "guide_id", null: false
-    t.text "lede", default: "", null: false
-    t.integer "position", default: 0, null: false
-    t.string "slug", null: false
     t.string "title", null: false
+    t.string "slug", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "lede", default: "", null: false
     t.index ["guide_id", "slug"], name: "index_guide_chapters_on_guide_id_and_slug", unique: true
     t.index ["guide_id"], name: "index_guide_chapters_on_guide_id"
   end
 
   create_table "guide_rules", force: :cascade do |t|
-    t.text "body", default: "", null: false
-    t.datetime "created_at", null: false
-    t.integer "guide_chapter_id", null: false
     t.integer "guide_id", null: false
+    t.integer "guide_chapter_id", null: false
     t.integer "number", null: false
-    t.integer "position", default: 0, null: false
     t.string "title", null: false
+    t.text "body", default: "", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["guide_chapter_id"], name: "index_guide_rules_on_guide_chapter_id"
     t.index ["guide_id", "number"], name: "index_guide_rules_on_guide_id_and_number", unique: true
@@ -139,58 +139,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "guides", force: :cascade do |t|
-    t.string "access", default: "free", null: false
-    t.string "cover_image"
-    t.datetime "created_at", null: false
-    t.text "lede", default: "", null: false
-    t.text "promo", default: "", null: false
-    t.boolean "published", default: false, null: false
-    t.string "slug", null: false
     t.string "title", null: false
+    t.string "slug", null: false
+    t.text "lede", default: "", null: false
+    t.boolean "published", default: false, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "cover_image"
+    t.text "promo", default: "", null: false
+    t.string "access", default: "free", null: false
     t.index ["slug"], name: "index_guides_on_slug", unique: true
   end
 
   create_table "incoming_messages", force: :cascade do |t|
-    t.text "body"
     t.string "channel", null: false
-    t.string "chat_id"
-    t.datetime "created_at", null: false
     t.string "external_id"
-    t.string "kind"
-    t.json "payload", null: false
     t.string "sender"
-    t.datetime "updated_at", null: false
+    t.string "chat_id"
+    t.string "kind"
+    t.text "body"
+    t.json "payload", null: false
     t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["channel", "external_id"], name: "index_incoming_messages_on_channel_and_external_id"
     t.index ["created_at"], name: "index_incoming_messages_on_created_at"
     t.index ["user_id"], name: "index_incoming_messages_on_user_id"
   end
 
   create_table "jobs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.integer "posts_count", default: 0, null: false
-    t.string "slug", null: false
-    t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "posts_count", default: 0, null: false
     t.index ["user_id", "slug"], name: "index_jobs_on_user_id_and_slug", unique: true
   end
 
   create_table "library_media", force: :cascade do |t|
-    t.integer "chat_id"
-    t.datetime "created_at", null: false
-    t.integer "folder_id", null: false
-    t.integer "from_id"
-    t.integer "job_id"
-    t.string "kind", null: false
-    t.string "source_url"
     t.string "telegram_file_id"
     t.string "telegram_file_unique_id"
+    t.integer "chat_id"
+    t.integer "from_id"
+    t.string "kind", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id"
-    t.string "whatsapp_from"
     t.string "whatsapp_media_id"
+    t.string "whatsapp_from"
+    t.string "source_url"
+    t.integer "folder_id", null: false
+    t.integer "job_id"
     t.index ["folder_id"], name: "index_library_media_on_folder_id"
     t.index ["job_id"], name: "index_library_media_on_job_id"
     t.index ["telegram_file_unique_id"], name: "index_library_media_on_telegram_file_unique_id", unique: true
@@ -207,47 +207,57 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "links", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "source", default: "app", null: false
-    t.datetime "updated_at", null: false
-    t.string "url", null: false
     t.integer "user_id", null: false
+    t.string "url", null: false
+    t.string "source", default: "app", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["user_id", "url"], name: "index_links_on_user_id_and_url", unique: true
     t.index ["user_id"], name: "index_links_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
-    t.string "cache_ttl"
-    t.boolean "cache_until_here", default: false, null: false
     t.bigint "chat_id", null: false
-    t.json "citations"
+    t.string "role", null: false
     t.text "content"
-    t.datetime "created_at", null: false
-    t.string "finish_reason"
+    t.boolean "cache_until_here", default: false, null: false
+    t.text "thinking_text"
+    t.text "thinking_signature"
+    t.json "citations"
+    t.json "server_tool_calls"
     t.json "raw_content"
     t.json "raw_reasoning"
-    t.string "role", null: false
-    t.json "server_tool_calls"
-    t.text "thinking_signature"
-    t.text "thinking_text"
+    t.string "finish_reason"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "cache_ttl"
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
   create_table "outgoing_messages", force: :cascade do |t|
-    t.text "body"
     t.string "channel", null: false
-    t.datetime "created_at", null: false
-    t.text "error"
     t.string "external_id"
-    t.string "kind"
-    t.json "payload", null: false
     t.string "recipient"
-    t.datetime "updated_at", null: false
+    t.string "kind"
+    t.text "body"
+    t.json "payload", null: false
+    t.text "error"
     t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["channel", "external_id"], name: "index_outgoing_messages_on_channel_and_external_id"
     t.index ["created_at"], name: "index_outgoing_messages_on_created_at"
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
+  end
+
+  create_table "post_frames", force: :cascade do |t|
+    t.integer "post_id", null: false
+    t.integer "position", null: false
+    t.integer "rule_number", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id", "position"], name: "index_post_frames_on_post_id_and_position", unique: true
+    t.index ["post_id"], name: "index_post_frames_on_post_id"
   end
 
   create_table "post_renders", force: :cascade do |t|
@@ -260,7 +270,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "posts", force: :cascade do |t|
-    t.string "name", default: "", null: false
     t.string "storyboard_slug", null: false
     t.string "source", default: "", null: false
     t.json "rules", default: [], null: false
@@ -270,137 +279,137 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "prompts", force: :cascade do |t|
+    t.string "name", null: false
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.integer "folder_id", null: false
-    t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.integer "folder_id", null: false
     t.integer "user_id"
     t.index ["folder_id"], name: "index_prompts_on_folder_id"
     t.index ["user_id"], name: "index_prompts_on_user_id"
   end
 
   create_table "reviews", force: :cascade do |t|
-    t.datetime "archived_at"
-    t.text "body"
-    t.datetime "created_at", null: false
-    t.string "customer_name", null: false
-    t.integer "folder_id", null: false
-    t.integer "rating", null: false
-    t.string "source", null: false
-    t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.string "customer_name", null: false
+    t.integer "rating", null: false
+    t.text "body"
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "source", null: false
+    t.integer "folder_id", null: false
     t.index ["folder_id"], name: "index_reviews_on_folder_id"
     t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
   create_table "rubric_posts", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error_message"
+    t.integer "rubric_id", null: false
     t.integer "library_media_id"
     t.datetime "published_at"
-    t.integer "rubric_id", null: false
-    t.datetime "scheduled_at", null: false
+    t.text "error_message"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "scheduled_at", null: false
     t.index ["library_media_id", "scheduled_at"], name: "index_rubric_posts_on_library_media_id_and_scheduled_at"
     t.index ["rubric_id", "scheduled_at"], name: "index_rubric_posts_on_rubric_id_and_scheduled_at"
   end
 
   create_table "rubrics", force: :cascade do |t|
-    t.boolean "auto_publish", default: false, null: false
-    t.string "color", default: "sky", null: false
-    t.datetime "created_at", null: false
-    t.integer "folder_id", null: false
-    t.string "format", default: "story", null: false
-    t.string "name", null: false
-    t.datetime "next_run_at"
-    t.string "schedule", null: false
-    t.json "tag_ids", default: [], null: false
-    t.datetime "updated_at", null: false
     t.integer "user_id", null: false
+    t.integer "folder_id", null: false
+    t.string "name", null: false
+    t.string "schedule", null: false
+    t.string "format", default: "story", null: false
+    t.string "color", default: "sky", null: false
+    t.boolean "auto_publish", default: false, null: false
+    t.datetime "next_run_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "tag_ids", default: [], null: false
     t.index ["folder_id"], name: "index_rubrics_on_folder_id"
     t.index ["next_run_at"], name: "index_rubrics_on_next_run_at"
     t.index ["user_id"], name: "index_rubrics_on_user_id"
   end
 
   create_table "ruby_llm_batches", force: :cascade do |t|
+    t.string "provider_batch_id", null: false
+    t.string "provider", null: false
+    t.string "status", null: false
+    t.string "raw_status"
+    t.boolean "completed", default: false, null: false
+    t.string "chat_type"
     t.string "batch_protocol"
     t.json "chat_ids", default: []
-    t.string "chat_type"
-    t.boolean "completed", default: false, null: false
-    t.datetime "created_at", null: false
-    t.string "provider", null: false
-    t.string "provider_batch_id", null: false
-    t.string "raw_status"
-    t.json "reported_cost"
     t.json "request_counts"
-    t.string "status", null: false
+    t.json "reported_cost"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["provider", "provider_batch_id"], name: "index_ruby_llm_batches_on_provider_and_provider_batch_id", unique: true
     t.index ["status"], name: "index_ruby_llm_batches_on_status"
   end
 
   create_table "ruby_llm_mcp_credentials", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "data"
-    t.string "key", null: false
-    t.bigint "owner_id"
     t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "key", null: false
+    t.text "data"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_ruby_llm_mcp_credentials_on_key", unique: true
     t.index ["owner_type", "owner_id"], name: "index_ruby_llm_mcp_credentials_on_owner"
   end
 
   create_table "ruby_llm_models", force: :cascade do |t|
-    t.json "capabilities", default: []
-    t.integer "context_window"
-    t.datetime "created_at", null: false
-    t.boolean "enabled", default: false, null: false
-    t.string "family"
-    t.date "knowledge_cutoff"
-    t.integer "max_output_tokens"
-    t.json "metadata", default: {}
-    t.json "modalities", default: {}
-    t.datetime "model_created_at"
     t.string "model_id", null: false
     t.string "name", null: false
+    t.string "provider", null: false
+    t.string "family"
+    t.datetime "model_created_at"
+    t.integer "context_window"
+    t.integer "max_output_tokens"
+    t.date "knowledge_cutoff"
+    t.datetime "unlisted_at"
+    t.json "modalities", default: {}
+    t.json "capabilities", default: []
+    t.json "pricing", default: {}
+    t.json "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "enabled", default: false, null: false
     t.integer "position"
     t.integer "price_band"
-    t.json "pricing", default: {}
-    t.string "provider", null: false
-    t.datetime "unlisted_at"
-    t.datetime "updated_at", null: false
     t.index ["family"], name: "index_ruby_llm_models_on_family"
     t.index ["provider", "model_id"], name: "index_ruby_llm_models_on_provider_and_model_id", unique: true
     t.index ["provider"], name: "index_ruby_llm_models_on_provider"
   end
 
   create_table "ruby_llm_provider_files", force: :cascade do |t|
-    t.string "account", null: false
     t.string "blob_key", null: false
-    t.datetime "created_at", null: false
-    t.datetime "expires_at"
-    t.text "file_id", null: false
     t.string "provider", null: false
+    t.string "account", null: false
+    t.text "file_id", null: false
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["blob_key", "provider", "account"], name: "index_ruby_llm_provider_files_uniqueness", unique: true
   end
 
   create_table "ruby_llm_tool_calls", force: :cascade do |t|
+    t.string "message_type", null: false
+    t.bigint "message_id", null: false
+    t.string "result_type"
+    t.bigint "result_id"
+    t.string "tool_call_id", null: false
+    t.string "name", null: false
+    t.text "thought_signature"
     t.string "approval"
+    t.boolean "remote", default: false, null: false
     t.json "arguments", default: {}
     t.datetime "created_at", null: false
-    t.json "mcp_result"
-    t.json "mcp_state"
-    t.bigint "message_id", null: false
-    t.string "message_type", null: false
-    t.string "name", null: false
-    t.boolean "remote", default: false, null: false
-    t.bigint "result_id"
-    t.string "result_type"
-    t.text "thought_signature"
-    t.string "tool_call_id", null: false
     t.datetime "updated_at", null: false
+    t.json "mcp_state"
+    t.json "mcp_result"
     t.index ["message_type", "message_id"], name: "index_ruby_llm_tool_calls_on_message_type_and_message_id"
     t.index ["name"], name: "index_ruby_llm_tool_calls_on_name"
     t.index ["result_type", "result_id"], name: "index_ruby_llm_tool_calls_on_result_type_and_result_id"
@@ -408,30 +417,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "ruby_llm_usages", force: :cascade do |t|
-    t.decimal "cache_read_cost", precision: 16, scale: 10
-    t.integer "cache_read_tokens"
-    t.decimal "cache_write_cost", precision: 16, scale: 10
-    t.integer "cache_write_tokens"
-    t.bigint "chat_id"
     t.string "chat_type"
-    t.datetime "created_at", null: false
-    t.decimal "input_cost", precision: 16, scale: 10
-    t.integer "input_tokens"
-    t.bigint "message_id"
+    t.bigint "chat_id"
     t.string "message_type"
-    t.string "model", null: false
+    t.bigint "message_id"
     t.string "operation", null: false
-    t.decimal "output_cost", precision: 16, scale: 10
-    t.integer "output_tokens"
-    t.bigint "owner_id"
-    t.string "owner_type"
     t.string "provider", null: false
-    t.json "server_tool_use"
+    t.string "model", null: false
     t.string "status", null: false
-    t.decimal "thinking_cost", precision: 16, scale: 10
+    t.integer "input_tokens"
+    t.integer "output_tokens"
+    t.integer "cache_read_tokens"
+    t.integer "cache_write_tokens"
     t.integer "thinking_tokens"
+    t.decimal "input_cost", precision: 16, scale: 10
+    t.decimal "output_cost", precision: 16, scale: 10
+    t.decimal "cache_read_cost", precision: 16, scale: 10
+    t.decimal "cache_write_cost", precision: 16, scale: 10
+    t.decimal "thinking_cost", precision: 16, scale: 10
     t.decimal "total_cost", precision: 16, scale: 10
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "server_tool_use"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["chat_type", "chat_id"], name: "index_ruby_llm_usages_on_chat_type_and_chat_id"
     t.index ["message_type", "message_id"], name: "index_ruby_llm_usages_on_message_type_and_message_id"
     t.index ["owner_type", "owner_id"], name: "index_ruby_llm_usages_on_owner"
@@ -441,13 +450,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "services", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "description"
-    t.string "duration"
+    t.integer "user_id", null: false
     t.string "name", null: false
     t.string "price"
+    t.string "duration"
+    t.text "description"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
     t.index ["user_id"], name: "index_services_on_user_id"
   end
 
@@ -476,45 +485,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
 
   create_table "suggestions", force: :cascade do |t|
     t.integer "crawl_id", null: false
-    t.datetime "created_at", null: false
     t.string "key", null: false
-    t.string "status", default: "pending", null: false
-    t.datetime "updated_at", null: false
     t.text "value", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["crawl_id"], name: "index_suggestions_on_crawl_id"
   end
 
   create_table "tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
   create_table "transformation_run_inputs", force: :cascade do |t|
-    t.string "input", default: "", null: false
-    t.integer "item_id", null: false
-    t.string "item_type", null: false
-    t.integer "position", default: 0, null: false
     t.integer "transformation_run_id", null: false
+    t.integer "position", default: 0, null: false
+    t.string "item_type", null: false
+    t.integer "item_id", null: false
+    t.string "input", default: "", null: false
     t.index ["item_type", "item_id"], name: "index_transformation_run_inputs_on_item"
     t.index ["transformation_run_id", "position"], name: "idx_on_transformation_run_id_position_5552ff8e6c", unique: true
     t.index ["transformation_run_id"], name: "index_transformation_run_inputs_on_transformation_run_id"
   end
 
   create_table "transformation_runs", force: :cascade do |t|
-    t.decimal "cost", precision: 10, scale: 6
-    t.datetime "created_at", null: false
-    t.text "error"
     t.json "options", default: {}, null: false
     t.text "prompt_text"
-    t.integer "result_id", null: false
-    t.string "result_type", null: false
+    t.decimal "cost", precision: 10, scale: 6
     t.string "status", default: "running", null: false
-    t.integer "transformation_id"
+    t.text "error"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "workflow_node_id"
+    t.integer "transformation_id"
     t.integer "workflow_run_id"
+    t.integer "workflow_node_id"
+    t.string "result_type", null: false
+    t.integer "result_id", null: false
     t.index ["result_type", "result_id"], name: "index_transformation_runs_on_result"
     t.index ["transformation_id"], name: "index_transformation_runs_on_transformation_id"
     t.index ["workflow_node_id"], name: "index_transformation_runs_on_workflow_node_id"
@@ -522,51 +531,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "transformations", force: :cascade do |t|
-    t.text "body", null: false
-    t.datetime "created_at", null: false
     t.string "kind", default: "generate_image", null: false
-    t.json "layer_steps", default: [], null: false
-    t.string "name", null: false
+    t.text "body", null: false
     t.json "options", default: {}, null: false
+    t.json "layer_steps", default: [], null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "name", null: false
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "address"
-    t.string "brand_voice"
-    t.text "business_description"
-    t.text "business_hours"
-    t.string "business_name"
     t.datetime "created_at", null: false
     t.string "email"
-    t.json "fresha_calendar"
-    t.string "homepage_url"
-    t.text "instagram_access_token"
-    t.json "instagram_profile"
-    t.string "instagram_user_id"
-    t.string "name"
-    t.string "password_digest"
-    t.string "phone"
-    t.string "role", default: "user", null: false
-    t.bigint "telegram_user_id"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false, null: false
-    t.string "whatsapp_link_code"
-    t.datetime "whatsapp_login_at"
-    t.string "whatsapp_pending_question"
+    t.string "role", default: "user", null: false
+    t.string "instagram_user_id"
+    t.text "instagram_access_token"
+    t.bigint "telegram_user_id"
     t.string "whatsapp_phone"
+    t.string "name"
+    t.string "business_name"
+    t.text "business_hours"
+    t.string "homepage_url"
+    t.string "address"
+    t.json "instagram_profile"
+    t.string "phone"
+    t.text "business_description"
+    t.string "whatsapp_pending_question"
+    t.datetime "whatsapp_login_at"
+    t.string "brand_voice"
+    t.string "password_digest"
+    t.string "whatsapp_link_code"
+    t.json "fresha_calendar"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["whatsapp_link_code"], name: "index_users_on_whatsapp_link_code", unique: true
     t.index ["whatsapp_phone"], name: "index_users_on_whatsapp_phone"
   end
 
   create_table "workflow_edges", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.integer "from_id", null: false
-    t.string "input", default: "", null: false
-    t.integer "to_id", null: false
-    t.datetime "updated_at", null: false
     t.integer "workflow_id", null: false
+    t.integer "from_id", null: false
+    t.integer "to_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "input", default: "", null: false
     t.index ["from_id", "to_id"], name: "index_workflow_edges_on_from_id_and_to_id", unique: true
     t.index ["from_id"], name: "index_workflow_edges_on_from_id"
     t.index ["to_id"], name: "index_workflow_edges_on_to_id"
@@ -574,21 +583,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "workflow_nodes", force: :cascade do |t|
-    t.string "color", default: "amber", null: false
-    t.datetime "created_at", null: false
-    t.integer "folder_id"
-    t.boolean "include_subfolders", default: true, null: false
-    t.integer "library_media_id"
-    t.string "media_type"
-    t.text "note"
-    t.json "pinned_ids", default: [], null: false
-    t.json "tag_ids", default: [], null: false
-    t.integer "take", default: 1, null: false
-    t.integer "transformation_id"
-    t.datetime "updated_at", null: false
     t.integer "workflow_id", null: false
+    t.integer "folder_id"
+    t.integer "transformation_id"
     t.integer "x", default: 0, null: false
     t.integer "y", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "library_media_id"
+    t.integer "take", default: 1, null: false
+    t.json "tag_ids", default: [], null: false
+    t.text "note"
+    t.string "color", default: "amber", null: false
+    t.json "pinned_ids", default: [], null: false
+    t.string "media_type"
+    t.boolean "include_subfolders", default: true, null: false
     t.index ["folder_id"], name: "index_workflow_nodes_on_folder_id"
     t.index ["library_media_id"], name: "index_workflow_nodes_on_library_media_id"
     t.index ["transformation_id"], name: "index_workflow_nodes_on_transformation_id"
@@ -596,22 +605,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   end
 
   create_table "workflow_runs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.text "error"
+    t.integer "workflow_id", null: false
     t.string "name", default: "Draft", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.json "picks", default: {}, null: false
     t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.integer "workflow_id", null: false
     t.index ["workflow_id"], name: "index_workflow_runs_on_workflow_id"
   end
 
   create_table "workflows", force: :cascade do |t|
-    t.boolean "autorun", default: false, null: false
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.string "slug", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "autorun", default: false, null: false
+    t.string "slug", null: false
     t.index ["slug"], name: "index_workflows_on_slug", unique: true
   end
 
@@ -634,6 +643,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
+  add_foreign_key "post_frames", "posts"
   add_foreign_key "post_renders", "posts"
   add_foreign_key "prompts", "folders"
   add_foreign_key "prompts", "users"

@@ -13,6 +13,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     get posts_url(account: @admin.id)
     assert_response :success
     assert_select "a[href=?]", post_path(@post, account: @admin.id)
+    assert_select "li .flex > span[style*=background-image]", { minimum: 3 }
 
     get post_url(@post, account: @admin.id, scene: "overlay-10")
     assert_response :success
@@ -39,7 +40,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
 
   test "update saves source and ordered rules" do
     patch post_url(@post, account: @admin.id), params: {
-      post: { name: "Guide promo", storyboard_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
+      post: { storyboard_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
     }
     assert_redirected_to post_path(@post, account: @admin.id)
     assert_equal [ 12, 10 ], @post.reload.rules_list
@@ -48,7 +49,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   test "create and destroy" do
     assert_difference -> { Post.count }, 1 do
       post posts_url(account: @admin.id), params: {
-        post: { name: "Custom", storyboard_slug: "guide-promo", source: "/guides/barbershop/warm.jpg", rules: [ 12 ] }
+        post: { storyboard_slug: "guide-promo", source: "/guides/barbershop/warm.jpg", rules: [ 12 ] }
       }
     end
     created = Post.order(:id).last

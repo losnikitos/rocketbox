@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Coded promo preset (Rocketbox advertising itself — not customer SMM workflows).
-# Hard-coded overlays, CTA, transition and scene formula; Posts supply source + rules.
-# Formula for guide-promo: before → (overlay → after)* → cta. No index/show UI — referenced by id.
+# Hard-coded overlays, CTA, transition and scene formula; Posts supply source + rules + frames.
+# Formula for guide-promo: before → (overlay → frame)* → cta. No index/show UI — referenced by id.
 class Storyboard
   Scene = Data.define(:slug, :kind, :label, :image, :from, :to, :text, :href) do
     def still? = kind == :still
@@ -16,11 +16,12 @@ class Storyboard
 
   # /app/media_bank/:id (optional host) — paste from Studio Media bank.
   MEDIA_BANK = %r{\A(?:https?://[^/]+)?/app/media_bank/(\d+)/?\z}
+  POST_FRAME = %r{\Apost_frame/(\d+)\z}
   TRANSITIONS = { "simple_fade" => "Simple fade" }.freeze
 
-  attr_reader :slug, :name, :size, :guide_slug, :transition_type, :cta_text, :cta_href, :overlays, :afters_by_rule
+  attr_reader :slug, :name, :size, :guide_slug, :transition_type, :cta_text, :cta_href, :overlays
 
-  def initialize(slug:, name:, size:, guide_slug:, transition_type:, cta_text:, cta_href:, overlays:, afters_by_rule: {})
+  def initialize(slug:, name:, size:, guide_slug:, transition_type:, cta_text:, cta_href:, overlays:)
     @slug = slug
     @name = name
     @size = size
@@ -29,7 +30,6 @@ class Storyboard
     @cta_text = cta_text
     @cta_href = cta_href
     @overlays = overlays.map { Overlay.new(**it) }.freeze
-    @afters_by_rule = afters_by_rule.freeze
   end
 
   GUIDE_PROMO = new(
@@ -43,12 +43,7 @@ class Storyboard
     overlays: [
       { number: 10, text: "Keep the facade clear" },
       { number: 12, text: "Use warm light" }
-    ],
-    # Optional after frames keyed by rule (demo compare set). Custom posts omit matches → overlays stack on source.
-    afters_by_rule: {
-      10 => "/guides/barbershop/clean.jpg",
-      12 => "/guides/barbershop/warm.jpg"
-    }
+    ]
   ).freeze
 
   ALL = [ GUIDE_PROMO ].freeze
@@ -67,13 +62,11 @@ class Storyboard
 
   def default_source = "/guides/#{guide_slug}/cluttered.jpg"
 
-  # Scenes for a Post: 1..n selected rules → matching overlay (+ optional after) scenes, then CTA.
-  # Hard-coded afters only apply on the preset's default source (before-after-after-cta demo).
-  # Other sources (e.g. media bank) stack overlays on the source, then CTA.
+  # Scenes for a Post: 1..n selected rules → matching overlay (+ optional frame) scenes, then CTA.
+  # Frames come from PostFrame attachments; missing frames → overlay stacks on current image.
   def scenes_for(post)
     source = post.source.to_s
     rules = Array(post.rules).map(&:to_i)
-    use_afters = source == default_source
     scenes = []
     current = source
 
@@ -85,8 +78,11 @@ class Storyboard
       scenes << Scene.new(slug: "overlay-#{number}", kind: :overlay, label: "Overlay · rule ##{number}",
         image: current, from: nil, to: nil, text: "Applying rule ##{number}\n#{text}", href: nil)
 
-      nxt = use_afters ? afters_by_rule[number].presence : nil
-      next if nxt.blank? || nxt == current
+      frame = post.frame_at(i + 1)
+      next unless frame&.file&.attached?
+
+      nxt = frame.source_ref
+      next if nxt == current
 
       scenes << Scene.new(slug: "transition-#{i}", kind: :transition, label: "Transition → v#{i + 1}",
         image: nil, from: current, to: nxt, text: nil, href: nil)
@@ -116,9 +112,8 @@ class Storyboard
   end
 
   def self.preview_url(source)
-    if (id = media_bank_id(source))
-      media = LibraryMedia.bank.find_by(id:)
-      return Rails.application.routes.url_helpers.rails_blob_path(media.file, only_path: true) if media&.file&.attached?
+    if (attachment = resolve_attachment(source))
+      return Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true)
     end
     source
   end
@@ -128,15 +123,13 @@ class Storyboard
     "data:#{mime};base64,#{Base64.strict_encode64(bytes)}"
   end
 
-  # Writes a readable file path into `dir` (tmpdir for bank blobs / copies).
+  # Writes a readable file path into `dir` (tmpdir for bank/frame blobs / copies).
   def self.resolve_file!(source, dir:)
-    if (id = media_bank_id(source))
-      media = LibraryMedia.bank.find(id)
-      raise Errno::ENOENT, source unless media.file.attached?
-
-      ext = File.extname(media.file.filename.to_s).presence || ".jpg"
-      path = File.join(dir, "bank-#{id}#{ext}")
-      File.binwrite(path, media.file.download)
+    if (attachment = resolve_attachment(source))
+      ext = File.extname(attachment.filename.to_s).presence || ".jpg"
+      label = post_frame_id(source) ? "frame-#{post_frame_id(source)}" : "bank-#{media_bank_id(source)}"
+      path = File.join(dir, "#{label}#{ext}")
+      File.binwrite(path, attachment.download)
       return path
     end
 
@@ -150,12 +143,22 @@ class Storyboard
 
   def self.media_bank_id(source) = MEDIA_BANK.match(source.to_s)&.[](1)
 
-  def self.image_bytes(source)
-    if (id = media_bank_id(source))
-      media = LibraryMedia.bank.find(id)
-      raise Errno::ENOENT, source unless media.file.attached?
+  def self.post_frame_id(source) = POST_FRAME.match(source.to_s)&.[](1)
 
-      return [ media.file.download, media.file.content_type.presence || "image/jpeg" ]
+  def self.resolve_attachment(source)
+    if (id = media_bank_id(source))
+      media = LibraryMedia.bank.find_by(id:)
+      return media.file if media&.file&.attached?
+    elsif (id = post_frame_id(source))
+      frame = PostFrame.find_by(id:)
+      return frame.file if frame&.file&.attached?
+    end
+    nil
+  end
+
+  def self.image_bytes(source)
+    if (attachment = resolve_attachment(source))
+      return [ attachment.download, attachment.content_type.presence || "image/jpeg" ]
     end
 
     file = Rails.root.join("public", source.to_s.delete_prefix("/"))
@@ -170,7 +173,6 @@ class Storyboard
 
   def default_post_attrs
     {
-      name: name,
       storyboard_slug: slug,
       source: default_source,
       rules: rule_numbers

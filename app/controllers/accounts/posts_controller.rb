@@ -10,7 +10,7 @@ module Accounts
 
     def index
       Post.ensure_defaults!
-      @posts = Post.order(created_at: :desc)
+      @posts = Post.includes(frames: { file_attachment: :blob }).order(created_at: :desc)
     end
 
     def show
@@ -19,7 +19,7 @@ module Accounts
 
     def new
       board = Storyboard.find(params[:storyboard].presence || Storyboard::GUIDE_PROMO.slug)
-      @post = Post.new(board.default_post_attrs.merge(name: "#{board.name} copy", source: "", rules: board.rule_numbers))
+      @post = Post.new(board.default_post_attrs.merge(source: "", rules: board.rule_numbers))
       @storyboard = board
     end
 
@@ -85,7 +85,7 @@ module Accounts
       end
 
       def post_params
-        params.require(:post).permit(:name, :storyboard_slug, :source, rules: [])
+        params.require(:post).permit(:storyboard_slug, :source, rules: [])
       end
 
       def normalize_rules(raw)

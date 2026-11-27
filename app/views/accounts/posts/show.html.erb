@@ -1,4 +1,4 @@
-<% content_for(:title, "#{@post.name} — Posts — Rocketbox") %>
+<% content_for(:title, "#{@storyboard.name} — Posts — Rocketbox") %>
 <% content_for(:fit, "true") %>
 <% scenes = @post.scenes %>
 
@@ -8,7 +8,7 @@
     Posts
   <% end %>
   <span class="text-sm text-ink-400">/</span>
-  <span class="text-sm text-ink-700" aria-current="page"><%= @post.name %></span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @storyboard.name %></span>
 <% end %>
 
 <% content_for(:header_actions) do %>

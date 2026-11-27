@@ -4,8 +4,10 @@ require "test_helper"
 
 class StoryboardTest < ActiveSupport::TestCase
   test "guide promo default scenes follow still → overlay → transition → … → cta" do
-    board = Storyboard.find("guide-promo")
-    post = Post.new(board.default_post_attrs)
+    Post.delete_all
+    Post.ensure_defaults!
+    post = Post.find_by!(storyboard_slug: "guide-promo")
+    board = post.storyboard
     scenes = board.scenes_for(post)
 
     assert_equal %i[still overlay transition still overlay transition still cta], scenes.map(&:kind)
@@ -13,13 +15,13 @@ class StoryboardTest < ActiveSupport::TestCase
     assert_equal "cta", scenes.last.slug
     assert_includes scenes.find { it.slug == "overlay-10" }.text, "#10"
     assert_equal "/guides/barbershop", scenes.last.href
+    assert_match %r{\Apost_frame/\d+\z}, scenes.find { it.slug == "v1" }.image
   end
 
-  test "source without coded afters stacks overlays then CTA" do
+  test "source without frames stacks overlays then CTA" do
     board = Storyboard.find("guide-promo")
     post = Post.new(
       storyboard_slug: board.slug,
-      name: "Bank",
       source: "/guides/barbershop/warm.jpg",
       rules: [ 10, 12 ]
     )
@@ -43,5 +45,16 @@ class StoryboardTest < ActiveSupport::TestCase
     assert_equal media.id.to_s, Storyboard.media_bank_id(url)
     assert_match %r{\Adata:image/png;base64,}, Storyboard.image_data_url(url)
     assert_match %r{/rails/active_storage/}, Storyboard.preview_url(url)
+  end
+
+  test "post_frame ref resolves through PostFrame attachment" do
+    Post.delete_all
+    Post.ensure_defaults!
+    frame = Post.find_by!(storyboard_slug: "guide-promo").frames.first
+    ref = frame.source_ref
+
+    assert_equal frame.id.to_s, Storyboard.post_frame_id(ref)
+    assert_match %r{\Adata:image/jpeg;base64,}, Storyboard.image_data_url(ref)
+    assert_match %r{/rails/active_storage/}, Storyboard.preview_url(ref)
   end
 end

@@ -13,11 +13,6 @@
   </div>
 
   <div class="space-y-2">
-    <%= f.label :name, class: "text-xs font-medium text-ink-500" %>
-    <%= f.text_field :name, class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
-  </div>
-
-  <div class="space-y-2">
     <%= f.label :storyboard_slug, "Storyboard", class: "text-xs font-medium text-ink-500" %>
     <%= f.select :storyboard_slug,
           Storyboard::ALL.map { [ "#{it.name} (#{it.slug})", it.slug ] },
