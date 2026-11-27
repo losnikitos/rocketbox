@@ -1,0 +1,14 @@
+<% content_for(:title, "New post — Rocketbox") %>
+
+<% content_for(:breadcrumbs) do %>
+  <%= link_to posts_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+    <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Posts
+  <% end %>
+  <span class="text-sm text-ink-400">/</span>
+  <span class="text-sm text-ink-700" aria-current="page">New</span>
+<% end %>
+
+<div class="mx-auto w-full max-w-lg">
+  <%= render "accounts/posts/form", post: @post, storyboard: @storyboard || @post.storyboard, renders: [] %>
+</div>

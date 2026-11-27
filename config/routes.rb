@@ -65,14 +65,14 @@ Rails.application.routes.draw do
         get :canvas, on: :member
       end
       resources :media_banks, path: "media_bank", only: %i[index show create destroy]
-      resources :storyboards, only: %i[index show] do
+      resources :posts do
         member do
           get :canvas
-          patch :settings, action: :update_settings
           post :render, action: :render_video
         end
       end
-      resources :storyboard_renders, only: :show
+      resources :post_renders, only: :show
+
       resources :transformations, only: %i[show update] do
         get "originals/:kind", action: :original, on: :collection, as: :original
       end

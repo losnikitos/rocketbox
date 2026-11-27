@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_133025) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_144038) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -250,6 +250,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_133025) do
     t.index ["user_id"], name: "index_outgoing_messages_on_user_id"
   end
 
+  create_table "post_renders", force: :cascade do |t|
+    t.integer "post_id", null: false
+    t.string "status", default: "pending", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_post_renders_on_post_id"
+  end
+
+  create_table "posts", force: :cascade do |t|
+    t.string "name", default: "", null: false
+    t.string "storyboard_slug", null: false
+    t.string "source", default: "", null: false
+    t.json "rules", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["storyboard_slug"], name: "index_posts_on_storyboard_slug"
+  end
+
   create_table "prompts", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
@@ -441,28 +460,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_133025) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
-  create_table "storyboard_renders", force: :cascade do |t|
-    t.string "storyboard_slug", null: false
-    t.integer "video_index", default: 0, null: false
-    t.string "status", default: "pending", null: false
-    t.text "error"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["storyboard_slug", "video_index"], name: "index_storyboard_renders_on_storyboard_slug_and_video_index"
-  end
-
-  create_table "storyboard_settings", force: :cascade do |t|
-    t.string "storyboard_slug", null: false
-    t.string "transition_type", default: "simple_fade", null: false
-    t.string "cta_text", default: "", null: false
-    t.string "cta_href", default: "", null: false
-    t.json "overlays", default: [], null: false
-    t.json "videos", default: [], null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["storyboard_slug"], name: "index_storyboard_settings_on_storyboard_slug", unique: true
-  end
-
   create_table "subscriptions", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.datetime "created_at", null: false
@@ -637,6 +634,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_133025) do
   add_foreign_key "links", "users"
   add_foreign_key "messages", "chats"
   add_foreign_key "outgoing_messages", "users"
+  add_foreign_key "post_renders", "posts"
   add_foreign_key "prompts", "folders"
   add_foreign_key "prompts", "users"
   add_foreign_key "reviews", "folders"
