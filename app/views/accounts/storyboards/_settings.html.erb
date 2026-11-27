@@ -1,0 +1,105 @@
+<%# locals: (settings:, storyboard:, video_index:, renders:) %>
+<%= form_with url: settings_storyboard_path(storyboard), method: :patch, class: "rb-surface-raised space-y-4 p-4" do %>
+  <%= hidden_field_tag :scene, params[:scene] %>
+  <%= hidden_field_tag :video, video_index %>
+
+  <div>
+    <h2 class="text-sm font-semibold text-ink-900">Settings</h2>
+    <p class="mt-1 text-xs text-ink-500">Videos each pick a source + rules. Overlays, CTA and transition are shared.</p>
+  </div>
+
+  <div class="space-y-2">
+    <label class="text-xs font-medium text-ink-500" for="transition_type">Transition</label>
+    <%= select_tag :transition_type,
+          options_for_select(StoryboardSetting::TRANSITIONS.invert, settings.transition_type),
+          id: "transition_type",
+          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-medium text-ink-500">Shared overlays</p>
+    <% settings.overlays.each_with_index do |overlay, i| %>
+      <div class="flex gap-2">
+        <%= hidden_field_tag "overlays[#{i}][number]", overlay["number"] %>
+        <span class="shrink-0 pt-2 font-mono text-xs text-ink-500">#<%= overlay["number"] %></span>
+        <%= text_field_tag "overlays[#{i}][text]", overlay["text"],
+              class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm",
+              placeholder: "Overlay line" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-xs font-medium text-ink-500">Shared CTA</p>
+    <%= text_field_tag :cta_text, settings.cta_text,
+          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm",
+          placeholder: "Comment “guide”" %>
+    <%= text_field_tag :cta_href, settings.cta_href,
+          class: "mt-2 block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm font-mono",
+          placeholder: "/guides/barbershop" %>
+  </div>
+
+  <div class="space-y-3 border-t border-ink-900/10 pt-4">
+    <p class="text-xs font-medium text-ink-500">Videos</p>
+    <% settings.videos.each_with_index do |video, i| %>
+      <div class="space-y-2 rounded-lg border border-ink-900/10 bg-white p-3 <%= "ring-2 ring-rocket/40" if i == video_index %>">
+        <div class="flex items-center justify-between gap-2">
+          <%= link_to "Video #{i + 1}", storyboard_path(storyboard, video: i),
+                class: "text-sm font-semibold text-ink-900 hover:text-rocket" %>
+          <% if settings.videos.size > 1 %>
+            <%= button_tag "Remove", name: "remove_video", value: i, class: "text-xs font-medium text-signal-red hover:underline" %>
+          <% end %>
+        </div>
+        <label class="block text-xs text-ink-500" for="video_<%= i %>_source">Source image</label>
+        <%= text_field_tag "videos[#{i}][source]", video["source"],
+              id: "video_#{i}_source",
+              class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 font-mono text-xs",
+              placeholder: "/app/media_bank/:id" %>
+        <% Array(video["afters"]).each do |after| %>
+          <%= hidden_field_tag "videos[#{i}][afters][]", after %>
+        <% end %>
+        <p class="text-[11px] text-ink-500">Paste a Media bank URL (<code class="font-mono">/app/media_bank/:id</code>) or a public path.</p>
+        <fieldset class="space-y-1">
+          <legend class="text-xs text-ink-500">Rules</legend>
+          <% settings.overlays.each do |overlay| %>
+            <% n = overlay["number"].to_i %>
+            <label class="flex items-center gap-2 text-sm text-ink-800">
+              <%= check_box_tag "videos[#{i}][rules][]", n, Array(video["rules"]).map(&:to_i).include?(n), id: "video_#{i}_rule_#{n}" %>
+              #<%= n %> · <%= overlay["text"] %>
+            </label>
+          <% end %>
+        </fieldset>
+      </div>
+    <% end %>
+    <%= button_tag "Add video", name: "add_video", value: "1",
+          class: "rb-btn-ghost-on-light w-full justify-center px-3 py-2 text-sm" %>
+  </div>
+
+  <%= submit_tag "Save settings", class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
+<% end %>
+
+<div class="rb-surface-raised space-y-3 p-4">
+  <h2 class="text-sm font-semibold text-ink-900">Render</h2>
+  <p class="text-xs text-ink-500">Builds an MP4 for the selected video with <%= StoryboardSetting::TRANSITIONS[settings.transition_type] %> transitions.</p>
+  <%= button_to "Render video #{video_index + 1}", render_storyboard_path(storyboard, video: video_index, scene: params[:scene]),
+        method: :post, class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
+
+  <% latest = Array(renders).select { it.video_index == video_index } %>
+  <% if latest.any? %>
+    <ul class="space-y-2">
+      <% latest.first(5).each do |row| %>
+        <li class="flex items-center justify-between gap-2 text-sm">
+          <span class="text-ink-600">
+            <span class="capitalize"><%= row.status %></span>
+            <span class="text-xs text-ink-400"><%= time_ago_in_words(row.created_at) %> ago</span>
+          </span>
+          <% if row.done? && row.file.attached? %>
+            <%= link_to "Download", storyboard_render_path(row), class: "font-medium text-rocket hover:underline" %>
+          <% elsif row.failed? %>
+            <span class="text-xs text-signal-red" title="<%= row.error %>"><%= row.error.to_s.truncate(40) %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

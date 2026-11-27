@@ -9,6 +9,7 @@ module MockFfmpeg
   def ffmpeg!(*args) = FileUtils.cp(Rails.root.join("test/fixtures/files/rendered#{File.extname(args.last)}"), args.last)
 end
 Transformation::Type.prepend(MockFfmpeg) unless ENV["RENDER_MEDIA"].present?
+StoryboardRenderJob.prepend(MockFfmpeg) unless ENV["RENDER_MEDIA"].present?
 
 class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
