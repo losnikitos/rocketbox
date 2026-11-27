@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style><%= raw Rails.application.assets.load_path.find("tailwind.css").content(encoding: "UTF-8") %></style>
   </head>
-  <body class="overflow-hidden bg-ink-900 bg-cover bg-center"<%= " style=\"#{body_style}\"".html_safe if body_style %>>
+  <body class="overflow-hidden bg-ink-900 bg-cover bg-center" <%= tag.attributes(style: body_style) %>>
     <%= render @storyboard.template_for(@scene), scene: @scene, from_bg: from_bg, to_bg: to_bg %>
   </body>
 </html>
