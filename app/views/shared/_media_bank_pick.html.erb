@@ -1,9 +1,9 @@
 <%# locals: (name:, selected:, label: "Source image") %>
-<%# Media bank image dropdown on the pick controller. Value is /app/media_bank/:id. %>
+<%# Media bank image dropdown. Value is the LibraryMedia bank id. %>
 <% items = LibraryMedia.bank.with_attached_file.includes(:tags).order(created_at: :desc).to_a %>
-<% selected_id = Preset.media_bank_id(selected.to_s) %>
+<% selected_id = selected.to_s.presence %>
 <% selected_media = items.find { it.id.to_s == selected_id } %>
-<% value = selected_media ? "/app/media_bank/#{selected_media.id}" : selected.to_s %>
+<% value = selected_media&.id.to_s %>
 <% chip = ->(media) do
      tags = media.tags.ordered.map { "##{it.name}" }.join(" ")
      tag.span class: "flex min-w-0 items-center gap-2" do
@@ -44,7 +44,7 @@
       <p class="px-2 py-3 text-sm text-ink-500">No images yet. Upload in Media bank.</p>
     <% else %>
       <% items.each do |media| %>
-        <%= tag.button type: "button", value: "/app/media_bank/#{media.id}",
+        <%= tag.button type: "button", value: media.id,
               aria: { current: ("true" if media == selected_media) },
               data: { pick_target: "option", action: "pick#pick" },
               class: "flex w-full cursor-pointer rounded-lg px-2 py-1.5 text-left text-sm text-ink-700 hover:bg-ink-900/5 focus-visible:ring-2 focus-visible:ring-rocket/30 focus-visible:outline-none aria-[current=true]:bg-rocket/10" do %>

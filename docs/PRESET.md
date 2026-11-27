@@ -21,7 +21,7 @@ Open locally with an admin account (e.g. `?account=5` on prod). Example: http://
 Per post:
 
 - **Preset** — coded preset id (`guide-promo`)
-- **Source image** — public path (`/guides/…`) or Media bank item URL (`/app/media_bank/:id`) — this is **v0**
+- **Source image** — Media bank item id chosen from the dropdown — this is **v0**
 - **Rules** — ordered sequence of hard-coded overlays (add / remove / reorder; each picked from a dropdown)
 
 Overlays, CTA and transition are fixed on the preset (read-only in the panel).
@@ -34,13 +34,13 @@ Changing **source** or **rules** destroys all `PostFrame`s and `PostRender`s (st
 
 ## Key frames (`PostFrame`)
 
-Each generated still after a rule is a `PostFrame`: `position` (1 = v1, 2 = v2, …), `rule_number` (how it was made today), Active Storage `file`. Scene refs use `post_frame/:id`. Source stays on the post / media bank; frames live on the post. Today frames come from rule + image generation (demo seeds attach public compare JPGs); other generators can land here later.
+Each generated still after a rule is a `PostFrame`: `position` (1 = v1, 2 = v2, …), `rule_number` (how it was made today), Active Storage `file`. Scenes hold the bank `LibraryMedia` or `PostFrame` records directly. Source id stays on the post; frames live on the post. Today frames come from rule + image generation (demo seeds attach public compare JPGs); other generators can land here later.
 
 ## Guide promo defaults
 
-[`guide-promo`](/app/models/preset.rb) seeds a default Post via `Post.ensure_defaults!` with source `cluttered.jpg` and demo frames from the public barbershop compare set:
+[`guide-promo`](/app/models/preset.rb) seeds a default Post via `Post.ensure_defaults!` with an empty source (pick from Media bank) and demo frames from the public barbershop compare set:
 
-1. **v0** — before (`cluttered.jpg`)
+1. **v0** — source (empty until a bank item is chosen)
 2. **Overlay · rule #10** — “Keep the facade clear”
 3. **Transition** — simple fade → clear facade
 4. **v1** — `PostFrame` from `clean.jpg`
@@ -67,11 +67,11 @@ MP4: render from the settings panel → `GET /app/post_renders/:id`
 ```bash
 bin/dev
 # sign in as admin → Studio → Posts
-# paste /app/media_bank/:id into a post’s source → Save → Render video
+# pick a Media bank image (by id) in the post’s source dropdown → Save → Render video
 ```
 
 Ferrum needs Chrome/Chromium (same as Layers). ffmpeg on PATH for real MP4s (`RENDER_MEDIA=1` in tests). Tests mock ffmpeg unless that flag is set.
 
 ## Media bank
 
-Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import`. Browse/upload at `/app/media_bank` (group by shop, filter by tag); open an item to set tags; copy its URL (`/app/media_bank/:id`) into a post’s source field. Tags include `barbershop`, `storefront`, plus shop slugs.
+Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import`. Browse/upload at `/app/media_bank` (group by shop, filter by tag); open an item to set tags. Posts pick bank items from the source dropdown. Tags include `barbershop`, `storefront`, plus shop slugs.

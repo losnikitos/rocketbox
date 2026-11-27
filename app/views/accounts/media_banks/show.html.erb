@@ -49,8 +49,6 @@
           <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
         <% end %>
       <% end %>
-      <p class="mt-3 text-xs text-ink-500">Copy this page URL into a Studio post’s source field.</p>
-      <p class="mt-1 break-all font-mono text-xs text-ink-700"><%= media_bank_url(@media) %></p>
     </div>
 
     <nav aria-label="Neighbours" class="flex gap-2">

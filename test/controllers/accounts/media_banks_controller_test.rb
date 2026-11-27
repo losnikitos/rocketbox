@@ -23,12 +23,11 @@ class Accounts::MediaBanksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", media_bank_path(@media, account: @admin.id)
   end
 
-  test "show is a dedicated bookmarkable url with editable tags" do
+  test "show is a dedicated page with editable tags" do
     get media_bank_url(@media, account: @admin.id)
     assert_response :success
-    assert_select "aside", text: /media_bank\/#{@media.id}/
-    assert_match media_bank_url(@media), response.body
     assert_select "aside form[onchange*=requestSubmit] button[aria-label=Tags]"
+    assert_select "p", text: /Copy this page URL/, count: 0
   end
 
   test "index hides the upload panel and keeps the header upload control" do

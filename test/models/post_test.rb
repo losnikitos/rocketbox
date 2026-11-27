@@ -8,13 +8,13 @@ class PostTest < ActiveSupport::TestCase
     Post.ensure_defaults!
     post = Post.find_by!(preset_slug: "guide-promo")
     assert_equal [ 10, 12 ], post.rules_list
-    assert_equal Preset::GUIDE_PROMO.default_source, post.source
+    assert_equal "", post.source
     assert_equal [ 1, 2 ], post.frames.map(&:position)
     assert post.frames.all? { it.file.attached? }
   end
 
   test "rejects unknown preset" do
-    post = Post.new(preset_slug: "nope", source: "/x.jpg", rules: [])
+    post = Post.new(preset_slug: "nope", source: "", rules: [])
     assert_not post.valid?
     assert_includes post.errors[:preset_slug], "is not a known preset"
   end
@@ -33,8 +33,17 @@ class PostTest < ActiveSupport::TestCase
 
     post.seed_demo_frames!
     post.renders.create!(status: :pending)
-    post.update!(source: "/guides/barbershop/warm.jpg")
+    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
+    post.update!(source: media.id.to_s)
     assert_equal 0, post.frames.reload.count
     assert_equal 0, post.renders.reload.count
   end
+
+  test "source_media looks up the bank item by id" do
+    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
+    post = Post.new(preset_slug: "guide-promo", source: media.id.to_s, rules: [])
+    assert_equal media, post.source_media
+    assert_nil Post.new(preset_slug: "guide-promo", source: "", rules: []).source_media
+  end
 end
+

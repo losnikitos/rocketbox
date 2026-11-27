@@ -41,20 +41,25 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update saves source and ordered rules" do
+    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
     patch post_url(@post, account: @admin.id), params: {
-      post: { preset_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
+      post: { preset_slug: "guide-promo", source: media.id.to_s, rules: [ 12, 10 ] }
     }
     assert_redirected_to post_path(@post, account: @admin.id)
-    assert_equal [ 12, 10 ], @post.reload.rules_list
+    @post.reload
+    assert_equal [ 12, 10 ], @post.rules_list
+    assert_equal media.id.to_s, @post.source
   end
 
   test "create and destroy" do
+    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
     assert_difference -> { Post.count }, 1 do
       post posts_url(account: @admin.id), params: {
-        post: { preset_slug: "guide-promo", source: "/guides/barbershop/warm.jpg", rules: [ 12 ] }
+        post: { preset_slug: "guide-promo", source: media.id.to_s, rules: [ 12 ] }
       }
     end
     created = Post.order(:id).last
+    assert_equal media.id.to_s, created.source
     assert_redirected_to post_path(created, account: @admin.id)
 
     assert_difference -> { Post.count }, -1 do
@@ -64,6 +69,11 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "render enqueues job" do
+    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
+    media.file.attach(io: File.open(Rails.root.join("test/fixtures/files/logo.png")), filename: "logo.png", content_type: "image/png")
+    @post.update!(source: media.id.to_s)
+    @post.seed_demo_frames!
+
     assert_enqueued_with(job: PostRenderJob) do
       post render_post_url(@post, account: @admin.id)
     end

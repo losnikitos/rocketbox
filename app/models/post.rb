@@ -21,6 +21,12 @@ class Post < ApplicationRecord
 
   def frame_at(position) = frames.find_by(position:)
 
+  # Studio Media bank item chosen as v0 (`posts.source` stores its id).
+  def source_media
+    id = source.to_s.presence or return
+    LibraryMedia.bank.find_by(id:)
+  end
+
   def invalidate_derived!
     frames.destroy_all
     renders.destroy_all

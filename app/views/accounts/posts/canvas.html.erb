@@ -1,5 +1,5 @@
 <%# Standalone document: inlined CSS so headless Chrome needs no asset server or session. %>
-<%# data_url true embeds image bytes for Ferrum; false uses public/blob paths in Studio. %>
+<%# data_url true embeds image bytes for Ferrum; false uses blob paths in Studio. %>
 <%
   data_url = local_assigns.fetch(:data_url, false)
   preset = @preset || @post.preset

@@ -14,9 +14,6 @@ class Preset
 
   Overlay = Data.define(:number, :text)
 
-  # /app/media_bank/:id (optional host) — paste from Studio Media bank.
-  MEDIA_BANK = %r{\A(?:https?://[^/]+)?/app/media_bank/(\d+)/?\z}
-  POST_FRAME = %r{\Apost_frame/(\d+)\z}
   TRANSITIONS = { "simple_fade" => "Simple fade" }.freeze
 
   attr_reader :slug, :name, :size, :guide_slug, :transition_type, :cta_text, :cta_href, :overlays
@@ -60,15 +57,12 @@ class Preset
 
   def transition_label = TRANSITIONS.fetch(transition_type)
 
-  def default_source = "/guides/#{guide_slug}/cluttered.jpg"
-
   # Scenes for a Post: 1..n selected rules → matching overlay (+ optional frame) scenes, then CTA.
-  # Frames come from PostFrame attachments; missing frames → overlay stacks on current image.
+  # image/from/to are LibraryMedia (bank) or PostFrame records; missing frames → overlay stacks on current.
   def scenes_for(post)
-    source = post.source.to_s
     rules = Array(post.rules).map(&:to_i)
     scenes = []
-    current = source
+    current = post.source_media
 
     scenes << Scene.new(slug: "v0", kind: :still, label: "v0 — source",
       image: current, from: nil, to: nil, text: nil, href: nil)
@@ -80,13 +74,11 @@ class Preset
 
       frame = post.frame_at(i + 1)
       next unless frame&.file&.attached?
-
-      nxt = frame.source_ref
-      next if nxt == current
+      next if frame == current
 
       scenes << Scene.new(slug: "transition-#{i}", kind: :transition, label: "Transition → v#{i + 1}",
-        image: nil, from: current, to: nxt, text: nil, href: nil)
-      current = nxt
+        image: nil, from: current, to: frame, text: nil, href: nil)
+      current = frame
       scenes << Scene.new(slug: "v#{i + 1}", kind: :still, label: "v#{i + 1}",
         image: current, from: nil, to: nil, text: nil, href: nil)
     end
@@ -103,78 +95,41 @@ class Preset
 
   def template_for(scene) = "accounts/presets/scenes/#{scene.kind}"
 
-  # Data URL for Ferrum; preview URL (public path or blob) for the iframe / film strip.
+  # Data URL for Ferrum; preview URL (blob) for the iframe / film strip.
   def background_for(scene, data_url: false)
-    path = scene.image || scene.from
-    return unless path
+    ref = scene.image || scene.from
+    return unless ref
 
-    data_url ? self.class.image_data_url(path) : self.class.preview_url(path)
+    data_url ? self.class.image_data_url(ref) : self.class.preview_url(ref)
   end
 
-  def self.preview_url(source)
-    if (attachment = resolve_attachment(source))
-      return Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true)
-    end
-    source
+  def self.preview_url(ref)
+    return unless (attachment = resolve_attachment(ref))
+
+    Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true)
   end
 
-  def self.image_data_url(source)
-    bytes, mime = image_bytes(source)
+  def self.image_data_url(ref)
+    bytes, mime = image_bytes(ref)
     "data:#{mime};base64,#{Base64.strict_encode64(bytes)}"
   end
 
-  # Writes a readable file path into `dir` (tmpdir for bank/frame blobs / copies).
-  def self.resolve_file!(source, dir:)
-    if (attachment = resolve_attachment(source))
-      ext = File.extname(attachment.filename.to_s).presence || ".jpg"
-      label = post_frame_id(source) ? "frame-#{post_frame_id(source)}" : "bank-#{media_bank_id(source)}"
-      path = File.join(dir, "#{label}#{ext}")
-      File.binwrite(path, attachment.download)
-      return path
-    end
-
-    file = Rails.root.join("public", source.to_s.delete_prefix("/"))
-    raise Errno::ENOENT, source unless file.file?
-
-    path = File.join(dir, "public-#{File.basename(file)}")
-    FileUtils.cp(file, path)
-    path
+  def self.resolve_attachment(ref)
+    file = ref.try(:file)
+    file if file&.attached?
   end
 
-  def self.media_bank_id(source) = MEDIA_BANK.match(source.to_s)&.[](1)
-
-  def self.post_frame_id(source) = POST_FRAME.match(source.to_s)&.[](1)
-
-  def self.resolve_attachment(source)
-    if (id = media_bank_id(source))
-      media = LibraryMedia.bank.find_by(id:)
-      return media.file if media&.file&.attached?
-    elsif (id = post_frame_id(source))
-      frame = PostFrame.find_by(id:)
-      return frame.file if frame&.file&.attached?
-    end
-    nil
+  def self.image_bytes(ref)
+    attachment = resolve_attachment(ref) or raise Errno::ENOENT, ref.inspect
+    [ attachment.download, attachment.content_type.presence || "image/jpeg" ]
   end
-
-  def self.image_bytes(source)
-    if (attachment = resolve_attachment(source))
-      return [ attachment.download, attachment.content_type.presence || "image/jpeg" ]
-    end
-
-    file = Rails.root.join("public", source.to_s.delete_prefix("/"))
-    raise Errno::ENOENT, source unless file.file?
-
-    [ file.binread, Marcel::MimeType.for(extension: file.extname) ]
-  end
-
-  def self.data_url(public_path) = image_data_url(public_path)
 
   def self.screenshot(html, size:) = Layer.screenshot(html, size:)
 
   def default_post_attrs
     {
       preset_slug: slug,
-      source: default_source,
+      source: "",
       rules: rule_numbers
     }
   end
