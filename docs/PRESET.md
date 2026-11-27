@@ -1,9 +1,9 @@
-# Storyboard + Posts (Studio)
+# Preset + Posts (Studio)
 
 Admin tool for **Rocketbox’s own promo** ads (not customer SMM workflows).
 
-- **Storyboard** — coded preset (Ruby, no index/show). Hard-coded overlays, CTA, transition and scene formula. Referenced by id (`guide-promo`). Current formula: before → (overlay → frame)×n → CTA; 1..n selected rules → matching scenes.
-- **Post** — DB entity. References a storyboard by id; settings are source image + sequence of rules. Generated key frames (`PostFrame`) and MP4 renders hang off the post. Previewed scene-by-scene, rendered to MP4. Full CRUD in Studio.
+- **Preset** — coded formula (Ruby, no index/show). Hard-coded overlays, CTA, transition and scene formula. Referenced by id (`guide-promo`). Current formula: before → (overlay → frame)×n → CTA; 1..n selected rules → matching scenes.
+- **Post** — DB entity. References a preset by id; settings are source image + sequence of rules. Generated key frames (`PostFrame`) and MP4 renders hang off the post. Previewed as a film strip of every scene, rendered to MP4. Full CRUD in Studio.
 
 ## Where
 
@@ -20,15 +20,15 @@ Open locally with an admin account (e.g. `?account=5` on prod). Example: http://
 
 Per post:
 
-- **Storyboard** — coded preset id (`guide-promo`)
+- **Preset** — coded preset id (`guide-promo`)
 - **Source image** — public path (`/guides/…`) or Media bank item URL (`/app/media_bank/:id`) — this is **v0**
 - **Rules** — ordered sequence of hard-coded overlays (add / remove / reorder; each picked from a dropdown)
 
-Overlays, CTA and transition are fixed on the storyboard preset (read-only in the panel).
+Overlays, CTA and transition are fixed on the preset (read-only in the panel).
 
 **Save**, then **Render video**. When the job finishes, **Download** the MP4.
 
-Film strip switches scenes (`?scene=`).
+The show page film strip is the main preview — every scene at once. Right-panel settings apply to the whole post.
 
 Changing **source** or **rules** destroys all `PostFrame`s and `PostRender`s (stale key frames and MP4s).
 
@@ -38,7 +38,7 @@ Each generated still after a rule is a `PostFrame`: `position` (1 = v1, 2 = v2, 
 
 ## Guide promo defaults
 
-[`guide-promo`](/app/models/storyboard.rb) seeds a default Post via `Post.ensure_defaults!` with source `cluttered.jpg` and demo frames from the public barbershop compare set:
+[`guide-promo`](/app/models/preset.rb) seeds a default Post via `Post.ensure_defaults!` with source `cluttered.jpg` and demo frames from the public barbershop compare set:
 
 1. **v0** — before (`cluttered.jpg`)
 2. **Overlay · rule #10** — “Keep the facade clear”

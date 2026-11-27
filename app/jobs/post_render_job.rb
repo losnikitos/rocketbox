@@ -26,7 +26,7 @@ class PostRenderJob < ApplicationJob
 
     def assemble!(render, dir)
       post = render.post
-      board = post.storyboard
+      preset = post.preset
       scenes = post.scenes.select(&:renderable?)
       raise "no scenes to render" if scenes.empty?
 
@@ -34,17 +34,17 @@ class PostRenderJob < ApplicationJob
         html = ApplicationController.render(
           template: "accounts/posts/canvas",
           layout: false,
-          assigns: { post: post, storyboard: board, scene: scene },
+          assigns: { post: post, preset: preset, scene: scene },
           locals: { data_url: true }
         )
         path = File.join(dir, format("scene-%02d.png", i))
-        File.binwrite(path, Storyboard.screenshot(html, size: board.size))
+        File.binwrite(path, Preset.screenshot(html, size: preset.size))
         path
       end
 
-      case board.transition_type
-      when "simple_fade" then simple_fade!(pngs, File.join(dir, "out.mp4"), size: board.size)
-      else raise "unknown transition #{board.transition_type}"
+      case preset.transition_type
+      when "simple_fade" then simple_fade!(pngs, File.join(dir, "out.mp4"), size: preset.size)
+      else raise "unknown transition #{preset.transition_type}"
       end
     end
 

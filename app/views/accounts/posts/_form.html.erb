@@ -1,35 +1,22 @@
-<%# locals: (post:, storyboard:, renders:) %>
+<%# locals: (post:, preset:, renders:) %>
 <%= form_with model: post, url: (post.persisted? ? post_path(post) : posts_path), class: "rb-surface-raised space-y-4 p-4" do |f| %>
-  <% if post.persisted? %>
-    <%= hidden_field_tag :scene, params[:scene] %>
-  <% end %>
-
-  <div>
-    <h2 class="text-sm font-semibold text-ink-900"><%= post.persisted? ? "Settings" : "New post" %></h2>
-    <p class="mt-1 text-xs text-ink-500">
-      Source image + rules. Overlays, CTA and transition come from the
-      <code class="font-mono"><%= storyboard.slug %></code> storyboard preset.
-    </p>
-  </div>
+  <h2 class="text-sm font-semibold text-ink-900"><%= post.persisted? ? "Settings" : "New post" %></h2>
 
   <div class="space-y-2">
-    <%= f.label :storyboard_slug, "Storyboard", class: "text-xs font-medium text-ink-500" %>
-    <%= f.select :storyboard_slug,
-          Storyboard::ALL.map { [ "#{it.name} (#{it.slug})", it.slug ] },
+    <%= f.label :preset_slug, "Preset", class: "text-xs font-medium text-ink-500" %>
+    <%= f.select :preset_slug,
+          Preset::ALL.map { [ "#{it.name} (#{it.slug})", it.slug ] },
           {},
           class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
   </div>
 
   <div class="space-y-2">
-    <%= f.label :source, "Source image", class: "text-xs font-medium text-ink-500" %>
-    <%= f.text_field :source,
-          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 font-mono text-xs",
-          placeholder: "/app/media_bank/:id" %>
-    <p class="text-[11px] text-ink-500">Paste a Media bank URL (<code class="font-mono">/app/media_bank/:id</code>) or a public path.</p>
+    <span class="text-xs font-medium text-ink-500">Source image</span>
+    <%= render "shared/media_bank_pick", name: "post[source]", selected: post.source, label: "Source image" %>
   </div>
 
   <%
-    rule_options = storyboard.overlays.map { [ "##{it.number} · #{it.text}", it.number ] }
+    rule_options = preset.overlays.map { [ "##{it.number} · #{it.text}", it.number ] }
     rule_icon = "cursor-pointer rounded-lg p-1 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900"
   %>
   <fieldset class="space-y-2" data-controller="rules-list">
@@ -50,8 +37,8 @@
   </fieldset>
 
   <div class="space-y-1 border-t border-ink-900/10 pt-3 text-xs text-ink-500">
-    <p>Transition: <%= storyboard.transition_label %></p>
-    <p>CTA: <%= storyboard.cta_text %> → <code class="font-mono"><%= storyboard.cta_href %></code></p>
+    <p>Transition: <%= preset.transition_label %></p>
+    <p>CTA: <%= preset.cta_text %> → <code class="font-mono"><%= preset.cta_href %></code></p>
   </div>
 
   <%= f.submit post.persisted? ? "Save" : "Create post",
@@ -61,8 +48,8 @@
 <% if post.persisted? %>
   <div class="rb-surface-raised space-y-3 p-4">
     <h2 class="text-sm font-semibold text-ink-900">Render</h2>
-    <p class="text-xs text-ink-500">Builds an MP4 with <%= storyboard.transition_label %> transitions.</p>
-    <%= button_to "Render video", render_post_path(post, scene: params[:scene]),
+    <p class="text-xs text-ink-500">Builds an MP4 with <%= preset.transition_label %> transitions.</p>
+    <%= button_to "Render video", render_post_path(post),
           method: :post, class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
 
     <% latest = Array(renders) %>

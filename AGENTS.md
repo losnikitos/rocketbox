@@ -93,6 +93,6 @@ How AI models get their £ / ££ / £££ price band: per-image and per-second 
 ### [ICONS.md](./docs/ICONS.md)
 Heroicons: `heroicon "name"` — no variant or size unless needed.
 
-### [STORYBOARD.md](./docs/STORYBOARD.md)
-Admin Studio: media bank + coded storyboard presets + Posts (scene preview, Ferrum stills, MP4).
+### [PRESET.md](./docs/PRESET.md)
+Admin Studio: media bank + coded presets + Posts (scene preview, Ferrum stills, MP4).
 

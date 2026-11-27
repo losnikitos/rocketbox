@@ -1,4 +1,4 @@
-<% content_for(:title, "#{@storyboard.name} — Posts — Rocketbox") %>
+<% content_for(:title, "#{@preset.name} — Posts — Rocketbox") %>
 <% content_for(:fit, "true") %>
 <% scenes = @post.scenes %>
 
@@ -8,7 +8,7 @@
     Posts
   <% end %>
   <span class="text-sm text-ink-400">/</span>
-  <span class="text-sm text-ink-700" aria-current="page"><%= @storyboard.name %></span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @preset.name %></span>
 <% end %>
 
 <% content_for(:header_actions) do %>
@@ -20,75 +20,24 @@
   <% end %>
 <% end %>
 
-<div class="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
-  <div class="relative flex min-w-0 flex-1 items-center justify-center rounded-lg bg-white md:m-2">
-    <div class="max-h-[70vh] w-full max-w-md overflow-hidden md:max-h-[calc(100vh-14rem)]"
-         style="aspect-ratio: <%= @storyboard.size.join(" / ") %>">
-      <iframe name="post_preview" src="<%= canvas_post_path(@post, scene: @scene.slug) %>"
-              title="<%= @scene.label %> preview" class="size-full"></iframe>
-    </div>
-  </div>
-
-  <nav aria-label="Scenes"
-       class="relative flex shrink-0 gap-2 overflow-x-auto p-2 md:border-t md:border-ink-900/10 md:px-4 md:py-3">
-    <ol class="flex gap-2.5">
-      <% scenes.each_with_index do |scene, i| %>
-        <%
-          thumb = scene.image || scene.from
-          current = scene == @scene
-          thumb_url = thumb && Storyboard.preview_url(thumb)
-          from_url = scene.from && Storyboard.preview_url(scene.from)
-          to_url = scene.to && Storyboard.preview_url(scene.to)
-        %>
-        <li class="shrink-0">
-          <%= link_to post_path(@post, scene: scene.slug),
-                class: "relative block w-32 overflow-hidden rounded-lg border-2 border-transparent bg-ink-900 hover:border-ink-900/30 aria-[current=page]:border-rocket",
-                style: "aspect-ratio: #{@storyboard.size.join(" / ")}",
-                aria: { current: ("page" if current), label: "#{i + 1}. #{scene.label}" },
-                title: scene.label do %>
-            <% if scene.transition? %>
-              <span class="absolute inset-0 bg-cover bg-center" style="background-image: url(<%= from_url %>)"></span>
-              <span class="absolute inset-0 bg-cover bg-center opacity-50" style="background-image: url(<%= to_url %>)"></span>
-              <span class="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 text-center text-[10px] font-medium text-white">↔</span>
-            <% elsif thumb_url %>
-              <span class="absolute inset-0 bg-cover bg-center" style="background-image: url(<%= thumb_url %>)"></span>
-            <% end %>
-            <% if scene.overlay? || scene.cta? %>
-              <span class="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-1 pb-1 pt-4 text-center text-[9px] leading-tight font-medium text-white">
-                <%= scene.overlay? ? "Rule" : "CTA" %>
-              </span>
-            <% end %>
-          <% end %>
-        </li>
-      <% end %>
-    </ol>
-  </nav>
+<div class="flex min-h-0 min-w-0 flex-1 flex-col md:m-2">
+  <ol class="flex min-h-0 flex-1 items-center gap-3 overflow-x-auto p-3 md:p-4"
+      aria-label="Scenes">
+    <% scenes.each_with_index do |scene, i| %>
+      <li class="relative h-full max-h-[70vh] shrink-0 overflow-hidden rounded-lg bg-ink-900 md:max-h-[calc(100vh-12rem)]"
+          style="aspect-ratio: <%= @preset.size.join(" / ") %>">
+        <iframe src="<%= canvas_post_path(@post, scene: scene.slug) %>"
+                title="<%= scene.label %> preview"
+                class="size-full"></iframe>
+        <p class="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-center text-[10px] leading-tight font-medium text-white"
+           title="<%= scene.label %>">
+          <%= i + 1 %>. <%= scene.label %>
+        </p>
+      </li>
+    <% end %>
+  </ol>
 </div>
 
 <% content_for(:aside) do %>
-  <div class="space-y-4">
-    <div class="rb-surface-raised space-y-3 p-4">
-      <div>
-        <h1 class="text-lg font-semibold text-ink-900"><%= @scene.label %></h1>
-        <p class="mt-1 text-sm text-ink-500">
-          <%= @scene.kind.to_s.humanize %>
-          · <%= @storyboard.name %>
-        </p>
-      </div>
-      <% if @scene.text.present? %>
-        <p class="whitespace-pre-line text-sm text-ink-900"><%= @scene.text %></p>
-      <% end %>
-      <% if @scene.href.present? %>
-        <p class="text-sm">
-          <%= link_to @scene.href, @scene.href, class: "underline underline-offset-2 hover:text-rocket", target: "_blank", rel: "noopener" %>
-        </p>
-      <% end %>
-      <p class="text-xs text-ink-500"><%= @storyboard.size.join(" × ") %> px · guide <code class="font-mono"><%= @storyboard.guide_slug %></code></p>
-      <% unless @scene.renderable? %>
-        <p class="text-sm text-ink-500">Transitions use <%= @storyboard.transition_label %> in the rendered MP4.</p>
-      <% end %>
-    </div>
-
-    <%= render "accounts/posts/form", post: @post, storyboard: @storyboard, renders: @renders %>
-  </div>
+  <%= render "accounts/posts/form", post: @post, preset: @preset, renders: @renders %>
 <% end %>

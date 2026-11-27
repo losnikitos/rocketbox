@@ -9,7 +9,7 @@ class PostRender < ApplicationRecord
 
   enum :status, STATUSES.index_by(&:itself), default: :pending
 
-  def storyboard = post.storyboard
+  def preset = post.preset
 
   def filename = "post-#{post_id}-#{id}.mp4"
 end

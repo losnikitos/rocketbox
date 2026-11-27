@@ -3,7 +3,7 @@
 # Coded promo preset (Rocketbox advertising itself — not customer SMM workflows).
 # Hard-coded overlays, CTA, transition and scene formula; Posts supply source + rules + frames.
 # Formula for guide-promo: before → (overlay → frame)* → cta. No index/show UI — referenced by id.
-class Storyboard
+class Preset
   Scene = Data.define(:slug, :kind, :label, :image, :from, :to, :text, :href) do
     def still? = kind == :still
     def overlay? = kind == :overlay
@@ -101,7 +101,7 @@ class Storyboard
     scenes_for(post).find { it.slug == slug } || raise(ActiveRecord::RecordNotFound)
   end
 
-  def template_for(scene) = "accounts/storyboards/scenes/#{scene.kind}"
+  def template_for(scene) = "accounts/presets/scenes/#{scene.kind}"
 
   # Data URL for Ferrum; preview URL (public path or blob) for the iframe / film strip.
   def background_for(scene, data_url: false)
@@ -173,7 +173,7 @@ class Storyboard
 
   def default_post_attrs
     {
-      storyboard_slug: slug,
+      preset_slug: slug,
       source: default_source,
       rules: rule_numbers
     }

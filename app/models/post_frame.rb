@@ -9,6 +9,6 @@ class PostFrame < ApplicationRecord
     uniqueness: { scope: :post_id }
   validates :rule_number, presence: true, numericality: { only_integer: true, greater_than: 0 }
 
-  # Resolvable ref for Storyboard preview / Ferrum / ffmpeg (parallel to /app/media_bank/:id).
+  # Resolvable ref for Preset preview / Ferrum / ffmpeg (parallel to /app/media_bank/:id).
   def source_ref = "post_frame/#{id}"
 end

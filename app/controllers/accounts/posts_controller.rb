@@ -6,7 +6,7 @@ module Accounts
 
     before_action :authenticate_admin!
     before_action :set_post, only: %i[show edit update destroy canvas render_video]
-    before_action :set_scene, only: %i[show canvas]
+    before_action :set_scene, only: %i[canvas]
 
     def index
       Post.ensure_defaults!
@@ -18,15 +18,15 @@ module Accounts
     end
 
     def new
-      board = Storyboard.find(params[:storyboard].presence || Storyboard::GUIDE_PROMO.slug)
-      @post = Post.new(board.default_post_attrs.merge(source: "", rules: board.rule_numbers))
-      @storyboard = board
+      preset = Preset.find(params[:preset].presence || Preset::GUIDE_PROMO.slug)
+      @post = Post.new(preset.default_post_attrs.merge(source: "", rules: preset.rule_numbers))
+      @preset = preset
     end
 
     def create
       @post = Post.new(post_params)
       @post.rules = normalize_rules(@post.rules)
-      @storyboard = @post.storyboard rescue Storyboard::GUIDE_PROMO
+      @preset = @post.preset rescue Preset::GUIDE_PROMO
       if @post.save
         redirect_to post_path(@post)
       else
@@ -42,10 +42,9 @@ module Accounts
       attrs = post_params
       attrs[:rules] = normalize_rules(attrs[:rules])
       if @post.update(attrs)
-        redirect_to post_path(@post, scene: params[:scene].presence)
+        redirect_to post_path(@post)
       else
         @renders = @post.renders.order(created_at: :desc)
-        @scene = @post.scenes.first
         flash.now[:alert] = @post.errors.full_messages.to_sentence
         render :show, status: :unprocessable_entity
       end
@@ -66,14 +65,14 @@ module Accounts
 
       render_row = @post.renders.create!(status: :pending)
       PostRenderJob.perform_later(render_row)
-      redirect_to post_path(@post, scene: params[:scene].presence), notice: "Rendering…"
+      redirect_to post_path(@post), notice: "Rendering…"
     end
 
     private
 
       def set_post
         @post = Post.find(params[:id])
-        @storyboard = @post.storyboard
+        @preset = @post.preset
       end
 
       def set_scene
@@ -85,7 +84,7 @@ module Accounts
       end
 
       def post_params
-        params.require(:post).permit(:storyboard_slug, :source, rules: [])
+        params.require(:post).permit(:preset_slug, :source, rules: [])
       end
 
       def normalize_rules(raw)

@@ -6,20 +6,22 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @admin = sign_in_as(users(:admin_user))
     Post.ensure_defaults!
-    @post = Post.find_by!(storyboard_slug: "guide-promo")
+    @post = Post.find_by!(preset_slug: "guide-promo")
   end
 
-  test "index and scene preview render" do
+  test "index and filmstrip preview render" do
     get posts_url(account: @admin.id)
     assert_response :success
     assert_select "a[href=?]", post_path(@post, account: @admin.id)
     assert_select "li .flex > span[style*=background-image]", { minimum: 3 }
 
-    get post_url(@post, account: @admin.id, scene: "overlay-10")
+    get post_url(@post, account: @admin.id)
     assert_response :success
-    assert_select "iframe[name=post_preview]"
-    assert_select "nav[aria-label=Scenes] a[aria-current=page][title=?]", "Overlay · rule #10"
+    assert_select "ol[aria-label=Scenes] iframe", { minimum: 3 }
+    assert_select "ol[aria-label=Scenes] iframe[title=?]", "Overlay · rule #10 preview"
     assert_select "form[action=?]", post_path(@post, account: @admin.id)
+    assert_select "[data-controller=pick] button[aria-label='Source image']"
+    assert_select "[data-controller=pick] input[type=hidden][name='post[source]']"
 
     get canvas_post_url(@post, account: @admin.id, scene: "overlay-10")
     assert_response :success
@@ -40,7 +42,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
 
   test "update saves source and ordered rules" do
     patch post_url(@post, account: @admin.id), params: {
-      post: { storyboard_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
+      post: { preset_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
     }
     assert_redirected_to post_path(@post, account: @admin.id)
     assert_equal [ 12, 10 ], @post.reload.rules_list
@@ -49,7 +51,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   test "create and destroy" do
     assert_difference -> { Post.count }, 1 do
       post posts_url(account: @admin.id), params: {
-        post: { storyboard_slug: "guide-promo", source: "/guides/barbershop/warm.jpg", rules: [ 12 ] }
+        post: { preset_slug: "guide-promo", source: "/guides/barbershop/warm.jpg", rules: [ 12 ] }
       }
     end
     created = Post.order(:id).last

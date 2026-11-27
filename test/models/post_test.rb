@@ -6,23 +6,23 @@ class PostTest < ActiveSupport::TestCase
   test "ensure_defaults creates a guide promo post with demo frames" do
     Post.delete_all
     Post.ensure_defaults!
-    post = Post.find_by!(storyboard_slug: "guide-promo")
+    post = Post.find_by!(preset_slug: "guide-promo")
     assert_equal [ 10, 12 ], post.rules_list
-    assert_equal Storyboard::GUIDE_PROMO.default_source, post.source
+    assert_equal Preset::GUIDE_PROMO.default_source, post.source
     assert_equal [ 1, 2 ], post.frames.map(&:position)
     assert post.frames.all? { it.file.attached? }
   end
 
-  test "rejects unknown storyboard" do
-    post = Post.new(storyboard_slug: "nope", source: "/x.jpg", rules: [])
+  test "rejects unknown preset" do
+    post = Post.new(preset_slug: "nope", source: "/x.jpg", rules: [])
     assert_not post.valid?
-    assert_includes post.errors[:storyboard_slug], "is not a known storyboard"
+    assert_includes post.errors[:preset_slug], "is not a known preset"
   end
 
   test "changing source or rules wipes frames and renders" do
     Post.delete_all
     Post.ensure_defaults!
-    post = Post.find_by!(storyboard_slug: "guide-promo")
+    post = Post.find_by!(preset_slug: "guide-promo")
     post.renders.create!(status: :done)
     assert_equal 2, post.frames.count
     assert_equal 1, post.renders.count

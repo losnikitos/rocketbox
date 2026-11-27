@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_161308) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_161907) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.string "namespace"
     t.text "body"
@@ -270,12 +270,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_161308) do
   end
 
   create_table "posts", force: :cascade do |t|
-    t.string "storyboard_slug", null: false
+    t.string "preset_slug", null: false
     t.string "source", default: "", null: false
     t.json "rules", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["storyboard_slug"], name: "index_posts_on_storyboard_slug"
+    t.index ["preset_slug"], name: "index_posts_on_preset_slug"
   end
 
   create_table "prompts", force: :cascade do |t|
