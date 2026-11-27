@@ -40,8 +40,38 @@ class LibraryMedia < ApplicationRecord
     ids.empty? ? all : where(id: LibraryMedia.unscoped.joins(:tags).where(tags: { id: ids }).group(:id).having("COUNT(*) = ?", ids.size).select(:id))
   end
 
+  # Admin media bank (Folder.bank), no owning account.
+  scope :bank, -> { where(user_id: nil, folder_id: Folder.bank.tree_ids) }
+
   # Media whose file is `type` ("image" or "video"); all media when nil.
   scope :of_type, ->(type) { type ? joins(file_attachment: :blob).where("active_storage_blobs.content_type LIKE ?", "#{type}/%") : all }
+
+  # Idempotent bank import from a directory of images (+ optional manifest.json of shops).
+  # Tags each file with barbershop, storefront, and the shop slug from the filename/manifest.
+  def self.seed_bank_from!(dir)
+    dir = Pathname(dir)
+    bank = Folder.bank
+    base_tags = %w[barbershop storefront].map { Tag.find_or_create_by!(name: it) }
+    shops = if (manifest = dir.join("manifest.json")).file?
+      JSON.parse(manifest.read).index_by { it.fetch("slug") }
+    else
+      {}
+    end
+
+    dir.glob("*.{jpg,jpeg,png,webp}").sort.each do |path|
+      source = "bank://#{path.basename}"
+      media = find_by(user_id: nil, source_url: source) || new(kind: "photo", folder: bank, source_url: source)
+      name = path.basename.to_s
+      shop_slug = shops.keys.select { name.start_with?("#{it}-") }.max_by(&:length) || name.sub(/\.\w+$/, "").sub(/-\d+$/, "")
+      tags = base_tags + [ Tag.find_or_create_by!(name: shop_slug.to_s.delete_prefix("#").downcase.tr(" ", "-")) ]
+      media.tags = tags
+      unless media.file.attached?
+        media.file.attach(io: path.open, filename: name, content_type: Marcel::MimeType.for(extension: path.extname))
+      end
+      media.save!
+    end
+  end
+
 
   validates :kind, presence: true
   validate { errors.add(:folder, "must be a media folder") unless folder&.media? }

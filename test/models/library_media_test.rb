@@ -26,6 +26,26 @@ class LibraryMediaTest < ActiveSupport::TestCase
     assert_equal "document", LibraryMedia.kind_for("application/pdf")
   end
 
+  test "seed_bank_from! imports images into Folder.bank with tags" do
+    Dir.mktmpdir do |dir|
+      path = Pathname(dir).join("01-demo-shop-01.jpg")
+      path.binwrite("fakejpg")
+      File.write(File.join(dir, "manifest.json"), [ { "slug" => "01-demo-shop", "name" => "Demo", "files" => [] } ].to_json)
+
+      assert_difference -> { LibraryMedia.bank.count }, 1 do
+        LibraryMedia.seed_bank_from!(dir)
+      end
+
+      media = LibraryMedia.bank.find_by!(source_url: "bank://01-demo-shop-01.jpg")
+      assert media.file.attached?
+      assert_equal %w[01-demo-shop barbershop storefront], media.tags.ordered.map(&:name)
+      assert_no_difference -> { LibraryMedia.bank.count } do
+        LibraryMedia.seed_bank_from!(dir)
+      end
+    end
+  end
+
+
   test "allows web uploads without channel identity" do
     media = LibraryMedia.create!(kind: "photo", user: users(:lazaro_nixon))
     media.file.attach(io: StringIO.new("img"), filename: "a.jpg", content_type: "image/jpeg")

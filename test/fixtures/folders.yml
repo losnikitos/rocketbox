@@ -8,6 +8,10 @@ ready:
   name: Ready
   slug: ready
   color: red
+bank:
+  name: Bank
+  slug: bank
+  color: slate
 <% %w[business_card interior exterior logo customer misc working].each do |key| %>
 <%= key %>:
   name: <%= key.humanize %>

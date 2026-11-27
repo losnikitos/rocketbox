@@ -4,7 +4,7 @@
 # Its `kind` says which items it holds: media (inbox and photobank are seeded), prompts or reviews; a subfolder takes
 # its parent's. Top-level folders hold subfolders one level below, except Reviews, which holds every review.
 # The slug is set from the name once and survives renames, so URLs and lookups by slug stay put.
-# Top-level folders never move, so code looks up inbox, photobank, ready, prompts and reviews by slug.
+# Top-level folders never move, so code looks up inbox, photobank, ready, bank, prompts and reviews by slug.
 # ponytail: code also looks up inbox/business-card, inbox/logo, inbox/interior, inbox/haircuts and photobank/logo
 # (WhatsApp onboarding, the haircut reel, account logo) by slug, so moving or deleting those rows breaks them.
 # Upgrade = a locked flag on those rows.
@@ -43,6 +43,8 @@ class Folder < ApplicationRecord
   def self.photobank = roots.find_by!(slug: "photobank")
   def self.prompts = roots.find_by!(slug: "prompts")
   def self.reviews = roots.find_by!(slug: "reviews")
+  # Admin media bank — shared reference photos (no account), browsed in ActiveAdmin.
+  def self.bank = roots.find_by!(slug: "bank")
   # Account logos live here as library media (newest per user is the logo).
   def self.logo = photobank.children.find_by!(slug: "logo")
   # Where a step with no output folder lands its results of `kind`.
