@@ -2,8 +2,8 @@
 
 require "open3"
 
-# Renders one storyboard video to MP4: Ferrum stills/overlays/CTA + ffmpeg simple fade.
-class StoryboardRenderJob < ApplicationJob
+# Renders one Studio Post to MP4: Ferrum stills/overlays/CTA + ffmpeg simple fade.
+class PostRenderJob < ApplicationJob
   queue_as :default
 
   HOLD = 2.0
@@ -12,7 +12,7 @@ class StoryboardRenderJob < ApplicationJob
 
   def perform(render)
     render.update!(status: :running, error: nil)
-    Dir.mktmpdir("storyboard-render") do |dir|
+    Dir.mktmpdir("post-render") do |dir|
       file = assemble!(render, dir)
       render.file.attach(io: File.open(file), filename: render.filename, content_type: "video/mp4")
     end
@@ -25,16 +25,16 @@ class StoryboardRenderJob < ApplicationJob
   private
 
     def assemble!(render, dir)
-      board = render.storyboard
-      settings = render.settings
-      scenes = board.scenes(video_index: render.video_index).select(&:renderable?)
+      post = render.post
+      board = post.storyboard
+      scenes = post.scenes.select(&:renderable?)
       raise "no scenes to render" if scenes.empty?
 
       pngs = scenes.each_with_index.map do |scene, i|
         html = ApplicationController.render(
-          template: "accounts/storyboards/canvas",
+          template: "accounts/posts/canvas",
           layout: false,
-          assigns: { storyboard: board, scene: scene },
+          assigns: { post: post, storyboard: board, scene: scene },
           locals: { data_url: true }
         )
         path = File.join(dir, format("scene-%02d.png", i))
@@ -42,9 +42,9 @@ class StoryboardRenderJob < ApplicationJob
         path
       end
 
-      case settings.transition_type
+      case board.transition_type
       when "simple_fade" then simple_fade!(pngs, File.join(dir, "out.mp4"), size: board.size)
-      else raise "unknown transition #{settings.transition_type}"
+      else raise "unknown transition #{board.transition_type}"
       end
     end
 

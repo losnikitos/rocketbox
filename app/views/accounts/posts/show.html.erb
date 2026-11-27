@@ -1,21 +1,30 @@
-<% content_for(:title, "#{@storyboard.name} — Storyboard — Rocketbox") %>
+<% content_for(:title, "#{@post.name} — Posts — Rocketbox") %>
 <% content_for(:fit, "true") %>
-<% scenes = @storyboard.scenes(video_index: @video_index) %>
+<% scenes = @post.scenes %>
 
 <% content_for(:breadcrumbs) do %>
-  <%= link_to storyboards_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
+  <%= link_to posts_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
     <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-    Storyboard
+    Posts
   <% end %>
   <span class="text-sm text-ink-400">/</span>
-  <span class="text-sm text-ink-700" aria-current="page"><%= @storyboard.name %></span>
+  <span class="text-sm text-ink-700" aria-current="page"><%= @post.name %></span>
+<% end %>
+
+<% content_for(:header_actions) do %>
+  <%= button_to post_path(@post), method: :delete,
+        form: { data: { turbo_confirm: "Delete this post?" } },
+        class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm text-signal-red hover:text-signal-red" do %>
+    <%= heroicon "trash", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    Delete
+  <% end %>
 <% end %>
 
 <div class="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
   <div class="relative flex min-w-0 flex-1 items-center justify-center rounded-lg bg-ink-900 md:m-2">
     <div class="max-h-[70vh] w-full max-w-md overflow-hidden md:max-h-[calc(100vh-14rem)]"
          style="aspect-ratio: <%= @storyboard.size.join(" / ") %>">
-      <iframe name="storyboard_preview" src="<%= canvas_storyboard_path(@storyboard, scene: @scene.slug, video: @video_index) %>"
+      <iframe name="post_preview" src="<%= canvas_post_path(@post, scene: @scene.slug) %>"
               title="<%= @scene.label %> preview" class="size-full"></iframe>
     </div>
   </div>
@@ -32,7 +41,7 @@
           to_url = scene.to && Storyboard.preview_url(scene.to)
         %>
         <li class="shrink-0">
-          <%= link_to storyboard_path(@storyboard, scene: scene.slug, video: @video_index),
+          <%= link_to post_path(@post, scene: scene.slug),
                 class: "relative block w-32 overflow-hidden rounded-lg border-2 border-transparent bg-ink-900 hover:border-ink-900/30 aria-[current=page]:border-rocket",
                 style: "aspect-ratio: #{@storyboard.size.join(" / ")}",
                 aria: { current: ("page" if current), label: "#{i + 1}. #{scene.label}" },
@@ -63,7 +72,7 @@
         <h1 class="text-lg font-semibold text-ink-900"><%= @scene.label %></h1>
         <p class="mt-1 text-sm text-ink-500">
           <%= @scene.kind.to_s.humanize %>
-          · video <%= @video_index + 1 %>/<%= @settings.videos.size %>
+          · <%= @storyboard.name %>
         </p>
       </div>
       <% if @scene.text.present? %>
@@ -76,16 +85,16 @@
       <% end %>
       <p class="text-xs text-ink-500"><%= @storyboard.size.join(" × ") %> px · guide <code class="font-mono"><%= @storyboard.guide_slug %></code></p>
       <% if @scene.renderable? %>
-        <%= link_to storyboard_path(@storyboard, scene: @scene.slug, video: @video_index, format: :png),
+        <%= link_to post_path(@post, scene: @scene.slug, format: :png),
               class: "rb-btn-primary inline-flex gap-1.5 px-3.5 py-2 text-sm" do %>
           <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
           Download PNG
         <% end %>
       <% else %>
-        <p class="text-sm text-ink-500">Transitions use <%= StoryboardSetting::TRANSITIONS[@settings.transition_type] %> in the rendered MP4.</p>
+        <p class="text-sm text-ink-500">Transitions use <%= @storyboard.transition_label %> in the rendered MP4.</p>
       <% end %>
     </div>
 
-    <%= render "accounts/storyboards/settings", settings: @settings, storyboard: @storyboard, video_index: @video_index, renders: @renders %>
+    <%= render "accounts/posts/form", post: @post, storyboard: @storyboard, renders: @renders %>
   </div>
 <% end %>

@@ -49,7 +49,7 @@ class Accounts::MediaBanksControllerTest < ActionDispatch::IntegrationTest
   test "studio nav points at media bank" do
     get media_banks_url(account: @admin.id)
     assert_select "a[href=?][aria-selected=true]", media_banks_path(account: @admin.id), text: /Media bank/
-    assert_select "a[href=?]", storyboards_path(account: @admin.id)
+    assert_select "a[href=?]", posts_path(account: @admin.id)
   end
 
   test "non-admin is blocked" do

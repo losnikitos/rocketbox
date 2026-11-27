@@ -61,8 +61,8 @@ module AppHelper
       [ :layers, "Layers", [] ]
     when "accounts/media_banks"
       [ :media_bank, "Media bank", [] ]
-    when "accounts/storyboards"
-      [ :storyboard, "Storyboard", [] ]
+    when "accounts/posts"
+      [ :posts, "Posts", [] ]
     when "accounts/workflows"
       [ :workflows, "Workflows", [] ]
     else

@@ -2,7 +2,7 @@
 
 module Accounts
   # Shared reference photos (Folder.bank) for Studio — browse, filter, upload, delete.
-  # Each item has a bookmarkable URL at /app/media_bank/:id for pasting into storyboard settings.
+  # Each item has a bookmarkable URL at /app/media_bank/:id for pasting into Studio post settings.
   class MediaBanksController < ApplicationController
     layout "app"
 

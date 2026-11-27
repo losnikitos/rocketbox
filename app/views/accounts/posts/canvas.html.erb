@@ -2,7 +2,8 @@
 <%# data_url true embeds image bytes for Ferrum; false uses public/blob paths in the preview iframe. %>
 <%
   data_url = local_assigns.fetch(:data_url, false)
-  bg = @storyboard.background_for(@scene, data_url: data_url)
+  board = @storyboard || @post.storyboard
+  bg = board.background_for(@scene, data_url: data_url)
   from_bg = @scene.from && (data_url ? Storyboard.image_data_url(@scene.from) : Storyboard.preview_url(@scene.from))
   to_bg = @scene.to && (data_url ? Storyboard.image_data_url(@scene.to) : Storyboard.preview_url(@scene.to))
   body_style = bg && !@scene.transition? ? "background-image: url(#{bg})" : nil
@@ -15,6 +16,6 @@
     <style><%= raw Rails.application.assets.load_path.find("tailwind.css").content(encoding: "UTF-8") %></style>
   </head>
   <body class="overflow-hidden bg-ink-900 bg-cover bg-center" <%= tag.attributes(style: body_style) %>>
-    <%= render @storyboard.template_for(@scene), scene: @scene, from_bg: from_bg, to_bg: to_bg %>
+    <%= render board.template_for(@scene), scene: @scene, from_bg: from_bg, to_bg: to_bg %>
   </body>
 </html>

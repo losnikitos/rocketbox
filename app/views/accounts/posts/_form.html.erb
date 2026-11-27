@@ -1,0 +1,82 @@
+<%# locals: (post:, storyboard:, renders:) %>
+<%= form_with model: post, url: (post.persisted? ? post_path(post) : posts_path), class: "rb-surface-raised space-y-4 p-4" do |f| %>
+  <% if post.persisted? %>
+    <%= hidden_field_tag :scene, params[:scene] %>
+  <% end %>
+
+  <div>
+    <h2 class="text-sm font-semibold text-ink-900"><%= post.persisted? ? "Settings" : "New post" %></h2>
+    <p class="mt-1 text-xs text-ink-500">
+      Source image + rules. Overlays, CTA and transition come from the
+      <code class="font-mono"><%= storyboard.slug %></code> storyboard preset.
+    </p>
+  </div>
+
+  <div class="space-y-2">
+    <%= f.label :name, class: "text-xs font-medium text-ink-500" %>
+    <%= f.text_field :name, class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= f.label :storyboard_slug, "Storyboard", class: "text-xs font-medium text-ink-500" %>
+    <%= f.select :storyboard_slug,
+          Storyboard::ALL.map { [ "#{it.name} (#{it.slug})", it.slug ] },
+          {},
+          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
+  </div>
+
+  <div class="space-y-2">
+    <%= f.label :source, "Source image", class: "text-xs font-medium text-ink-500" %>
+    <%= f.text_field :source,
+          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 font-mono text-xs",
+          placeholder: "/app/media_bank/:id" %>
+    <p class="text-[11px] text-ink-500">Paste a Media bank URL (<code class="font-mono">/app/media_bank/:id</code>) or a public path.</p>
+  </div>
+
+  <fieldset class="space-y-1">
+    <legend class="text-xs font-medium text-ink-500">Rules</legend>
+    <% storyboard.overlays.each do |overlay| %>
+      <label class="flex items-center gap-2 text-sm text-ink-800">
+        <%= check_box_tag "post[rules][]", overlay.number, post.rules_list.include?(overlay.number),
+              id: "post_rule_#{overlay.number}" %>
+        #<%= overlay.number %> · <%= overlay.text %>
+      </label>
+    <% end %>
+  </fieldset>
+
+  <div class="space-y-1 border-t border-ink-900/10 pt-3 text-xs text-ink-500">
+    <p>Transition: <%= storyboard.transition_label %></p>
+    <p>CTA: <%= storyboard.cta_text %> → <code class="font-mono"><%= storyboard.cta_href %></code></p>
+  </div>
+
+  <%= f.submit post.persisted? ? "Save" : "Create post",
+        class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
+<% end %>
+
+<% if post.persisted? %>
+  <div class="rb-surface-raised space-y-3 p-4">
+    <h2 class="text-sm font-semibold text-ink-900">Render</h2>
+    <p class="text-xs text-ink-500">Builds an MP4 with <%= storyboard.transition_label %> transitions.</p>
+    <%= button_to "Render video", render_post_path(post, scene: params[:scene]),
+          method: :post, class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
+
+    <% latest = Array(renders) %>
+    <% if latest.any? %>
+      <ul class="space-y-2">
+        <% latest.first(5).each do |row| %>
+          <li class="flex items-center justify-between gap-2 text-sm">
+            <span class="text-ink-600">
+              <span class="capitalize"><%= row.status %></span>
+              <span class="text-xs text-ink-400"><%= time_ago_in_words(row.created_at) %> ago</span>
+            </span>
+            <% if row.done? && row.file.attached? %>
+              <%= link_to "Download", post_render_path(row), class: "font-medium text-rocket hover:underline" %>
+            <% elsif row.failed? %>
+              <span class="text-xs text-signal-red" title="<%= row.error %>"><%= row.error.to_s.truncate(40) %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+<% end %>

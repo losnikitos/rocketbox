@@ -1,0 +1,32 @@
+<% content_for(:title, "Posts — Rocketbox") %>
+
+<% content_for(:header_actions) do %>
+  <%= link_to new_post_path, class: "rb-btn-primary gap-1.5 px-3.5 py-1.5 text-sm" do %>
+    <%= heroicon "plus", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+    New post
+  <% end %>
+<% end %>
+
+<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <% @posts.each do |post| %>
+    <% board = post.storyboard %>
+    <% first = post.scenes.first %>
+    <li class="overflow-hidden rounded-2xl border border-ink-900/10 bg-ink-900"
+        style="aspect-ratio: <%= board.size.join(" / ") %>">
+      <div class="relative size-full">
+        <% if first && post.source.present? %>
+          <iframe src="<%= canvas_post_path(post, scene: first.slug) %>" title="<%= post.name %>"
+                  loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
+        <% end %>
+        <%= link_to post_path(post), class: "absolute inset-0 flex flex-col items-start justify-between" do %>
+          <span class="w-full bg-linear-to-b from-black/60 to-transparent p-4 pb-10 text-sm font-semibold text-white">
+            <%= post.name.presence || board.name %>
+          </span>
+          <span class="w-full bg-linear-to-t from-black/50 to-transparent p-4 pt-8 text-xs text-white/80">
+            <%= board.name %> · <%= post.rules_list.size %> rules
+          </span>
+        <% end %>
+      </div>
+    </li>
+  <% end %>
+</ul>

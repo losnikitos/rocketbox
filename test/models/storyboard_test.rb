@@ -5,9 +5,8 @@ require "test_helper"
 class StoryboardTest < ActiveSupport::TestCase
   test "guide promo default scenes follow still → overlay → transition → … → cta" do
     board = Storyboard.find("guide-promo")
-    settings = board.settings
-    settings.assign_attributes(board.default_settings)
-    scenes = board.send(:build_scenes, settings, video_index: 0)
+    post = Post.new(board.default_post_attrs)
+    scenes = board.scenes_for(post)
 
     assert_equal %i[still overlay transition still overlay transition still cta], scenes.map(&:kind)
     assert_equal "v0", scenes.first.slug
@@ -16,20 +15,18 @@ class StoryboardTest < ActiveSupport::TestCase
     assert_equal "/guides/barbershop", scenes.last.href
   end
 
-  test "video without afters stacks overlays on the source then CTA" do
+  test "source without coded afters stacks overlays then CTA" do
     board = Storyboard.find("guide-promo")
-    settings = StoryboardSetting.new(
+    post = Post.new(
       storyboard_slug: board.slug,
-      transition_type: "simple_fade",
-      cta_text: "Go",
-      cta_href: "/guides/barbershop",
-      overlays: [ { "number" => 10, "text" => "Keep the facade clear" }, { "number" => 12, "text" => "Use warm light" } ],
-      videos: [ { "source" => "/guides/barbershop/cluttered.jpg", "rules" => [ 10, 12 ] } ]
+      name: "Bank",
+      source: "/guides/barbershop/warm.jpg",
+      rules: [ 10, 12 ]
     )
-    scenes = board.send(:build_scenes, settings, video_index: 0)
+    scenes = board.scenes_for(post)
 
     assert_equal %i[still overlay overlay cta], scenes.map(&:kind)
-    assert scenes.select(&:overlay?).all? { it.image == "/guides/barbershop/cluttered.jpg" }
+    assert scenes.select(&:overlay?).all? { it.image == "/guides/barbershop/warm.jpg" }
   end
 
   test "data_url embeds a public guide image" do
