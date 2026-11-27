@@ -5,6 +5,12 @@ require "telegram/bot"
 namespace :telegram do
   desc "Long-poll Telegram updates (local/dev). Deletes webhook first."
   task poll: :environment do
+    unless Rails.application.credentials.dig(:telegram, :bot_token).presence
+      puts "telegram:poll idle: credentials.telegram.bot_token is missing"
+      $stdout.flush
+      sleep
+    end
+
     TelegramBot.client.api.delete_webhook
     puts "Polling as @#{TelegramBot.client.api.get_me.username}…"
 
