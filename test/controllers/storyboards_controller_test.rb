@@ -13,7 +13,7 @@ class StoryboardsControllerTest < ActionDispatch::IntegrationTest
     get storyboard_url("guide-promo", account: @admin.id, scene: "overlay-10")
     assert_response :success
     assert_select "iframe[name=storyboard_preview]"
-    assert_select "nav[aria-label=Scenes] a[aria-current=page]", text: /rule #10/
+    assert_select "nav[aria-label=Scenes] a[aria-current=page][title=?]", "Overlay · rule #10"
 
     get canvas_storyboard_url("guide-promo", account: @admin.id, scene: "overlay-10")
     assert_response :success
