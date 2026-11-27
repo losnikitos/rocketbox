@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_122457) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_125346) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -139,8 +139,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_122457) do
   end
 
   create_table "guides", force: :cascade do |t|
+    t.string "access", default: "free", null: false
+    t.string "cover_image"
     t.datetime "created_at", null: false
     t.text "lede", default: "", null: false
+    t.text "promo", default: "", null: false
     t.boolean "published", default: false, null: false
     t.string "slug", null: false
     t.string "title", null: false

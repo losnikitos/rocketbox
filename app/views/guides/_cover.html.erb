@@ -1,0 +1,26 @@
+<%# locals: guide:, size: (:shelf | :hero) %>
+<% size = local_assigns.fetch(:size, :shelf) %>
+<% shelf = size == :shelf %>
+<% frame = shelf ? "aspect-2/3 w-full" : "aspect-2/3 w-full max-w-72 sm:max-w-80" %>
+
+<figure class="<%= frame %> relative isolate overflow-hidden rounded-r-md rounded-l-sm bg-ink-900 text-white shadow-[4px_8px_24px_rgb(14_14_15_/_0.18)] ring-1 ring-ink-900/20">
+  <span class="pointer-events-none absolute inset-y-0 left-0 z-20 w-2 bg-linear-to-r from-black/35 to-transparent" aria-hidden="true"></span>
+  <% if guide.cover_image.present? %>
+    <%= image_tag guide.cover_image, alt: "", class: "absolute inset-0 size-full object-cover" %>
+    <span class="absolute inset-0 bg-linear-to-t from-ink-900 via-ink-900/55 to-ink-900/15" aria-hidden="true"></span>
+  <% else %>
+    <span class="absolute inset-0 bg-linear-to-br from-ink-800 via-ink-900 to-ink-700" aria-hidden="true"></span>
+  <% end %>
+
+  <figcaption class="relative z-10 flex h-full flex-col justify-between p-5 sm:p-6">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">Rocketbox Guide</p>
+    <div>
+      <p class="font-manrope <%= shelf ? "text-2xl" : "text-3xl sm:text-4xl" %> font-extrabold leading-[1.05] tracking-[-0.035em] text-balance">
+        <%= guide.title %>
+      </p>
+      <% if guide.lede.present? && !shelf %>
+        <p class="mt-3 text-sm font-medium leading-relaxed text-white/75"><%= guide.lede %></p>
+      <% end %>
+    </div>
+  </figcaption>
+</figure>
