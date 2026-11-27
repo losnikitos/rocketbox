@@ -18,15 +18,15 @@ module Accounts
     end
 
     def new
-      preset = Preset.find(params[:preset].presence || Preset::GUIDE_PROMO.slug)
-      @post = Post.new(preset.default_post_attrs.merge(source: "", rules: preset.rule_numbers))
+      preset = Preset.find(params[:preset].presence || Preset::GuidePromo::SLUG)
+      @post = Post.new(preset.default_post_attrs)
       @preset = preset
     end
 
     def create
       @post = Post.new(post_params)
       @post.rules = normalize_rules(@post.rules)
-      @preset = @post.preset rescue Preset::GUIDE_PROMO
+      @preset = @post.preset rescue Preset::GuidePromo.new
       if @post.save
         redirect_to post_path(@post)
       else
@@ -84,7 +84,7 @@ module Accounts
       end
 
       def post_params
-        params.require(:post).permit(:preset_slug, :source, rules: [])
+        params.require(:post).permit(:preset_slug, :source, :transition_type, rules: [])
       end
 
       def normalize_rules(raw)

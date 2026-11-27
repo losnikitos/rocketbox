@@ -5,7 +5,7 @@
   <div class="space-y-2">
     <%= f.label :preset_slug, "Preset", class: "text-xs font-medium text-ink-500" %>
     <%= f.select :preset_slug,
-          Preset::ALL.map { [ "#{it.name} (#{it.slug})", it.slug ] },
+          Preset.all.map { [ "#{it.name} (#{it.slug})", it.slug ] },
           {},
           class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
   </div>
@@ -36,8 +36,15 @@
     </button>
   </fieldset>
 
+  <div class="space-y-2">
+    <%= f.label :transition_type, "Transition", class: "text-xs font-medium text-ink-500" %>
+    <%= f.select :transition_type,
+          Preset::TRANSITIONS.map { |value, label| [ label, value ] },
+          {},
+          class: "block w-full rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
+  </div>
+
   <div class="space-y-1 border-t border-ink-900/10 pt-3 text-xs text-ink-500">
-    <p>Transition: <%= preset.transition_label %></p>
     <p>CTA: <%= preset.cta_text %> → <code class="font-mono"><%= preset.cta_href %></code></p>
   </div>
 
@@ -48,7 +55,7 @@
 <% if post.persisted? %>
   <div class="rb-surface-raised space-y-3 p-4">
     <h2 class="text-sm font-semibold text-ink-900">Render</h2>
-    <p class="text-xs text-ink-500">Builds an MP4 with <%= preset.transition_label %> transitions.</p>
+    <p class="text-xs text-ink-500">Builds an MP4 with <%= post.transition_label %> transitions.</p>
     <%= button_to "Render video", render_post_path(post),
           method: :post, class: "rb-btn-primary w-full justify-center px-3.5 py-2 text-sm cursor-pointer" %>
 

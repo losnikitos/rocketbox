@@ -42,9 +42,9 @@ class PostRenderJob < ApplicationJob
         path
       end
 
-      case preset.transition_type
+      case post.transition_type
       when "simple_fade" then simple_fade!(pngs, File.join(dir, "out.mp4"), size: preset.size)
-      else raise "unknown transition #{preset.transition_type}"
+      else raise "unknown transition #{post.transition_type}"
       end
     end
 

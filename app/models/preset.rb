@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 # Coded promo preset (Rocketbox advertising itself — not customer SMM workflows).
-# Hard-coded overlays, CTA, transition and scene formula; Posts supply source + rules + frames.
-# Formula for guide-promo: before → (overlay → frame)* → cta. No index/show UI — referenced by id.
+# Subclasses define CTA, scene formula and other hard-coded bits; Posts hold settings.
+# No index/show UI — referenced by slug.
 class Preset
+  SIZE = [ 1080, 1920 ].freeze
+
   Scene = Data.define(:slug, :kind, :label, :image, :from, :to, :text, :href) do
     def still? = kind == :still
     def overlay? = kind == :overlay
@@ -16,36 +18,11 @@ class Preset
 
   TRANSITIONS = { "simple_fade" => "Simple fade" }.freeze
 
-  attr_reader :slug, :name, :size, :guide_slug, :transition_type, :cta_text, :cta_href, :overlays
+  def self.all = [ GuidePromo.new ]
 
-  def initialize(slug:, name:, size:, guide_slug:, transition_type:, cta_text:, cta_href:, overlays:)
-    @slug = slug
-    @name = name
-    @size = size
-    @guide_slug = guide_slug
-    @transition_type = transition_type
-    @cta_text = cta_text
-    @cta_href = cta_href
-    @overlays = overlays.map { Overlay.new(**it) }.freeze
-  end
+  def self.find(slug) = all.find { it.slug == slug } || raise(ActiveRecord::RecordNotFound)
 
-  GUIDE_PROMO = new(
-    slug: "guide-promo",
-    name: "Guide promo",
-    size: [ 1080, 1920 ],
-    guide_slug: "barbershop",
-    transition_type: "simple_fade",
-    cta_text: "Comment “guide”",
-    cta_href: "/guides/barbershop",
-    overlays: [
-      { number: 10, text: "Keep the facade clear" },
-      { number: 12, text: "Use warm light" }
-    ]
-  ).freeze
-
-  ALL = [ GUIDE_PROMO ].freeze
-
-  def self.find(slug) = ALL.find { it.slug == slug } || raise(ActiveRecord::RecordNotFound)
+  def size = SIZE
 
   def to_param = slug
 
@@ -53,41 +30,7 @@ class Preset
     overlays.find { it.number == number.to_i }&.text.to_s
   end
 
-  def rule_numbers = overlays.map(&:number)
-
-  def transition_label = TRANSITIONS.fetch(transition_type)
-
-  # Scenes for a Post: 1..n selected rules → matching overlay (+ optional frame) scenes, then CTA.
-  # image/from/to are LibraryMedia (bank) or PostFrame records; missing frames → overlay stacks on current.
-  def scenes_for(post)
-    rules = Array(post.rules).map(&:to_i)
-    scenes = []
-    current = post.source_media
-
-    scenes << Scene.new(slug: "v0", kind: :still, label: "v0 — source",
-      image: current, from: nil, to: nil, text: nil, href: nil)
-
-    rules.each_with_index do |number, i|
-      text = overlay_text(number).presence || "Rule ##{number}"
-      scenes << Scene.new(slug: "overlay-#{number}", kind: :overlay, label: "Overlay · rule ##{number}",
-        image: current, from: nil, to: nil, text: "Applying rule ##{number}\n#{text}", href: nil)
-
-      frame = post.frame_at(i + 1)
-      next unless frame&.file&.attached?
-      next if frame == current
-
-      scenes << Scene.new(slug: "transition-#{i}", kind: :transition, label: "Transition → v#{i + 1}",
-        image: nil, from: current, to: frame, text: nil, href: nil)
-      current = frame
-      scenes << Scene.new(slug: "v#{i + 1}", kind: :still, label: "v#{i + 1}",
-        image: current, from: nil, to: nil, text: nil, href: nil)
-    end
-
-    scenes << Scene.new(slug: "cta", kind: :cta, label: "CTA — guide",
-      image: current, from: nil, to: nil, text: cta_text, href: cta_href)
-    scenes
-  end
-
+  def self.transition_label(type) = TRANSITIONS.fetch(type)
 
   def find_scene(slug, post:)
     scenes_for(post).find { it.slug == slug } || raise(ActiveRecord::RecordNotFound)
@@ -126,11 +69,9 @@ class Preset
 
   def self.screenshot(html, size:) = Layer.screenshot(html, size:)
 
-  def default_post_attrs
-    {
-      preset_slug: slug,
-      source: "",
-      rules: rule_numbers
-    }
-  end
+  def scenes_for(post) = raise NotImplementedError, "#{self.class}#scenes_for"
+  def default_post_attrs = raise NotImplementedError, "#{self.class}#default_post_attrs"
+  def overlays = raise NotImplementedError, "#{self.class}#overlays"
+  def slug = raise NotImplementedError, "#{self.class}#slug"
+  def name = raise NotImplementedError, "#{self.class}#name"
 end

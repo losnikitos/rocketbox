@@ -6,7 +6,7 @@
   # Transition paints from/to itself; still/overlay/CTA use the frame background.
   frame_style = bg && !scene.transition? ? "background-image: url(#{bg})" : nil
 %>
-<%= tag.div class: "@container-size size-full overflow-hidden bg-white bg-cover bg-center bg-no-repeat",
+<%= tag.div class: "@container-size size-full overflow-hidden bg-ink-900/10 bg-cover bg-center bg-no-repeat",
       style: frame_style do %>
   <%= render preset.template_for(scene), scene:, from_bg:, to_bg:, bg: %>
 <% end %>

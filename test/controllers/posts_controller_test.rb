@@ -13,19 +13,17 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     get posts_url(account: @admin.id)
     assert_response :success
     assert_select "a[href=?]", post_path(@post, account: @admin.id)
-    assert_select "li .flex > span[style*=background-image]", { minimum: 3 }
+    assert_select "li .flex > span.bg-ink-100"
 
     get post_url(@post, account: @admin.id)
     assert_response :success
-    assert_select "ol[aria-label=Scenes] > li", { minimum: 3 }
-    assert_includes response.body, "Keep the facade clear"
+    assert_select "ol[aria-label=Scenes] > li", 2
     assert_select "form[action=?]", post_path(@post, account: @admin.id)
     assert_select "[data-controller=pick] button[aria-label='Source image']"
     assert_select "[data-controller=pick] input[type=hidden][name='post[source]']"
 
-    get canvas_post_url(@post, account: @admin.id, scene: "overlay-10")
+    get canvas_post_url(@post, account: @admin.id, scene: "v0")
     assert_response :success
-    assert_includes response.body, "Keep the facade clear"
   end
 
   test "studio nav lists media bank and posts" do
@@ -35,9 +33,13 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "transition canvas shows simple fade" do
+    media = bank_media!
+    @post.update!(source: media.id.to_s, rules: [ 10 ])
+    attach_frame!(@post, position: 1, rule_number: 10)
+
     get canvas_post_url(@post, account: @admin.id, scene: "transition-0")
     assert_response :success
-    assert_includes response.body, "Simple fade"
+    assert_select ".opacity-50[style*=background-image]"
   end
 
   test "update saves source and ordered rules" do
@@ -69,10 +71,9 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "render enqueues job" do
-    media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
-    media.file.attach(io: File.open(Rails.root.join("test/fixtures/files/logo.png")), filename: "logo.png", content_type: "image/png")
-    @post.update!(source: media.id.to_s)
-    @post.seed_demo_frames!
+    media = bank_media!
+    @post.update!(source: media.id.to_s, rules: [ 10 ])
+    attach_frame!(@post, position: 1, rule_number: 10)
 
     assert_enqueued_with(job: PostRenderJob) do
       post render_post_url(@post, account: @admin.id)
@@ -81,4 +82,17 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pending", PostRender.last.status
   end
 
+  private
+
+    def bank_media!
+      media = LibraryMedia.create!(kind: "photo", folder: Folder.bank, user: nil)
+      media.file.attach(io: File.open(Rails.root.join("test/fixtures/files/logo.png")), filename: "logo.png", content_type: "image/png")
+      media
+    end
+
+    def attach_frame!(post, position:, rule_number:)
+      frame = post.frames.create!(position:, rule_number:)
+      frame.file.attach(io: File.open(Rails.root.join("test/fixtures/files/logo.png")), filename: "frame.png", content_type: "image/png")
+      frame
+    end
 end

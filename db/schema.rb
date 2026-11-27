@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_161907) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_164606) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.string "namespace"
     t.text "body"
@@ -275,6 +275,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_161907) do
     t.json "rules", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "transition_type", default: "simple_fade", null: false
     t.index ["preset_slug"], name: "index_posts_on_preset_slug"
   end
 

@@ -10,15 +10,15 @@
 <ul class="flex flex-wrap gap-3">
   <% @posts.each do |post| %>
     <% preset = post.preset %>
-    <% stills = post.scenes.select(&:still?) %>
+    <% thumbs = post.scenes.select(&:still?).filter_map { Preset.preview_url(it.image) } %>
     <li>
       <%= link_to post_path(post), class: "block rounded-2xl border border-ink-900/10 bg-white p-3",
             aria: { label: preset.name } do %>
         <span class="flex gap-2">
-          <% if stills.any? %>
-            <% stills.each do |scene| %>
+          <% if thumbs.any? %>
+            <% thumbs.each do |url| %>
               <span class="h-72 shrink-0 overflow-hidden rounded-lg bg-cover bg-center"
-                    style="aspect-ratio: <%= preset.size.join(" / ") %>; background-image: url(<%= Preset.preview_url(scene.image) %>)"
+                    style="aspect-ratio: <%= preset.size.join(" / ") %>; background-image: url(<%= url %>)"
                     aria-hidden="true"></span>
             <% end %>
           <% else %>
