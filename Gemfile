@@ -78,7 +78,7 @@ gem "tailwindcss-rails", "~> 4.4"
 gem "heroicons", "~> 2.0"
 gem "lucide-rails", "~> 0.7.4"
 
-gem "stripe", "~> 15.0"
+gem "stripe", "~> 20.0"
 
 
 # Active Admin v3 (not v4). CSS via dartsass → builds/; JS via rake active_admin:build_js.
