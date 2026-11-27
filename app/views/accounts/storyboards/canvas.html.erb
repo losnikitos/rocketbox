@@ -1,10 +1,10 @@
 <%# Standalone document: inlined CSS so headless Chrome needs no asset server or session. %>
-<%# data_url true embeds image bytes for Ferrum; false uses public paths in the preview iframe. %>
+<%# data_url true embeds image bytes for Ferrum; false uses public/blob paths in the preview iframe. %>
 <%
   data_url = local_assigns.fetch(:data_url, false)
   bg = @storyboard.background_for(@scene, data_url: data_url)
-  from_bg = @scene.from && (data_url ? Storyboard.data_url(@scene.from) : @scene.from)
-  to_bg = @scene.to && (data_url ? Storyboard.data_url(@scene.to) : @scene.to)
+  from_bg = @scene.from && (data_url ? Storyboard.image_data_url(@scene.from) : Storyboard.preview_url(@scene.from))
+  to_bg = @scene.to && (data_url ? Storyboard.image_data_url(@scene.to) : Storyboard.preview_url(@scene.to))
   body_style = bg && !@scene.transition? ? "background-image: url(#{bg})" : nil
 %>
 <!DOCTYPE html>
