@@ -1,0 +1,69 @@
+<% content_for(:title, "#{@storyboard.name} — Storyboard — Rocketbox") %>
+
+<div class="@container space-y-4">
+  <nav aria-label="Breadcrumb" class="text-sm text-ink-500">
+    <%= link_to "Storyboard", storyboards_path, class: "underline underline-offset-2 hover:text-ink-900" %>
+    <span class="mx-1">/</span>
+    <span aria-current="page"><%= @storyboard.name %></span>
+  </nav>
+
+  <div class="grid items-start gap-6 @3xl:grid-cols-[minmax(0,16rem)_minmax(0,24rem)_1fr]">
+    <nav aria-label="Scenes" class="rounded-2xl border border-ink-900/10 bg-white p-3">
+      <p class="px-2 pb-2 text-xs font-medium tracking-wide text-ink-500 uppercase">Scenes</p>
+      <ol class="flex flex-col gap-0.5">
+        <% @storyboard.scenes.each_with_index do |scene, i| %>
+          <li>
+            <%= link_to storyboard_path(@storyboard, scene: scene.slug),
+                  class: "flex items-start gap-2 rounded-xl px-2.5 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-[current=page]:bg-ink-900/5 aria-[current=page]:text-ink-900",
+                  aria: { current: ("page" if scene == @scene) } do %>
+              <span class="mt-0.5 w-5 shrink-0 text-center font-mono text-xs text-ink-400"><%= i + 1 %></span>
+              <span class="min-w-0">
+                <span class="block truncate"><%= scene.label %></span>
+                <span class="block text-xs font-normal text-ink-400"><%= scene.kind %></span>
+              </span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    </nav>
+
+    <div class="w-full max-w-sm overflow-hidden rounded-xl border border-ink-900/10 bg-ink-900"
+         style="aspect-ratio: <%= @storyboard.size.join(" / ") %>">
+      <iframe name="storyboard_preview" src="<%= canvas_storyboard_path(@storyboard, scene: @scene.slug) %>"
+              title="<%= @scene.label %> preview" class="size-full"></iframe>
+    </div>
+
+    <div class="max-w-md space-y-4 rounded-2xl border border-ink-900/10 bg-white p-6">
+      <div>
+        <h1 class="text-lg font-semibold text-ink-900"><%= @scene.label %></h1>
+        <p class="mt-1 text-sm text-ink-500">
+          <%= @scene.kind.to_s.humanize %>
+          <% if @scene.transition? %>
+            · stub until video API (Kling / Runway first→last frame)
+          <% end %>
+        </p>
+      </div>
+
+      <% if @scene.text.present? %>
+        <p class="whitespace-pre-line text-sm text-ink-900"><%= @scene.text %></p>
+      <% end %>
+      <% if @scene.href.present? %>
+        <p class="text-sm">
+          <%= link_to @scene.href, @scene.href, class: "underline underline-offset-2 hover:text-rocket", target: "_blank", rel: "noopener" %>
+        </p>
+      <% end %>
+
+      <p class="text-xs text-ink-500"><%= @storyboard.size.join(" × ") %> px · guide <code class="font-mono"><%= @storyboard.guide_slug %></code></p>
+
+      <% if @scene.renderable? %>
+        <%= link_to storyboard_path(@storyboard, scene: @scene.slug, format: :png),
+              class: "rb-btn-primary inline-flex gap-1.5 px-3.5 py-2 text-sm" do %>
+          <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+          Download PNG
+        <% end %>
+      <% else %>
+        <p class="text-sm text-ink-500">PNG export is for still / overlay / CTA scenes. Transitions render via the video pipeline later.</p>
+      <% end %>
+    </div>
+  </div>
+</div>

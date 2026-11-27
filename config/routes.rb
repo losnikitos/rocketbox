@@ -64,6 +64,9 @@ Rails.application.routes.draw do
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end
+      resources :storyboards, only: %i[index show] do
+        get :canvas, on: :member
+      end
       resources :transformations, only: %i[show update] do
         get "originals/:kind", action: :original, on: :collection, as: :original
       end
