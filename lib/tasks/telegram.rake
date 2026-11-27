@@ -5,9 +5,10 @@ require "telegram/bot"
 namespace :telegram do
   desc "Long-poll Telegram updates (local/dev). Deletes webhook first."
   task poll: :environment do
-    unless Rails.application.credentials.dig(:telegram, :bot_token).presence
-      puts "telegram:poll idle: credentials.telegram.bot_token is missing"
-      $stdout.flush
+    token = Rails.application.credentials.dig(:telegram, :bot_token).presence
+    unless token
+      warn "telegram:poll idle: credentials.telegram.bot_token is missing"
+      $stderr.flush
       sleep
     end
 
@@ -22,6 +23,10 @@ namespace :telegram do
         "message" => payload.as_json
       )
     end
+  rescue StandardError => e
+    warn "telegram:poll idle: #{e.class}: #{e.message}"
+    $stderr.flush
+    sleep
   end
 
   desc "Set Telegram webhook URL. Usage: rails telegram:set_webhook[https://rocketbox.plus/telegram/webhook]"
