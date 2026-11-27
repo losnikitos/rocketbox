@@ -1,0 +1,25 @@
+<% content_for(:title, "Guides — Rocketbox") %>
+
+<section class="pb-12 pt-4 lg:pb-16 lg:pt-2">
+  <h1 class="mt-6 font-manrope text-[clamp(2.5rem,6vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink-900 text-balance">
+    Guides
+  </h1>
+  <p class="mt-6 max-w-xl text-[17px] font-medium leading-relaxed text-ink-500">
+    Short handbooks for keeping the shop sharp — brand, look, and day-to-day standards.
+  </p>
+</section>
+
+<section class="border-t border-ink-900/10 py-12 lg:py-16" aria-labelledby="guides-heading">
+  <h2 id="guides-heading" class="sr-only">All guides</h2>
+  <ul class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+    <% @guides.each do |guide| %>
+      <li>
+        <%= link_to guide_path(guide), class: "group block no-underline" do %>
+          <p class="font-manrope text-2xl font-extrabold tracking-[-0.03em] text-ink-900 group-hover:text-rocket"><%= guide.title %></p>
+          <p class="mt-2 text-[15px] font-medium leading-relaxed text-ink-500"><%= guide.lede %></p>
+          <p class="mt-4 text-sm font-semibold text-rocket">Read guide →</p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</section>

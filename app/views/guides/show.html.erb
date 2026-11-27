@@ -1,0 +1,32 @@
+<% content_for(:title, "#{@guide.title} — Guides — Rocketbox") %>
+
+<article class="pb-16 pt-4 lg:pb-24 lg:pt-2">
+  <header class="max-w-3xl border-b border-ink-900/10 pb-10">
+    <p class="text-sm font-semibold uppercase tracking-wide text-ink-500">
+      <%= link_to "Guides", guides_path, class: "text-ink-500 hover:text-ink-900" %>
+    </p>
+    <h1 class="mt-4 font-manrope text-[clamp(2.25rem,5vw,4.5rem)] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink-900 text-balance">
+      <%= @guide.title %>
+    </h1>
+    <p class="mt-6 max-w-2xl text-[17px] font-medium leading-relaxed text-ink-500">
+      <%= @guide.lede %>
+    </p>
+  </header>
+
+  <section class="mt-12 max-w-3xl" aria-labelledby="chapters-heading">
+    <h2 id="chapters-heading" class="font-manrope text-xl font-extrabold tracking-[-0.03em] text-ink-900">Chapters</h2>
+    <ol class="mt-6 divide-y divide-ink-900/10 border-y border-ink-900/10">
+      <% @guide.chapters.each do |chapter| %>
+        <li>
+          <%= link_to guide_chapter_path(@guide, chapter), class: "flex items-baseline justify-between gap-4 py-4 no-underline hover:text-rocket" do %>
+            <span class="font-manrope text-lg font-bold tracking-tight text-ink-900"><%= chapter.title %></span>
+            <span class="shrink-0 text-sm font-medium text-ink-500"><%= pluralize(chapter.rules.size, "rule") %></span>
+          <% end %>
+          <% if chapter.lede.present? %>
+            <p class="-mt-2 mb-4 max-w-2xl text-[15px] font-medium leading-relaxed text-ink-500"><%= chapter.lede %></p>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+</article>

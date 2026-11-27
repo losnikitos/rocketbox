@@ -21,7 +21,11 @@
       <%= link_to "Pricing", pricing_path,
             class: "font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900",
             aria: { selected: controller_name == "pricing" } %>
+      <%= link_to "Guides", guides_path,
+            class: "font-medium text-ink-500 transition-colors hover:text-ink-900 aria-selected:text-ink-900",
+            aria: { selected: controller_name == "guides" } %>
     </div>
+
     <div class="flex flex-wrap items-center gap-3 sm:justify-end">
       <% if Current.user %>
         <%= link_to "Go to Dashboard", app_path, class: "rb-btn-ghost px-3 py-2 text-sm" %>

@@ -1,0 +1,13 @@
+visual_appeal:
+  guide: barbershop
+  title: Visual appeal
+  slug: visual-appeal
+  lede: What walk-ins see before they sit down.
+  position: 1
+
+marketing:
+  guide: barbershop
+  title: Marketing
+  slug: marketing
+  lede: Show the work.
+  position: 2

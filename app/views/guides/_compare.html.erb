@@ -1,0 +1,25 @@
+<div class="not-prose my-8 grid gap-4 sm:grid-cols-2">
+  <figure>
+    <div class="mb-2 flex items-center gap-1.5 text-[15px] font-medium text-ink-900">
+      <%= lucide_icon "x", class: "size-5 shrink-0 text-signal-red", "stroke-width": 2, "aria-hidden": true %>
+      <span><%= dont_label %></span>
+    </div>
+    <div class="relative overflow-hidden">
+      <%= image_tag dont_src, alt: dont_label, class: "aspect-4/3 w-full object-cover" %>
+      <svg class="pointer-events-none absolute inset-0 size-full text-signal-red" aria-hidden="true">
+        <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" />
+      </svg>
+
+    </div>
+  </figure>
+  <figure>
+    <div class="mb-2 flex items-center gap-1.5 text-[15px] font-medium text-ink-900">
+      <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-signal-green text-white">
+        <%= lucide_icon "check", class: "size-3", "stroke-width": 3, "aria-hidden": true %>
+      </span>
+      <span><%= do_label %></span>
+    </div>
+    <%= image_tag do_src, alt: do_label, class: "aspect-4/3 w-full object-cover" %>
+
+  </figure>
+</div>

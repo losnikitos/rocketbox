@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_122457) do
   create_table "active_admin_comments", force: :cascade do |t|
     t.integer "author_id"
     t.string "author_type"
@@ -110,6 +110,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
     t.string "sluggable_type"
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+  end
+
+  create_table "guide_chapters", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "guide_id", null: false
+    t.text "lede", default: "", null: false
+    t.integer "position", default: 0, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["guide_id", "slug"], name: "index_guide_chapters_on_guide_id_and_slug", unique: true
+    t.index ["guide_id"], name: "index_guide_chapters_on_guide_id"
+  end
+
+  create_table "guide_rules", force: :cascade do |t|
+    t.text "body", default: "", null: false
+    t.datetime "created_at", null: false
+    t.integer "guide_chapter_id", null: false
+    t.integer "guide_id", null: false
+    t.integer "number", null: false
+    t.integer "position", default: 0, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["guide_chapter_id"], name: "index_guide_rules_on_guide_chapter_id"
+    t.index ["guide_id", "number"], name: "index_guide_rules_on_guide_id_and_number", unique: true
+    t.index ["guide_id"], name: "index_guide_rules_on_guide_id"
+  end
+
+  create_table "guides", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "lede", default: "", null: false
+    t.boolean "published", default: false, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_guides_on_slug", unique: true
   end
 
   create_table "incoming_messages", force: :cascade do |t|
@@ -563,6 +599,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_160000) do
   add_foreign_key "chats", "users"
   add_foreign_key "crawls", "links"
   add_foreign_key "folders", "folders", column: "parent_id"
+  add_foreign_key "guide_chapters", "guides"
+  add_foreign_key "guide_rules", "guide_chapters"
+  add_foreign_key "guide_rules", "guides"
   add_foreign_key "incoming_messages", "users"
   add_foreign_key "jobs", "users"
   add_foreign_key "library_media", "folders"

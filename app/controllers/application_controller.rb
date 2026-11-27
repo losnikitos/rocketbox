@@ -67,7 +67,11 @@ class ApplicationController < ActionController::Base
       return true if controller_name == "documents" && action_name == "show" && (request.get? || request.head?)
       return true if controller_name == "use_cases" && action_name == "show" && (request.get? || request.head?)
       return true if controller_name == "pricing" && action_name == "show" && (request.get? || request.head?)
+      return true if controller_name == "guides" && %w[index show].include?(action_name) && (request.get? || request.head?)
+      return true if controller_name == "guide_chapters" && action_name == "show" && (request.get? || request.head?)
       false
+
+
     end
 
 

@@ -21,8 +21,13 @@ Rails.application.routes.draw do
   root "home#index"
 
   get "pricing", to: "pricing#show", as: :pricing
+  resources :guides, only: %i[index show], param: :slug
+  get "guides/:guide_slug/:slug", to: "guide_chapters#show", as: :guide_chapter
+
+
   get "use-cases/:slug", to: "use_cases#show", as: :use_case
   resources :documents, only: [ :show ], param: :slug
+
 
 
   # Customer portal at /app (landing page stays at /)

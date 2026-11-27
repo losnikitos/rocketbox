@@ -1,0 +1,31 @@
+facade:
+  guide: barbershop
+  chapter: visual_appeal
+  number: 10
+  title: Keep the facade clear
+  position: 1
+  body: |
+    One sign on the facade.
+
+    :::compare
+    do: /guides/barbershop/clean.jpg
+    dont: /guides/barbershop/cluttered.jpg
+    do_label: Clear facade
+    dont_label: Sticker clutter
+    :::
+
+uniform:
+  guide: barbershop
+  chapter: visual_appeal
+  number: 11
+  title: Look the part
+  position: 2
+  body: Black shirt, white apron on the floor.
+
+photograph:
+  guide: barbershop
+  chapter: marketing
+  number: 20
+  title: Photograph every finished cut
+  position: 1
+  body: Take one clear photo before the client leaves.
