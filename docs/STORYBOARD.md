@@ -8,7 +8,7 @@ Sidebar → **Studio**:
 
 | Tool | Path | Notes |
 |------|------|--------|
-| Media bank | [`/admin/media_bank`](/admin/media_bank) | Dropbox-like tagged reference photos (`Folder.bank`) |
+| Media bank | [`/app/media_bank`](/app/media_bank) | Tagged reference photos (`Folder.bank`); each item at `/app/media_bank/:id` |
 | Storyboard | [`/app/storyboards`](/app/storyboards) | Scene preview + PNG export for stills |
 
 Open locally with an admin account (e.g. `?account=5` on prod). Example: http://localhost:3003/app/storyboards/guide-promo
@@ -53,4 +53,4 @@ Video transitions reuse the existing generation stack (`GenerationOptions` / Rub
 
 ## Media bank
 
-Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import` (see ActiveAdmin page). Tags include `barbershop`, `storefront`, plus shop slugs. Storyboard stills currently use the guide compare set; bank assets are the pool for later variants.
+Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import`. Browse/upload at `/app/media_bank` (group by shop, filter by tag); copy an item’s URL (`/app/media_bank/:id`) into storyboard settings. Tags include `barbershop`, `storefront`, plus shop slugs. Storyboard stills currently use the guide compare set; bank assets are the pool for later variants.

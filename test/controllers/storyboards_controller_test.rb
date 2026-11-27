@@ -22,7 +22,7 @@ class StoryboardsControllerTest < ActionDispatch::IntegrationTest
 
   test "studio nav lists media bank and storyboard" do
     get storyboards_url(account: @admin.id)
-    assert_select "a[href='/admin/media_bank']", text: /Media bank/
+    assert_select "a[href=?]", media_banks_path(account: @admin.id), text: /Media bank/
     assert_select "a[href=?]", storyboards_path(account: @admin.id)
   end
 

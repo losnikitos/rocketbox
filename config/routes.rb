@@ -64,6 +64,7 @@ Rails.application.routes.draw do
       resources :layers, only: %i[index show] do
         get :canvas, on: :member
       end
+      resources :media_banks, path: "media_bank", only: %i[index show create destroy]
       resources :storyboards, only: %i[index show] do
         get :canvas, on: :member
       end

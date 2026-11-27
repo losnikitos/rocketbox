@@ -59,6 +59,8 @@ module AppHelper
       [ :folders, @prompt&.folder&.name || "Prompts", [] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
+    when "accounts/media_banks"
+      [ :media_bank, "Media bank", [] ]
     when "accounts/storyboards"
       [ :storyboard, "Storyboard", [] ]
     when "accounts/workflows"
@@ -69,8 +71,9 @@ module AppHelper
   end
 
   # Top-level folders in the sidebar and command panel. Non-admins see Inbox and its subfolders.
+  # Bank is Studio-only (/app/media_bank), not a library root.
   def sidebar_roots
-    roots = Folder.roots.ordered.includes(:children)
+    roots = Folder.roots.where.not(slug: "bank").ordered.includes(:children)
     Current.user&.admin? ? roots : roots.where(slug: "inbox")
   end
 
