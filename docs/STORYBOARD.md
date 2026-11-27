@@ -26,7 +26,7 @@ Defined in code ([`Storyboard::GUIDE_PROMO`](/app/models/storyboard.rb)), using 
 7. **v2** — warm light (`warm.jpg`)
 8. **CTA** — comment “guide” → `/guides/barbershop`
 
-Switch scenes in the left list to judge framing and copy. Download PNG on still / overlay / CTA scenes.
+Switch scenes in the bottom film strip; settings sit in the right panel. Download PNG on still / overlay / CTA scenes.
 
 ## Rendering pipeline
 
