@@ -1,12 +1,8 @@
 <%# Standalone document: inlined CSS so headless Chrome needs no asset server or session. %>
-<%# data_url true embeds image bytes for Ferrum; false uses public/blob paths in the preview iframe. %>
+<%# data_url true embeds image bytes for Ferrum; false uses public/blob paths in Studio. %>
 <%
   data_url = local_assigns.fetch(:data_url, false)
   preset = @preset || @post.preset
-  bg = preset.background_for(@scene, data_url: data_url)
-  from_bg = @scene.from && (data_url ? Preset.image_data_url(@scene.from) : Preset.preview_url(@scene.from))
-  to_bg = @scene.to && (data_url ? Preset.image_data_url(@scene.to) : Preset.preview_url(@scene.to))
-  body_style = bg && !@scene.transition? ? "background-image: url(#{bg})" : nil
 %>
 <!DOCTYPE html>
 <html>
@@ -15,7 +11,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style><%= raw Rails.application.assets.load_path.find("tailwind.css").content(encoding: "UTF-8") %></style>
   </head>
-  <body class="overflow-hidden bg-white bg-contain bg-center bg-no-repeat" <%= tag.attributes(style: body_style) %>>
-    <%= render preset.template_for(@scene), scene: @scene, from_bg: from_bg, to_bg: to_bg %>
+  <body class="h-screen w-screen overflow-hidden">
+    <%= render "accounts/posts/scene", scene: @scene, preset:, data_url: %>
   </body>
 </html>

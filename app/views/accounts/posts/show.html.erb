@@ -1,6 +1,10 @@
 <% content_for(:title, "#{@preset.name} — Posts — Rocketbox") %>
 <% content_for(:fit, "true") %>
 <% scenes = @post.scenes %>
+<%# Filmstrip is always 9:16 reel; design canvas 1080×1920 → preview 360×640 (⅓). %>
+<% width, height = 1080, 1920 %>
+<% frame_w, frame_h = 360, 640 %>
+<% scale = frame_h.to_f / height %>
 
 <% content_for(:breadcrumbs) do %>
   <%= link_to posts_path, class: "inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-900" do %>
@@ -24,12 +28,15 @@
   <ol class="flex min-h-0 flex-1 items-center gap-3 overflow-x-auto p-3 md:p-4"
       aria-label="Scenes">
     <% scenes.each_with_index do |scene, i| %>
-      <li class="relative h-full max-h-[70vh] shrink-0 overflow-hidden rounded-lg bg-ink-900 md:max-h-[calc(100vh-12rem)]"
-          style="aspect-ratio: <%= @preset.size.join(" / ") %>">
-        <iframe src="<%= canvas_post_path(@post, scene: scene.slug) %>"
-                title="<%= scene.label %> preview"
-                class="size-full"></iframe>
-        <p class="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2 pb-1.5 pt-6 text-center text-[10px] leading-tight font-medium text-white"
+      <li class="flex shrink-0 flex-col" style="width: <%= frame_w %>px">
+        <div class="overflow-hidden rounded-lg bg-white"
+             style="width: <%= frame_w %>px; height: <%= frame_h %>px">
+          <div class="origin-top-left"
+               style="width: <%= width %>px; height: <%= height %>px; transform: scale(<%= scale %>)">
+            <%= render "accounts/posts/scene", scene:, preset: @preset %>
+          </div>
+        </div>
+        <p class="mt-1.5 text-center text-[10px] leading-tight font-medium text-ink-700"
            title="<%= scene.label %>">
           <%= i + 1 %>. <%= scene.label %>
         </p>

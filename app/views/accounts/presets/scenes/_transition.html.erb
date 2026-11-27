@@ -1,10 +1,10 @@
-<%# locals: (scene:, from_bg:, to_bg:) %>
+<%# locals: (scene:, from_bg:, to_bg:, bg: nil) %>
 <%# CSS stand-in for the chosen transition (simple fade today). %>
-<div class="relative h-screen w-screen overflow-hidden">
+<div class="relative size-full overflow-hidden">
   <div class="absolute inset-0 bg-cover bg-center" style="background-image: url(<%= from_bg %>)"></div>
   <div class="absolute inset-0 bg-cover bg-center opacity-50" style="background-image: url(<%= to_bg %>)"></div>
-  <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-[6vw] pb-[8vw] pt-[16vw] text-center">
-    <p class="text-[3.5vw] font-semibold tracking-wide text-white/90 uppercase">Simple fade</p>
-    <p class="mt-[1.5vw] text-[4vw] font-medium text-white"><%= scene.label %></p>
+  <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-[6cqi] pb-[8cqi] pt-[16cqi] text-center">
+    <p class="text-[3.5cqi] font-semibold tracking-wide text-white/90 uppercase">Simple fade</p>
+    <p class="mt-[1.5cqi] text-[4cqi] font-medium text-white"><%= scene.label %></p>
   </div>
 </div>

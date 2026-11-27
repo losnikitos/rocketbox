@@ -17,8 +17,8 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
 
     get post_url(@post, account: @admin.id)
     assert_response :success
-    assert_select "ol[aria-label=Scenes] iframe", { minimum: 3 }
-    assert_select "ol[aria-label=Scenes] iframe[title=?]", "Overlay · rule #10 preview"
+    assert_select "ol[aria-label=Scenes] > li", { minimum: 3 }
+    assert_includes response.body, "Keep the facade clear"
     assert_select "form[action=?]", post_path(@post, account: @admin.id)
     assert_select "[data-controller=pick] button[aria-label='Source image']"
     assert_select "[data-controller=pick] input[type=hidden][name='post[source]']"

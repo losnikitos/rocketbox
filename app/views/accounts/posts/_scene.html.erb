@@ -1,0 +1,12 @@
+<%# locals: (scene:, preset:, data_url: false) %>
+<%
+  bg = preset.background_for(scene, data_url:)
+  from_bg = scene.from && (data_url ? Preset.image_data_url(scene.from) : Preset.preview_url(scene.from))
+  to_bg = scene.to && (data_url ? Preset.image_data_url(scene.to) : Preset.preview_url(scene.to))
+  # Transition paints from/to itself; still/overlay/CTA use the frame background.
+  frame_style = bg && !scene.transition? ? "background-image: url(#{bg})" : nil
+%>
+<%= tag.div class: "@container-size size-full overflow-hidden bg-white bg-cover bg-center bg-no-repeat",
+      style: frame_style do %>
+  <%= render preset.template_for(scene), scene:, from_bg:, to_bg:, bg: %>
+<% end %>
