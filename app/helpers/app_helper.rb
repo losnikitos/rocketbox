@@ -59,6 +59,8 @@ module AppHelper
       [ :folders, @prompt&.folder&.name || "Prompts", [] ]
     when "accounts/layers"
       [ :layers, "Layers", [] ]
+    when "accounts/storyboards"
+      [ :storyboard, "Storyboard", [] ]
     when "accounts/workflows"
       [ :workflows, "Workflows", [] ]
     else

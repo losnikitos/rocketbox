@@ -131,15 +131,43 @@
     </li>
     <% if Current.user&.admin? %>
       <li class="mt-2 border-t border-ink-900/10 pt-2">
+        <details class="group" <%= "open" if section.in?(%i[storyboard media_bank]) %>>
+          <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
+            Studio
+            <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 group-open:rotate-90", "aria-hidden": true } %>
+          </summary>
+          <ul class="flex flex-col gap-0.5">
+            <li>
+              <%= link_to "/admin/media_bank",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5",
+                    target: "_blank",
+                    rel: "noopener" do %>
+                <%= heroicon "photo", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Media bank
+                <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5 shrink-0 text-ink-400" } %>
+              <% end %>
+            </li>
+            <li>
+              <%= link_to storyboards_path,
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    aria: { selected: section == :storyboard } do %>
+                <%= heroicon "film", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
+                Storyboard
+              <% end %>
+            </li>
+          </ul>
+        </details>
+      </li>
+      <li class="mt-2 border-t border-ink-900/10 pt-2">
         <details class="group" <%= "open" if section.in?(%i[admin transcript]) %>>
-          <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
+          <summary class="flex w-full cursor-pointer list-none items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 [&::-webkit-details-marker]:hidden">
             Admin
-            <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 transition group-open:rotate-90", "aria-hidden": true } %>
+            <%= heroicon "chevron-right", variant: :mini, options: { class: "ml-auto size-4 shrink-0 text-ink-400 group-open:rotate-90", "aria-hidden": true } %>
           </summary>
           <ul class="flex flex-col gap-0.5">
             <li>
               <%= link_to admin_path,
-                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == :admin } do %>
                 <%= heroicon "wrench-screwdriver", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
                 Dashboard
@@ -147,7 +175,7 @@
             </li>
             <li>
               <%= link_to transcript_path,
-                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5 aria-selected:bg-ink-900/5 aria-selected:text-ink-900",
                     aria: { selected: section == :transcript } do %>
                 <%= heroicon "chat-bubble-left-right", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
                 Transcript
@@ -155,7 +183,7 @@
             </li>
             <li>
               <%= link_to "/admin",
-                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5",
                     target: "_blank",
                     rel: "noopener" do %>
                 <%= heroicon "table-cells", options: { class: "size-5 shrink-0", "aria-hidden": true } %>
@@ -165,7 +193,7 @@
             </li>
             <li>
               <%= link_to "/jobs",
-                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-ink-900/5",
+                    class: "inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-900/5",
                     target: "_blank",
                     rel: "noopener" do %>
                 <%= heroicon "queue-list", options: { class: "size-5 shrink-0", "aria-hidden": true } %>

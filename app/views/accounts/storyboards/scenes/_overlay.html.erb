@@ -1,0 +1,7 @@
+<%# locals: (scene:, from_bg:, to_bg:) %>
+<%# Sized in vw so the layout scales with the viewport: 1080px wide in Chrome, any width in the preview iframe. %>
+<div class="flex h-screen w-screen flex-col items-center justify-end bg-linear-to-t from-black/70 via-black/20 to-transparent px-[8vw] pb-[12vw] text-center">
+  <p class="whitespace-pre-line text-[5vw] leading-tight font-semibold text-white drop-shadow-[0_0.2vw_0.8vw_rgb(0_0_0/0.55)]">
+    <%= scene.text %>
+  </p>
+</div>
