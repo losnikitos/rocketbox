@@ -7,11 +7,11 @@
   <% end %>
 <% end %>
 
-<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
   <% @posts.each do |post| %>
     <% board = post.storyboard %>
     <% first = post.scenes.first %>
-    <li class="overflow-hidden rounded-2xl border border-ink-900/10 bg-ink-900"
+    <li class="overflow-hidden rounded-lg border border-ink-900/10 bg-ink-900"
         style="aspect-ratio: <%= board.size.join(" / ") %>">
       <div class="relative size-full">
         <% if first && post.source.present? %>
@@ -19,10 +19,10 @@
                   loading="lazy" tabindex="-1" class="pointer-events-none absolute inset-0 size-full"></iframe>
         <% end %>
         <%= link_to post_path(post), class: "absolute inset-0 flex flex-col items-start justify-between" do %>
-          <span class="w-full bg-linear-to-b from-black/60 to-transparent p-4 pb-10 text-sm font-semibold text-white">
+          <span class="w-full bg-linear-to-b from-black/60 to-transparent p-1.5 pb-4 text-[10px] font-semibold leading-tight text-white">
             <%= post.name.presence || board.name %>
           </span>
-          <span class="w-full bg-linear-to-t from-black/50 to-transparent p-4 pt-8 text-xs text-white/80">
+          <span class="w-full bg-linear-to-t from-black/50 to-transparent p-1.5 pt-3 text-[9px] leading-tight text-white/80">
             <%= board.name %> · <%= post.rules_list.size %> rules
           </span>
         <% end %>

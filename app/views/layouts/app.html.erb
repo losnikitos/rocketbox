@@ -65,7 +65,7 @@
         <% end %>
 
         <% if content_for?(:breadcrumbs) %>
-          <div class="mt-2 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-2"><%= yield :breadcrumbs %></div>
+          <div class="mt-2 flex shrink-0 items-center gap-2 px-1 sm:px-2"><%= yield :breadcrumbs %></div>
         <% end %>
 
         <div class="mt-3 flex min-h-0 flex-1 gap-3 <%= "max-md:flex-col" if content_for?(:aside) %>">

@@ -31,21 +31,18 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", posts_path(account: @admin.id)
   end
 
-  test "transition canvas shows simple fade, png only for renderable scenes" do
+  test "transition canvas shows simple fade" do
     get canvas_post_url(@post, account: @admin.id, scene: "transition-0")
     assert_response :success
     assert_includes response.body, "Simple fade"
-
-    get post_url(@post, format: :png, account: @admin.id, scene: "transition-0")
-    assert_response :bad_request
   end
 
-  test "update saves source and rules" do
+  test "update saves source and ordered rules" do
     patch post_url(@post, account: @admin.id), params: {
-      post: { name: "Guide promo", storyboard_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 10 ] }
+      post: { name: "Guide promo", storyboard_slug: "guide-promo", source: "/guides/barbershop/cluttered.jpg", rules: [ 12, 10 ] }
     }
     assert_redirected_to post_path(@post, account: @admin.id)
-    assert_equal [ 10 ], @post.reload.rules_list
+    assert_equal [ 12, 10 ], @post.reload.rules_list
   end
 
   test "create and destroy" do
@@ -71,12 +68,4 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "pending", PostRender.last.status
   end
 
-  test "png is a screenshot of an overlay scene" do
-    Ferrum::Browser.new.quit rescue skip("Chrome not available")
-
-    get post_url(@post, format: :png, account: @admin.id, scene: "v0")
-    assert_response :success
-    assert_equal "image/png", response.media_type
-    assert response.body.start_with?("\x89PNG".b)
-  end
 end

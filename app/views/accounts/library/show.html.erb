@@ -10,7 +10,7 @@
     <%= heroicon "arrow-left", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
     <%= @media.folder.path %>
   <% end %>
-  <%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %>
+  <span class="ml-auto"><%= render "shared/admin_links/library_media", library_media: @media, links: { remove: false } %></span>
 <% end %>
 
 <div class="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">

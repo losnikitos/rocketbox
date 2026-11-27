@@ -15,17 +15,6 @@ module Accounts
 
     def show
       @renders = @post.renders.order(created_at: :desc)
-      respond_to do |format|
-        format.html
-        format.png do
-          return head :bad_request unless @scene.renderable?
-
-          html = render_to_string(:canvas, layout: false, formats: :html, locals: { data_url: true })
-          send_data Storyboard.screenshot(html, size: @storyboard.size),
-            type: "image/png", disposition: "attachment",
-            filename: "post-#{@post.id}-#{@scene.slug}.png"
-        end
-      end
     end
 
     def new

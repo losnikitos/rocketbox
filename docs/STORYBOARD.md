@@ -12,7 +12,7 @@ Sidebar → **Studio**:
 | Tool | Path | Notes |
 |------|------|--------|
 | Media bank | [`/app/media_bank`](/app/media_bank) | Tagged reference photos (`Folder.bank`); each item at `/app/media_bank/:id` |
-| Posts | [`/app/posts`](/app/posts) | CRUD, scene preview, settings, PNG + MP4 export |
+| Posts | [`/app/posts`](/app/posts) | CRUD, scene preview, settings, MP4 export |
 
 Open locally with an admin account (e.g. `?account=5` on prod). Example: http://localhost:3003/app/posts
 
@@ -23,11 +23,11 @@ Per post:
 - **Name**
 - **Storyboard** — coded preset id (`guide-promo`)
 - **Source image** — public path (`/guides/…`) or Media bank item URL (`/app/media_bank/:id`)
-- **Rules** — which hard-coded overlays from the storyboard apply
+- **Rules** — ordered sequence of hard-coded overlays (add / remove / reorder; each picked from a dropdown)
 
 Overlays, CTA and transition are fixed on the storyboard preset (read-only in the panel).
 
-**Save**, then **Render video**. When the job finishes, **Download** the MP4. Scene PNG export remains for still / overlay / CTA.
+**Save**, then **Render video**. When the job finishes, **Download** the MP4.
 
 Film strip switches scenes (`?scene=`).
 
@@ -55,7 +55,6 @@ A media-bank (or other non-default) source stacks overlays on that source, then 
 | MP4 assembly | Live | [`PostRenderJob`](/app/jobs/post_render_job.rb) — hold each frame, `xfade` fade, attach to [`PostRender`](/app/models/post_render.rb) |
 | AI transitions (Kling / Runway) | Later | Extra transition types beside simple fade |
 
-PNG: `GET /app/posts/:id.png?scene=overlay-10`  
 MP4: render from the settings panel → `GET /app/post_renders/:id`
 
 ## Local run

@@ -21,7 +21,7 @@
 <% end %>
 
 <div class="flex min-w-0 flex-1 flex-col gap-4 md:min-h-0 md:gap-0">
-  <div class="relative flex min-w-0 flex-1 items-center justify-center rounded-lg bg-ink-900 md:m-2">
+  <div class="relative flex min-w-0 flex-1 items-center justify-center rounded-lg bg-white md:m-2">
     <div class="max-h-[70vh] w-full max-w-md overflow-hidden md:max-h-[calc(100vh-14rem)]"
          style="aspect-ratio: <%= @storyboard.size.join(" / ") %>">
       <iframe name="post_preview" src="<%= canvas_post_path(@post, scene: @scene.slug) %>"
@@ -84,13 +84,7 @@
         </p>
       <% end %>
       <p class="text-xs text-ink-500"><%= @storyboard.size.join(" × ") %> px · guide <code class="font-mono"><%= @storyboard.guide_slug %></code></p>
-      <% if @scene.renderable? %>
-        <%= link_to post_path(@post, scene: @scene.slug, format: :png),
-              class: "rb-btn-primary inline-flex gap-1.5 px-3.5 py-2 text-sm" do %>
-          <%= heroicon "arrow-down-tray", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
-          Download PNG
-        <% end %>
-      <% else %>
+      <% unless @scene.renderable? %>
         <p class="text-sm text-ink-500">Transitions use <%= @storyboard.transition_label %> in the rendered MP4.</p>
       <% end %>
     </div>

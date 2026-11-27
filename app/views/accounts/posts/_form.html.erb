@@ -33,15 +33,25 @@
     <p class="text-[11px] text-ink-500">Paste a Media bank URL (<code class="font-mono">/app/media_bank/:id</code>) or a public path.</p>
   </div>
 
-  <fieldset class="space-y-1">
+  <%
+    rule_options = storyboard.overlays.map { [ "##{it.number} · #{it.text}", it.number ] }
+    rule_icon = "cursor-pointer rounded-lg p-1 text-ink-500 hover:bg-ink-900/5 hover:text-ink-900"
+  %>
+  <fieldset class="space-y-2" data-controller="rules-list">
     <legend class="text-xs font-medium text-ink-500">Rules</legend>
-    <% storyboard.overlays.each do |overlay| %>
-      <label class="flex items-center gap-2 text-sm text-ink-800">
-        <%= check_box_tag "post[rules][]", overlay.number, post.rules_list.include?(overlay.number),
-              id: "post_rule_#{overlay.number}" %>
-        #<%= overlay.number %> · <%= overlay.text %>
-      </label>
-    <% end %>
+    <div data-rules-list-target="list" class="space-y-2">
+      <% post.rules_list.each do |number| %>
+        <%= render "accounts/posts/rule_row", options: rule_options, selected: number, icon_btn: rule_icon %>
+      <% end %>
+    </div>
+    <template data-rules-list-target="template">
+      <%= render "accounts/posts/rule_row", options: rule_options, selected: rule_options.dig(0, 1), icon_btn: rule_icon %>
+    </template>
+    <button type="button" data-action="rules-list#add"
+          class="rb-btn-ghost-on-light gap-1 px-2.5 py-1 text-xs">
+      <%= heroicon "plus", variant: :mini, options: { class: "size-3.5", "aria-hidden": true } %>
+      Add rule
+    </button>
   </fieldset>
 
   <div class="space-y-1 border-t border-ink-900/10 pt-3 text-xs text-ink-500">

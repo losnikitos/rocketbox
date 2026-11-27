@@ -1,0 +1,14 @@
+<%# locals: (options:, selected: nil, icon_btn:) %>
+<div data-rules-list-row class="flex items-center gap-1">
+  <%= select_tag "post[rules][]", options_for_select(options, selected),
+        class: "min-w-0 flex-1 rounded-lg border border-ink-900/15 bg-white px-3 py-2 text-sm" %>
+  <button type="button" data-action="rules-list#up" aria-label="Move up" class="<%= icon_btn %>">
+    <%= heroicon "chevron-up", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+  </button>
+  <button type="button" data-action="rules-list#down" aria-label="Move down" class="<%= icon_btn %>">
+    <%= heroicon "chevron-down", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+  </button>
+  <button type="button" data-action="rules-list#remove" aria-label="Remove rule" class="<%= icon_btn %>">
+    <%= heroicon "x-mark", variant: :mini, options: { class: "size-4", "aria-hidden": true } %>
+  </button>
+</div>
