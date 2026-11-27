@@ -249,9 +249,7 @@ GEM
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     ice_nine (0.11.2)
-    image_processing (1.14.0)
-      mini_magick (>= 4.9.5, < 6)
-      ruby-vips (>= 2.0.17, < 3)
+    image_processing (2.2.0)
     importmap-rails (2.2.3)
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
@@ -325,8 +323,6 @@ GEM
       net-smtp
     marcel (1.2.1)
     matrix (0.4.3)
-    mini_magick (5.3.1)
-      logger
     mini_mime (1.1.5)
     minitest (6.0.6)
       drb (~> 2.0)
@@ -497,9 +493,6 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
-    ruby-vips (2.3.0)
-      ffi (~> 1.12)
-      logger
     ruby2_keywords (0.0.5)
     ruby_llm (2.1.1)
       base64
@@ -650,7 +643,7 @@ DEPENDENCIES
   fugit (~> 1.11)
   heroicons (~> 2.0)
   hotwire-spark
-  image_processing (~> 1.2)
+  image_processing (~> 2.2)
   importmap-rails
   jbuilder
   json (< 3)
