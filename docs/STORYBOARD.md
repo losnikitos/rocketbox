@@ -70,4 +70,4 @@ Ferrum needs Chrome/Chromium (same as Layers). ffmpeg on PATH for real MP4s (`RE
 
 ## Media bank
 
-Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import`. Browse/upload at `/app/media_bank` (group by shop, filter by tag); copy an item’s URL (`/app/media_bank/:id`) into a post’s source field. Tags include `barbershop`, `storefront`, plus shop slugs.
+Seed / sync: `bin/rails media_bank:seed`, `media_bank:export`, `media_bank:import`. Browse/upload at `/app/media_bank` (group by shop, filter by tag); open an item to set tags; copy its URL (`/app/media_bank/:id`) into a post’s source field. Tags include `barbershop`, `storefront`, plus shop slugs.

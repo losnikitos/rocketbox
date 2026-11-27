@@ -42,14 +42,12 @@
   <aside class="w-full shrink-0 space-y-4 md:w-72 md:border-l md:border-ink-900/10 md:p-4 lg:w-80">
     <div class="rounded-2xl border border-ink-900/10 bg-white p-4">
       <h2 class="text-sm font-semibold text-ink-900"><%= bank_business_label(@media) %></h2>
-      <% if @media.tags.any? %>
-        <div class="mt-2 flex flex-wrap gap-1.5">
-          <% @media.tags.ordered.each do |tag| %>
-            <%= link_to media_banks_path(tag_id: tag.id) do %>
-              <%= render "accounts/tags/tag", tag: %>
-            <% end %>
-          <% end %>
-        </div>
+      <% if Tag.exists? %>
+        <% box_css = "mt-3 flex rounded-lg border border-ink-900/15 bg-white focus-within:border-rocket focus-within:ring-2 focus-within:ring-rocket/30" %>
+        <%= form_with url: media_bank_path(@media), method: :patch,
+              html: { onchange: "event.target.type == 'checkbox' && this.requestSubmit()" }, class: box_css do %>
+          <%= render "shared/tag_pick", name: "library_media[tag_ids][]", selected: @media.tag_ids, label: "Tags", multiple: true %>
+        <% end %>
       <% end %>
       <p class="mt-3 text-xs text-ink-500">Copy this page URL into a Studio post’s source field.</p>
       <p class="mt-1 break-all font-mono text-xs text-ink-700"><%= media_bank_url(@media) %></p>

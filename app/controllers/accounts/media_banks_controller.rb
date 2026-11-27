@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 module Accounts
-  # Shared reference photos (Folder.bank) for Studio — browse, filter, upload, delete.
+  # Shared reference photos (Folder.bank) for Studio — browse, filter, upload, tag, delete.
   # Each item has a bookmarkable URL at /app/media_bank/:id for pasting into Studio post settings.
   class MediaBanksController < ApplicationController
     layout "app"
 
     before_action :authenticate_admin!
-    before_action :set_media, only: %i[show destroy]
+    before_action :set_media, only: %i[show update destroy]
 
     # Tags that classify the shot, not the business (shop slug).
     CATEGORY_TAGS = %w[barbershop storefront exterior interior logo].freeze
@@ -31,16 +31,24 @@ module Accounts
 
     def create
       files = Array(params[:files]).compact_blank
-      tag_ids = Array(params[:tag_ids]).compact_blank
       if files.empty?
         redirect_to media_banks_path(tag_id: params[:tag_id].presence), alert: "Choose at least one image." and return
       end
 
       created = files.map do |file|
-        LibraryMedia.create!(kind: "photo", folder: Folder.bank, tag_ids:).tap { it.file.attach(file) }
+        LibraryMedia.create!(kind: "photo", folder: Folder.bank).tap { it.file.attach(file) }
       end
       path = created.one? ? media_bank_path(created.first) : media_banks_path(tag_id: params[:tag_id].presence)
       redirect_to path, notice: "Uploaded #{created.size} #{'image'.pluralize(created.size)}."
+    end
+
+    def update
+      attrs = params.expect(library_media: [ tag_ids: [] ])
+      if @media.update(attrs)
+        head :no_content
+      else
+        redirect_to media_bank_path(@media), alert: @media.errors.full_messages.to_sentence
+      end
     end
 
     def destroy

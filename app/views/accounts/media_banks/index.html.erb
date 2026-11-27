@@ -7,32 +7,12 @@
   </label>
 <% end %>
 
-<%= form_with url: media_banks_path, multipart: true, class: "mb-6 rounded-2xl border border-ink-900/10 bg-white p-4",
+<%= form_with url: media_banks_path, multipart: true, class: "hidden",
       data: { controller: "drop-upload", action: "dragstart@document->drop-upload#internalStart dragend@document->drop-upload#internalEnd" } do %>
   <%= hidden_field_tag :source_id, nil, data: { drop_upload_target: "source" } %>
   <%= hidden_field_tag :tag_id, @tag&.id %>
-  <div class="flex flex-wrap items-end gap-4">
-    <div class="min-w-0 flex-1">
-      <p class="mb-2 text-sm font-medium text-ink-900">Upload images</p>
-      <%= file_field_tag "files[]", multiple: true, accept: "image/*", id: "media-bank-upload", required: true,
-            data: { drop_upload_target: "input", action: "change->drop-upload#changed" },
-            class: "block w-full text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-900/5 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink-900 hover:file:bg-ink-900/10" %>
-    </div>
-    <% if Tag.exists? %>
-      <div class="min-w-48">
-        <p class="mb-2 text-sm font-medium text-ink-900">Tags</p>
-        <div class="flex flex-wrap gap-x-3 gap-y-1">
-          <% Tag.ordered.each do |tag| %>
-            <label class="inline-flex items-center gap-1.5 text-sm text-ink-700">
-              <%= check_box_tag "tag_ids[]", tag.id, false, id: nil, class: "size-4 accent-rocket" %>
-              #<%= tag.name %>
-            </label>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-    <%= button_tag "Upload", class: "rb-btn-primary px-3.5 py-2 text-sm" %>
-  </div>
+  <%= file_field_tag "files[]", multiple: true, accept: "image/*", id: "media-bank-upload",
+        data: { drop_upload_target: "input", action: "change->drop-upload#changed" } %>
 <% end %>
 
 <nav aria-label="Tags" class="mb-6 flex flex-wrap items-center gap-2">
@@ -50,7 +30,7 @@
 </nav>
 
 <% if @items.empty? %>
-  <p class="text-sm text-ink-500">No images yet. Upload above or run <code class="font-mono text-ink-700">bin/rails media_bank:seed</code>.</p>
+  <p class="text-sm text-ink-500">No images yet. Use Upload or run <code class="font-mono text-ink-700">bin/rails media_bank:seed</code>.</p>
 <% else %>
   <div class="space-y-8" data-controller="gallery-lightbox">
     <% @groups.each do |label, items| %>
