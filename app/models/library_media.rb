@@ -40,7 +40,7 @@ class LibraryMedia < ApplicationRecord
     ids.empty? ? all : where(id: LibraryMedia.unscoped.joins(:tags).where(tags: { id: ids }).group(:id).having("COUNT(*) = ?", ids.size).select(:id))
   end
 
-  # Admin media bank (Folder.bank), no owning account.
+  # Studio media bank (Folder.bank), no owning account — /app/media_bank.
   scope :bank, -> { where(user_id: nil, folder_id: Folder.bank.tree_ids) }
 
   # Media whose file is `type` ("image" or "video"); all media when nil.

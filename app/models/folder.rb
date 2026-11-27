@@ -43,7 +43,7 @@ class Folder < ApplicationRecord
   def self.photobank = roots.find_by!(slug: "photobank")
   def self.prompts = roots.find_by!(slug: "prompts")
   def self.reviews = roots.find_by!(slug: "reviews")
-  # Admin media bank — shared reference photos (no account), browsed in ActiveAdmin.
+  # Studio media bank — shared reference photos (no account), at /app/media_bank.
   def self.bank = roots.find_by!(slug: "bank")
   # Account logos live here as library media (newest per user is the logo).
   def self.logo = photobank.children.find_by!(slug: "logo")
