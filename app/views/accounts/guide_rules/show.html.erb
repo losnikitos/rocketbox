@@ -13,6 +13,14 @@
   <span class="text-sm text-ink-700" aria-current="page"><%= @rule.label %></span>
 <% end %>
 
+<% content_for(:header_actions) do %>
+  <%= link_to guide_chapter_path(@guide, @chapter, account: nil, anchor: @rule.fragment), target: "_blank", rel: "noopener",
+        class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+    Open
+    <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5", "aria-hidden": true } %>
+  <% end %>
+<% end %>
+
 <article class="rounded-2xl border border-ink-900/10 bg-white p-6">
   <p class="font-mono text-sm text-ink-400"><%= @rule.label %></p>
   <h2 class="mt-1 font-manrope text-2xl font-extrabold tracking-tight text-ink-900"><%= @rule.title %></h2>
@@ -26,12 +34,14 @@
   </div>
 </article>
 
-<section class="mt-6 rounded-2xl border border-dashed border-ink-900/15 bg-white p-6" aria-labelledby="prompt-heading">
-  <h2 id="prompt-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-500">Image prompt</h2>
-  <p class="mt-1 text-sm text-ink-500">Studio only — not shown on the public guide.</p>
-  <% if @rule.prompt.present? %>
-    <p class="mt-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-800"><%= @rule.prompt %></p>
-  <% else %>
-    <p class="mt-4 text-sm text-ink-400">No prompt set.</p>
-  <% end %>
-</section>
+<% content_for(:aside) do %>
+  <section class="rounded-2xl border border-dashed border-ink-900/15 bg-white p-6" aria-labelledby="prompt-heading">
+    <h2 id="prompt-heading" class="text-xs font-semibold uppercase tracking-wide text-ink-500">Image prompt</h2>
+    <p class="mt-1 text-sm text-ink-500">Studio only — not shown on the public guide.</p>
+    <% if @rule.prompt.present? %>
+      <p class="mt-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink-800"><%= @rule.prompt %></p>
+    <% else %>
+      <p class="mt-4 text-sm text-ink-400">No prompt set.</p>
+    <% end %>
+  </section>
+<% end %>

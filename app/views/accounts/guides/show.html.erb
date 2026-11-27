@@ -9,6 +9,14 @@
   <span class="text-sm text-ink-700" aria-current="page"><%= @guide.title %></span>
 <% end %>
 
+<% content_for(:header_actions) do %>
+  <%= link_to guide_path(@guide, account: nil), target: "_blank", rel: "noopener",
+        class: "rb-btn-ghost-on-light gap-1.5 px-3.5 py-1.5 text-sm" do %>
+    Open
+    <%= heroicon "arrow-up-right", variant: :mini, options: { class: "size-3.5", "aria-hidden": true } %>
+  <% end %>
+<% end %>
+
 <div class="rounded-2xl border border-ink-900/10 bg-white p-6">
   <div class="flex flex-wrap items-center gap-2 text-sm text-ink-500">
     <%= @guide.access_label %>

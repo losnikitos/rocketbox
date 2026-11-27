@@ -24,4 +24,11 @@ class GuideTest < ActiveSupport::TestCase
     assert_not guide.valid?
     assert_includes guide.errors[:access], "is not included in the list"
   end
+
+  test "rule label and fragment" do
+    rule = guide_rules(:facade)
+
+    assert_equal "Rule #10", rule.label
+    assert_equal "rule-10", rule.fragment
+  end
 end

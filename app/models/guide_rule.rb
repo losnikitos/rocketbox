@@ -9,7 +9,8 @@ class GuideRule < ApplicationRecord
 
   before_validation :assign_guide_from_chapter, on: :create
 
-  def label = "##{number}"
+  def label = "Rule ##{number}"
+  def fragment = "rule-#{number}"
 
   private
 

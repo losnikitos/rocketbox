@@ -36,9 +36,9 @@ class GuidesTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", text: "Visual appeal"
-    assert_select "section#10"
+    assert_select "section#rule-10"
     assert_select "h2", text: "Keep the facade clear"
-    assert_select "*", text: /#10/
+    assert_select "*", text: /Rule #10/
     assert_select "img[alt='Clear facade']"
     assert_select "img[alt='Sticker clutter']"
   end

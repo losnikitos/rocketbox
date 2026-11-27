@@ -22,15 +22,18 @@ class Accounts::GuidesControllerTest < ActionDispatch::IntegrationTest
     get studio_guide_url(@guide, account: @admin.id)
     assert_response :success
     assert_select "a[href=?]", studio_guide_chapter_path(@guide, @chapter, account: @admin.id)
+    assert_select "a[href=?][target=_blank]", guide_path(@guide, account: nil), text: /Open/
 
     get studio_guide_chapter_url(@guide, @chapter, account: @admin.id)
     assert_response :success
     assert_select "a[href=?]", studio_guide_chapter_rule_path(@guide, @chapter, @rule.number, account: @admin.id)
+    assert_select "a[href=?][target=_blank]", guide_chapter_path(@guide, @chapter, account: nil), text: /Open/
     assert_select "*", text: /Clear the facade glass/
 
     get studio_guide_chapter_rule_url(@guide, @chapter, @rule.number, account: @admin.id)
     assert_response :success
     assert_select "h2", text: @rule.title
+    assert_select "a[href=?][target=_blank]", guide_chapter_path(@guide, @chapter, account: nil, anchor: @rule.fragment), text: /Open/
     assert_select "*", text: /Clear the facade glass/
     assert_select "*", text: /Studio only/
   end
